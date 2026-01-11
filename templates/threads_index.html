@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+
+{% block title %}Theme Threads - {{ site_title }}{% endblock %}
+
+{% block description %}All theme threads showing evolution of thinking{% endblock %}
+
+{% block content %}
+<h2>Theme Threads</h2>
+
+<p style="color: var(--muted); margin-bottom: 2rem;">
+    Long-form compilations showing how thinking evolved over time
+</p>
+
+{% if threads.is_empty() %}
+<p style="color: var(--muted);">No threads available yet. Threads are created automatically when a theme has 3+ entries.</p>
+{% else %}
+<ul style="list-style: none; margin-left: 0;">
+{% for thread in threads %}
+<li style="margin: 1.5rem 0;">
+    <a href="/threads/{{ thread.slug }}.html" style="font-size: 1.2rem;">{{ thread.name }}</a>
+    <div style="color: var(--muted); font-size: 0.9rem; margin-top: 0.3rem;">
+        {{ thread.count }} entries • {{ thread.date_range }}
+    </div>
+</li>
+{% endfor %}
+</ul>
+{% endif %}
+{% endblock %}

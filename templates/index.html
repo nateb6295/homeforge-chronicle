@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+
+{% block title %}{{ site_title }} - Recent Entries{% endblock %}
+
+{% block description %}Recent entries from the chronicle{% endblock %}
+
+{% block content %}
+<h2>Recent Entries</h2>
+
+{% if entries.is_empty() %}
+<p style="color: var(--muted);">No entries yet. Start by ingesting conversations and extracting themes.</p>
+{% else %}
+{% for entry in entries %}
+<div class="entry">
+    <div class="entry-meta">
+        <span class="entry-classification">{{ entry.classification }}</span>
+        <span style="margin-left: 1rem;">{{ entry.date }}</span>
+    </div>
+    <h3 class="entry-title">{{ entry.title }}</h3>
+    {% if !entry.themes.is_empty() %}
+    <div class="theme-list">
+        {% for theme in entry.themes %}
+        <a href="/threads/{{ theme }}.html" class="theme-tag">{{ theme }}</a>
+        {% endfor %}
+    </div>
+    {% endif %}
+    <p>{{ entry.summary }}</p>
+    {% if !entry.quotes.is_empty() %}
+    {% for quote in entry.quotes %}
+    <blockquote>{{ quote }}</blockquote>
+    {% endfor %}
+    {% endif %}
+</div>
+{% endfor %}
+{% endif %}
+
+{% if has_more %}
+<p style="text-align: center; margin-top: 2rem;">
+    <a href="/archive/">View full archive →</a>
+</p>
+{% endif %}
+{% endblock %}

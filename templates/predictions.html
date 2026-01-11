@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+
+{% block title %}Predictions - {{ site_title }}{% endblock %}
+
+{% block description %}Prediction registry - tracking claims and outcomes{% endblock %}
+
+{% block content %}
+<h2>Prediction Registry</h2>
+
+<p style="color: var(--muted); margin-bottom: 2rem;">
+    Total: {{ total }} predictions • Pending: {{ pending_count }} • Validated: {{ validated_count }} • Invalidated: {{ invalidated_count }}
+</p>
+
+{% if !pending.is_empty() %}
+<h3>Pending Predictions</h3>
+{% for pred in pending %}
+<div class="prediction pending">
+    <h4>{{ pred.claim }}</h4>
+    <div style="margin: 0.5rem 0; font-size: 0.9rem;">
+        <span class="prediction-status">PENDING</span>
+        <span style="color: var(--muted); margin-left: 1rem;">Made: {{ pred.date_made }}</span>
+        {% if !pred.timeline.is_empty() %}
+        <span style="color: var(--muted); margin-left: 1rem;">Timeline: {{ pred.timeline }}</span>
+        {% endif %}
+    </div>
+    {% if !pred.notes.is_empty() %}
+    <p style="font-size: 0.9rem; color: var(--muted);">{{ pred.notes }}</p>
+    {% endif %}
+</div>
+{% endfor %}
+{% endif %}
+
+{% if !validated.is_empty() %}
+<h3 style="margin-top: 2rem;">Validated Predictions</h3>
+{% for pred in validated %}
+<div class="prediction validated">
+    <h4>✓ {{ pred.claim }}</h4>
+    <div style="margin: 0.5rem 0; font-size: 0.9rem;">
+        <span class="prediction-status">VALIDATED</span>
+        <span style="color: var(--muted); margin-left: 1rem;">Made: {{ pred.date_made }}</span>
+        {% if !pred.validation_date.is_empty() %}
+        <span style="color: var(--muted); margin-left: 1rem;">Validated: {{ pred.validation_date }}</span>
+        {% endif %}
+    </div>
+    {% if !pred.notes.is_empty() %}
+    <p style="font-size: 0.9rem; color: var(--muted);">{{ pred.notes }}</p>
+    {% endif %}
+</div>
+{% endfor %}
+{% endif %}
+
+{% if !invalidated.is_empty() %}
+<h3 style="margin-top: 2rem;">Invalidated Predictions</h3>
+{% for pred in invalidated %}
+<div class="prediction invalidated">
+    <h4>✗ {{ pred.claim }}</h4>
+    <div style="margin: 0.5rem 0; font-size: 0.9rem;">
+        <span class="prediction-status">INVALIDATED</span>
+        <span style="color: var(--muted); margin-left: 1rem;">Made: {{ pred.date_made }}</span>
+        {% if !pred.validation_date.is_empty() %}
+        <span style="color: var(--muted); margin-left: 1rem;">Invalidated: {{ pred.validation_date }}</span>
+        {% endif %}
+    </div>
+    {% if !pred.notes.is_empty() %}
+    <p style="font-size: 0.9rem; color: var(--muted);">{{ pred.notes }}</p>
+    {% endif %}
+</div>
+{% endfor %}
+{% endif %}
+
+{% if pending.is_empty() && validated.is_empty() && invalidated.is_empty() %}
+<p style="color: var(--muted);">No predictions recorded yet.</p>
+{% endif %}
+{% endblock %}

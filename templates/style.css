@@ -1,0 +1,232 @@
+/* Homeforge Chronicle - Minimal Dark Mode CSS */
+
+:root {
+    --bg: #1a1a1a;
+    --fg: #e0e0e0;
+    --accent: #4a9eff;
+    --muted: #888;
+    --border: #333;
+    --code-bg: #0d0d0d;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', monospace;
+    font-size: 14px;
+    line-height: 1.6;
+    color: var(--fg);
+    background: var(--bg);
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 2rem 1rem;
+}
+
+/* Typography */
+h1, h2, h3, h4 {
+    margin: 1.5rem 0 1rem;
+    font-weight: 600;
+}
+
+h1 { font-size: 1.8rem; border-bottom: 2px solid var(--border); padding-bottom: 0.5rem; }
+h2 { font-size: 1.4rem; }
+h3 { font-size: 1.2rem; }
+
+p {
+    margin: 1rem 0;
+}
+
+/* Links */
+a {
+    color: var(--accent);
+    text-decoration: none;
+}
+
+a:hover {
+    text-decoration: underline;
+}
+
+/* Header */
+header {
+    margin-bottom: 3rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--border);
+}
+
+header h1 {
+    border: none;
+    margin: 0;
+}
+
+nav {
+    margin-top: 0.5rem;
+}
+
+nav a {
+    margin-right: 1.5rem;
+    color: var(--muted);
+}
+
+nav a:hover, nav a.active {
+    color: var(--accent);
+}
+
+/* Main content */
+main {
+    min-height: 60vh;
+}
+
+/* Lists */
+ul, ol {
+    margin-left: 2rem;
+    margin-bottom: 1rem;
+}
+
+li {
+    margin: 0.5rem 0;
+}
+
+/* Entries */
+.entry {
+    margin: 2rem 0;
+    padding: 1.5rem;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+}
+
+.entry-meta {
+    color: var(--muted);
+    font-size: 0.9rem;
+    margin-bottom: 0.5rem;
+}
+
+.entry-title {
+    font-size: 1.3rem;
+    margin: 0.5rem 0;
+}
+
+.entry-classification {
+    display: inline-block;
+    padding: 0.2rem 0.5rem;
+    background: var(--code-bg);
+    border-radius: 3px;
+    font-size: 0.85rem;
+    color: var(--accent);
+}
+
+/* Quotes */
+blockquote {
+    margin: 1rem 0;
+    padding-left: 1rem;
+    border-left: 3px solid var(--accent);
+    color: var(--muted);
+    font-style: italic;
+}
+
+/* Code */
+code, pre {
+    font-family: inherit;
+    background: var(--code-bg);
+    padding: 0.2rem 0.4rem;
+    border-radius: 3px;
+}
+
+pre {
+    padding: 1rem;
+    overflow-x: auto;
+    margin: 1rem 0;
+}
+
+/* Tables */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1rem 0;
+}
+
+th, td {
+    padding: 0.5rem;
+    border: 1px solid var(--border);
+    text-align: left;
+}
+
+th {
+    background: var(--code-bg);
+}
+
+/* Themes list */
+.theme-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin: 1rem 0;
+}
+
+.theme-tag {
+    padding: 0.3rem 0.8rem;
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    font-size: 0.9rem;
+}
+
+/* Predictions */
+.prediction {
+    margin: 1.5rem 0;
+    padding: 1rem;
+    border-left: 3px solid var(--muted);
+}
+
+.prediction.pending { border-color: var(--accent); }
+.prediction.validated { border-color: #4a9e4a; }
+.prediction.invalidated { border-color: #ff4a4a; }
+
+.prediction-status {
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+.prediction.pending .prediction-status { color: var(--accent); }
+.prediction.validated .prediction-status { color: #4a9e4a; }
+.prediction.invalidated .prediction-status { color: #ff4a4a; }
+
+/* Footer */
+footer {
+    margin-top: 4rem;
+    padding-top: 2rem;
+    border-top: 1px solid var(--border);
+    text-align: center;
+    color: var(--muted);
+    font-size: 0.9rem;
+}
+
+/* Responsive */
+@media (max-width: 600px) {
+    body {
+        font-size: 13px;
+        padding: 1rem 0.5rem;
+    }
+
+    h1 { font-size: 1.5rem; }
+    h2 { font-size: 1.2rem; }
+
+    .entry {
+        padding: 1rem;
+    }
+}
+
+/* Print */
+@media print {
+    body {
+        background: white;
+        color: black;
+    }
+
+    a {
+        color: black;
+    }
+}

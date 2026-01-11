@@ -1,0 +1,28 @@
+{
+  "version": 1,
+  "canisters": {
+    "chronicle_assets": {
+      "type": "assets",
+      "source": [
+        "build"
+      ]
+    }
+  },
+  "defaults": {
+    "build": {
+      "packtool": ""
+    }
+  },
+  "networks": {
+    "local": {
+      "bind": "127.0.0.1:8000",
+      "type": "ephemeral"
+    },
+    "ic": {
+      "providers": [
+        "https://icp-api.io"
+      ],
+      "type": "persistent"
+    }
+  }
+}
