@@ -38,12 +38,45 @@ Local AI and automation infrastructure built across home network.
 
 ## Jetson Orin Nano - AI Inference
 
-**SSH:** `ssh nate@192.168.1.11`
+**SSH:** `ssh nvidia@192.168.1.11`
+
+**Specs:**
+- JetPack R36.3.0
+- 7.6GB RAM
+- 116GB storage (45GB free)
+- 6 CPU cores + Tegra GPU
+
+**Ollama Setup:**
+- Version: 0.13.3
+- API: http://192.168.1.11:11434
+- Models installed:
+  - `mistral:latest` (7.2B params, 4.4GB)
+  - `gemma2:2b` (2.6B params, 1.6GB)
+
+**Start Ollama:**
+```bash
+# If not running via systemctl
+ssh nvidia@192.168.1.11 "nohup ollama serve > /tmp/ollama.log 2>&1 &"
+
+# Or enable service (requires sudo on Jetson)
+sudo systemctl enable ollama
+sudo systemctl start ollama
+```
+
+**Test from anywhere on network:**
+```bash
+curl http://192.168.1.11:11434/api/generate -d '{
+  "model": "gemma2:2b",
+  "prompt": "Hello",
+  "stream": false
+}'
+```
 
 **Purpose:**
-- Local LLM inference (Ollama)
+- Local LLM inference (automation manager)
 - Computer vision processing
 - Frigate NVR integration (future)
+- Executes instructions from Claude conversations
 
 ## Reolink Camera System
 
@@ -171,6 +204,11 @@ nmap -sn 192.168.1.0/24
 
 # Check cycles balance (ICP)
 DFX_WARNING=-mainnet_plaintext_identity dfx cycles balance --network ic --identity chronicle-auto
+
+# Ollama (Jetson)
+ssh nvidia@192.168.1.11 "ollama list"                    # List models
+ssh nvidia@192.168.1.11 "ollama run gemma2:2b 'Hello'"   # Quick test
+curl http://192.168.1.11:11434/api/tags                  # Check API
 ```
 
 ## Future Plans
