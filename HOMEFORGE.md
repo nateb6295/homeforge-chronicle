@@ -35,6 +35,7 @@ Local AI and automation infrastructure built across home network.
 - Google Cast
 - Met.no (weather)
 - Sun
+- Ollama (natural language control via Jetson)
 
 ## Jetson Orin Nano - AI Inference
 
@@ -77,6 +78,21 @@ curl http://192.168.1.11:11434/api/generate -d '{
 - Computer vision processing
 - Frigate NVR integration (future)
 - Executes instructions from Claude conversations
+
+**Home Assistant Integration:**
+The Ollama integration connects HA to the Jetson for natural language device control.
+
+Config location: `/home/nathaniel/homeassistant/.storage/core.config_entries`
+
+Key settings:
+- URL: `http://192.168.1.11:11434`
+- Model: `mistral:latest` (supports function calling/tools)
+- LLM API: `assist` (enables device control)
+
+**Important notes:**
+- `gemma2:2b` does NOT support tools - use `mistral:latest` for HA integration
+- `mistral:latest` does NOT support "thinking" mode - set `think: false` in config
+- `prefer_local_intents: true` in pipeline lets HA handle common commands fast
 
 ## Reolink Camera System
 
@@ -188,7 +204,7 @@ npx eas-cli build --profile preview --platform android
 ```bash
 # SSH to devices
 ssh nathaniel@192.168.1.10    # Pi5
-ssh nate@192.168.1.11         # Jetson
+ssh nvidia@192.168.1.11       # Jetson
 
 # Home Assistant
 docker logs homeassistant     # Check logs (on Pi5)
@@ -215,7 +231,8 @@ curl http://192.168.1.11:11434/api/tags                  # Check API
 
 **Infrastructure:**
 - [ ] Frigate NVR on Jetson (AI object detection)
-- [ ] Ollama on Jetson for local inference
+- [x] Ollama on Jetson for local inference
+- [x] Home Assistant + Ollama integration (natural language control)
 - [ ] Open-WebUI for local chat interface
 - [ ] Chronicle automation (watch mode)
 - [ ] Home Assistant automations with camera AI
@@ -229,4 +246,4 @@ curl http://192.168.1.11:11434/api/tags                  # Check API
 
 ---
 
-*Last updated: January 11, 2026*
+*Last updated: January 12, 2026*
