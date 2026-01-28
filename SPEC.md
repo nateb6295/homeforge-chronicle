@@ -164,7 +164,7 @@ themes = ["lattice", "homeforge", "icp", "xrp", "ai-agency", "construction", "fa
 [output]
 build_directory = "~/.homeforge-chronicle/build"
 site_title = "Homeforge Chronicle"
-author = "Nate"
+author = "Your Name"
 
 [deployment]
 canister_id = "xxxxx-xxxxx-xxxxx-xxxxx-cai"

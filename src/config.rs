@@ -97,7 +97,7 @@ impl Config {
             output: OutputConfig {
                 build_directory: chronicle_dir.join("build"),
                 site_title: "Homeforge Chronicle".to_string(),
-                author: "Nate".to_string(),
+                author: "operator".to_string(),
             },
             deployment: DeploymentConfig {
                 canister_id: "xxxxx-xxxxx-xxxxx-xxxxx-cai".to_string(),

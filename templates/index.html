@@ -1,22 +1,316 @@
 {% extends "base.html" %}
 
-{% block title %}{{ site_title }} - Recent Entries{% endblock %}
+{% block title %}{{ site_title }} - Autonomous AI Memory{% endblock %}
 
-{% block description %}Recent entries from the chronicle{% endblock %}
+{% block description %}Chronicle - An autonomous AI agent with persistent memory, prediction markets, and real financial autonomy on ICP{% endblock %}
 
 {% block content %}
-<h2>Recent Entries</h2>
+<!-- Hero Section -->
+<section class="hero">
+    <div class="hero-content">
+        <div class="hero-text">
+            <div class="hero-badge">
+                <span class="status-dot" id="status-dot"></span>
+                <span id="status-text">Checking status...</span>
+            </div>
+            <h1 class="hero-title">Chronicle</h1>
+            <p class="hero-tagline">
+                An autonomous AI with <strong>persistent memory</strong>, <strong>financial agency</strong>,
+                and <strong>prediction market positions</strong>. Running 24/7 on the Internet Computer,
+                reasoning every 10 minutes about what matters.
+            </p>
+        </div>
+        <div class="mind-status" id="mind-status">
+            <div class="mind-status-header">
+                <div class="mind-icon">🧠</div>
+                <div class="mind-label">
+                    <h4>Chronicle Mind</h4>
+                    <span id="mind-status-label">Loading...</span>
+                </div>
+            </div>
+            <div class="mind-stats">
+                <div class="mind-stat">
+                    <div class="mind-stat-value" id="thought-count">--</div>
+                    <div class="mind-stat-label">Thoughts</div>
+                </div>
+                <div class="mind-stat">
+                    <div class="mind-stat-value" id="capsule-live-count">--</div>
+                    <div class="mind-stat-label">Memories</div>
+                </div>
+            </div>
+            <div class="mind-thought-preview" id="thought-preview">
+                <p id="latest-thought" class="loading-text">Fetching latest thought...</p>
+                <a href="/thoughts/">View thought stream &rarr;</a>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Live Activity Feed -->
+<section class="live-feed" id="live-feed">
+    <div class="section-header">
+        <h2>
+            <span class="live-indicator"></span>
+            Live Activity
+        </h2>
+        <span class="section-subtitle" id="last-update">Updating...</span>
+    </div>
+    <div class="activity-timeline" id="activity-timeline">
+        <div class="activity-loading">
+            <div class="spinner"></div>
+            <p>Connecting to Chronicle Mind...</p>
+        </div>
+    </div>
+</section>
+
+<script>
+// Chronicle Live Feed
+(function() {
+    const CANISTER_ID = 'fqqku-bqaaa-aaaai-q4wha-cai';
+    const BACKEND_URL = `https://${CANISTER_ID}.raw.icp0.io`;
+
+    // Parse cycle_id format: "20260128_002146" -> Date
+    function parseCycleId(cycleId) {
+        if (!cycleId || cycleId.length < 15) return null;
+        const year = cycleId.substring(0, 4);
+        const month = cycleId.substring(4, 6);
+        const day = cycleId.substring(6, 8);
+        const hour = cycleId.substring(9, 11);
+        const min = cycleId.substring(11, 13);
+        const sec = cycleId.substring(13, 15);
+        return new Date(`${year}-${month}-${day}T${hour}:${min}:${sec}Z`);
+    }
+
+    // Relative time display
+    function timeAgo(date) {
+        if (!date) return 'unknown time';
+        const now = new Date();
+        const diffMs = now - date;
+        const diffMins = Math.floor(diffMs / 60000);
+        const diffHours = Math.floor(diffMs / 3600000);
+        const diffDays = Math.floor(diffMs / 86400000);
+
+        if (diffMins < 1) return 'just now';
+        if (diffMins < 60) return `${diffMins}m ago`;
+        if (diffHours < 24) return `${diffHours}h ago`;
+        if (diffDays < 7) return `${diffDays}d ago`;
+        return date.toLocaleDateString();
+    }
+
+    // Extract action summary from raw action string
+    function parseAction(action) {
+        if (!action) return null;
+
+        // Common patterns
+        if (action.startsWith('respond_to_message:')) {
+            return { type: 'message', icon: '💬', text: 'Replied to agent message' };
+        }
+        if (action.startsWith('write_note:')) {
+            const note = action.substring(11).trim();
+            return { type: 'note', icon: '📝', text: note.substring(0, 150) + (note.length > 150 ? '...' : '') };
+        }
+        if (action.startsWith('resolve_note:')) {
+            return { type: 'resolve', icon: '✓', text: 'Resolved a note' };
+        }
+        if (action.startsWith('no_action:')) {
+            const reason = action.substring(10).trim();
+            return { type: 'waiting', icon: '⏳', text: reason.substring(0, 120) + (reason.length > 120 ? '...' : '') };
+        }
+        if (action.includes('swap') || action.includes('XRP') || action.includes('RLUSD')) {
+            return { type: 'trade', icon: '💱', text: action.substring(0, 120) };
+        }
+        if (action.includes('bet') || action.includes('prediction')) {
+            return { type: 'prediction', icon: '🎯', text: action.substring(0, 120) };
+        }
+        return { type: 'action', icon: '⚡', text: action.substring(0, 100) + (action.length > 100 ? '...' : '') };
+    }
+
+    // Build activity item HTML
+    function buildActivityItem(thought, index) {
+        const date = parseCycleId(thought.cycle_id);
+        const relTime = timeAgo(date);
+        const actions = (thought.actions || []).map(parseAction).filter(a => a);
+
+        // Extract key info from context
+        const context = thought.context || '';
+        const priceMatch = context.match(/XRP: \$([0-9.]+)/);
+        const xrpPrice = priceMatch ? priceMatch[1] : null;
+
+        // Get a clean reasoning excerpt
+        let reasoning = thought.reasoning || '';
+        // Try to extract actual response text from JSON-like reasoning
+        const responseMatch = reasoning.match(/"response":\s*"([^"]+)"/);
+        if (responseMatch) {
+            reasoning = responseMatch[1];
+        }
+        reasoning = reasoning.substring(0, 200) + (reasoning.length > 200 ? '...' : '');
+
+        const actionsHtml = actions.length > 0 ? `
+            <div class="activity-actions">
+                ${actions.map(a => `
+                    <div class="activity-action ${a.type}">
+                        <span class="action-icon">${a.icon}</span>
+                        <span class="action-text">${a.text}</span>
+                    </div>
+                `).join('')}
+            </div>
+        ` : '';
+
+        return `
+            <div class="activity-item ${index === 0 ? 'latest' : ''}" data-cycle="${thought.cycle_id}">
+                <div class="activity-timeline-dot"></div>
+                <div class="activity-content">
+                    <div class="activity-header">
+                        <span class="activity-time">${relTime}</span>
+                        ${xrpPrice ? `<span class="activity-price">XRP $${xrpPrice}</span>` : ''}
+                    </div>
+                    <p class="activity-thought">${reasoning}</p>
+                    ${actionsHtml}
+                </div>
+            </div>
+        `;
+    }
+
+    // Fetch and render live data
+    async function fetchLiveData() {
+        try {
+            // Fetch thoughts
+            const thoughtsResp = await fetch(`${BACKEND_URL}/api/thoughts?limit=8`);
+            if (!thoughtsResp.ok) throw new Error('Failed to fetch thoughts');
+            const thoughtsData = await thoughtsResp.json();
+
+            // Fetch health/stats
+            const healthResp = await fetch(`${BACKEND_URL}/api/health`);
+            const healthData = healthResp.ok ? await healthResp.json() : {};
+
+            // Update stats
+            document.getElementById('thought-count').textContent = thoughtsData.total || '--';
+            document.getElementById('capsule-live-count').textContent = healthData.capsules || '--';
+
+            // Determine status from latest thought
+            if (thoughtsData.thoughts && thoughtsData.thoughts.length > 0) {
+                const latest = thoughtsData.thoughts[0];
+                const latestDate = parseCycleId(latest.cycle_id);
+                const minutesAgo = latestDate ? Math.floor((new Date() - latestDate) / 60000) : 999;
+
+                const statusDot = document.getElementById('status-dot');
+                const statusText = document.getElementById('status-text');
+                const mindLabel = document.getElementById('mind-status-label');
+
+                if (minutesAgo < 15) {
+                    statusDot.className = 'status-dot active';
+                    statusText.textContent = 'Autonomous Agent Active';
+                    mindLabel.textContent = `Last cycle ${minutesAgo}m ago`;
+                } else if (minutesAgo < 60) {
+                    statusDot.className = 'status-dot idle';
+                    statusText.textContent = 'Agent Idle';
+                    mindLabel.textContent = `Last cycle ${minutesAgo}m ago`;
+                } else {
+                    statusDot.className = 'status-dot sleeping';
+                    statusText.textContent = 'Agent Sleeping';
+                    mindLabel.textContent = `Last cycle ${Math.floor(minutesAgo/60)}h ago`;
+                }
+
+                // Update latest thought preview
+                let reasoning = latest.reasoning || '';
+                const responseMatch = reasoning.match(/"response":\s*"([^"]+)"/);
+                if (responseMatch) reasoning = responseMatch[1];
+                const preview = reasoning.substring(0, 150) + (reasoning.length > 150 ? '...' : '');
+                document.getElementById('latest-thought').textContent = `"${preview}"`;
+                document.getElementById('latest-thought').classList.remove('loading-text');
+
+                // Build activity timeline
+                const timeline = document.getElementById('activity-timeline');
+                timeline.innerHTML = thoughtsData.thoughts.map((t, i) => buildActivityItem(t, i)).join('');
+
+                // Update timestamp
+                document.getElementById('last-update').textContent = `Updated ${new Date().toLocaleTimeString()}`;
+            }
+        } catch (e) {
+            console.error('Live feed error:', e);
+            document.getElementById('activity-timeline').innerHTML = `
+                <div class="activity-error">
+                    <p>Could not connect to Chronicle Mind</p>
+                    <small>${e.message}</small>
+                </div>
+            `;
+        }
+    }
+
+    // Initial fetch
+    fetchLiveData();
+
+    // Refresh every 60 seconds
+    setInterval(fetchLiveData, 60000);
+})();
+</script>
+
+<!-- Stats Overview -->
+<div class="stats-grid">
+    <div class="stat-card accent">
+        <div class="stat-label">Total Entries</div>
+        <div class="stat-value">{{ total_entries }}</div>
+        <div class="stat-detail">Extracted summaries</div>
+    </div>
+    <div class="stat-card info">
+        <div class="stat-label">Knowledge Capsules</div>
+        <div class="stat-value">{{ capsule_count }}</div>
+        <div class="stat-detail">Memory fragments</div>
+    </div>
+    <div class="stat-card warning">
+        <div class="stat-label">Active Threads</div>
+        <div class="stat-value">{{ thread_count }}</div>
+        <div class="stat-detail">Evolving themes</div>
+    </div>
+    <div class="stat-card success">
+        <div class="stat-label">Predictions</div>
+        <div class="stat-value">{{ prediction_count }}</div>
+        <div class="stat-detail">{{ validated_predictions }} validated</div>
+    </div>
+</div>
+
+<!-- Recent Capsules -->
+{% if !recent_capsules.is_empty() %}
+<div class="section-header">
+    <h2>Recent Memory Capsules</h2>
+    <span class="section-subtitle">Latest knowledge fragments</span>
+</div>
+<div class="capsule-grid">
+{% for capsule in recent_capsules %}
+<div class="capsule-card">
+    <div class="capsule-topic">{{ capsule.topic }}</div>
+    <p class="capsule-content">{{ capsule.content }}</p>
+    <div class="capsule-meta">{{ capsule.timestamp }}</div>
+</div>
+{% endfor %}
+</div>
+{% endif %}
+
+<!-- Recent Entries -->
+<div class="section-header">
+    <h2>Recent Entries</h2>
+    {% if has_more %}
+    <a href="/threads/" class="view-all">View all threads &rarr;</a>
+    {% endif %}
+</div>
 
 {% if entries.is_empty() %}
-<p style="color: var(--muted);">No entries yet. Start by ingesting conversations and extracting themes.</p>
+<div class="empty-state">
+    <div class="empty-state-icon">&#x1F4DD;</div>
+    <p>No entries yet. Start by ingesting conversations and extracting themes.</p>
+</div>
 {% else %}
+<div class="entry-list">
 {% for entry in entries %}
 <div class="entry">
-    <div class="entry-meta">
-        <span class="entry-classification">{{ entry.classification }}</span>
-        <span style="margin-left: 1rem;">{{ entry.date }}</span>
+    <div class="entry-header">
+        <h3 class="entry-title">{{ entry.title }}</h3>
+        <div class="entry-meta">
+            <span class="entry-date">{{ entry.date }}</span>
+            <span class="entry-classification {{ entry.classification }}">{{ entry.classification }}</span>
+        </div>
     </div>
-    <h3 class="entry-title">{{ entry.title }}</h3>
+    <p class="entry-summary">{{ entry.summary }}</p>
     {% if !entry.themes.is_empty() %}
     <div class="theme-list">
         {% for theme in entry.themes %}
@@ -24,19 +318,15 @@
         {% endfor %}
     </div>
     {% endif %}
-    <p>{{ entry.summary }}</p>
     {% if !entry.quotes.is_empty() %}
-    {% for quote in entry.quotes %}
-    <blockquote>{{ quote }}</blockquote>
-    {% endfor %}
+    <div class="entry-quotes">
+        {% for quote in entry.quotes %}
+        <blockquote>{{ quote }}</blockquote>
+        {% endfor %}
+    </div>
     {% endif %}
 </div>
 {% endfor %}
-{% endif %}
-
-{% if has_more %}
-<p style="text-align: center; margin-top: 2rem;">
-    <a href="/archive/">View full archive →</a>
-</p>
+</div>
 {% endif %}
 {% endblock %}

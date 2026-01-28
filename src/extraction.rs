@@ -87,7 +87,7 @@ fn format_conversation_for_analysis(conversation: &ConversationExport) -> String
             crate::parser::MessageSender::Human => "Human",
             crate::parser::MessageSender::Assistant => "Assistant",
         };
-        text.push_str(&format!("[{}] {}: {}\n\n", i + 1, sender, msg.text));
+        text.push_str(&format!("[{}] {}: {}\n\n", i + 1, sender, msg.get_text()));
     }
 
     text
@@ -226,7 +226,7 @@ fn calculate_confidence_score(conversation: &ConversationExport) -> f64 {
     let total_chars: usize = conversation
         .chat_messages
         .iter()
-        .map(|m| m.text.len())
+        .map(|m| m.get_text().len())
         .sum();
     let avg_message_length = total_chars as f64 / message_count;
 
@@ -272,6 +272,8 @@ mod tests {
                     created_at: "2025-01-01T10:00:00Z".to_string(),
                     updated_at: None,
                     attachments: vec![],
+                    content: None,
+                    files: None,
                 },
                 ChatMessage {
                     uuid: "msg-2".to_string(),
@@ -280,6 +282,8 @@ mod tests {
                     created_at: "2025-01-01T10:00:30Z".to_string(),
                     updated_at: None,
                     attachments: vec![],
+                    content: None,
+                    files: None,
                 },
             ],
         }

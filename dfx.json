@@ -6,6 +6,16 @@
       "source": [
         "build"
       ]
+    },
+    "chronicle_backend": {
+      "type": "rust",
+      "package": "chronicle_backend",
+      "candid": "src/canister/chronicle_backend.did",
+      "dependencies": ["llm"]
+    },
+    "llm": {
+      "type": "pull",
+      "id": "w36hm-eqaaa-aaaal-qr76a-cai"
     }
   },
   "defaults": {

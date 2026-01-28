@@ -21,6 +21,7 @@ pub type BulkConversationExport = Vec<ConversationExport>;
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct ChatMessage {
     pub uuid: String,
+    #[serde(default)]
     pub text: String,
     pub sender: MessageSender,
     pub created_at: String,
@@ -28,6 +29,46 @@ pub struct ChatMessage {
     pub updated_at: Option<String>,
     #[serde(default)]
     pub attachments: Vec<Attachment>,
+    #[serde(default)]
+    pub content: Option<Vec<MessageContent>>,
+    #[serde(default)]
+    pub files: Option<Vec<serde_json::Value>>,
+}
+
+/// Content block within a message (new Claude.ai export format)
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct MessageContent {
+    #[serde(rename = "type")]
+    pub content_type: String,
+    #[serde(default)]
+    pub text: String,
+    #[serde(default)]
+    pub start_timestamp: Option<String>,
+    #[serde(default)]
+    pub stop_timestamp: Option<String>,
+}
+
+impl ChatMessage {
+    /// Get the actual text content from either the flat `text` field or nested `content` array
+    pub fn get_text(&self) -> String {
+        // First try the flat text field (old format)
+        if !self.text.is_empty() {
+            return self.text.clone();
+        }
+
+        // Then try the nested content array (new format)
+        if let Some(content) = &self.content {
+            let texts: Vec<&str> = content.iter()
+                .filter(|c| c.content_type == "text" && !c.text.is_empty())
+                .map(|c| c.text.as_str())
+                .collect();
+            if !texts.is_empty() {
+                return texts.join("\n");
+            }
+        }
+
+        String::new()
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
@@ -85,7 +126,7 @@ impl ConversationExport {
         let total_chars: usize = self
             .chat_messages
             .iter()
-            .map(|msg| msg.text.len())
+            .map(|msg| msg.get_text().len())
             .sum();
         total_chars / 4
     }

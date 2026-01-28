@@ -5,24 +5,31 @@
 {% block description %}All theme threads showing evolution of thinking{% endblock %}
 
 {% block content %}
-<h2>Theme Threads</h2>
+<div class="section-header">
+    <h2>Theme Threads</h2>
+    <span class="view-all">{{ thread_count }} active themes</span>
+</div>
 
-<p style="color: var(--muted); margin-bottom: 2rem;">
-    Long-form compilations showing how thinking evolved over time
+<p style="color: var(--fg-dim); margin-bottom: 1.5rem;">
+    Long-form compilations showing how thinking evolves over time. Each thread represents a recurring theme with 3+ entries.
 </p>
 
 {% if threads.is_empty() %}
-<p style="color: var(--muted);">No threads available yet. Threads are created automatically when a theme has 3+ entries.</p>
+<div class="empty-state">
+    <div class="empty-state-icon">&#x1F9F5;</div>
+    <p>No threads available yet. Threads are created automatically when a theme has 3+ entries.</p>
+</div>
 {% else %}
-<ul style="list-style: none; margin-left: 0;">
+<div class="thread-grid">
 {% for thread in threads %}
-<li style="margin: 1.5rem 0;">
-    <a href="/threads/{{ thread.slug }}.html" style="font-size: 1.2rem;">{{ thread.name }}</a>
-    <div style="color: var(--muted); font-size: 0.9rem; margin-top: 0.3rem;">
-        {{ thread.count }} entries • {{ thread.date_range }}
+<a href="/threads/{{ thread.slug }}.html" class="thread-card">
+    <div class="thread-name">{{ thread.name }}</div>
+    <div class="thread-meta">
+        <span class="thread-count">{{ thread.count }}</span>
+        entries &bull; {{ thread.date_range }}
     </div>
-</li>
+</a>
 {% endfor %}
-</ul>
+</div>
 {% endif %}
 {% endblock %}

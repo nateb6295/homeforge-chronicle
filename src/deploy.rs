@@ -74,21 +74,33 @@ fn deploy_to_existing_canister(
     println!("Build directory: {:?}", build_dir);
 
     // Create a temporary dfx.json in the build directory
-    let dfx_json = format!(
-        r#"{{
+    let dfx_json = r#"{
   "version": 1,
-  "canisters": {{
-    "chronicle_assets": {{
+  "canisters": {
+    "chronicle_assets": {
       "type": "assets",
       "source": ["."]
-    }}
-  }}
-}}"#
-    );
+    }
+  }
+}"#;
 
     let dfx_json_path = build_dir.join("dfx.json");
     std::fs::write(&dfx_json_path, dfx_json)
         .context("Failed to write temporary dfx.json")?;
+
+    // Create canister_ids.json so dfx knows about the existing canister
+    let canister_ids_json = format!(
+        r#"{{
+  "chronicle_assets": {{
+    "{}": "{}"
+  }}
+}}"#,
+        network, canister_id
+    );
+
+    let canister_ids_path = build_dir.join("canister_ids.json");
+    std::fs::write(&canister_ids_path, canister_ids_json)
+        .context("Failed to write temporary canister_ids.json")?;
 
     // Deploy using dfx with chronicle-auto identity (unencrypted for automation)
     let output = Command::new("dfx")
@@ -98,13 +110,15 @@ fn deploy_to_existing_canister(
         .arg(network)
         .arg("--identity")
         .arg("chronicle-auto")
+        .arg("--no-wallet")
         .env("DFX_WARNING", "-mainnet_plaintext_identity")
         .current_dir(build_dir)
         .output()
         .context("Failed to execute dfx deploy")?;
 
-    // Clean up temporary dfx.json
+    // Clean up temporary files
     let _ = std::fs::remove_file(dfx_json_path);
+    let _ = std::fs::remove_file(canister_ids_path);
 
     if !output.status.success() {
         let error = String::from_utf8_lossy(&output.stderr);

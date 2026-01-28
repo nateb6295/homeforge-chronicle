@@ -20,6 +20,20 @@ pub struct PipelineOptions {
     pub deploy: bool,
     /// Send notifications
     pub notify: bool,
+    /// Run metabolism after ingestion (pattern evolution)
+    pub metabolize: bool,
+    /// Ollama URL for embedding generation
+    pub ollama_url: String,
+    /// Embedding model name
+    pub embedding_model: String,
+    /// Generate embeddings for unembedded capsules
+    pub generate_embeddings: bool,
+    /// Sync capsules and embeddings to backend canister
+    pub sync_backend: bool,
+    /// Backend canister ID for sync
+    pub backend_canister_id: String,
+    /// DFX identity for backend sync
+    pub backend_identity: String,
 }
 
 impl Default for PipelineOptions {
@@ -28,8 +42,15 @@ impl Default for PipelineOptions {
             extract: true,
             compile: true,
             build: true,
-            deploy: false, // Don't auto-deploy by default
+            deploy: false, // Don't auto-deploy frontend by default
             notify: false,
+            metabolize: true, // Run metabolism by default
+            ollama_url: "http://localhost:11434".to_string(),
+            embedding_model: "mxbai-embed-large".to_string(), // Better model
+            generate_embeddings: true, // Generate embeddings for capsules
+            sync_backend: true, // Sync to backend canister
+            backend_canister_id: "fqqku-bqaaa-aaaai-q4wha-cai".to_string(),
+            backend_identity: "chronicle-auto".to_string(),
         }
     }
 }
@@ -40,6 +61,12 @@ pub enum WatchResult {
     FileProcessed {
         file_path: PathBuf,
         conversation_id: String,
+    },
+    BulkProcessed {
+        file_path: PathBuf,
+        ingested: usize,
+        duplicates: usize,
+        skipped: usize,
     },
     FileIgnored {
         file_path: PathBuf,
@@ -65,8 +92,15 @@ pub fn watch_directory<P: AsRef<Path>>(
     println!("  Extract: {}", options.extract);
     println!("  Compile: {}", options.compile);
     println!("  Build: {}", options.build);
-    println!("  Deploy: {}", options.deploy);
+    println!("  Deploy (frontend): {}", options.deploy);
     println!("  Notify: {}", options.notify);
+    println!("  Metabolize: {}", options.metabolize);
+    println!("  Generate embeddings: {}", options.generate_embeddings);
+    println!("  Sync backend: {}", options.sync_backend);
+    if options.sync_backend {
+        println!("    Canister: {}", options.backend_canister_id);
+        println!("    Identity: {}", options.backend_identity);
+    }
     println!("\nPress Ctrl+C to stop watching...\n");
 
     // Ensure watch directory exists
@@ -124,6 +158,27 @@ pub fn watch_directory<P: AsRef<Path>>(
                                     );
                                 }
                             }
+                            Ok(WatchResult::BulkProcessed {
+                                file_path,
+                                ingested,
+                                duplicates,
+                                skipped,
+                            }) => {
+                                println!(
+                                    "\n✓ Bulk processed {:?}: {} new, {} duplicates, {} skipped",
+                                    file_path.file_name().unwrap_or_default(),
+                                    ingested,
+                                    duplicates,
+                                    skipped
+                                );
+
+                                if options.notify && ingested > 0 {
+                                    send_notification(
+                                        "Chronicle Bulk Processing Complete",
+                                        &format!("Ingested {} new conversations", ingested),
+                                    );
+                                }
+                            }
                             Ok(WatchResult::FileIgnored { file_path, reason }) => {
                                 println!(
                                     "⊘ Ignored {:?}: {}",
@@ -162,9 +217,37 @@ pub fn watch_directory<P: AsRef<Path>>(
     Ok(())
 }
 
-/// Check if a path is a JSON file
+/// Check if a path is a conversation JSON file (filters out non-conversation exports)
 fn is_json_file(path: &Path) -> bool {
-    path.extension().and_then(|s| s.to_str()) == Some("json")
+    let is_json = path.extension().and_then(|s| s.to_str()) == Some("json");
+    if !is_json {
+        return false;
+    }
+
+    // Filter out known non-conversation files from Claude exports
+    let filename = path.file_name().and_then(|s| s.to_str()).unwrap_or("");
+
+    // Skip Zone.Identifier files (Windows security markers)
+    if filename.contains(":Zone.Identifier") || filename.ends_with(".Identifier") {
+        return false;
+    }
+
+    // Skip other Claude export files that aren't conversations
+    let skip_files = ["memories.json", "projects.json", "users.json"];
+    if skip_files.contains(&filename) {
+        return false;
+    }
+
+    true
+}
+
+/// Check if a JSON file is a bulk export (array of conversations)
+fn is_bulk_export(path: &Path) -> Result<bool> {
+    let mut file = std::fs::File::open(path)?;
+    let mut first_byte = [0u8; 1];
+    use std::io::Read;
+    file.read_exact(&mut first_byte)?;
+    Ok(first_byte[0] == b'[')
 }
 
 /// Process a single file through the pipeline
@@ -178,11 +261,202 @@ fn process_file(
         file_path.file_name().unwrap_or_default()
     );
 
+    // Check if this is a bulk export
+    let is_bulk = is_bulk_export(file_path).unwrap_or(false);
+
+    if is_bulk {
+        process_bulk_file(file_path, config, options)
+    } else {
+        process_single_file(file_path, config, options)
+    }
+}
+
+/// Process a bulk export file (array of conversations)
+fn process_bulk_file(
+    file_path: &Path,
+    config: &Config,
+    options: &PipelineOptions,
+) -> Result<WatchResult> {
+    use crate::parser::parse_bulk_export;
+
+    // Open database
+    let db = Database::new(&config.input.processed_db)?;
+
+    // Step 1: Parse and ingest all conversations
+    println!("  [1/{}] Ingesting bulk export...", if options.deploy { 5 } else { 4 });
+
+    let conversations = parse_bulk_export(file_path)
+        .context("Failed to parse bulk conversation export")?;
+
+    let total = conversations.len();
+    println!("    Found {} conversations", total);
+
+    let filename = file_path
+        .file_name()
+        .and_then(|f| f.to_str())
+        .unwrap_or("conversations.json");
+
+    let mut ingested = 0;
+    let mut duplicates = 0;
+    let mut skipped = 0;
+
+    for (i, conversation) in conversations.iter().enumerate() {
+        let result = crate::ingest_conversation_export(&db, conversation, filename)?;
+        match result {
+            crate::IngestResult::Ingested { message_count, .. } => {
+                println!("    [{}/{}] ✓ {} ({} messages)",
+                    i + 1, total,
+                    conversation.name.chars().take(40).collect::<String>(),
+                    message_count
+                );
+                ingested += 1;
+            }
+            crate::IngestResult::Duplicate { .. } => {
+                duplicates += 1;
+            }
+            crate::IngestResult::Skipped { .. } => {
+                skipped += 1;
+            }
+        }
+    }
+
+    println!("    Summary: {} ingested, {} duplicates, {} skipped", ingested, duplicates, skipped);
+
+    // If nothing new was ingested, skip the rest of the pipeline
+    if ingested == 0 {
+        return Ok(WatchResult::BulkProcessed {
+            file_path: file_path.to_path_buf(),
+            ingested,
+            duplicates,
+            skipped,
+        });
+    }
+
+    // Step 2: Metabolize (if enabled) - run pattern evolution on new capsules
+    if options.metabolize {
+        println!("  [2/{}] Running metabolism (pattern evolution)...", pipeline_steps(options));
+
+        match run_metabolism(&db, &options.ollama_url, &options.embedding_model) {
+            Ok((reinforced, seeded)) => {
+                println!("    ✓ Metabolized: {} patterns reinforced, {} new patterns", reinforced, seeded);
+            }
+            Err(e) => {
+                // Metabolism errors are non-fatal - log and continue
+                eprintln!("    ⚠ Metabolism warning: {}", e);
+            }
+        }
+    }
+
+    // Step 3: Generate embeddings (if enabled) - embed any capsules without embeddings
+    if options.generate_embeddings {
+        let mut step = 2;
+        if options.metabolize { step += 1; }
+        println!("  [{}/{}] Generating embeddings for capsules...", step, pipeline_steps(options));
+
+        match run_embedding_generation(&db, &options.ollama_url, &options.embedding_model) {
+            Ok(count) => {
+                if count > 0 {
+                    println!("    ✓ Generated {} embeddings", count);
+                } else {
+                    println!("    ✓ No new capsules to embed");
+                }
+            }
+            Err(e) => {
+                // Embedding errors are non-fatal - log and continue
+                eprintln!("    ⚠ Embedding warning: {}", e);
+            }
+        }
+    }
+
+    // Step 4: Sync to backend canister (if enabled)
+    if options.sync_backend {
+        let mut step = 2;
+        if options.metabolize { step += 1; }
+        if options.generate_embeddings { step += 1; }
+        println!("  [{}/{}] Syncing to backend canister...", step, pipeline_steps(options));
+
+        match run_backend_sync(&db, &options.backend_canister_id, &options.backend_identity) {
+            Ok((capsules, embeddings)) => {
+                println!("    ✓ Synced {} capsules, {} embeddings", capsules, embeddings);
+            }
+            Err(e) => {
+                // Sync errors are non-fatal - log and continue
+                eprintln!("    ⚠ Sync warning: {}", e);
+            }
+        }
+    }
+
+    // Step 5: Compile (if enabled) - skip extraction for bulk (too expensive)
+    if options.compile {
+        let mut step = 2;
+        if options.metabolize { step += 1; }
+        if options.generate_embeddings { step += 1; }
+        if options.sync_backend { step += 1; }
+        println!("  [{}/{}] Compiling digests and threads...", step, pipeline_steps(options));
+
+        if let Err(e) = run_compilation(config) {
+            return Ok(WatchResult::PipelineError {
+                file_path: file_path.to_path_buf(),
+                error: format!("Compilation failed: {}", e),
+            });
+        }
+        println!("    ✓ Compiled");
+    }
+
+    // Step 6: Build (if enabled)
+    if options.build {
+        let mut step = 2;
+        if options.metabolize { step += 1; }
+        if options.generate_embeddings { step += 1; }
+        if options.sync_backend { step += 1; }
+        if options.compile { step += 1; }
+        println!("  [{}/{}] Building static site...", step, pipeline_steps(options));
+
+        if let Err(e) = run_build(config) {
+            return Ok(WatchResult::PipelineError {
+                file_path: file_path.to_path_buf(),
+                error: format!("Build failed: {}", e),
+            });
+        }
+        println!("    ✓ Built");
+    }
+
+    // Step 7: Deploy frontend (if enabled)
+    if options.deploy {
+        println!("  [{}/{}] Deploying frontend to ICP...", pipeline_steps(options), pipeline_steps(options));
+
+        match run_deployment(config) {
+            Ok(url) => {
+                println!("    ✓ Deployed to {}", url);
+            }
+            Err(e) => {
+                return Ok(WatchResult::PipelineError {
+                    file_path: file_path.to_path_buf(),
+                    error: format!("Frontend deployment failed: {}", e),
+                });
+            }
+        }
+    }
+
+    Ok(WatchResult::BulkProcessed {
+        file_path: file_path.to_path_buf(),
+        ingested,
+        duplicates,
+        skipped,
+    })
+}
+
+/// Process a single conversation file
+fn process_single_file(
+    file_path: &Path,
+    config: &Config,
+    options: &PipelineOptions,
+) -> Result<WatchResult> {
     // Open database
     let db = Database::new(&config.input.processed_db)?;
 
     // Step 1: Ingest
-    println!("  [1/{}] Ingesting...", if options.deploy { 5 } else { 4 });
+    println!("  [1/{}] Ingesting...", pipeline_steps(options));
     let ingest_result = crate::ingest_conversation(&db, file_path)?;
 
     let conversation_id = match ingest_result {
@@ -209,7 +483,7 @@ fn process_file(
 
     // Step 2: Extract (if enabled)
     if options.extract {
-        println!("  [2/{}] Extracting themes and summaries...", if options.deploy { 5 } else { 4 });
+        println!("  [2/{}] Extracting themes and summaries...", pipeline_steps(options));
 
         match run_extraction(file_path, &db, config) {
             Ok(extraction_id) => {
@@ -224,10 +498,28 @@ fn process_file(
         }
     }
 
-    // Step 3: Compile (if enabled)
-    if options.compile {
+    // Step 3: Metabolize (if enabled) - run pattern evolution
+    if options.metabolize {
         let step = if options.extract { 3 } else { 2 };
-        println!("  [{}/{}] Compiling digests and threads...", step, if options.deploy { 5 } else { 4 });
+        println!("  [{}/{}] Running metabolism (pattern evolution)...", step, pipeline_steps(options));
+
+        match run_metabolism(&db, &options.ollama_url, &options.embedding_model) {
+            Ok((reinforced, seeded)) => {
+                println!("    ✓ Metabolized: {} patterns reinforced, {} new patterns", reinforced, seeded);
+            }
+            Err(e) => {
+                // Metabolism errors are non-fatal - log and continue
+                eprintln!("    ⚠ Metabolism warning: {}", e);
+            }
+        }
+    }
+
+    // Step 4: Compile (if enabled)
+    if options.compile {
+        let mut step = 2;
+        if options.extract { step += 1; }
+        if options.metabolize { step += 1; }
+        println!("  [{}/{}] Compiling digests and threads...", step, pipeline_steps(options));
 
         if let Err(e) = run_compilation(config) {
             return Ok(WatchResult::PipelineError {
@@ -238,10 +530,13 @@ fn process_file(
         println!("    ✓ Compiled");
     }
 
-    // Step 4: Build (if enabled)
+    // Step 5: Build (if enabled)
     if options.build {
-        let step = if options.compile && options.extract { 4 } else if options.compile || options.extract { 3 } else { 2 };
-        println!("  [{}/{}] Building static site...", step, if options.deploy { 5 } else { 4 });
+        let mut step = 2;
+        if options.extract { step += 1; }
+        if options.metabolize { step += 1; }
+        if options.compile { step += 1; }
+        println!("  [{}/{}] Building static site...", step, pipeline_steps(options));
 
         if let Err(e) = run_build(config) {
             return Ok(WatchResult::PipelineError {
@@ -252,9 +547,9 @@ fn process_file(
         println!("    ✓ Built");
     }
 
-    // Step 5: Deploy (if enabled)
+    // Step 6: Deploy (if enabled)
     if options.deploy {
-        println!("  [5/5] Deploying to ICP...");
+        println!("  [{}/{}] Deploying to ICP...", pipeline_steps(options), pipeline_steps(options));
 
         match run_deployment(config) {
             Ok(url) => {
@@ -273,6 +568,32 @@ fn process_file(
         file_path: file_path.to_path_buf(),
         conversation_id,
     })
+}
+
+/// Calculate total pipeline steps based on options
+fn pipeline_steps(options: &PipelineOptions) -> usize {
+    let mut steps = 1; // Always have ingest
+    if options.extract { steps += 1; }
+    if options.metabolize { steps += 1; }
+    if options.generate_embeddings { steps += 1; }
+    if options.sync_backend { steps += 1; }
+    if options.compile { steps += 1; }
+    if options.build { steps += 1; }
+    if options.deploy { steps += 1; }
+    steps
+}
+
+/// Run metabolism on unprocessed capsules
+fn run_metabolism(db: &Database, ollama_url: &str, model: &str) -> Result<(usize, usize)> {
+    use crate::embedding::OllamaEmbedding;
+    use crate::metabolism::{metabolize_all_new, MetabolismConfig};
+
+    let embedding_client = OllamaEmbedding::new(ollama_url, model)?;
+    let config = MetabolismConfig::default();
+
+    let result = metabolize_all_new(db, &embedding_client, &config)?;
+
+    Ok((result.patterns_reinforced, result.patterns_seeded))
 }
 
 /// Run extraction for a single conversation
@@ -439,7 +760,7 @@ fn run_compilation(config: &Config) -> Result<()> {
 
 /// Run static site build
 fn run_build(config: &Config) -> Result<()> {
-    use crate::{build_site, DisplayEntry};
+    use crate::{build_site, DisplayEntry, DisplayCapsule, DisplayMarketPosition};
     use crate::compilation::{Prediction, PredictionStatus};
     use chrono::{DateTime, Utc};
 
@@ -523,6 +844,50 @@ fn run_build(config: &Config) -> Result<()> {
         })
         .collect();
 
+    // Get capsule data
+    let capsule_count = db.get_capsule_count()? as usize;
+    let active_capsules = db.get_active_capsules(10)?;
+    let recent_capsules: Vec<DisplayCapsule> = active_capsules
+        .into_iter()
+        .map(|(_, restatement, timestamp, topic, _)| DisplayCapsule {
+            content: if restatement.len() > 200 {
+                format!("{}...", &restatement[..200])
+            } else {
+                restatement
+            },
+            topic: topic.unwrap_or_else(|| "general".to_string()),
+            timestamp: timestamp.unwrap_or_else(|| "recent".to_string()),
+            keywords: vec![],
+        })
+        .collect();
+
+    // Get market positions
+    let positions_data = db.get_market_positions(None)?;
+    let market_positions: Vec<DisplayMarketPosition> = positions_data
+        .into_iter()
+        .map(|p| DisplayMarketPosition {
+            platform: p.platform,
+            market_id: p.market_id,
+            market_question: p.market_question,
+            position: p.position,
+            entry_price: p.entry_price,
+            shares: p.shares,
+            stake_usdc: p.stake_usdc,
+            thesis: p.thesis,
+            confidence: (p.confidence * 100.0) as i32,
+            status: p.status,
+            pnl_usdc: p.pnl_usdc.unwrap_or(0.0),
+            created_at: DateTime::from_timestamp(p.created_at, 0)
+                .unwrap_or_else(Utc::now)
+                .format("%Y-%m-%d")
+                .to_string(),
+            resolved_at: p.resolved_at
+                .and_then(|ts| DateTime::from_timestamp(ts, 0))
+                .map(|dt| dt.format("%Y-%m-%d").to_string())
+                .unwrap_or_default(),
+        })
+        .collect();
+
     // Build site
     build_site(
         &config.output.build_directory,
@@ -531,6 +896,9 @@ fn run_build(config: &Config) -> Result<()> {
         recent_entries,
         threads,
         predictions,
+        market_positions,
+        capsule_count,
+        recent_capsules,
     )?;
 
     Ok(())
@@ -551,6 +919,87 @@ fn run_deployment(config: &Config) -> Result<String> {
     )?;
 
     Ok(result.url)
+}
+
+/// Generate embeddings for capsules without embeddings
+fn run_embedding_generation(db: &Database, ollama_url: &str, model: &str) -> Result<usize> {
+    use crate::embedding::OllamaEmbedding;
+
+    let embedder = OllamaEmbedding::new(ollama_url, model)?;
+
+    // Get capsules without embeddings (None = no limit)
+    let capsules = db.get_capsules_without_embeddings(None)?;
+    if capsules.is_empty() {
+        return Ok(0);
+    }
+
+    let mut generated = 0;
+    for (capsule_id, restatement) in capsules {
+        match embedder.embed(&restatement) {
+            Ok(embedding) => {
+                db.insert_capsule_embedding(capsule_id, &embedding, model)?;
+                generated += 1;
+            }
+            Err(e) => {
+                eprintln!("      Warning: Failed to embed capsule {}: {}", capsule_id, e);
+            }
+        }
+    }
+
+    Ok(generated)
+}
+
+/// Sync capsules and embeddings to backend canister
+fn run_backend_sync(db: &Database, canister_id: &str, identity: &str) -> Result<(usize, usize)> {
+    use crate::icp::{IcpClient, KnowledgeCapsule, CapsuleEmbedding, sync_to_canister};
+
+    // Get all capsules and embeddings from local DB
+    let local_capsules = db.get_all_capsules_for_sync()?;
+    let local_embeddings = db.get_all_embeddings_for_sync()?;
+
+    if local_capsules.is_empty() && local_embeddings.is_empty() {
+        return Ok((0, 0));
+    }
+
+    // Convert to ICP types
+    let capsules: Vec<KnowledgeCapsule> = local_capsules
+        .into_iter()
+        .map(|c| {
+            KnowledgeCapsule {
+                id: c.id as u64,
+                conversation_id: c.conversation_id,
+                restatement: c.restatement,
+                timestamp: c.timestamp,
+                location: c.location,
+                topic: c.topic,
+                confidence_score: c.confidence_score,
+                persons: c.persons,
+                entities: c.entities,
+                keywords: c.keywords,
+                created_at: c.created_at as u64,
+            }
+        })
+        .collect();
+
+    let embeddings: Vec<CapsuleEmbedding> = local_embeddings
+        .into_iter()
+        .map(|e| {
+            CapsuleEmbedding {
+                capsule_id: e.capsule_id as u64,
+                embedding: e.embedding,
+                model_name: e.model_name,
+            }
+        })
+        .collect();
+
+    // Create client and sync
+    let rt = tokio::runtime::Runtime::new()?;
+    let result = rt.block_on(async {
+        let client = IcpClient::from_dfx_identity(canister_id, identity).await?;
+        sync_to_canister(&client, capsules, embeddings, 50).await
+    })?;
+
+    Ok((result.capsules_synced, result.embeddings_synced))
 }
 
 /// Send desktop notification (if notifications feature is enabled)
@@ -577,11 +1026,24 @@ mod tests {
 
     #[test]
     fn test_is_json_file() {
+        // Valid conversation files
         assert!(is_json_file(Path::new("test.json")));
         assert!(is_json_file(Path::new("/path/to/file.json")));
+        assert!(is_json_file(Path::new("conversations.json")));
+
+        // Non-JSON files
         assert!(!is_json_file(Path::new("test.txt")));
         assert!(!is_json_file(Path::new("test.md")));
         assert!(!is_json_file(Path::new("test")));
+
+        // Filtered non-conversation exports
+        assert!(!is_json_file(Path::new("memories.json")));
+        assert!(!is_json_file(Path::new("projects.json")));
+        assert!(!is_json_file(Path::new("users.json")));
+
+        // Zone.Identifier files (Windows security markers)
+        assert!(!is_json_file(Path::new("conversations.json:Zone.Identifier")));
+        assert!(!is_json_file(Path::new("test.json:Zone.Identifier")));
     }
 
     #[test]
@@ -601,6 +1063,14 @@ mod tests {
             conversation_id: "test-123".to_string(),
         };
         assert!(matches!(processed, WatchResult::FileProcessed { .. }));
+
+        let bulk = WatchResult::BulkProcessed {
+            file_path: PathBuf::from("conversations.json"),
+            ingested: 5,
+            duplicates: 2,
+            skipped: 1,
+        };
+        assert!(matches!(bulk, WatchResult::BulkProcessed { .. }));
 
         let ignored = WatchResult::FileIgnored {
             file_path: PathBuf::from("test.json"),

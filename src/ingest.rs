@@ -33,6 +33,21 @@ pub fn ingest_conversation<P: AsRef<Path>>(
     let export = ConversationExport::from_file(path)
         .context("Failed to parse conversation export")?;
 
+    // Get filename for record
+    let filename = path
+        .file_name()
+        .and_then(|f| f.to_str())
+        .unwrap_or("unknown.json");
+
+    ingest_conversation_export(db, &export, filename)
+}
+
+/// Ingest a parsed ConversationExport struct directly
+pub fn ingest_conversation_export(
+    db: &Database,
+    export: &ConversationExport,
+    filename: &str,
+) -> Result<IngestResult> {
     // Check if conversation is empty
     if export.message_count() == 0 {
         return Ok(IngestResult::Skipped {
@@ -51,12 +66,6 @@ pub fn ingest_conversation<P: AsRef<Path>>(
     let first_timestamp = export.first_message_timestamp()?.timestamp();
     let last_timestamp = export.last_message_timestamp()?.timestamp();
     let message_count = export.message_count() as i64;
-
-    // Get filename for record
-    let filename = path
-        .file_name()
-        .and_then(|f| f.to_str())
-        .unwrap_or("unknown.json");
 
     // Insert into database
     db.insert_conversation(

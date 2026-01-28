@@ -5,3 +5,10 @@
 *.db-shm
 *.db-wal
 .env
+
+node_modules/
+deps/
+static/
+chronicle.toml
+canister_ids.json
+docs/

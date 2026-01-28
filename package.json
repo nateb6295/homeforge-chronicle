@@ -1,0 +1,9 @@
+{
+  "scripts": {
+    "build": "echo 'Static assets - no build needed'"
+  },
+  "dependencies": {
+    "@polymarket/clob-client": "^5.2.1",
+    "ethers": "^5.8.0"
+  }
+}

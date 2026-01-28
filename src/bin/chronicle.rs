@@ -3,6 +3,7 @@ use clap::Parser;
 use homeforge_chronicle::cli::{Cli, Commands};
 use homeforge_chronicle::config::Config;
 use homeforge_chronicle::db::Database;
+use homeforge_chronicle::{SyncCapsule, ThoughtEntry};
 use std::path::PathBuf;
 
 fn main() -> Result<()> {
@@ -37,6 +38,39 @@ fn main() -> Result<()> {
         }
         Commands::Watch => {
             watch_command(&config)?;
+        }
+        Commands::Capsules { limit, conversation_id } => {
+            capsules_command(&config, limit, conversation_id)?;
+        }
+        Commands::CapsuleStats => {
+            capsule_stats_command(&config)?;
+        }
+        Commands::SearchCapsules { query, search_type, limit } => {
+            search_capsules_command(&config, &query, &search_type, limit)?;
+        }
+        Commands::Embeddings { ollama_url, model, limit, force } => {
+            embeddings_command(&config, &ollama_url, &model, limit, force)?;
+        }
+        Commands::SemanticSearch { query, limit, ollama_url, model } => {
+            semantic_search_command(&config, &query, limit, &ollama_url, &model)?;
+        }
+        Commands::Sync { canister_id, identity, capsules_only, embeddings_only } => {
+            sync_command(&config, &canister_id, &identity, capsules_only, embeddings_only)?;
+        }
+        Commands::Metabolize { ollama_url, model, with_decay, detect_meta } => {
+            metabolize_command(&config, &ollama_url, &model, with_decay, detect_meta)?;
+        }
+        Commands::Patterns { min_confidence, limit, active_only, id } => {
+            patterns_command(&config, min_confidence, limit, active_only, id)?;
+        }
+        Commands::SyncNative { canister_id, identity, batch_size } => {
+            sync_native_command(&config, &canister_id, &identity, batch_size)?;
+        }
+        Commands::OnchainSearch { query, limit, canister_id, identity, ollama_url, model } => {
+            onchain_search_command(&query, limit, &canister_id, &identity, &ollama_url, &model)?;
+        }
+        Commands::RefreshPatterns { id, min_capsules, dry_run } => {
+            refresh_patterns_command(&config, id, min_capsules, dry_run)?;
         }
     }
 
@@ -494,9 +528,9 @@ fn compile_command(config: &Config) -> Result<()> {
 }
 
 fn build_command(config: &Config) -> Result<()> {
-    use homeforge_chronicle::{build_site, DisplayEntry};
+    use homeforge_chronicle::{build_site, build_thoughts_page, build_outbox_page, DisplayEntry, DisplayCapsule, DisplayThought, DisplayOutboxMessage, DisplayMarketPosition};
     use homeforge_chronicle::compilation::{Prediction, PredictionStatus};
-    use chrono::{DateTime, Utc};
+    use chrono::{DateTime, Utc, Datelike, Timelike};
 
     println!("Building static site to {:?}", config.output.build_directory);
 
@@ -588,6 +622,52 @@ fn build_command(config: &Config) -> Result<()> {
 
     println!("  Found {} predictions", predictions.len());
 
+    // Get capsules for activity discovery
+    println!("Loading capsules...");
+    let capsule_count = db.get_capsule_count()? as usize;
+    let active_capsules = db.get_active_capsules(10)?;
+    let recent_capsules: Vec<DisplayCapsule> = active_capsules.into_iter().map(|(id, restatement, timestamp, topic, confidence)| {
+        DisplayCapsule {
+            content: if restatement.len() > 200 {
+                format!("{}...", &restatement[..200])
+            } else {
+                restatement
+            },
+            topic: topic.unwrap_or_else(|| "general".to_string()),
+            timestamp: timestamp.unwrap_or_else(|| "recent".to_string()),
+            keywords: vec![], // Could fetch separately if needed
+        }
+    }).collect();
+    println!("  Found {} total capsules, showing {}", capsule_count, recent_capsules.len());
+
+    // Get market positions
+    println!("Loading market positions...");
+    let positions_data = db.get_market_positions(None)?;
+    let market_positions: Vec<DisplayMarketPosition> = positions_data.into_iter().map(|p| {
+        DisplayMarketPosition {
+            platform: p.platform,
+            market_id: p.market_id,
+            market_question: p.market_question,
+            position: p.position,
+            entry_price: p.entry_price,
+            shares: p.shares,
+            stake_usdc: p.stake_usdc,
+            thesis: p.thesis,
+            confidence: (p.confidence * 100.0) as i32,
+            status: p.status,
+            pnl_usdc: p.pnl_usdc.unwrap_or(0.0),
+            created_at: DateTime::from_timestamp(p.created_at, 0)
+                .unwrap_or_else(Utc::now)
+                .format("%Y-%m-%d")
+                .to_string(),
+            resolved_at: p.resolved_at
+                .and_then(|ts| DateTime::from_timestamp(ts, 0))
+                .map(|dt| dt.format("%Y-%m-%d").to_string())
+                .unwrap_or_default(),
+        }
+    }).collect();
+    println!("  Found {} market positions", market_positions.len());
+
     // Build the site
     println!("\nGenerating static site...");
     build_site(
@@ -597,12 +677,96 @@ fn build_command(config: &Config) -> Result<()> {
         recent_entries,
         threads,
         predictions,
+        market_positions,
+        capsule_count,
+        recent_capsules,
+    )?;
+
+    // Build thoughts page
+    println!("Loading thought stream...");
+    let thought_entries = db.get_recent_thoughts(50)?;
+    let total_thoughts = thought_entries.len(); // Could add a count method later
+
+    // Count actions taken today
+    let now = Utc::now();
+    let today_start = now.date_naive().and_hms_opt(0, 0, 0).unwrap().and_utc().timestamp();
+    let actions_today: usize = thought_entries.iter()
+        .filter(|t| t.created_at >= today_start)
+        .map(|t| t.actions_taken.split('\n').filter(|a| !a.is_empty()).count())
+        .sum();
+
+    // Convert to display format
+    let display_thoughts: Vec<DisplayThought> = thought_entries.into_iter().map(|t| {
+        let actions: Vec<String> = t.actions_taken
+            .split('\n')
+            .filter(|a| !a.is_empty())
+            .map(|s| s.to_string())
+            .collect();
+
+        DisplayThought {
+            cycle_id: t.cycle_id,
+            timestamp: DateTime::from_timestamp(t.created_at, 0)
+                .unwrap_or_else(Utc::now)
+                .format("%Y-%m-%d %H:%M UTC")
+                .to_string(),
+            context_summary: t.context_summary,
+            reasoning: t.reasoning,
+            actions,
+        }
+    }).collect();
+
+    println!("  Found {} thoughts, {} actions today", total_thoughts, actions_today);
+
+    build_thoughts_page(
+        &config.output.build_directory,
+        &config.output.site_title,
+        &config.output.author,
+        display_thoughts,
+        total_thoughts,
+        actions_today,
+    )?;
+
+    // Build outbox page
+    println!("Loading outbox messages...");
+    let outbox_messages = db.get_all_outbox_messages(100)?;
+    let unread_count = db.count_unread_messages()?;
+    let total_outbox = db.count_outbox_messages()?;
+
+    // Convert to display format
+    let display_messages: Vec<DisplayOutboxMessage> = outbox_messages.into_iter().map(|m| {
+        DisplayOutboxMessage {
+            message: m.message,
+            category: m.category.unwrap_or_else(|| "general".to_string()),
+            priority: m.priority,
+            timestamp: DateTime::from_timestamp(m.created_at, 0)
+                .unwrap_or_else(Utc::now)
+                .format("%Y-%m-%d %H:%M UTC")
+                .to_string(),
+            acknowledged: m.acknowledged,
+            read_at: m.read_at
+                .and_then(|ts| DateTime::from_timestamp(ts, 0))
+                .map(|dt| dt.format("%Y-%m-%d %H:%M UTC").to_string())
+                .unwrap_or_default(),
+        }
+    }).collect();
+
+    println!("  Found {} messages ({} unread)", total_outbox, unread_count);
+
+    build_outbox_page(
+        &config.output.build_directory,
+        &config.output.site_title,
+        &config.output.author,
+        display_messages,
+        unread_count,
+        total_outbox,
     )?;
 
     println!("\n✓ Static site built successfully!");
     println!("  Output: {:?}", config.output.build_directory);
     println!("\nFiles generated:");
     println!("  - index.html (homepage with recent entries)");
+    println!("  - thoughts/index.html (cognitive loop stream)");
+    println!("  - outbox/index.html (messages for the operator)");
     println!("  - threads/index.html (theme threads listing)");
     println!("  - threads/*.html (individual theme pages)");
     println!("  - predictions/index.html (prediction registry)");
@@ -655,17 +819,883 @@ fn deploy_command(config: &Config) -> Result<()> {
 fn watch_command(config: &Config) -> Result<()> {
     use homeforge_chronicle::{watch_directory, PipelineOptions};
 
-    // Build pipeline options from config
+    // Build pipeline options from config (use defaults then override)
     let options = PipelineOptions {
         extract: true,
         compile: true,
         build: true,
         deploy: config.schedule.auto_deploy,
         notify: config.schedule.notify_on_completion.unwrap_or(false),
+        metabolize: true,
+        generate_embeddings: true,
+        sync_backend: true,
+        ..PipelineOptions::default()
     };
 
     // Start watching
     watch_directory(&config.input.watch_directory, config, options)?;
+
+    Ok(())
+}
+
+// ============================================================
+// Knowledge Capsule Commands (KIP Integration)
+// ============================================================
+
+fn capsules_command(config: &Config, limit: Option<usize>, conversation_id: Option<String>) -> Result<()> {
+    use homeforge_chronicle::{extract_capsules, parse_bulk_export};
+    use homeforge_chronicle::llm::ClaudeClient;
+
+    println!("Extracting knowledge capsules...");
+
+    let db = Database::new(&config.input.processed_db)?;
+
+    // Initialize LLM client
+    let llm_client = ClaudeClient::new(
+        config.extraction.claude_api_key.clone().unwrap_or_default(),
+        config.extraction.llm_model.clone(),
+    )?;
+
+    // Get conversations to process
+    let conversations_to_process: Vec<String> = if let Some(id) = conversation_id {
+        vec![id]
+    } else {
+        // Get all conversations that haven't been capsulized yet
+        let mut stmt = db.connection().prepare(
+            "SELECT c.id FROM conversations c
+             WHERE c.id NOT IN (SELECT DISTINCT conversation_id FROM knowledge_capsules)
+             ORDER BY c.processed_at DESC"
+        )?;
+        let conv_ids: Vec<String> = stmt.query_map([], |row| row.get(0))?
+            .collect::<Result<Vec<_>, _>>()?;
+
+        if let Some(l) = limit {
+            conv_ids.into_iter().take(l).collect()
+        } else {
+            conv_ids
+        }
+    };
+
+    if conversations_to_process.is_empty() {
+        println!("No new conversations to process.");
+        return Ok(());
+    }
+
+    println!("Processing {} conversation(s)...\n", conversations_to_process.len());
+
+    // Find the export file and re-parse conversations
+    let export_file = config.input.watch_directory.join("conversations.json");
+    if !export_file.exists() {
+        anyhow::bail!("Export file not found: {:?}", export_file);
+    }
+
+    let bulk_export = parse_bulk_export(&export_file)?;
+    let mut total_capsules = 0;
+
+    for conv_id in &conversations_to_process {
+        // Find conversation in export
+        let conversation = bulk_export.iter().find(|c| &c.uuid == conv_id);
+
+        if let Some(conv) = conversation {
+            print!("Processing '{}' ({} messages)... ", conv.name, conv.message_count());
+
+            match extract_capsules(conv, &llm_client) {
+                Ok(capsules) => {
+                    if capsules.is_empty() {
+                        println!("skipped (too short)");
+                        continue;
+                    }
+
+                    // Store capsules in database
+                    for capsule in &capsules {
+                        let entities: Vec<(String, Option<String>)> = capsule.entities.clone();
+
+                        db.insert_knowledge_capsule(
+                            conv_id,
+                            &capsule.restatement,
+                            capsule.timestamp.as_deref(),
+                            capsule.location.as_deref(),
+                            capsule.topic.as_deref(),
+                            0.8, // Default confidence
+                            &capsule.persons,
+                            &entities,
+                            &capsule.keywords,
+                        )?;
+                    }
+
+                    println!("{} capsules extracted", capsules.len());
+                    total_capsules += capsules.len();
+                }
+                Err(e) => {
+                    println!("error: {}", e);
+                }
+            }
+        } else {
+            println!("Warning: Conversation {} not found in export file", conv_id);
+        }
+    }
+
+    println!("\n✓ Extraction complete!");
+    println!("  Total capsules created: {}", total_capsules);
+    println!("  Run 'chronicle capsule-stats' to see statistics");
+
+    Ok(())
+}
+
+fn capsule_stats_command(config: &Config) -> Result<()> {
+    println!("Knowledge Capsule Statistics\n");
+
+    let db = Database::new(&config.input.processed_db)?;
+
+    // Get capsule count
+    let capsule_count = db.get_capsule_count()?;
+    println!("Total capsules: {}", capsule_count);
+
+    // Get active capsules (not consolidated)
+    let active = db.get_active_capsules(5)?;
+    println!("Active capsules: {}", active.len());
+
+    // Get pattern count
+    let patterns = db.get_active_patterns(0.0, 100)?;
+    println!("Consolidation patterns: {}\n", patterns.len());
+
+    // Show recent capsules
+    if !active.is_empty() {
+        println!("Recent capsules:");
+        for (id, restatement, timestamp, topic, confidence) in active.iter().take(5) {
+            println!("  [{}] {}", id, truncate_string(restatement, 60));
+            if let Some(t) = topic {
+                println!("      Topic: {} | Confidence: {:.2}", t, confidence);
+            }
+            if let Some(ts) = timestamp {
+                println!("      Time: {}", ts);
+            }
+        }
+    }
+
+    // Show patterns if any
+    if !patterns.is_empty() {
+        println!("\nTop patterns:");
+        for (id, summary, count, confidence) in patterns.iter().take(5) {
+            println!("  [{}] {} (seen {}x, confidence: {:.2})", id, summary, count, confidence);
+        }
+    }
+
+    Ok(())
+}
+
+fn search_capsules_command(config: &Config, query: &str, search_type: &str, limit: i64) -> Result<()> {
+    println!("Searching capsules for '{}' (type: {})\n", query, search_type);
+
+    let db = Database::new(&config.input.processed_db)?;
+
+    let results = match search_type {
+        "person" => {
+            db.search_capsules_by_person(query, limit)?
+        }
+        "keyword" | _ => {
+            let keywords: Vec<String> = query.split_whitespace().map(String::from).collect();
+            db.search_capsules_by_keyword(&keywords, limit)?
+        }
+    };
+
+    if results.is_empty() {
+        println!("No capsules found.");
+        return Ok(());
+    }
+
+    println!("Found {} result(s):\n", results.len());
+
+    for (id, restatement, confidence) in results {
+        println!("[{}] (confidence: {:.2})", id, confidence);
+        println!("  {}\n", restatement);
+    }
+
+    Ok(())
+}
+
+fn truncate_string(s: &str, max_len: usize) -> String {
+    if s.len() <= max_len {
+        s.to_string()
+    } else {
+        format!("{}...", &s[..max_len])
+    }
+}
+
+fn embeddings_command(config: &Config, ollama_url: &str, model: &str, limit: Option<usize>, force: bool) -> Result<()> {
+    use homeforge_chronicle::OllamaEmbedding;
+
+    println!("Generating embeddings via Ollama...");
+    println!("  URL: {}", ollama_url);
+    println!("  Model: {}", model);
+    if force {
+        println!("  Mode: FORCE (re-embedding all capsules)");
+    }
+    println!();
+
+    let db = Database::new(&config.input.processed_db)?;
+
+    // Get capsules - either all (force) or only those without embeddings
+    let capsules = if force {
+        db.get_all_capsules_for_embedding(limit)?
+    } else {
+        db.get_capsules_without_embeddings(limit)?
+    };
+
+    if capsules.is_empty() {
+        if force {
+            println!("No capsules found in database.");
+        } else {
+            println!("All capsules already have embeddings. Use --force to re-embed.");
+        }
+        return Ok(());
+    }
+
+    println!("Processing {} capsule(s)...\n", capsules.len());
+
+    // Initialize embedding client
+    let embedder = OllamaEmbedding::new(ollama_url, model)?;
+
+    let mut success_count = 0;
+    let mut error_count = 0;
+
+    for (i, (capsule_id, restatement)) in capsules.iter().enumerate() {
+        print!("[{}/{}] Capsule {}... ", i + 1, capsules.len(), capsule_id);
+
+        match embedder.embed(restatement) {
+            Ok(embedding) => {
+                // Store/update embedding in database
+                db.upsert_capsule_embedding(*capsule_id, &embedding, model)?;
+                println!("ok ({} dims)", embedding.len());
+                success_count += 1;
+            }
+            Err(e) => {
+                println!("error: {}", e);
+                error_count += 1;
+            }
+        }
+    }
+
+    println!("\n✓ Embedding generation complete!");
+    println!("  Success: {}", success_count);
+    println!("  Errors: {}", error_count);
+    println!("  Total embeddings: {}", db.get_embedding_count()?);
+
+    Ok(())
+}
+
+fn semantic_search_command(config: &Config, query: &str, limit: usize, ollama_url: &str, model: &str) -> Result<()> {
+    use homeforge_chronicle::{find_top_k_similar, OllamaEmbedding};
+
+    println!("Semantic search for: \"{}\"\n", query);
+
+    let db = Database::new(&config.input.processed_db)?;
+
+    // Check if we have embeddings
+    let embedding_count = db.get_embedding_count()?;
+    if embedding_count == 0 {
+        println!("No embeddings found. Run 'chronicle embeddings' first.");
+        return Ok(());
+    }
+
+    // Initialize embedding client and embed query
+    print!("Embedding query... ");
+    let embedder = OllamaEmbedding::new(ollama_url, model)?;
+    let query_embedding = embedder.embed(query)?;
+    println!("ok ({} dims)", query_embedding.len());
+
+    // Load all embeddings
+    print!("Loading {} embeddings... ", embedding_count);
+    let embeddings = db.get_all_embeddings()?;
+    println!("ok");
+
+    // Find similar capsules
+    print!("Finding similar capsules... ");
+    let similar = find_top_k_similar(&query_embedding, &embeddings, limit);
+    println!("found {}\n", similar.len());
+
+    if similar.is_empty() {
+        println!("No similar capsules found.");
+        return Ok(());
+    }
+
+    println!("Results:\n");
+
+    for (i, (capsule_id, similarity)) in similar.iter().enumerate() {
+        if let Some((restatement, timestamp, topic, _confidence)) = db.get_capsule_display_info(*capsule_id)? {
+            println!("{}. [similarity: {:.3}]", i + 1, similarity);
+            println!("   {}", restatement);
+            if let Some(t) = topic {
+                println!("   Topic: {}", t);
+            }
+            if let Some(ts) = timestamp {
+                println!("   Time: {}", ts);
+            }
+            println!();
+        }
+    }
+
+    Ok(())
+}
+
+fn sync_command(config: &Config, canister_id: &str, identity: &str, capsules_only: bool, embeddings_only: bool) -> Result<()> {
+    use std::process::Command;
+
+    println!("Syncing to ICP canister...");
+    println!("  Canister: {}", canister_id);
+    println!("  Identity: {}\n", identity);
+
+    let db = Database::new(&config.input.processed_db)?;
+
+    // Get counts from canister
+    print!("Checking canister state... ");
+    let output = Command::new("dfx")
+        .args(["canister", "call", canister_id, "get_capsule_count", "--network", "ic", "--identity", identity])
+        .env("DFX_WARNING", "-mainnet_plaintext_identity")
+        .output()?;
+
+    let canister_count: i64 = if output.status.success() {
+        let stdout = String::from_utf8_lossy(&output.stdout);
+        // Parse "(123 : nat64)" format
+        stdout.trim()
+            .trim_start_matches('(')
+            .split_whitespace()
+            .next()
+            .and_then(|s| s.parse().ok())
+            .unwrap_or(0)
+    } else {
+        println!("warning: couldn't get count");
+        0
+    };
+    println!("{} capsules on canister", canister_count);
+
+    // Get local counts
+    let local_capsule_count = db.get_capsule_count()?;
+    let local_embedding_count = db.get_embedding_count()?;
+
+    println!("Local database: {} capsules, {} embeddings\n", local_capsule_count, local_embedding_count);
+
+    // Sync capsules
+    if !embeddings_only {
+        println!("Syncing capsules...");
+
+        // Get all capsules from local DB
+        let capsules = db.get_all_capsules_for_sync()?;
+
+        if capsules.is_empty() {
+            println!("  No capsules to sync.");
+        } else {
+            let mut success = 0;
+            let mut errors = 0;
+
+            for (i, capsule) in capsules.iter().enumerate() {
+                print!("\r  [{}/{}] Syncing capsule {}... ", i + 1, capsules.len(), capsule.id);
+
+                // Build the dfx call
+                let persons_arg = format!("vec {{ {} }}",
+                    capsule.persons.iter().map(|p| format!("\"{}\"", p.replace('"', "\\\""))).collect::<Vec<_>>().join("; "));
+                let entities_arg = format!("vec {{ {} }}",
+                    capsule.entities.iter().map(|e| format!("\"{}\"", e.replace('"', "\\\""))).collect::<Vec<_>>().join("; "));
+                let keywords_arg = format!("vec {{ {} }}",
+                    capsule.keywords.iter().map(|k| format!("\"{}\"", k.replace('"', "\\\""))).collect::<Vec<_>>().join("; "));
+
+                let timestamp_arg = capsule.timestamp.as_ref()
+                    .map(|t| format!("opt \"{}\"", t.replace('"', "\\\"")))
+                    .unwrap_or_else(|| "null".to_string());
+                let location_arg = capsule.location.as_ref()
+                    .map(|l| format!("opt \"{}\"", l.replace('"', "\\\"")))
+                    .unwrap_or_else(|| "null".to_string());
+                let topic_arg = capsule.topic.as_ref()
+                    .map(|t| format!("opt \"{}\"", t.replace('"', "\\\"")))
+                    .unwrap_or_else(|| "null".to_string());
+
+                let args = format!(
+                    "(\"{}\", \"{}\", {}, {}, {}, {:.2} : float64, {}, {}, {})",
+                    capsule.conversation_id.replace('"', "\\\""),
+                    capsule.restatement.replace('"', "\\\"").replace('\n', " "),
+                    timestamp_arg,
+                    location_arg,
+                    topic_arg,
+                    capsule.confidence_score,
+                    persons_arg,
+                    entities_arg,
+                    keywords_arg
+                );
+
+                let result = Command::new("dfx")
+                    .args(["canister", "call", canister_id, "add_capsule", "--network", "ic", "--identity", identity])
+                    .arg(&args)
+                    .env("DFX_WARNING", "-mainnet_plaintext_identity")
+                    .output();
+
+                match result {
+                    Ok(output) if output.status.success() => {
+                        success += 1;
+                    }
+                    Ok(output) => {
+                        errors += 1;
+                        let stderr = String::from_utf8_lossy(&output.stderr);
+                        if errors <= 3 {
+                            println!("\n    Error: {}", stderr.lines().next().unwrap_or("unknown"));
+                        }
+                    }
+                    Err(e) => {
+                        errors += 1;
+                        if errors <= 3 {
+                            println!("\n    Error: {}", e);
+                        }
+                    }
+                }
+            }
+
+            println!("\r  Capsules: {} synced, {} errors                    ", success, errors);
+        }
+    }
+
+    // Sync embeddings
+    if !capsules_only {
+        println!("\nSyncing embeddings...");
+
+        let embeddings = db.get_all_embeddings()?;
+
+        if embeddings.is_empty() {
+            println!("  No embeddings to sync.");
+        } else {
+            let mut success = 0;
+            let mut errors = 0;
+
+            for (i, (capsule_id, embedding)) in embeddings.iter().enumerate() {
+                print!("\r  [{}/{}] Syncing embedding for capsule {}... ", i + 1, embeddings.len(), capsule_id);
+
+                // Convert embedding to Candid vec format
+                let embedding_arg = format!("vec {{ {} }}",
+                    embedding.iter().map(|v| format!("{:.6} : float32", v)).collect::<Vec<_>>().join("; "));
+
+                let args = format!(
+                    "({} : nat64, {}, \"gemma2:2b\")",
+                    capsule_id,
+                    embedding_arg
+                );
+
+                let result = Command::new("dfx")
+                    .args(["canister", "call", canister_id, "add_embedding", "--network", "ic", "--identity", identity])
+                    .arg(&args)
+                    .env("DFX_WARNING", "-mainnet_plaintext_identity")
+                    .output();
+
+                match result {
+                    Ok(output) if output.status.success() => {
+                        success += 1;
+                    }
+                    Ok(_) | Err(_) => {
+                        errors += 1;
+                    }
+                }
+            }
+
+            println!("\r  Embeddings: {} synced, {} errors                    ", success, errors);
+        }
+    }
+
+    // Final status check
+    println!("\nChecking final canister state...");
+    let output = Command::new("dfx")
+        .args(["canister", "call", canister_id, "health", "--network", "ic", "--identity", identity])
+        .env("DFX_WARNING", "-mainnet_plaintext_identity")
+        .output()?;
+
+    if output.status.success() {
+        let stdout = String::from_utf8_lossy(&output.stdout);
+        println!("  {}", stdout.trim());
+    }
+
+    println!("\n✓ Sync complete!");
+
+    Ok(())
+}
+
+fn metabolize_command(config: &Config, ollama_url: &str, model: &str, with_decay: bool, detect_meta: bool) -> Result<()> {
+    use homeforge_chronicle::{MetabolismConfig, metabolize_all_new, decay_patterns, detect_meta_patterns};
+    use homeforge_chronicle::OllamaEmbedding;
+
+    println!("Memory Metabolism");
+    println!("=================\n");
+
+    let db = Database::new(&config.input.processed_db)?;
+    let embedding_client = OllamaEmbedding::new(ollama_url, model)?;
+    let metabolism_config = MetabolismConfig::default();
+
+    // Run metabolism on new capsules
+    println!("Processing unmetabolized capsules...");
+    let result = metabolize_all_new(&db, &embedding_client, &metabolism_config)?;
+
+    println!("  Processed: {} capsules", result.processed);
+    println!("  Patterns reinforced: {}", result.patterns_reinforced);
+    println!("  New patterns seeded: {}", result.patterns_seeded);
+    if result.errors > 0 {
+        println!("  Errors: {}", result.errors);
+    }
+
+    // Optionally run decay
+    if with_decay {
+        println!("\nApplying decay to stale patterns...");
+        let decay_result = decay_patterns(&db, &metabolism_config)?;
+        println!("  Decayed: {} patterns", decay_result.decayed);
+        println!("  Deactivated: {} patterns", decay_result.deactivated);
+    }
+
+    // Optionally detect meta-patterns
+    if detect_meta {
+        println!("\nDetecting meta-patterns...");
+        let meta_patterns = detect_meta_patterns(&db, &embedding_client, &metabolism_config)?;
+        if meta_patterns.is_empty() {
+            println!("  No meta-patterns detected yet.");
+        } else {
+            println!("  Found {} meta-patterns:", meta_patterns.len());
+            for (i, mp) in meta_patterns.iter().enumerate() {
+                println!("\n  {}. {} (confidence: {:.2})", i + 1, mp.summary, mp.confidence);
+                println!("     Composed of {} patterns: {:?}", mp.pattern_ids.len(), mp.pattern_ids);
+            }
+        }
+    }
+
+    // Show overall stats
+    let pattern_count = db.get_pattern_count()?;
+    println!("\n✓ Metabolism complete!");
+    println!("  Total active patterns: {}", pattern_count);
+
+    Ok(())
+}
+
+fn patterns_command(config: &Config, min_confidence: f64, limit: usize, active_only: bool, id: Option<i64>) -> Result<()> {
+    let db = Database::new(&config.input.processed_db)?;
+
+    if let Some(pattern_id) = id {
+        // Show specific pattern with linked capsules
+        if let Some((summary, confidence, reinforced_at, is_active)) = db.get_pattern_by_id(pattern_id)? {
+            println!("Pattern #{}", pattern_id);
+            println!("===========");
+            println!("Summary: {}", summary);
+            println!("Confidence: {:.2}", confidence);
+            println!("Active: {}", if is_active { "yes" } else { "no" });
+            if let Some(ts) = reinforced_at {
+                let dt = chrono::DateTime::from_timestamp(ts, 0)
+                    .map(|d| d.format("%Y-%m-%d %H:%M").to_string())
+                    .unwrap_or_else(|| ts.to_string());
+                println!("Last reinforced: {}", dt);
+            }
+
+            // Get linked capsules
+            let linked = db.get_pattern_capsules(pattern_id)?;
+            if !linked.is_empty() {
+                println!("\nLinked capsules ({}):", linked.len());
+                for (capsule_id, restatement) in linked.iter().take(10) {
+                    let truncated = if restatement.len() > 80 {
+                        format!("{}...", &restatement[..80])
+                    } else {
+                        restatement.clone()
+                    };
+                    println!("  [{}] {}", capsule_id, truncated);
+                }
+                if linked.len() > 10 {
+                    println!("  ... and {} more", linked.len() - 10);
+                }
+            }
+        } else {
+            println!("Pattern #{} not found.", pattern_id);
+        }
+    } else {
+        // List patterns
+        let patterns = db.get_all_patterns(min_confidence, limit, active_only)?;
+
+        if patterns.is_empty() {
+            println!("No patterns found.");
+            println!("\nRun 'chronicle metabolize' to process capsules into patterns.");
+            return Ok(());
+        }
+
+        println!("Knowledge Patterns");
+        println!("==================\n");
+
+        for (pattern_id, summary, capsule_count, confidence, is_active) in &patterns {
+            let status = if *is_active { "" } else { " [inactive]" };
+            let truncated = if summary.len() > 60 {
+                format!("{}...", &summary[..60])
+            } else {
+                summary.clone()
+            };
+            println!("#{:<4} ({} capsules, conf: {:.2}){}", pattern_id, capsule_count, confidence, status);
+            println!("      {}\n", truncated);
+        }
+
+        let total = db.get_pattern_count()? as usize;
+        if total > patterns.len() {
+            println!("Showing {} of {} patterns. Use --limit to see more.", patterns.len(), total);
+        }
+    }
+
+    Ok(())
+}
+
+fn sync_native_command(config: &Config, canister_id: &str, identity: &str, batch_size: usize) -> Result<()> {
+    use homeforge_chronicle::icp::{IcpClient, KnowledgeCapsule, CapsuleEmbedding, sync_to_canister};
+
+    println!("Native ICP Sync");
+    println!("===============\n");
+    println!("Canister: {}", canister_id);
+    println!("Identity: {}", identity);
+    println!("Batch size: {}\n", batch_size);
+
+    let db = Database::new(&config.input.processed_db)?;
+
+    // Create async runtime
+    let rt = tokio::runtime::Runtime::new()?;
+
+    rt.block_on(async {
+        // Connect to ICP
+        println!("Connecting to ICP...");
+        let client = IcpClient::from_dfx_identity(canister_id, identity).await?;
+
+        // Check canister health
+        let health = client.health().await?;
+        println!("Canister status: {}\n", health);
+
+        // Get local capsules
+        let local_capsules = db.get_all_capsules_for_sync()?;
+        let local_embeddings = db.get_all_embeddings()?;
+
+        println!("Local data: {} capsules, {} embeddings", local_capsules.len(), local_embeddings.len());
+
+        if local_capsules.is_empty() {
+            println!("No capsules to sync.");
+            return Ok(());
+        }
+
+        // Convert to ICP types
+        let capsules: Vec<KnowledgeCapsule> = local_capsules.into_iter().map(|c| {
+            KnowledgeCapsule {
+                id: 0, // Will be assigned by canister
+                conversation_id: c.conversation_id,
+                restatement: c.restatement,
+                timestamp: c.timestamp,
+                location: c.location,
+                topic: c.topic,
+                confidence_score: c.confidence_score,
+                persons: c.persons,
+                entities: c.entities,
+                keywords: c.keywords,
+                created_at: 0, // Will be set by canister
+            }
+        }).collect();
+
+        let embeddings: Vec<CapsuleEmbedding> = local_embeddings.into_iter().map(|(capsule_id, embedding)| {
+            CapsuleEmbedding {
+                capsule_id: capsule_id as u64,
+                embedding,
+                model_name: "gemma2:2b".to_string(),
+            }
+        }).collect();
+
+        // Sync
+        println!("\nSyncing...");
+        let result = sync_to_canister(&client, capsules, embeddings, batch_size).await?;
+
+        println!("\n✓ Sync complete!");
+        println!("  Capsules synced: {}", result.capsules_synced);
+        println!("  Embeddings synced: {}", result.embeddings_synced);
+
+        if !result.errors.is_empty() {
+            println!("  Errors:");
+            for err in &result.errors {
+                println!("    - {}", err);
+            }
+        }
+
+        // Final status
+        let final_health = client.health().await?;
+        println!("\nFinal canister status: {}", final_health);
+
+        Ok::<(), anyhow::Error>(())
+    })?;
+
+    Ok(())
+}
+
+fn onchain_search_command(
+    query: &str,
+    limit: u64,
+    canister_id: &str,
+    identity: &str,
+    ollama_url: &str,
+    model: &str,
+) -> Result<()> {
+    use homeforge_chronicle::icp::IcpClient;
+    use homeforge_chronicle::OllamaEmbedding;
+
+    println!("On-Chain Semantic Search");
+    println!("========================\n");
+    println!("Query: \"{}\"\n", query);
+
+    // Generate query embedding
+    println!("Generating query embedding...");
+    let embedding_client = OllamaEmbedding::new(ollama_url, model)?;
+    let query_embedding = embedding_client.embed(query)?;
+    println!("  ✓ Generated {}-dimensional embedding\n", query_embedding.len());
+
+    // Create async runtime
+    let rt = tokio::runtime::Runtime::new()?;
+
+    rt.block_on(async {
+        // Connect to ICP
+        println!("Querying canister...");
+        let client = IcpClient::from_dfx_identity(canister_id, identity).await?;
+
+        // Perform on-chain semantic search
+        let results = client.semantic_search(query_embedding, limit).await?;
+
+        if results.is_empty() {
+            println!("No results found.");
+            return Ok(());
+        }
+
+        println!("Found {} results:\n", results.len());
+
+        for (i, result) in results.iter().enumerate() {
+            println!("{}. [similarity: {:.3}]", i + 1, result.score);
+            let restatement = if result.capsule.restatement.len() > 100 {
+                format!("{}...", &result.capsule.restatement[..100])
+            } else {
+                result.capsule.restatement.clone()
+            };
+            println!("   {}", restatement);
+            if let Some(topic) = &result.capsule.topic {
+                println!("   Topic: {}", topic);
+            }
+            println!();
+        }
+
+        Ok::<(), anyhow::Error>(())
+    })?;
+
+    Ok(())
+}
+
+fn refresh_patterns_command(config: &Config, id: Option<i64>, min_capsules: i64, dry_run: bool) -> Result<()> {
+    use std::collections::HashMap;
+
+    println!("Pattern Summary Refresh");
+    println!("=======================\n");
+
+    if dry_run {
+        println!("(DRY RUN - no changes will be made)\n");
+    }
+
+    let db = Database::new(&config.input.processed_db)?;
+
+    // Get patterns to refresh
+    let patterns = db.get_active_patterns(0.0, 1000)?;
+
+    let mut refreshed = 0;
+    let mut skipped = 0;
+
+    for (pattern_id, old_summary, capsule_count, confidence) in patterns {
+        // Skip if filtering by ID
+        if let Some(target_id) = id {
+            if pattern_id != target_id {
+                continue;
+            }
+        }
+
+        // Skip if too few capsules
+        if capsule_count < min_capsules {
+            skipped += 1;
+            continue;
+        }
+
+        // Get capsules for this pattern (sample up to 20)
+        let capsules = db.get_capsules_for_pattern(pattern_id, 20)?;
+
+        if capsules.is_empty() {
+            skipped += 1;
+            continue;
+        }
+
+        // Count topic frequencies
+        let mut topic_counts: HashMap<String, usize> = HashMap::new();
+        for (_id, _restatement, topic) in &capsules {
+            if let Some(t) = topic {
+                *topic_counts.entry(t.clone()).or_insert(0) += 1;
+            }
+        }
+
+        // Find the most common topic(s)
+        let mut sorted_topics: Vec<_> = topic_counts.into_iter().collect();
+        sorted_topics.sort_by(|a, b| b.1.cmp(&a.1));
+
+        // Check if topics are useful (not too fragmented)
+        // If top topic appears in less than 10% of total capsules, topics are too fragmented
+        // Use capsule_count (total) not capsules.len() (sampled)
+        let topics_useful = !sorted_topics.is_empty() &&
+            (sorted_topics[0].1 as f64 / capsule_count as f64) >= 0.1;
+
+        // Generate new summary
+        let new_summary = if topics_useful {
+            // Topics are consistent enough to use
+            if sorted_topics.len() == 1 || sorted_topics[0].1 > sorted_topics.get(1).map(|x| x.1).unwrap_or(0) * 2 {
+                sorted_topics[0].0.clone()
+            } else {
+                let top_topics: Vec<&str> = sorted_topics.iter()
+                    .take(3)
+                    .map(|(t, _)| t.as_str())
+                    .collect();
+                top_topics.join(" + ")
+            }
+        } else {
+            // Topics too fragmented - fall back to keywords
+            let keywords = db.get_keywords_for_pattern(pattern_id, 5)?;
+            if keywords.is_empty() {
+                // No keywords either - use truncated restatement
+                let first_restatement = &capsules[0].1;
+                if first_restatement.len() > 60 {
+                    format!("{}...", &first_restatement[..60])
+                } else {
+                    first_restatement.clone()
+                }
+            } else {
+                // Use top keywords as summary
+                let kw_list: Vec<&str> = keywords.iter()
+                    .take(4)
+                    .map(|(k, _)| k.as_str())
+                    .collect();
+                kw_list.join(", ")
+            }
+        };
+
+        // Check if summary would change
+        if new_summary == old_summary {
+            continue;
+        }
+
+        println!("Pattern #{} ({} capsules, confidence {:.2})", pattern_id, capsule_count, confidence);
+        println!("  Old: {}", old_summary);
+        println!("  New: {}", new_summary);
+
+        if !dry_run {
+            db.update_pattern_summary(pattern_id, &new_summary)?;
+            println!("  ✓ Updated");
+        }
+        println!();
+
+        refreshed += 1;
+    }
+
+    println!("Summary:");
+    println!("  Patterns refreshed: {}", refreshed);
+    println!("  Patterns skipped: {}", skipped);
+
+    if dry_run && refreshed > 0 {
+        println!("\nRun without --dry-run to apply changes.");
+    }
 
     Ok(())
 }

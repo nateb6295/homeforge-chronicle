@@ -1,0 +1,481 @@
+{% extends "base.html" %}
+
+{% block title %}{{ site_title }} - Input{% endblock %}
+
+{% block description %}Submit information and research to Chronicle's memory{% endblock %}
+
+{% block content %}
+<div class="input-page">
+    <div class="section-header">
+        <h2>Chronicle Input</h2>
+        <span class="section-subtitle">Submit information to memory</span>
+    </div>
+
+    <form id="input-form" class="input-form">
+        <!-- Topic Selection -->
+        <div class="form-group">
+            <label for="topic">Topic</label>
+            <select id="topic" name="topic">
+                <option value="general">General</option>
+                <option value="homeforge">Homeforge</option>
+                <option value="chronicle">Chronicle</option>
+                <option value="xrp">XRP / Crypto</option>
+                <option value="prediction">Prediction</option>
+                <option value="research">Research</option>
+                <option value="family">Family</option>
+                <option value="project">Project</option>
+                <option value="feed">Feed Item</option>
+            </select>
+        </div>
+
+        <!-- Main Content -->
+        <div class="form-group">
+            <label for="content">Content <span class="char-count">(<span id="char-count">0</span> / 15000)</span></label>
+            <textarea
+                id="content"
+                name="content"
+                rows="15"
+                maxlength="15000"
+                placeholder="Enter information, insights, or research notes..."></textarea>
+        </div>
+
+        <!-- Keywords -->
+        <div class="form-group">
+            <label for="keywords">Keywords <span class="optional">(comma-separated)</span></label>
+            <input type="text" id="keywords" name="keywords" placeholder="e.g., xrp, prediction, market">
+        </div>
+
+        <!-- Research Attachments -->
+        <div class="form-group">
+            <label>Attach Research</label>
+            <div class="research-attachments" id="research-attachments">
+                <div class="research-item">
+                    <input type="url" placeholder="URL (article, paper, tweet...)" class="research-url">
+                    <input type="text" placeholder="Brief description" class="research-desc">
+                    <button type="button" class="btn-remove" onclick="this.parentElement.remove()">&times;</button>
+                </div>
+            </div>
+            <button type="button" class="btn-add-research" onclick="addResearchItem()">+ Add another URL</button>
+        </div>
+
+        <!-- Priority -->
+        <div class="form-group">
+            <label for="priority">Priority</label>
+            <div class="priority-buttons">
+                <label class="priority-option">
+                    <input type="radio" name="priority" value="low"> Low
+                </label>
+                <label class="priority-option selected">
+                    <input type="radio" name="priority" value="normal" checked> Normal
+                </label>
+                <label class="priority-option">
+                    <input type="radio" name="priority" value="high"> High
+                </label>
+            </div>
+        </div>
+
+        <!-- Submit -->
+        <div class="form-actions">
+            <button type="submit" class="btn-submit" id="submit-btn">
+                <span class="btn-text">Store in Chronicle</span>
+                <span class="btn-loading" style="display:none;">Storing...</span>
+            </button>
+            <div class="submit-status" id="submit-status"></div>
+        </div>
+    </form>
+
+    <!-- Recent Submissions -->
+    <div class="recent-submissions" id="recent-submissions">
+        <h3>Recent Submissions</h3>
+        <div class="submissions-list" id="submissions-list">
+            <p class="empty-state">No recent submissions this session</p>
+        </div>
+    </div>
+</div>
+
+<style>
+.input-page {
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.input-form {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.form-group {
+    margin-bottom: 1.25rem;
+}
+
+.form-group label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    color: var(--fg);
+}
+
+.form-group .optional,
+.form-group .char-count {
+    font-weight: normal;
+    color: var(--fg-dim);
+    font-size: 0.85rem;
+}
+
+.form-group input[type="text"],
+.form-group input[type="url"],
+.form-group textarea,
+.form-group select {
+    width: 100%;
+    padding: 0.75rem;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--fg);
+    font-family: inherit;
+    font-size: 0.95rem;
+    transition: border-color 0.2s;
+}
+
+.form-group input:focus,
+.form-group textarea:focus,
+.form-group select:focus {
+    outline: none;
+    border-color: var(--accent);
+}
+
+.form-group textarea {
+    resize: vertical;
+    min-height: 200px;
+    line-height: 1.6;
+}
+
+/* Research Attachments */
+.research-attachments {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.research-item {
+    display: grid;
+    grid-template-columns: 1fr 1fr auto;
+    gap: 0.5rem;
+}
+
+.research-item input {
+    padding: 0.5rem 0.75rem;
+}
+
+.btn-remove {
+    background: var(--danger);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    width: 32px;
+    cursor: pointer;
+    font-size: 1.2rem;
+}
+
+.btn-add-research {
+    background: transparent;
+    color: var(--accent);
+    border: 1px dashed var(--border);
+    border-radius: 6px;
+    padding: 0.5rem 1rem;
+    cursor: pointer;
+    margin-top: 0.5rem;
+    transition: all 0.2s;
+}
+
+.btn-add-research:hover {
+    border-color: var(--accent);
+    background: var(--accent-glow);
+}
+
+/* Priority Buttons */
+.priority-buttons {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.priority-option {
+    flex: 1;
+    text-align: center;
+    padding: 0.5rem 1rem;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.priority-option:hover {
+    border-color: var(--accent);
+}
+
+.priority-option.selected,
+.priority-option:has(input:checked) {
+    background: var(--accent-glow);
+    border-color: var(--accent);
+    color: var(--accent);
+}
+
+.priority-option input {
+    display: none;
+}
+
+/* Submit */
+.form-actions {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-top: 1.5rem;
+}
+
+.btn-submit {
+    background: linear-gradient(135deg, var(--accent), var(--accent-secondary));
+    color: white;
+    border: none;
+    padding: 0.875rem 2rem;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-submit:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 16px rgba(74, 158, 255, 0.3);
+}
+
+.btn-submit:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.submit-status {
+    color: var(--fg-dim);
+    font-size: 0.9rem;
+}
+
+.submit-status.success {
+    color: var(--success);
+}
+
+.submit-status.error {
+    color: var(--danger);
+}
+
+/* Recent Submissions */
+.recent-submissions {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.25rem;
+}
+
+.recent-submissions h3 {
+    margin: 0 0 1rem 0;
+    font-size: 1rem;
+}
+
+.submissions-list .empty-state {
+    color: var(--fg-dim);
+    font-style: italic;
+}
+
+.submission-item {
+    padding: 0.75rem;
+    background: var(--bg);
+    border-radius: 6px;
+    margin-bottom: 0.5rem;
+}
+
+.submission-item:last-child {
+    margin-bottom: 0;
+}
+
+.submission-topic {
+    font-size: 0.75rem;
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.submission-preview {
+    color: var(--fg);
+    margin: 0.25rem 0;
+    font-size: 0.9rem;
+}
+
+.submission-time {
+    font-size: 0.75rem;
+    color: var(--fg-dim);
+}
+
+@media (max-width: 600px) {
+    .research-item {
+        grid-template-columns: 1fr;
+    }
+
+    .priority-buttons {
+        flex-direction: column;
+    }
+}
+</style>
+
+<script>
+const CANISTER_ID = 'fqqku-bqaaa-aaaai-q4wha-cai';
+const BACKEND_URL = `https://${CANISTER_ID}.raw.icp0.io`;
+
+// Character count
+const contentEl = document.getElementById('content');
+const charCountEl = document.getElementById('char-count');
+
+contentEl.addEventListener('input', () => {
+    charCountEl.textContent = contentEl.value.length;
+});
+
+// Add research item
+function addResearchItem() {
+    const container = document.getElementById('research-attachments');
+    const item = document.createElement('div');
+    item.className = 'research-item';
+    item.innerHTML = `
+        <input type="url" placeholder="URL (article, paper, tweet...)" class="research-url">
+        <input type="text" placeholder="Brief description" class="research-desc">
+        <button type="button" class="btn-remove" onclick="this.parentElement.remove()">&times;</button>
+    `;
+    container.appendChild(item);
+}
+
+// Priority button handling
+document.querySelectorAll('.priority-option').forEach(opt => {
+    opt.addEventListener('click', () => {
+        document.querySelectorAll('.priority-option').forEach(o => o.classList.remove('selected'));
+        opt.classList.add('selected');
+    });
+});
+
+// Session submissions
+const submissions = [];
+
+function addToRecent(topic, content) {
+    submissions.unshift({ topic, content, time: new Date() });
+    if (submissions.length > 5) submissions.pop();
+
+    const list = document.getElementById('submissions-list');
+    list.innerHTML = submissions.map(s => `
+        <div class="submission-item">
+            <div class="submission-topic">${s.topic}</div>
+            <div class="submission-preview">${s.content.substring(0, 100)}${s.content.length > 100 ? '...' : ''}</div>
+            <div class="submission-time">${s.time.toLocaleTimeString()}</div>
+        </div>
+    `).join('');
+}
+
+// Form submission
+document.getElementById('input-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const btn = document.getElementById('submit-btn');
+    const status = document.getElementById('submit-status');
+    const btnText = btn.querySelector('.btn-text');
+    const btnLoading = btn.querySelector('.btn-loading');
+
+    btn.disabled = true;
+    btnText.style.display = 'none';
+    btnLoading.style.display = 'inline';
+    status.textContent = '';
+    status.className = 'submit-status';
+
+    try {
+        const content = document.getElementById('content').value.trim();
+        const topic = document.getElementById('topic').value;
+        const keywordsRaw = document.getElementById('keywords').value;
+        const priority = document.querySelector('input[name="priority"]:checked').value;
+
+        if (!content) {
+            throw new Error('Content is required');
+        }
+
+        // Gather research URLs
+        const researchItems = [];
+        document.querySelectorAll('.research-item').forEach(item => {
+            const url = item.querySelector('.research-url').value.trim();
+            const desc = item.querySelector('.research-desc').value.trim();
+            if (url) {
+                researchItems.push({ url, description: desc });
+            }
+        });
+
+        // Build full content with research
+        let fullContent = content;
+        if (researchItems.length > 0) {
+            fullContent += '\n\n---\nResearch References:\n';
+            researchItems.forEach((r, i) => {
+                fullContent += `${i + 1}. ${r.url}${r.description ? ' - ' + r.description : ''}\n`;
+            });
+        }
+
+        // Parse keywords
+        const keywords = keywordsRaw.split(',').map(k => k.trim()).filter(k => k);
+        if (priority === 'high') keywords.push('priority:high');
+        if (priority === 'low') keywords.push('priority:low');
+
+        // Submit to canister (using public /api/feed endpoint)
+        const response = await fetch(`${BACKEND_URL}/api/feed`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                content: fullContent,
+                topic: topic,
+                keywords: keywords,
+                persons: []
+            })
+        });
+
+        if (!response.ok) {
+            const errText = await response.text();
+            throw new Error(errText || 'Failed to store');
+        }
+
+        const result = await response.json();
+
+        status.textContent = `Stored as capsule #${result.id || 'success'}`;
+        status.className = 'submit-status success';
+
+        // Add to recent and clear form
+        addToRecent(topic, content);
+        document.getElementById('content').value = '';
+        document.getElementById('keywords').value = '';
+        charCountEl.textContent = '0';
+
+        // Clear research items except first
+        const researchContainer = document.getElementById('research-attachments');
+        while (researchContainer.children.length > 1) {
+            researchContainer.lastChild.remove();
+        }
+        researchContainer.querySelector('.research-url').value = '';
+        researchContainer.querySelector('.research-desc').value = '';
+
+    } catch (err) {
+        status.textContent = `Error: ${err.message}`;
+        status.className = 'submit-status error';
+        console.error('Submit error:', err);
+    } finally {
+        btn.disabled = false;
+        btnText.style.display = 'inline';
+        btnLoading.style.display = 'none';
+    }
+});
+</script>
+{% endblock %}

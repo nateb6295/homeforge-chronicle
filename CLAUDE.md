@@ -4,24 +4,24 @@ Automated life-archive system that transforms Claude conversation exports into a
 
 ## Workflow
 
-1. **Ingest**: `./target/release/chronicle ingest-bulk /home/bradf/claude-exports/conversations.json`
+1. **Ingest**: `./target/release/chronicle ingest-bulk ~/claude-exports/conversations.json`
 2. **Extract**: Ask Claude to extract (uses Max plan, not separate API billing)
 3. **Build**: `./target/release/chronicle build`
 4. **Deploy**: User runs `chronicle deploy` manually (requires dfx passphrase)
 
 ## Key Paths
 
-- Watch directory: `/home/bradf/claude-exports/`
-- Database: `/home/bradf/.homeforge-chronicle/processed.db`
-- Build output: `/home/bradf/.homeforge-chronicle/build/`
-- Canister ID: `nbt4b-giaaa-aaaai-q33lq-cai`
+- Watch directory: `~/claude-exports/`
+- Database: `~/.homeforge-chronicle/processed.db`
+- Build output: `~/.homeforge-chronicle/build/`
+- Canister ID: Set via `CHRONICLE_CANISTER_ID` env var
 
 ## Extraction Format
 
 When extracting conversations, generate:
 - **title**: <10 words
 - **summary**: 2-3 sentences, preserve original voice
-- **themes**: from [lattice, homeforge, icp, xrp, ai-agency, construction, family] or new relevant ones
+- **themes**: customizable theme list
 - **classification**: prediction | insight | milestone | reflection | technical
 - **key_quotes**: verbatim excerpts capturing essential thinking
 - **confidence_score**: 0.0-1.0 (how substantive vs casual)
@@ -43,7 +43,15 @@ INSERT INTO quotes (extraction_id, content) VALUES (?, ?);
 ## Deploy Command
 
 ```bash
-DFX_WARNING=-mainnet_plaintext_identity dfx deploy --network ic --identity chronicle-auto
+DFX_WARNING=-mainnet_plaintext_identity dfx deploy --network ic --identity <your-identity>
 ```
 
-Identity `chronicle-auto` (principal: `kalce-s3e7q-ob55s-ttoe7-z2x5y-x3tof-onliz-2gaad-zsh3w-etvve-rqe`) has controller + asset permissions.
+Your dfx identity needs controller + asset permissions on the canister.
+
+## Environment Variables
+
+- `CHRONICLE_CANISTER_ID` - Your ICP canister ID
+- `CHRONICLE_IDENTITY` - dfx identity name
+- `CHRONICLE_OLLAMA_URL` - Ollama server for embeddings (default: http://localhost:11434)
+- `CHRONICLE_EMBEDDING_MODEL` - Embedding model (default: mxbai-embed-large)
+- `ANTHROPIC_API_KEY` - For the Mind cognitive loop

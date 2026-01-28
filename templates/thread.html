@@ -5,21 +5,39 @@
 {% block description %}Thread: {{ theme }} - Evolution of thinking over time{% endblock %}
 
 {% block content %}
-<h2>Theme: {{ theme }}</h2>
+<div class="section-header">
+    <h2>{{ theme }}</h2>
+    <a href="/threads/" class="view-all">&larr; All threads</a>
+</div>
 
-<p style="color: var(--muted); margin-bottom: 2rem;">
-    Evolution from {{ date_start }} to {{ date_end }} • {{ entry_count }} entries
-</p>
+<div class="stats-grid" style="margin-bottom: 2rem;">
+    <div class="stat-card accent">
+        <div class="stat-label">Entries</div>
+        <div class="stat-value">{{ entry_count }}</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-label">Started</div>
+        <div class="stat-value" style="font-size: 1.5rem;">{{ date_start }}</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-label">Latest</div>
+        <div class="stat-value" style="font-size: 1.5rem;">{{ date_end }}</div>
+    </div>
+</div>
 
+<div class="entry-list">
 {% for entry in entries %}
 <div class="entry">
-    <div class="entry-meta">
-        {{ entry.date }}
+    <div class="entry-header">
+        <h3 class="entry-title">{{ entry.title }}</h3>
+        <div class="entry-meta">
+            <span class="entry-date">{{ entry.date }}</span>
+            <span class="entry-classification {{ entry.classification }}">{{ entry.classification }}</span>
+        </div>
     </div>
-    <h3 class="entry-title">{{ entry.title }}</h3>
-    <p>{{ entry.summary }}</p>
+    <p class="entry-summary">{{ entry.summary }}</p>
     {% if !entry.quotes.is_empty() %}
-    <div style="margin-top: 1rem;">
+    <div class="entry-quotes">
         {% for quote in entry.quotes %}
         <blockquote>{{ quote }}</blockquote>
         {% endfor %}
@@ -27,8 +45,5 @@
     {% endif %}
 </div>
 {% endfor %}
-
-<p style="text-align: center; margin-top: 2rem;">
-    <a href="/threads/">← Back to all threads</a>
-</p>
+</div>
 {% endblock %}

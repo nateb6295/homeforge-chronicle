@@ -1,0 +1,137 @@
+type KnowledgeCapsule = record {
+    id: nat64;
+    conversation_id: text;
+    restatement: text;
+    timestamp: opt text;
+    location: opt text;
+    topic: opt text;
+    confidence_score: float64;
+    persons: vec text;
+    entities: vec text;
+    keywords: vec text;
+    created_at: nat64;
+};
+
+type CapsuleEmbedding = record {
+    capsule_id: nat64;
+    embedding: vec float32;
+    model_name: text;
+};
+
+type SearchResult = record {
+    capsule: KnowledgeCapsule;
+    score: float64;
+};
+
+// Agent-to-Agent Messaging Types (v11)
+type AgentIdentity = record {
+    canister_id: principal;
+    name: text;
+    agent_type: text;
+    description: opt text;
+    capabilities: vec text;
+    http_endpoint: opt text;
+};
+
+type MessageType = variant {
+    Query;
+    ActionRequest;
+    Information;
+    Conversation;
+    GoalAssignment;
+};
+
+type AgentMessage = record {
+    id: nat64;
+    thread_id: nat64;
+    in_reply_to: opt nat64;
+    sender: AgentIdentity;
+    msg_type: MessageType;
+    subject: opt text;
+    content: text;
+    metadata: opt text;
+    timestamp: nat64;
+    expects_reply: bool;
+    read: bool;
+    replied: bool;
+};
+
+type ConversationThread = record {
+    id: nat64;
+    subject: text;
+    participants: vec principal;
+    created_at: nat64;
+    last_activity: nat64;
+    message_count: nat64;
+};
+
+type RegisteredAgent = record {
+    identity: AgentIdentity;
+    registered_at: nat64;
+    last_contact: opt nat64;
+    notes: opt text;
+    trust_level: nat8;
+};
+
+service : {
+    // Knowledge Capsule methods
+    add_capsule: (
+        conversation_id: text,
+        restatement: text,
+        timestamp: opt text,
+        location: opt text,
+        topic: opt text,
+        confidence_score: float64,
+        persons: vec text,
+        entities: vec text,
+        keywords: vec text
+    ) -> (nat64);
+    add_embedding: (capsule_id: nat64, embedding: vec float32, model_name: text) -> (bool);
+    add_capsules_bulk: (capsules: vec KnowledgeCapsule) -> (vec nat64);
+    get_capsule_count: () -> (nat64) query;
+    get_embedding_count: () -> (nat64) query;
+    get_capsule: (id: nat64) -> (opt KnowledgeCapsule) query;
+    get_recent_capsules: (limit: nat64) -> (vec KnowledgeCapsule) query;
+    search_by_keyword: (keyword: text, limit: nat64) -> (vec KnowledgeCapsule) query;
+    search_by_person: (person: text, limit: nat64) -> (vec KnowledgeCapsule) query;
+    get_all_embeddings: () -> (vec CapsuleEmbedding) query;
+    get_embedding: (capsule_id: nat64) -> (opt CapsuleEmbedding) query;
+    health: () -> (text) query;
+
+    // Agent-to-Agent Messaging (v11)
+    init_messaging: (name: text, agent_type: text, description: opt text, capabilities: vec text) -> (text);
+    get_messaging_identity: () -> (opt AgentIdentity) query;
+
+    agent_send_message: (
+        sender_name: text,
+        sender_type: text,
+        sender_canister: opt principal,
+        msg_type: text,
+        subject: opt text,
+        content: text,
+        thread_id: opt nat64,
+        in_reply_to: opt nat64,
+        expects_reply: bool
+    ) -> (text);
+
+    agent_reply: (original_message_id: nat64, content: text) -> (text);
+    agent_get_inbox: (include_read: bool, limit: nat64) -> (vec AgentMessage) query;
+    agent_get_outbox: (limit: nat64) -> (vec AgentMessage) query;
+    agent_get_thread: (thread_id: nat64) -> (text) query;
+    agent_list_threads: (limit: nat64) -> (vec ConversationThread) query;
+    agent_mark_read: (message_id: nat64) -> (bool);
+
+    agent_register: (
+        canister_id: principal,
+        name: text,
+        agent_type: text,
+        description: opt text,
+        capabilities: vec text,
+        http_endpoint: opt text,
+        notes: opt text,
+        trust_level: nat8
+    ) -> (text);
+
+    agent_list_known: () -> (vec RegisteredAgent) query;
+    agent_messaging_stats: () -> (text) query;
+}

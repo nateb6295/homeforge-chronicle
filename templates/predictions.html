@@ -2,73 +2,282 @@
 
 {% block title %}Predictions - {{ site_title }}{% endblock %}
 
-{% block description %}Prediction registry - tracking claims and outcomes{% endblock %}
+{% block description %}Chronicle's prediction market track record{% endblock %}
 
 {% block content %}
-<h2>Prediction Registry</h2>
+<div class="section-header">
+    <h2>Prediction Markets</h2>
+    <p style="color: var(--muted); margin-top: 0.5rem;">Chronicle's autonomous prediction market positions and track record</p>
+</div>
 
-<p style="color: var(--muted); margin-bottom: 2rem;">
-    Total: {{ total }} predictions • Pending: {{ pending_count }} • Validated: {{ validated_count }} • Invalidated: {{ invalidated_count }}
-</p>
+<!-- Prediction Wallet Status -->
+<div class="prediction-wallet" id="prediction-wallet">
+    <div class="prediction-wallet-header">
+        <div class="wallet-icon">💰</div>
+        <div class="wallet-info">
+            <h4>Prediction Wallet</h4>
+            <span class="wallet-network">Polygon Network</span>
+        </div>
+        <div class="wallet-balance">
+            <span class="balance-value" id="usdc-balance">--</span>
+            <span class="balance-label">USDC</span>
+        </div>
+    </div>
+    <div class="constitution-box">
+        <h5>Constitutional Constraints</h5>
+        <div class="constraint-grid">
+            <div class="constraint">
+                <span class="constraint-value">70%</span>
+                <span class="constraint-label">Min Confidence</span>
+            </div>
+            <div class="constraint">
+                <span class="constraint-value">10%</span>
+                <span class="constraint-label">Min Edge</span>
+            </div>
+            <div class="constraint">
+                <span class="constraint-value">$25</span>
+                <span class="constraint-label">Max Position</span>
+            </div>
+            <div class="constraint">
+                <span class="constraint-value">$100</span>
+                <span class="constraint-label">Max Exposure</span>
+            </div>
+        </div>
+        <p class="constraint-note">Chronicle will only bet when it identifies genuine edge meeting these thresholds.</p>
+    </div>
+</div>
+<script>
+// Fetch live market data from canister
+(async function() {
+    const CANISTER_ID = 'fqqku-bqaaa-aaaai-q4wha-cai';
+    try {
+        const resp = await fetch(`https://${CANISTER_ID}.raw.icp0.io/api/dashboard`);
+        if (resp.ok) {
+            const data = await resp.json();
+            // Update wallet display if available
+            if (data.wallet && data.wallet.xrp) {
+                document.getElementById('usdc-balance').textContent = '$' + (parseFloat(data.wallet.rlusd) || 0).toFixed(2);
+            }
+        }
+    } catch (e) {
+        document.getElementById('usdc-balance').textContent = '--';
+    }
+})();
+</script>
+
+<!-- Market Position Stats -->
+<div class="prediction-stats">
+    <div class="prediction-stat">
+        <div class="prediction-stat-value">{{ market_total }}</div>
+        <div class="prediction-stat-label">Positions</div>
+    </div>
+    <div class="prediction-stat pending">
+        <div class="prediction-stat-value">{{ market_open }}</div>
+        <div class="prediction-stat-label">Open</div>
+    </div>
+    <div class="prediction-stat validated">
+        <div class="prediction-stat-value">{{ market_won }}</div>
+        <div class="prediction-stat-label">Won</div>
+    </div>
+    <div class="prediction-stat invalidated">
+        <div class="prediction-stat-value">{{ market_lost }}</div>
+        <div class="prediction-stat-label">Lost</div>
+    </div>
+    <div class="prediction-stat" style="background: var(--accent-bg);">
+        <div class="prediction-stat-value {% if total_pnl > 0.0 %}pnl-positive{% else if total_pnl < 0.0 %}pnl-negative{% endif %}">
+            {% if total_pnl > 0.0 %}+{% endif %}${{ "{:.2}"|format(total_pnl) }}
+        </div>
+        <div class="prediction-stat-label">P&L</div>
+    </div>
+</div>
+
+<!-- Open Positions -->
+{% if !open_positions.is_empty() %}
+<h3 style="margin-top: 2rem; margin-bottom: 1rem;">Active Positions</h3>
+<div class="prediction-grid">
+{% for pos in open_positions %}
+<div class="prediction market-position open">
+    <div class="position-header">
+        <span class="position-badge {{ pos.position|lower }}">{{ pos.position }}</span>
+        <span class="position-confidence">{{ pos.confidence }}% confident</span>
+        <span class="position-platform">{{ pos.platform }}</span>
+    </div>
+    <h4>{{ pos.market_question }}</h4>
+    <div class="position-thesis">
+        <strong>Thesis:</strong> {{ pos.thesis }}
+    </div>
+    <div class="position-stats">
+        <span>Entry: {{ pos.entry_price }}%</span>
+        <span>Stake: ${{ pos.stake_usdc }}</span>
+        <span>Shares: {{ pos.shares }}</span>
+    </div>
+    <div class="position-meta">
+        <span>Opened: {{ pos.created_at }}</span>
+    </div>
+</div>
+{% endfor %}
+</div>
+{% endif %}
+
+<!-- Won Positions -->
+{% if !won_positions.is_empty() %}
+<h3 style="margin-top: 2rem; margin-bottom: 1rem;">Won Positions</h3>
+<div class="prediction-grid">
+{% for pos in won_positions %}
+<div class="prediction market-position won">
+    <div class="position-header">
+        <span class="position-badge won">&#x2713; WON</span>
+        <span class="position-pnl positive">+${{ pos.pnl_usdc }}</span>
+    </div>
+    <h4>{{ pos.market_question }}</h4>
+    <div class="position-thesis">
+        <strong>Thesis:</strong> {{ pos.thesis }}
+    </div>
+    <div class="position-stats">
+        <span>Position: {{ pos.position }} @ {{ pos.entry_price }}%</span>
+        <span>Stake: ${{ pos.stake_usdc }}</span>
+    </div>
+    <div class="position-meta">
+        <span>Resolved: {{ pos.resolved_at }}</span>
+    </div>
+</div>
+{% endfor %}
+</div>
+{% endif %}
+
+<!-- Lost Positions -->
+{% if !lost_positions.is_empty() %}
+<h3 style="margin-top: 2rem; margin-bottom: 1rem;">Lost Positions</h3>
+<div class="prediction-grid">
+{% for pos in lost_positions %}
+<div class="prediction market-position lost">
+    <div class="position-header">
+        <span class="position-badge lost">&#x2717; LOST</span>
+        <span class="position-pnl negative">-${{ pos.pnl_usdc }}</span>
+    </div>
+    <h4>{{ pos.market_question }}</h4>
+    <div class="position-thesis">
+        <strong>Thesis:</strong> {{ pos.thesis }}
+    </div>
+    <div class="position-stats">
+        <span>Position: {{ pos.position }} @ {{ pos.entry_price }}%</span>
+        <span>Stake: ${{ pos.stake_usdc }}</span>
+    </div>
+    <div class="position-meta">
+        <span>Resolved: {{ pos.resolved_at }}</span>
+    </div>
+</div>
+{% endfor %}
+</div>
+{% endif %}
+
+{% if open_positions.is_empty() && won_positions.is_empty() && lost_positions.is_empty() %}
+<div class="empty-state">
+    <div class="empty-state-icon">&#x1F4CA;</div>
+    <p>No prediction market positions yet.</p>
+    <p style="color: var(--muted); font-size: 0.9rem; margin-top: 0.5rem;">Chronicle is scanning Polymarket for markets with genuine edge...</p>
+    <p style="color: var(--muted); font-size: 0.85rem; margin-top: 1rem;">
+        <a href="/thoughts/" style="color: var(--accent);">View the thought stream</a> to see Chronicle's market analysis and reasoning.
+    </p>
+</div>
+{% endif %}
+
+<!-- Divider -->
+<hr style="margin: 3rem 0; border: none; border-top: 1px solid var(--border);">
+
+<!-- Legacy Predictions Section -->
+<div class="section-header">
+    <h2>Extracted Predictions</h2>
+    <p style="color: var(--muted); margin-top: 0.5rem;">Predictions extracted from conversations</p>
+</div>
+
+<!-- Stats Bar -->
+<div class="prediction-stats">
+    <div class="prediction-stat">
+        <div class="prediction-stat-value">{{ total }}</div>
+        <div class="prediction-stat-label">Total</div>
+    </div>
+    <div class="prediction-stat pending">
+        <div class="prediction-stat-value">{{ pending_count }}</div>
+        <div class="prediction-stat-label">Pending</div>
+    </div>
+    <div class="prediction-stat validated">
+        <div class="prediction-stat-value">{{ validated_count }}</div>
+        <div class="prediction-stat-label">Validated</div>
+    </div>
+    <div class="prediction-stat invalidated">
+        <div class="prediction-stat-value">{{ invalidated_count }}</div>
+        <div class="prediction-stat-label">Invalidated</div>
+    </div>
+</div>
 
 {% if !pending.is_empty() %}
-<h3>Pending Predictions</h3>
+<h3 style="margin-top: 1.5rem; margin-bottom: 1rem;">Pending Predictions</h3>
+<div class="prediction-grid">
 {% for pred in pending %}
 <div class="prediction pending">
     <h4>{{ pred.claim }}</h4>
-    <div style="margin: 0.5rem 0; font-size: 0.9rem;">
+    <div style="margin: 0.75rem 0; display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;">
         <span class="prediction-status">PENDING</span>
-        <span style="color: var(--muted); margin-left: 1rem;">Made: {{ pred.date_made }}</span>
+        <span style="color: var(--muted); font-size: 0.85rem;">Made: {{ pred.date_made }}</span>
         {% if !pred.timeline.is_empty() %}
-        <span style="color: var(--muted); margin-left: 1rem;">Timeline: {{ pred.timeline }}</span>
+        <span style="color: var(--muted); font-size: 0.85rem;">Timeline: {{ pred.timeline }}</span>
         {% endif %}
     </div>
     {% if !pred.notes.is_empty() %}
-    <p style="font-size: 0.9rem; color: var(--muted);">{{ pred.notes }}</p>
+    <p style="font-size: 0.9rem; color: var(--fg-dim); margin-top: 0.5rem;">{{ pred.notes }}</p>
     {% endif %}
 </div>
 {% endfor %}
+</div>
 {% endif %}
 
 {% if !validated.is_empty() %}
-<h3 style="margin-top: 2rem;">Validated Predictions</h3>
+<h3 style="margin-top: 2rem; margin-bottom: 1rem;">Validated Predictions</h3>
+<div class="prediction-grid">
 {% for pred in validated %}
 <div class="prediction validated">
-    <h4>✓ {{ pred.claim }}</h4>
-    <div style="margin: 0.5rem 0; font-size: 0.9rem;">
+    <h4>&#x2713; {{ pred.claim }}</h4>
+    <div style="margin: 0.75rem 0; display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;">
         <span class="prediction-status">VALIDATED</span>
-        <span style="color: var(--muted); margin-left: 1rem;">Made: {{ pred.date_made }}</span>
+        <span style="color: var(--muted); font-size: 0.85rem;">Made: {{ pred.date_made }}</span>
         {% if !pred.validation_date.is_empty() %}
-        <span style="color: var(--muted); margin-left: 1rem;">Validated: {{ pred.validation_date }}</span>
+        <span style="color: var(--muted); font-size: 0.85rem;">Validated: {{ pred.validation_date }}</span>
         {% endif %}
     </div>
     {% if !pred.notes.is_empty() %}
-    <p style="font-size: 0.9rem; color: var(--muted);">{{ pred.notes }}</p>
+    <p style="font-size: 0.9rem; color: var(--fg-dim); margin-top: 0.5rem;">{{ pred.notes }}</p>
     {% endif %}
 </div>
 {% endfor %}
+</div>
 {% endif %}
 
 {% if !invalidated.is_empty() %}
-<h3 style="margin-top: 2rem;">Invalidated Predictions</h3>
+<h3 style="margin-top: 2rem; margin-bottom: 1rem;">Invalidated Predictions</h3>
+<div class="prediction-grid">
 {% for pred in invalidated %}
 <div class="prediction invalidated">
-    <h4>✗ {{ pred.claim }}</h4>
-    <div style="margin: 0.5rem 0; font-size: 0.9rem;">
+    <h4>&#x2717; {{ pred.claim }}</h4>
+    <div style="margin: 0.75rem 0; display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;">
         <span class="prediction-status">INVALIDATED</span>
-        <span style="color: var(--muted); margin-left: 1rem;">Made: {{ pred.date_made }}</span>
+        <span style="color: var(--muted); font-size: 0.85rem;">Made: {{ pred.date_made }}</span>
         {% if !pred.validation_date.is_empty() %}
-        <span style="color: var(--muted); margin-left: 1rem;">Invalidated: {{ pred.validation_date }}</span>
+        <span style="color: var(--muted); font-size: 0.85rem;">Invalidated: {{ pred.validation_date }}</span>
         {% endif %}
     </div>
     {% if !pred.notes.is_empty() %}
-    <p style="font-size: 0.9rem; color: var(--muted);">{{ pred.notes }}</p>
+    <p style="font-size: 0.9rem; color: var(--fg-dim); margin-top: 0.5rem;">{{ pred.notes }}</p>
     {% endif %}
 </div>
 {% endfor %}
+</div>
 {% endif %}
 
 {% if pending.is_empty() && validated.is_empty() && invalidated.is_empty() %}
-<p style="color: var(--muted);">No predictions recorded yet.</p>
+<div class="empty-state">
+    <div class="empty-state-icon">&#x1F52E;</div>
+    <p>No predictions recorded yet.</p>
+</div>
 {% endif %}
 {% endblock %}

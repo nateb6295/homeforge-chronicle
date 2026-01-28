@@ -3,30 +3,40 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}Homeforge Chronicle{% endblock %}</title>
+    <title>{% block title %}Chronicle{% endblock %}</title>
     <link rel="stylesheet" href="/style.css">
     <link rel="alternate" type="application/rss+xml" title="RSS Feed" href="/feed.xml">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <meta name="description" content="{% block description %}An automated life-archive system{% endblock %}">
 </head>
 <body>
     <header>
-        <h1><a href="/" style="color: inherit;">{{ site_title }}</a></h1>
-        <nav>
-            <a href="/" {% if page == "index" %}class="active"{% endif %}>Recent</a>
-            <a href="/threads/" {% if page == "threads" %}class="active"{% endif %}>Threads</a>
-            <a href="/predictions/" {% if page == "predictions" %}class="active"{% endif %}>Predictions</a>
-            <a href="/about.html" {% if page == "about" %}class="active"{% endif %}>About</a>
-            <a href="/feed.xml">RSS</a>
-        </nav>
+        <div class="container">
+            <h1><a href="/"><span class="logo-icon">&#x25C8;</span> {{ site_title }}</a></h1>
+            <nav>
+                <a href="/" {% if page == "index" %}class="active"{% endif %}>Dashboard</a>
+                <a href="/input/" {% if page == "input" %}class="active"{% endif %}>Input</a>
+                <a href="/thoughts/" {% if page == "thoughts" %}class="active"{% endif %}>Thoughts</a>
+                <a href="/outbox/" {% if page == "outbox" %}class="active"{% endif %}>Outbox</a>
+                <a href="/threads/" {% if page == "threads" %}class="active"{% endif %}>Threads</a>
+                <a href="/wallet/" {% if page == "wallet" %}class="active"{% endif %}>Wallet</a>
+                <a href="/about.html" {% if page == "about" %}class="active"{% endif %}>About</a>
+                <a href="/feed.xml">RSS</a>
+            </nav>
+        </div>
     </header>
 
-    <main>
+    <main class="container">
         {% block content %}{% endblock %}
     </main>
 
     <footer>
-        <p>Generated with Homeforge Chronicle | {{ author }}</p>
-        <p style="font-size: 0.8rem; margin-top: 0.5rem;">Raw over polished. Exhaust, not effort.</p>
+        <div class="container">
+            <p>{{ site_title }} | {{ author }}</p>
+            <p>Raw over polished. Exhaust, not effort.</p>
+        </div>
     </footer>
 </body>
 </html>

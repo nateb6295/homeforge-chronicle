@@ -1,0 +1,287 @@
+{% extends "base.html" %}
+
+{% block title %}{{ site_title }} - Outbox{% endblock %}
+{% block description %}Messages from Chronicle to Nate{% endblock %}
+
+{% block content %}
+<section class="outbox-page">
+    <div class="section-header">
+        <h2>Outbox</h2>
+        <span class="section-subtitle">Messages from the cognitive loop</span>
+    </div>
+
+    <p class="section-description">
+        These are thoughts, observations, questions, and insights that emerged during autonomous operation.
+        Chronicle leaves messages here when it has something to share with Nate.
+    </p>
+
+    <div class="stats-bar">
+        <div class="stat">
+            <span class="stat-value {% if unread_count > 0 %}highlight{% endif %}">{{ unread_count }}</span>
+            <span class="stat-label">Unread</span>
+        </div>
+        <div class="stat">
+            <span class="stat-value">{{ total_messages }}</span>
+            <span class="stat-label">Total Messages</span>
+        </div>
+    </div>
+
+    {% if total_messages == 0 %}
+    <div class="empty-state">
+        <div class="empty-icon">📭</div>
+        <p>No messages yet. The cognitive loop will leave messages here when it has something to share.</p>
+    </div>
+    {% else %}
+    <div class="messages-list">
+        {% for msg in messages %}
+        <article class="message-entry {% if msg.acknowledged %}read{% else %}unread{% endif %}">
+            <header class="message-header">
+                <div class="message-meta">
+                    <span class="message-category">{{ msg.category }}</span>
+                    <span class="message-priority priority-{{ msg.priority }}">
+                        {% if msg.priority >= 8 %}Urgent{% else if msg.priority >= 5 %}Important{% else %}Normal{% endif %}
+                    </span>
+                </div>
+                <time class="message-time">{{ msg.timestamp }}</time>
+            </header>
+            <div class="message-content">
+                {{ msg.message }}
+            </div>
+            {% if msg.acknowledged %}
+            <div class="message-status">
+                <span class="status-icon">&#10003;</span> Acknowledged {{ msg.read_at }}
+            </div>
+            {% endif %}
+        </article>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <div class="outbox-actions">
+        <button class="btn-acknowledge" id="acknowledge-all" style="display: {% if unread_count > 0 %}block{% else %}none{% endif %};">
+            Acknowledge All Unread
+        </button>
+    </div>
+</section>
+
+<script>
+const CANISTER_ID = 'fqqku-bqaaa-aaaai-q4wha-cai';
+
+document.getElementById('acknowledge-all')?.addEventListener('click', async () => {
+    const btn = document.getElementById('acknowledge-all');
+    btn.textContent = 'Acknowledging...';
+    btn.disabled = true;
+
+    try {
+        // This would need to call the canister to acknowledge messages
+        // For now, just show feedback
+        await new Promise(r => setTimeout(r, 1000));
+        btn.textContent = 'Done!';
+        setTimeout(() => location.reload(), 500);
+    } catch (e) {
+        btn.textContent = 'Error - try again';
+        btn.disabled = false;
+    }
+});
+</script>
+
+<style>
+.outbox-page {
+    max-width: 900px;
+    margin: 0 auto;
+}
+
+.section-description {
+    color: var(--fg-dim);
+    margin-bottom: 2rem;
+    line-height: 1.6;
+}
+
+.stats-bar {
+    display: flex;
+    gap: 2rem;
+    margin-bottom: 2rem;
+    padding: 1.25rem;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+}
+
+.stat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex: 1;
+}
+
+.stat-value {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: var(--accent);
+}
+
+.stat-value.highlight {
+    color: var(--warning);
+    animation: pulse-glow 2s ease-in-out infinite;
+}
+
+.stat-label {
+    font-size: 0.8rem;
+    color: var(--fg-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 3rem;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    color: var(--fg-dim);
+}
+
+.empty-icon {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+}
+
+.messages-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.message-entry {
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.25rem;
+    background: var(--bg-card);
+    transition: all 0.2s;
+}
+
+.message-entry.unread {
+    border-left: 4px solid var(--accent);
+    background: linear-gradient(90deg, var(--accent-glow), var(--bg-card));
+}
+
+.message-entry:hover {
+    border-color: var(--border-light);
+}
+
+.message-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid var(--border);
+}
+
+.message-meta {
+    display: flex;
+    gap: 0.75rem;
+    align-items: center;
+}
+
+.message-category {
+    background: var(--accent);
+    color: var(--bg);
+    padding: 0.25rem 0.625rem;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+
+.message-priority {
+    font-size: 0.75rem;
+    padding: 0.25rem 0.5rem;
+    border-radius: 6px;
+    font-weight: 500;
+}
+
+.priority-8, .priority-9, .priority-10 {
+    background: var(--danger);
+    color: white;
+}
+
+.priority-5, .priority-6, .priority-7 {
+    background: var(--warning);
+    color: var(--bg);
+}
+
+.priority-1, .priority-2, .priority-3, .priority-4, .priority-0 {
+    background: var(--bg-elevated);
+    color: var(--fg-dim);
+}
+
+.message-time {
+    font-size: 0.8rem;
+    color: var(--fg-dim);
+}
+
+.message-content {
+    font-size: 0.95rem;
+    line-height: 1.7;
+    white-space: pre-wrap;
+    color: var(--fg);
+}
+
+.message-status {
+    margin-top: 1rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid var(--border);
+    font-size: 0.8rem;
+    color: var(--success);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.status-icon {
+    font-weight: bold;
+}
+
+.outbox-actions {
+    margin-top: 2rem;
+    text-align: center;
+}
+
+.btn-acknowledge {
+    background: linear-gradient(135deg, var(--accent), var(--accent-secondary));
+    color: white;
+    border: none;
+    padding: 0.75rem 1.5rem;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-acknowledge:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 16px rgba(74, 158, 255, 0.3);
+}
+
+.btn-acknowledge:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+}
+
+@media (max-width: 600px) {
+    .message-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+    }
+
+    .message-meta {
+        width: 100%;
+    }
+}
+</style>
+{% endblock %}
