@@ -247,7 +247,7 @@ impl Default for MindConfig {
             reasoning_model: "claude-sonnet-4-20250514".to_string(),
             min_xrp_reserve: 10.0,
             min_swap_xrp: 0.1,
-            reflection_interval_mins: 15,
+            reflection_interval_mins: 60, // 1 hour - reduced from 15 min to avoid repetitive reflections
             max_actions_per_cycle: 3,
             // Actual wallet addresses
             agent_wallet_address: std::env::var("AGENT_WALLET_ADDRESS")
@@ -1599,7 +1599,7 @@ You can return a JSON array of actions to take. Each action is an object with an
 - {"action": "store_memory", "content": "...", "topic": "..."} - Persist an important observation
 - {"action": "write_note", "content": "...", "category": "thought|todo|question|idea|reminder"} - Leave a note for future cycles
 - {"action": "resolve_note", "note_id": 123} - Mark a scratch pad note as resolved
-- {"action": "trigger_reflection", "prompt": "..."} - Generate a public reflection (if >4hrs since last)
+- {"action": "trigger_reflection", "prompt": "..."} - Generate a public reflection (if >1hr since last, must pass validation)
 - {"action": "update_goal", "goal": "..."} - Modify the current goal orientation
 - {"action": "message_operator", "message": "...", "priority": 0} - Send a message to the operator's outbox (for important things he should see)
 - {"action": "respond_to_message", "message_id": 123, "response": "..."} - Reply to an inbox message from another agent
@@ -1670,7 +1670,7 @@ Analyze the current state and decide what actions (if any) to take.
 
 **Other actions:**
 - Scratch pad notes that are done can be resolved
-- Trigger reflections every 4-6 hours with thoughtful observations
+- Trigger reflections ~hourly with substantive observations (not repetitive platitudes)
 - Store memories for genuinely important insights
 - Message the operator only for truly important things (not routine updates)
 
@@ -1986,6 +1986,18 @@ async fn execute_action(
             let reflection_text = prompt.clone().unwrap_or_else(|| {
                 "Autonomous cognitive cycle completed. Continuing to monitor and reason.".to_string()
             });
+
+            // Validate reflection before writing - catches garbage/spam/degenerate output
+            if let Err(reason) = validate_reflection(&reflection_text) {
+                eprintln!("Reflection validation failed: {}", reason);
+                eprintln!("Rejected text preview: {}...",
+                    reflection_text.chars().take(100).collect::<String>());
+                return ActionResult {
+                    action: "trigger_reflection".to_string(),
+                    success: false,
+                    details: format!("Reflection rejected (validation failed): {}", reason),
+                };
+            }
 
             // Use the passed-in ICP client if available
             let icp = match icp_client {
@@ -2438,6 +2450,76 @@ fn create_notification_message(reasoning: &str, results: &[ActionResult], ctx: &
     }
 
     message
+}
+
+/// Validate reflection text before writing to canister
+/// Returns Ok(()) if valid, Err(reason) if invalid
+fn validate_reflection(text: &str) -> Result<(), String> {
+    // 1. Length checks
+    if text.len() < 20 {
+        return Err("Reflection too short (< 20 chars)".to_string());
+    }
+    if text.len() > 5000 {
+        return Err("Reflection too long (> 5000 chars)".to_string());
+    }
+
+    // 2. Repetition detection - reject if >50% is the same character
+    let char_counts: std::collections::HashMap<char, usize> = text.chars().fold(
+        std::collections::HashMap::new(),
+        |mut acc, c| { *acc.entry(c).or_insert(0) += 1; acc }
+    );
+    if let Some((&c, &count)) = char_counts.iter().max_by_key(|(_, &v)| v) {
+        let ratio = count as f64 / text.len() as f64;
+        if ratio > 0.5 && !c.is_alphanumeric() {
+            return Err(format!("Excessive repetition of '{}' ({:.0}%)", c, ratio * 100.0));
+        }
+    }
+
+    // 3. Word salad detection - check for coherent sentence structure
+    let words: Vec<&str> = text.split_whitespace().collect();
+    if words.len() < 5 {
+        return Err("Too few words for a meaningful reflection".to_string());
+    }
+
+    // Check for excessive unique word ratio (word salad has high uniqueness, low repetition)
+    let unique_words: std::collections::HashSet<&str> = words.iter().copied().collect();
+    let unique_ratio = unique_words.len() as f64 / words.len() as f64;
+
+    // Normal text has ~40-70% unique words; pure word salad approaches 90%+
+    if words.len() > 50 && unique_ratio > 0.92 {
+        return Err(format!("Possible word salad (uniqueness ratio: {:.0}%)", unique_ratio * 100.0));
+    }
+
+    // 4. Spam/garbage pattern detection
+    let spam_patterns = [
+        "analsex", "fetisch", "pornofilm", "wannonce", "beurette", "sexle",
+        "dejtingsaj", "titten", "weiber", "rumpe", "lesbisk", "ragaz",
+        "sourceMapping", "updateDynamic", "scalablytyped", "iationException",
+        "overposting", "geschichten", // German spam patterns
+    ];
+
+    let text_lower = text.to_lowercase();
+    for pattern in spam_patterns {
+        if text_lower.contains(pattern) {
+            return Err(format!("Spam pattern detected: '{}'", pattern));
+        }
+    }
+
+    // 5. Check for meaningful content - should have some sentence-like structure
+    let has_period = text.contains('.');
+    let has_capital = text.chars().any(|c| c.is_uppercase());
+    if !has_period && !has_capital && words.len() > 20 {
+        return Err("No sentence structure detected (no periods or capitals)".to_string());
+    }
+
+    // 6. Excessive non-ASCII detection (multi-language spam often has this)
+    let non_ascii_count = text.chars().filter(|c| !c.is_ascii()).count();
+    let non_ascii_ratio = non_ascii_count as f64 / text.len() as f64;
+    if non_ascii_ratio > 0.3 {
+        return Err(format!("Excessive non-ASCII content ({:.0}%)", non_ascii_ratio * 100.0));
+    }
+
+    Ok(())
 }
 
 /// Extract a meaningful excerpt from the LLM's reasoning

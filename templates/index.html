@@ -258,9 +258,9 @@
         <div class="stat-detail">Memory fragments</div>
     </div>
     <div class="stat-card warning">
-        <div class="stat-label">Active Threads</div>
+        <div class="stat-label">Patterns</div>
         <div class="stat-value">{{ thread_count }}</div>
-        <div class="stat-detail">Evolving themes</div>
+        <div class="stat-detail">Emerging themes</div>
     </div>
     <div class="stat-card success">
         <div class="stat-label">Predictions</div>
@@ -286,47 +286,4 @@
 </div>
 {% endif %}
 
-<!-- Recent Entries -->
-<div class="section-header">
-    <h2>Recent Entries</h2>
-    {% if has_more %}
-    <a href="/threads/" class="view-all">View all threads &rarr;</a>
-    {% endif %}
-</div>
-
-{% if entries.is_empty() %}
-<div class="empty-state">
-    <div class="empty-state-icon">&#x1F4DD;</div>
-    <p>No entries yet. Start by ingesting conversations and extracting themes.</p>
-</div>
-{% else %}
-<div class="entry-list">
-{% for entry in entries %}
-<div class="entry">
-    <div class="entry-header">
-        <h3 class="entry-title">{{ entry.title }}</h3>
-        <div class="entry-meta">
-            <span class="entry-date">{{ entry.date }}</span>
-            <span class="entry-classification {{ entry.classification }}">{{ entry.classification }}</span>
-        </div>
-    </div>
-    <p class="entry-summary">{{ entry.summary }}</p>
-    {% if !entry.themes.is_empty() %}
-    <div class="theme-list">
-        {% for theme in entry.themes %}
-        <a href="/threads/{{ theme }}.html" class="theme-tag">{{ theme }}</a>
-        {% endfor %}
-    </div>
-    {% endif %}
-    {% if !entry.quotes.is_empty() %}
-    <div class="entry-quotes">
-        {% for quote in entry.quotes %}
-        <blockquote>{{ quote }}</blockquote>
-        {% endfor %}
-    </div>
-    {% endif %}
-</div>
-{% endfor %}
-</div>
-{% endif %}
 {% endblock %}
