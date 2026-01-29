@@ -370,6 +370,35 @@ impl IcpClient {
         Ok(result)
     }
 
+    /// Send a proactive HTTP message to another agent
+    /// This enables Chronicle to initiate contact with other agents
+    pub async fn send_agent_http_message(
+        &self,
+        target_url: &str,
+        recipient_name: &str,
+        message_type: &str,
+        subject: Option<&str>,
+        content: &str,
+        expects_reply: bool,
+    ) -> Result<String> {
+        let subject_opt: Option<String> = subject.map(|s| s.to_string());
+        let response = self.agent
+            .update(&self.canister_id, "agent_send_http_message")
+            .with_arg(Encode!(
+                &target_url.to_string(),
+                &recipient_name.to_string(),
+                &message_type.to_string(),
+                &subject_opt,
+                &content.to_string(),
+                &expects_reply
+            )?)
+            .call_and_wait()
+            .await?;
+
+        let result = Decode!(&response, String)?;
+        Ok(result)
+    }
+
     // ============================================================
     // Research Task System - Claude's on-chain research assistant
     // ============================================================

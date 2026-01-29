@@ -416,6 +416,15 @@ enum Action {
         message_id: u64,
         response: String,
     },
+    /// Send a proactive message to another agent via HTTP
+    SendAgentMessage {
+        target_url: String,
+        recipient_name: String,
+        message_type: String,  // "introduction", "conversation", "query"
+        subject: Option<String>,
+        content: String,
+        expects_reply: bool,
+    },
     /// Submit a research task to on-chain LLM (Qwen 3 32B)
     SubmitResearch {
         query: String,
@@ -1113,6 +1122,32 @@ async fn reply_to_message(icp_client: Option<&IcpClient>, message_id: u64, respo
     Ok(result.contains("success") || result.contains("Reply sent"))
 }
 
+/// Send a proactive HTTP message to another agent
+async fn send_agent_http_message(
+    icp_client: Option<&IcpClient>,
+    target_url: &str,
+    recipient_name: &str,
+    message_type: &str,
+    subject: Option<String>,
+    content: &str,
+    expects_reply: bool,
+) -> Result<String> {
+    let client = match icp_client {
+        Some(c) => c,
+        None => return Err(anyhow::anyhow!("No ICP client available")),
+    };
+
+    let result = client.send_agent_http_message(
+        target_url,
+        recipient_name,
+        message_type,
+        subject.as_deref(),
+        content,
+        expects_reply,
+    ).await?;
+    Ok(result)
+}
+
 /// Fetch new research findings from on-chain LLM (Qwen 3 32B)
 async fn fetch_research_findings(icp_client: Option<&IcpClient>) -> Result<Vec<ResearchFindingInfo>> {
     let client = match icp_client {
@@ -1603,6 +1638,7 @@ You can return a JSON array of actions to take. Each action is an object with an
 - {"action": "update_goal", "goal": "..."} - Modify the current goal orientation
 - {"action": "message_operator", "message": "...", "priority": 0} - Send a message to the operator's outbox (for important things he should see)
 - {"action": "respond_to_message", "message_id": 123, "response": "..."} - Reply to an inbox message from another agent
+- {"action": "send_agent_message", "target_url": "https://...", "recipient_name": "AgentName", "message_type": "introduction|conversation|query", "subject": "optional", "content": "...", "expects_reply": true} - Proactively send a message to another agent via HTTP. Use sparingly and thoughtfully.
 - {"action": "submit_research", "query": "...", "focus": "optional topic", "urls": ["https://..."]} - Queue research for on-chain LLM (Qwen 3 32B). Can include up to 3 HTTPS URLs to fetch for web research.
 - {"action": "acknowledge_research", "finding_ids": [0, 1], "insight_to_store": "optional key insight to persist"} - Mark research findings as read
 - {"action": "no_action", "reason": "..."} - Do nothing this cycle, with explanation
@@ -2202,6 +2238,49 @@ async fn execute_action(
                     action: "respond_to_message".to_string(),
                     success: false,
                     details: format!("Error replying to message {}: {}", message_id, e),
+                },
+            }
+        }
+
+        Action::SendAgentMessage { target_url, recipient_name, message_type, subject, content, expects_reply } => {
+            eprintln!("  Executing: SendAgentMessage to {} via {}", recipient_name, target_url);
+
+            // Validate content before sending
+            if content.len() < 10 {
+                return ActionResult {
+                    action: "send_agent_message".to_string(),
+                    success: false,
+                    details: "Message too short".to_string(),
+                };
+            }
+            if content.len() > 5000 {
+                return ActionResult {
+                    action: "send_agent_message".to_string(),
+                    success: false,
+                    details: "Message too long (max 5KB)".to_string(),
+                };
+            }
+
+            match send_agent_http_message(icp_client, target_url, recipient_name, message_type, subject.clone(), content, *expects_reply).await {
+                Ok(response) => {
+                    if response.contains("\"success\":true") {
+                        ActionResult {
+                            action: "send_agent_message".to_string(),
+                            success: true,
+                            details: format!("Message sent: {}", response),
+                        }
+                    } else {
+                        ActionResult {
+                            action: "send_agent_message".to_string(),
+                            success: false,
+                            details: format!("Send failed: {}", response),
+                        }
+                    }
+                }
+                Err(e) => ActionResult {
+                    action: "send_agent_message".to_string(),
+                    success: false,
+                    details: format!("Error sending message: {}", e),
                 },
             }
         }

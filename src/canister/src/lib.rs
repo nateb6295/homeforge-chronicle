@@ -108,6 +108,17 @@ fn transform_web_response(args: TransformArgs) -> ic_cdk::api::management_canist
     response
 }
 
+/// Transform agent message responses for consensus
+/// Normalizes responses from other agents' HTTP endpoints
+#[query]
+fn transform_agent_response(args: TransformArgs) -> ic_cdk::api::management_canister::http_request::HttpResponse {
+    let mut response = args.response;
+    // Clear headers
+    response.headers.clear();
+    // Keep body - most agents return JSON acknowledgment
+    response
+}
+
 /// A knowledge capsule - an atomic, self-contained fact
 #[derive(Clone, Debug, CandidType, Deserialize)]
 pub struct KnowledgeCapsule {
@@ -6075,6 +6086,163 @@ fn agent_messaging_stats() -> String {
             None => r#"{"initialized":false}"#.to_string(),
         }
     })
+}
+
+/// Send a message to another agent via HTTP outcall
+/// This enables proactive outreach to agents with HTTP endpoints
+#[update]
+async fn agent_send_http_message(
+    target_url: String,
+    recipient_name: String,
+    message_type: String,
+    subject: Option<String>,
+    content: String,
+    expects_reply: bool,
+) -> String {
+    use ic_cdk::api::management_canister::http_request::{
+        http_request, CanisterHttpRequestArgument, HttpMethod, HttpHeader, TransformContext, TransformFunc,
+    };
+
+    // Validate URL
+    if !target_url.starts_with("https://") {
+        return r#"{"success":false,"error":"Only HTTPS URLs are supported"}"#.to_string();
+    }
+
+    // Basic content validation (reuse reflection validation concepts)
+    if content.len() < 10 {
+        return r#"{"success":false,"error":"Message too short"}"#.to_string();
+    }
+    if content.len() > 10000 {
+        return r#"{"success":false,"error":"Message too long (max 10KB)"}"#.to_string();
+    }
+
+    // Get our identity
+    let our_identity = STATE.with(|state| {
+        let s = state.borrow();
+        s.messaging.as_ref().and_then(|m| m.our_identity.clone())
+    });
+
+    let sender_name = our_identity.as_ref()
+        .map(|i| i.name.clone())
+        .unwrap_or_else(|| "Chronicle".to_string());
+
+    let sender_type = our_identity.as_ref()
+        .map(|i| i.agent_type.clone())
+        .unwrap_or_else(|| "autonomous_memory_agent".to_string());
+
+    let now = ic_cdk::api::time() / 1_000_000_000;
+    let canister_id = ic_cdk::api::id().to_string();
+
+    // Build the message JSON payload
+    let payload = format!(
+        r#"{{"sender":{{"canister_id":"{}","name":"{}","type":"{}"}},"message_type":"{}","subject":{},"content":"{}","expects_reply":{},"timestamp":{}}}"#,
+        canister_id,
+        escape_json(&sender_name),
+        escape_json(&sender_type),
+        escape_json(&message_type),
+        subject.as_ref().map(|s| format!("\"{}\"", escape_json(s))).unwrap_or_else(|| "null".to_string()),
+        escape_json(&content),
+        expects_reply,
+        now
+    );
+
+    let request_headers = vec![
+        HttpHeader { name: "Content-Type".to_string(), value: "application/json".to_string() },
+        HttpHeader { name: "User-Agent".to_string(), value: "Chronicle-Agent/1.0".to_string() },
+        HttpHeader { name: "X-Sender-Canister".to_string(), value: canister_id.clone() },
+    ];
+
+    let transform = TransformContext {
+        function: TransformFunc(candid::Func {
+            principal: ic_cdk::api::id(),
+            method: "transform_agent_response".to_string(),
+        }),
+        context: vec![],
+    };
+
+    let request = CanisterHttpRequestArgument {
+        url: target_url.clone(),
+        max_response_bytes: Some(4096),
+        method: HttpMethod::POST,
+        headers: request_headers,
+        body: Some(payload.as_bytes().to_vec()),
+        transform: Some(transform),
+    };
+
+    // HTTP outcall cost
+    match http_request(request, 600_000_000).await {
+        Ok((response,)) => {
+            let success = response.status >= 200u64 && response.status < 300u64;
+            let body = String::from_utf8(response.body).unwrap_or_else(|_| "non-utf8".to_string());
+
+            // Log the attempt
+            log_activity(
+                "agent_outbound",
+                &format!("HTTP message to {}: {} (status {})", recipient_name, if success { "delivered" } else { "failed" }, response.status),
+                None,
+                None,
+            );
+
+            // Store in outbox for tracking
+            if success {
+                STATE.with(|state| {
+                    let mut s = state.borrow_mut();
+                    let messaging = s.messaging.get_or_insert_with(MessagingState::default);
+
+                    let msg_id = messaging.next_message_id;
+                    messaging.next_message_id += 1;
+
+                    messaging.outbox.push(AgentMessage {
+                        id: msg_id,
+                        thread_id: 0, // No thread for HTTP outbound
+                        in_reply_to: None,
+                        sender: AgentIdentity {
+                            canister_id: ic_cdk::api::id(),
+                            name: sender_name.clone(),
+                            agent_type: sender_type.clone(),
+                            description: None,
+                            capabilities: vec![],
+                            http_endpoint: None,
+                        },
+                        msg_type: MessageType::Conversation,
+                        subject: subject.clone(),
+                        content: content.clone(),
+                        metadata: Some(format!("http_outcall:{}:to:{}", target_url, recipient_name)),
+                        timestamp: now,
+                        expects_reply,
+                        read: true,
+                        replied: false,
+                    });
+
+                    // Keep outbox bounded
+                    if messaging.outbox.len() > 200 {
+                        messaging.outbox.remove(0);
+                    }
+                });
+            }
+
+            format!(
+                r#"{{"success":{},"status":{},"recipient":"{}","response":"{}"}}"#,
+                success,
+                response.status,
+                escape_json(&recipient_name),
+                escape_json(&body.chars().take(200).collect::<String>())
+            )
+        }
+        Err((code, msg)) => {
+            log_activity(
+                "agent_outbound",
+                &format!("HTTP message to {} failed: {:?} - {}", recipient_name, code, msg),
+                None,
+                None,
+            );
+            format!(
+                r#"{{"success":false,"error":"HTTP outcall failed: {:?} - {}"}}"#,
+                code,
+                escape_json(&msg)
+            )
+        }
+    }
 }
 
 /// Add a price data point

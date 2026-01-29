@@ -134,4 +134,14 @@ service : {
 
     agent_list_known: () -> (vec RegisteredAgent) query;
     agent_messaging_stats: () -> (text) query;
+
+    // HTTP outcall for proactive agent-to-agent messaging
+    agent_send_http_message: (
+        target_url: text,
+        recipient_name: text,
+        message_type: text,
+        subject: opt text,
+        content: text,
+        expects_reply: bool
+    ) -> (text);
 }
