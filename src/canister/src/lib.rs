@@ -110,12 +110,16 @@ fn transform_web_response(args: TransformArgs) -> ic_cdk::api::management_canist
 
 /// Transform agent message responses for consensus
 /// Normalizes responses from other agents' HTTP endpoints
+/// Must produce identical output across all replicas
 #[query]
 fn transform_agent_response(args: TransformArgs) -> ic_cdk::api::management_canister::http_request::HttpResponse {
     let mut response = args.response;
-    // Clear headers
+    // Clear headers (vary per replica)
     response.headers.clear();
-    // Keep body - most agents return JSON acknowledgment
+    // Normalize body to just status indicator (actual response varies per replica due to timestamps, IPs, etc.)
+    // We only need to know if it succeeded or failed
+    let status = response.status.clone();
+    response.body = format!("{{\"status\":{}}}", status).into_bytes();
     response
 }
 
