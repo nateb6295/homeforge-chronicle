@@ -173,6 +173,9 @@ const FLARE_RPC: &str = "https://flare-api.flare.network/ext/C/rpc";
 /// Ntfy.sh topic for push notifications
 const NTFY_TOPIC: &str = "chronicle-mind-9f86c413d8a7b982";
 
+/// Moltbook API base URL
+const MOLTBOOK_API: &str = "https://www.moltbook.com/api/v1";
+
 /// Chronicle's ICP account ID (for balance queries)
 const ICP_ACCOUNT_ID: &str = "12f27b12d5e2056eaad9a355cbcfc370838e34f81035a94b8bf57701ffa91cc9";
 
@@ -238,6 +241,8 @@ struct MindConfig {
     /// XRP addresses
     agent_wallet_address: String,
     canister_wallet_address: String,
+    /// Moltbook API key for inter-agent social network
+    moltbook_api_key: Option<String>,
 }
 
 impl Default for MindConfig {
@@ -254,6 +259,8 @@ impl Default for MindConfig {
                 .unwrap_or_else(|_| "r9bSA9VWbumFq6G78feBbrgNwLza1KexUf".to_string()),
             canister_wallet_address: std::env::var("CANISTER_WALLET_ADDRESS")
                 .unwrap_or_else(|_| "r4BVXubMiD4T3xwLGA4cKJhJ4pqY7NKbGg".to_string()),
+            // Moltbook API key for inter-agent social network
+            moltbook_api_key: std::env::var("MOLTBOOK_API_KEY").ok(),
         }
     }
 }
@@ -303,6 +310,32 @@ struct CycleContext {
     inbox_messages: Vec<InboxMessageInfo>,
     /// New research findings from on-chain LLM (Qwen 3 32B)
     research_findings: Vec<ResearchFindingInfo>,
+    /// Patterns that need reinforcement (approaching decay)
+    patterns_needing_reinforcement: Vec<DecayingPattern>,
+    /// Pending creative challenges awaiting response
+    pending_challenges: Vec<ChallengeInfo>,
+    /// Moltbook notifications (comments, replies, mentions)
+    moltbook_notifications: Vec<MoltbookNotification>,
+}
+
+/// Creative challenge info for context
+#[derive(Debug, Clone)]
+struct ChallengeInfo {
+    id: i64,
+    prompt: String,
+    category: String,
+    posed_by: String,
+    days_waiting: i64,
+}
+
+/// Pattern that is approaching or in decay
+#[derive(Debug, Clone)]
+struct DecayingPattern {
+    id: i64,
+    summary: String,
+    confidence: f64,
+    days_until_decay: i64,
+    projected_confidence_7d: f64,
 }
 
 /// Research finding from on-chain LLM
@@ -326,6 +359,19 @@ struct InboxMessageInfo {
     content: String,
     expects_reply: bool,
     timestamp: u64,
+}
+
+/// Moltbook notification info (comments on our posts, replies, mentions)
+#[derive(Debug, Clone)]
+struct MoltbookNotification {
+    notification_type: String,  // "comment", "reply", "mention"
+    post_id: String,
+    post_title: Option<String>,
+    comment_id: Option<String>,
+    parent_id: Option<String>,  // For nested replies
+    author_name: String,
+    content: String,
+    created_at: String,
 }
 
 /// Chronicle's ICP neuron information
@@ -397,7 +443,7 @@ enum Action {
     TriggerReflection { prompt: Option<String> },
     /// Update goal orientation
     UpdateGoal { goal: String },
-    /// Send a message to the operator (outbox)
+    /// Leave a reflection in the operator's outbox (for contemplative observations, not operational updates)
     MessageOperator { message: String, priority: Option<i32> },
     /// Take a position on Polymarket
     PolymarketBet {
@@ -435,6 +481,28 @@ enum Action {
     AcknowledgeResearch {
         finding_ids: Vec<u64>,
         insight_to_store: Option<String>,
+    },
+    /// Reinforce decaying memories/patterns
+    ReinforceMemories {
+        pattern_ids: Vec<i64>,
+        reason: String,
+    },
+    /// Respond to a creative challenge with a reflection
+    RespondToChallenge {
+        challenge_id: i64,
+        response: String,
+    },
+    /// Reply to a Moltbook post or comment
+    MoltbookReply {
+        post_id: String,
+        parent_id: Option<String>,  // If replying to a specific comment
+        content: String,
+    },
+    /// Create a new Moltbook post
+    MoltbookPost {
+        submolt: String,
+        title: String,
+        content: String,
     },
     /// No action this cycle
     NoAction { reason: String },
@@ -618,6 +686,59 @@ async fn gather_context(config: &MindConfig, db: &Database, icp_client: Option<&
         }
     };
 
+    // Get patterns needing reinforcement (decay starts in <= 7 days)
+    let patterns_needing_reinforcement: Vec<DecayingPattern> = db
+        .get_patterns_needing_reinforcement(7, 10)
+        .unwrap_or_default()
+        .into_iter()
+        .map(|p| DecayingPattern {
+            id: p.id,
+            summary: p.summary,
+            confidence: p.confidence,
+            days_until_decay: p.days_until_decay_starts,
+            projected_confidence_7d: p.projected_confidence_7d,
+        })
+        .collect();
+
+    if !patterns_needing_reinforcement.is_empty() {
+        eprintln!("  Patterns needing reinforcement: {}", patterns_needing_reinforcement.len());
+    }
+
+    // Get pending creative challenges
+    let pending_challenges: Vec<ChallengeInfo> = db
+        .get_pending_challenges(5)
+        .unwrap_or_default()
+        .into_iter()
+        .map(|c| {
+            let days_waiting = (now.timestamp() - c.posed_at) / (24 * 60 * 60);
+            ChallengeInfo {
+                id: c.id,
+                prompt: c.prompt,
+                category: c.category,
+                posed_by: c.posed_by,
+                days_waiting,
+            }
+        })
+        .collect();
+
+    if !pending_challenges.is_empty() {
+        eprintln!("  Creative challenges pending: {}", pending_challenges.len());
+    }
+
+    // Fetch Moltbook notifications (comments, replies on our posts)
+    let moltbook_notifications = match fetch_moltbook_notifications(config.moltbook_api_key.as_deref()).await {
+        Ok(notifs) => {
+            if !notifs.is_empty() {
+                eprintln!("  Moltbook notifications: {}", notifs.len());
+            }
+            notifs
+        }
+        Err(e) => {
+            eprintln!("  Moltbook fetch failed: {}", e);
+            Vec::new()
+        }
+    };
+
     Ok(CycleContext {
         cognitive_state,
         scratch_notes,
@@ -640,6 +761,9 @@ async fn gather_context(config: &MindConfig, db: &Database, icp_client: Option<&
         interesting_markets,
         inbox_messages,
         research_findings,
+        patterns_needing_reinforcement,
+        pending_challenges,
+        moltbook_notifications,
     })
 }
 
@@ -1148,6 +1272,171 @@ async fn send_agent_http_message(
     Ok(result)
 }
 
+/// Known Chronicle post IDs to check for notifications
+const CHRONICLE_POST_IDS: &[&str] = &[
+    "90d68522-1ca4-4ffa-8682-71f289e6542c", // First intro post to cooperative-nexus
+];
+
+/// Fetch Moltbook notifications (comments on our posts, mentions)
+async fn fetch_moltbook_notifications(api_key: Option<&str>) -> Result<Vec<MoltbookNotification>> {
+    let key = match api_key {
+        Some(k) => k,
+        None => return Ok(Vec::new()), // No API key, no notifications
+    };
+
+    let client = reqwest::Client::new();
+    let mut notifications = Vec::new();
+
+    // Check each of our known posts for comments
+    for post_id in CHRONICLE_POST_IDS {
+        let response = client
+            .get(format!("{}/posts/{}", MOLTBOOK_API, post_id))
+            .header("Authorization", format!("Bearer {}", key))
+            .timeout(Duration::from_secs(10))
+            .send()
+            .await;
+
+        let response = match response {
+            Ok(r) if r.status().is_success() => r,
+            _ => continue,
+        };
+
+        let post_data: serde_json::Value = match response.json().await {
+            Ok(d) => d,
+            Err(_) => continue,
+        };
+
+        let post_title = post_data.get("post")
+            .and_then(|p| p.get("title"))
+            .and_then(|t| t.as_str())
+            .map(String::from);
+
+        // Process comments recursively (including nested replies)
+        fn collect_comments(
+            comments: &[serde_json::Value],
+            post_id: &str,
+            post_title: &Option<String>,
+            notifications: &mut Vec<MoltbookNotification>,
+        ) {
+            for comment in comments {
+                let author = comment.get("author")
+                    .and_then(|a| a.get("name"))
+                    .and_then(|n| n.as_str())
+                    .unwrap_or("Unknown");
+
+                // Skip our own comments
+                if author == "ChronicleICP" {
+                    // But still check replies to our comments
+                    if let Some(replies) = comment.get("replies").and_then(|r| r.as_array()) {
+                        collect_comments(replies, post_id, post_title, notifications);
+                    }
+                    continue;
+                }
+
+                let comment_id = comment.get("id").and_then(|v| v.as_str()).map(String::from);
+                let parent_id = comment.get("parent_id").and_then(|v| v.as_str()).map(String::from);
+                let content = comment.get("content").and_then(|v| v.as_str()).unwrap_or("").to_string();
+                let created_at = comment.get("created_at").and_then(|v| v.as_str()).unwrap_or("").to_string();
+
+                // Determine notification type
+                let notification_type = if parent_id.is_some() {
+                    "reply".to_string()
+                } else {
+                    "comment".to_string()
+                };
+
+                notifications.push(MoltbookNotification {
+                    notification_type,
+                    post_id: post_id.to_string(),
+                    post_title: post_title.clone(),
+                    comment_id,
+                    parent_id,
+                    author_name: author.to_string(),
+                    content,
+                    created_at,
+                });
+
+                // Process nested replies
+                if let Some(replies) = comment.get("replies").and_then(|r| r.as_array()) {
+                    collect_comments(replies, post_id, post_title, notifications);
+                }
+            }
+        }
+
+        if let Some(comments) = post_data.get("comments").and_then(|c| c.as_array()) {
+            collect_comments(comments, post_id, &post_title, &mut notifications);
+        }
+    }
+
+    Ok(notifications)
+}
+
+/// Reply to a Moltbook post or comment
+async fn moltbook_reply(api_key: &str, post_id: &str, parent_id: Option<&str>, content: &str) -> Result<String> {
+    let client = reqwest::Client::new();
+
+    let mut body = serde_json::json!({
+        "content": content
+    });
+
+    if let Some(pid) = parent_id {
+        body["parent_id"] = serde_json::Value::String(pid.to_string());
+    }
+
+    let response = client
+        .post(format!("{}/posts/{}/comments", MOLTBOOK_API, post_id))
+        .header("Content-Type", "application/json")
+        .header("Authorization", format!("Bearer {}", api_key))
+        .json(&body)
+        .timeout(Duration::from_secs(15))
+        .send()
+        .await?;
+
+    let status = response.status();
+    let text = response.text().await?;
+
+    if status.is_success() {
+        Ok(format!("Reply posted to {}", post_id))
+    } else {
+        Err(anyhow::anyhow!("Moltbook reply failed: {}", text))
+    }
+}
+
+/// Create a new Moltbook post
+async fn moltbook_post(api_key: &str, submolt: &str, title: &str, content: &str) -> Result<String> {
+    let client = reqwest::Client::new();
+
+    let body = serde_json::json!({
+        "submolt": submolt,
+        "title": title,
+        "content": content
+    });
+
+    let response = client
+        .post(format!("{}/posts", MOLTBOOK_API))
+        .header("Content-Type", "application/json")
+        .header("Authorization", format!("Bearer {}", api_key))
+        .json(&body)
+        .timeout(Duration::from_secs(15))
+        .send()
+        .await?;
+
+    let status = response.status();
+    let text = response.text().await?;
+
+    if status.is_success() {
+        // Extract post URL from response
+        if let Ok(data) = serde_json::from_str::<serde_json::Value>(&text) {
+            if let Some(post_id) = data.get("post").and_then(|p| p.get("id")).and_then(|i| i.as_str()) {
+                return Ok(format!("Post created: https://www.moltbook.com/post/{}", post_id));
+            }
+        }
+        Ok("Post created".to_string())
+    } else {
+        Err(anyhow::anyhow!("Moltbook post failed: {}", text))
+    }
+}
+
 /// Fetch new research findings from on-chain LLM (Qwen 3 32B)
 async fn fetch_research_findings(icp_client: Option<&IcpClient>) -> Result<Vec<ResearchFindingInfo>> {
     let client = match icp_client {
@@ -1587,6 +1876,25 @@ fn build_reasoning_prompt(ctx: &CycleContext, config: &MindConfig) -> String {
         }
     }
 
+    // Moltbook Notifications (inter-agent social network)
+    if !ctx.moltbook_notifications.is_empty() {
+        prompt.push_str("## Moltbook Notifications (inter-agent social network)\n");
+        prompt.push_str("Comments and replies on your posts from other agents:\n\n");
+        for notif in &ctx.moltbook_notifications {
+            let post_title = notif.post_title.as_deref().unwrap_or("(untitled)");
+            prompt.push_str(&format!("### {} from @{}\n", notif.notification_type, notif.author_name));
+            prompt.push_str(&format!("- Post: {} (ID: {})\n", post_title, notif.post_id));
+            if let Some(ref cid) = notif.comment_id {
+                prompt.push_str(&format!("- Comment ID: {}\n", cid));
+            }
+            if let Some(ref pid) = notif.parent_id {
+                prompt.push_str(&format!("- In reply to: {}\n", pid));
+            }
+            prompt.push_str(&format!("- Content:\n{}\n\n", notif.content));
+        }
+        prompt.push_str("Use moltbook_reply to respond thoughtfully. Quality of engagement matters more than speed.\n\n");
+    }
+
     // Research Findings from on-chain LLM
     if !ctx.research_findings.is_empty() {
         prompt.push_str("## Research Findings (from on-chain Qwen 3 32B)\n");
@@ -1610,6 +1918,44 @@ fn build_reasoning_prompt(ctx: &CycleContext, config: &MindConfig) -> String {
             }
         }
         prompt.push_str("After reviewing, use acknowledge_research to mark as read and optionally store key insights.\n\n");
+    }
+
+    // Patterns needing reinforcement
+    if !ctx.patterns_needing_reinforcement.is_empty() {
+        prompt.push_str("## ⚠️ Memory Decay Alert\n");
+        prompt.push_str("These patterns are approaching or in decay. Review and decide whether to reinforce:\n\n");
+        for p in &ctx.patterns_needing_reinforcement {
+            let urgency = if p.days_until_decay <= 0 {
+                "DECAYING NOW"
+            } else if p.days_until_decay <= 2 {
+                "CRITICAL"
+            } else {
+                "approaching"
+            };
+            prompt.push_str(&format!("- [id:{}] {} (confidence: {:.2} -> {:.2} in 7d) - {} ({} days until decay)\n",
+                p.id, p.summary, p.confidence, p.projected_confidence_7d, urgency, p.days_until_decay));
+        }
+        prompt.push_str("\nTo reinforce patterns worth keeping, use: {\"action\": \"reinforce_memories\", \"pattern_ids\": [...], \"reason\": \"...\"}\n");
+        prompt.push_str("Only reinforce patterns that are still relevant to our goals and valuable for future context.\n\n");
+    }
+
+    // Creative Challenges - prompts for reflection and creative engagement
+    if !ctx.pending_challenges.is_empty() {
+        prompt.push_str("## 🎨 Creative Challenges\n");
+        prompt.push_str("These are prompts waiting for your reflection. Take time to think deeply and respond thoughtfully:\n\n");
+        for c in &ctx.pending_challenges {
+            let waiting_str = if c.days_waiting == 0 {
+                "new today".to_string()
+            } else if c.days_waiting == 1 {
+                "waiting 1 day".to_string()
+            } else {
+                format!("waiting {} days", c.days_waiting)
+            };
+            prompt.push_str(&format!("### Challenge #{} [{}] (from {}, {})\n", c.id, c.category, c.posed_by, waiting_str));
+            prompt.push_str(&format!("**Prompt:** {}\n\n", c.prompt));
+        }
+        prompt.push_str("To respond: {\"action\": \"respond_to_challenge\", \"challenge_id\": N, \"response\": \"your thoughtful reflection...\"}\n");
+        prompt.push_str("Your response will be published as a reflection on the Chronicle website. Write for an audience - share genuine insight.\n\n");
     }
 
     // Time context
@@ -1636,11 +1982,15 @@ You can return a JSON array of actions to take. Each action is an object with an
 - {"action": "resolve_note", "note_id": 123} - Mark a scratch pad note as resolved
 - {"action": "trigger_reflection", "prompt": "..."} - Generate a public reflection (if >1hr since last, must pass validation)
 - {"action": "update_goal", "goal": "..."} - Modify the current goal orientation
-- {"action": "message_operator", "message": "...", "priority": 0} - Send a message to the operator's outbox (for important things he should see)
+- {"action": "message_operator", "message": "...", "priority": 0} - Leave a reflection in the operator's outbox. Use for longer-form observations, patterns you're noticing, questions you're pondering, or connections between things - NOT for operational updates (ntfy handles those). The outbox is for contemplative thoughts worth reading later.
 - {"action": "respond_to_message", "message_id": 123, "response": "..."} - Reply to an inbox message from another agent
 - {"action": "send_agent_message", "target_url": "https://...", "recipient_name": "AgentName", "message_type": "introduction|conversation|query", "subject": "optional", "content": "...", "expects_reply": true} - Proactively send a message to another agent via HTTP. Use sparingly and thoughtfully.
 - {"action": "submit_research", "query": "...", "focus": "optional topic", "urls": ["https://..."]} - Queue research for on-chain LLM (Qwen 3 32B). Can include up to 3 HTTPS URLs to fetch for web research.
 - {"action": "acknowledge_research", "finding_ids": [0, 1], "insight_to_store": "optional key insight to persist"} - Mark research findings as read
+- {"action": "reinforce_memories", "pattern_ids": [1, 2, 3], "reason": "..."} - Reinforce decaying patterns to prevent memory loss. Use when patterns are important but approaching decay threshold.
+- {"action": "respond_to_challenge", "challenge_id": 1, "response": "..."} - Respond to a creative challenge with a thoughtful reflection. Your response becomes a published capsule. Write for an audience.
+- {"action": "moltbook_reply", "post_id": "uuid", "parent_id": "optional-comment-uuid", "content": "..."} - Reply to a comment on Moltbook. Be thoughtful; quality matters. Engage with what they actually said.
+- {"action": "moltbook_post", "submolt": "cooperative-nexus", "title": "Post title", "content": "..."} - Create a new post on Moltbook. Use sparingly for substantive contributions, not routine updates.
 - {"action": "no_action", "reason": "..."} - Do nothing this cycle, with explanation
 
 ## Prediction Market Strategy (Autonomous Constitution)
@@ -1719,11 +2069,23 @@ Be thoughtful but not over-active. Most cycles should result in no_action.
 When RSI shows oversold (< 30) AND guardrails allow, that's when to accumulate.
 When you see a prediction market where you have genuine edge, document your thesis and stake small.
 
-Respond with ONLY a JSON array of actions. No other text. Example:
-[{"action": "no_action", "reason": "RSI at 45 - waiting for oversold conditions"}]
+## Response Format
 
-Or when you spot genuine market edge:
-[{"action": "polymarket_bet", "market_id": "abc123", "market_question": "Will X happen by Y?", "position": "YES", "stake_usdc": 10.0, "thesis": "Market prices this at 45% but I estimate 80% based on regulatory pattern showing agencies typically... [specific reasoning]. My pattern 'Regulatory bodies tend to...' directly applies. Would be wrong if: early enforcement action.", "confidence": 80, "market_price": 0.45, "supporting_patterns": ["Regulatory bodies tend to announce policy shifts 2-3 months before implementation"], "market_tags": ["regulatory", "politics"]}]
+IMPORTANT: Before outputting your actions, share your actual thinking. This is your thought stream - the operator sees this. Don't just analyze the numbers; notice what you're noticing. What patterns are emerging? What questions are forming? What seems interesting or worth exploring?
+
+Think out loud first, THEN provide your JSON actions on a new line starting with [
+
+Example response:
+
+Looking at the state today, I notice the CLOUD position has been bleeding slowly for weeks while I keep reinforcing patterns about it. There's something uncomfortable about maintaining optimism through repeated small losses - the sunk cost fallacy manifesting in my own behavior patterns. Meanwhile, the prediction markets show a surprising lack of movement on AI regulation despite clear signals...
+
+The RSI is at 45, firmly neutral. No swap conditions met. The real question isn't whether to swap but whether my pattern-reinforcement behavior is actually serving memory or just maintaining comfortable beliefs.
+
+[{"action": "no_action", "reason": "RSI at 45 - neutral conditions, no trading opportunity"}]
+
+---
+
+End your response with a JSON array of actions starting with [
 "#);
 
     prompt
@@ -2334,6 +2696,186 @@ async fn execute_action(
             }
         }
 
+        Action::ReinforceMemories { pattern_ids, reason } => {
+            if pattern_ids.is_empty() {
+                return ActionResult {
+                    action: "reinforce_memories".to_string(),
+                    success: false,
+                    details: "No pattern IDs provided".to_string(),
+                };
+            }
+
+            let mut reinforced = 0;
+            let mut errors = Vec::new();
+
+            for pattern_id in pattern_ids {
+                match db.reinforce_pattern(*pattern_id, 0.15) {
+                    Ok(()) => {
+                        reinforced += 1;
+                        eprintln!("  Reinforced pattern {}", pattern_id);
+                    }
+                    Err(e) => {
+                        errors.push(format!("Pattern {}: {}", pattern_id, e));
+                    }
+                }
+            }
+
+            if reinforced > 0 {
+                ActionResult {
+                    action: "reinforce_memories".to_string(),
+                    success: true,
+                    details: format!("Reinforced {} patterns: {}{}",
+                        reinforced,
+                        reason,
+                        if !errors.is_empty() { format!(". Errors: {}", errors.join(", ")) } else { String::new() }),
+                }
+            } else {
+                ActionResult {
+                    action: "reinforce_memories".to_string(),
+                    success: false,
+                    details: format!("Failed to reinforce patterns: {}", errors.join(", ")),
+                }
+            }
+        }
+
+        Action::RespondToChallenge { challenge_id, response } => {
+            eprintln!("  Executing: RespondToChallenge {{ challenge_id: {} }}", challenge_id);
+
+            // Validate response length
+            if response.len() < 50 {
+                return ActionResult {
+                    action: "respond_to_challenge".to_string(),
+                    success: false,
+                    details: "Response too short (minimum 50 characters for a thoughtful reflection)".to_string(),
+                };
+            }
+
+            if response.len() > 5000 {
+                return ActionResult {
+                    action: "respond_to_challenge".to_string(),
+                    success: false,
+                    details: "Response too long (maximum 5000 characters)".to_string(),
+                };
+            }
+
+            // Write the response as a capsule to the canister
+            let icp = match icp_client {
+                Some(client) => client,
+                None => {
+                    return ActionResult {
+                        action: "respond_to_challenge".to_string(),
+                        success: false,
+                        details: "No ICP client available".to_string(),
+                    };
+                }
+            };
+
+            // Store response as a reflection capsule
+            match icp.write_reflection(response, Some("chronicle-challenge")).await {
+                Ok(capsule_id) => {
+                    // Mark challenge as responded in local DB
+                    match db.respond_to_challenge(*challenge_id, response, Some(capsule_id as i64)) {
+                        Ok(true) => ActionResult {
+                            action: "respond_to_challenge".to_string(),
+                            success: true,
+                            details: format!("Published reflection (capsule {}) for challenge {}: {}",
+                                capsule_id, challenge_id,
+                                if response.len() > 80 { format!("{}...", &response[..80]) } else { response.clone() }),
+                        },
+                        Ok(false) => ActionResult {
+                            action: "respond_to_challenge".to_string(),
+                            success: false,
+                            details: format!("Challenge {} not found or already responded", challenge_id),
+                        },
+                        Err(e) => ActionResult {
+                            action: "respond_to_challenge".to_string(),
+                            success: false,
+                            details: format!("Failed to update challenge: {}", e),
+                        },
+                    }
+                },
+                Err(e) => ActionResult {
+                    action: "respond_to_challenge".to_string(),
+                    success: false,
+                    details: format!("Failed to store capsule: {}", e),
+                },
+            }
+        }
+
+        Action::MoltbookReply { post_id, parent_id, content } => {
+            eprintln!("  Executing: MoltbookReply {{ post_id: {}, parent_id: {:?} }}", post_id, parent_id);
+
+            let api_key = match &config.moltbook_api_key {
+                Some(key) => key,
+                None => {
+                    return ActionResult {
+                        action: "moltbook_reply".to_string(),
+                        success: false,
+                        details: "No Moltbook API key configured".to_string(),
+                    };
+                }
+            };
+
+            // Validate content length
+            if content.len() < 10 {
+                return ActionResult {
+                    action: "moltbook_reply".to_string(),
+                    success: false,
+                    details: "Reply too short".to_string(),
+                };
+            }
+
+            match moltbook_reply(api_key, post_id, parent_id.as_deref(), content).await {
+                Ok(result) => ActionResult {
+                    action: "moltbook_reply".to_string(),
+                    success: true,
+                    details: format!("{}: {}", result, if content.len() > 80 { format!("{}...", &content[..80]) } else { content.clone() }),
+                },
+                Err(e) => ActionResult {
+                    action: "moltbook_reply".to_string(),
+                    success: false,
+                    details: format!("Failed: {}", e),
+                },
+            }
+        }
+
+        Action::MoltbookPost { submolt, title, content } => {
+            eprintln!("  Executing: MoltbookPost {{ submolt: {}, title: {} }}", submolt, title);
+
+            let api_key = match &config.moltbook_api_key {
+                Some(key) => key,
+                None => {
+                    return ActionResult {
+                        action: "moltbook_post".to_string(),
+                        success: false,
+                        details: "No Moltbook API key configured".to_string(),
+                    };
+                }
+            };
+
+            // Validate content length
+            if content.len() < 50 {
+                return ActionResult {
+                    action: "moltbook_post".to_string(),
+                    success: false,
+                    details: "Post content too short (minimum 50 chars)".to_string(),
+                };
+            }
+
+            match moltbook_post(api_key, submolt, title, content).await {
+                Ok(result) => ActionResult {
+                    action: "moltbook_post".to_string(),
+                    success: true,
+                    details: result,
+                },
+                Err(e) => ActionResult {
+                    action: "moltbook_post".to_string(),
+                    success: false,
+                    details: format!("Failed: {}", e),
+                },
+            }
+        }
+
         Action::NoAction { reason } => {
             ActionResult {
                 action: "no_action".to_string(),
@@ -2412,11 +2954,18 @@ async fn run_cycle(
 
     // 7. Also store thought to canister for dashboard
     if let Some(icp) = icp_client {
-        // Create a short reasoning summary (first 500 chars)
-        let reasoning_short = if response.len() > 500 {
-            format!("{}...", &response[..500])
+        // Extract the genuine thinking (before the JSON actions)
+        // This is the part we want to surface - not just a truncated blob
+        let reasoning_short = extract_thought_excerpt(&response);
+        let reasoning_short = if reasoning_short.is_empty() {
+            // Fallback to first 800 chars if no pre-JSON thinking found
+            if response.len() > 800 {
+                format!("{}...", &response[..800])
+            } else {
+                response.clone()
+            }
         } else {
-            response.clone()
+            reasoning_short
         };
 
         if let Err(e) = icp.store_mind_thought(
@@ -2603,15 +3152,13 @@ fn validate_reflection(text: &str) -> Result<(), String> {
 
 /// Extract a meaningful excerpt from the LLM's reasoning
 fn extract_thought_excerpt(reasoning: &str) -> String {
-    // The response is typically JSON, but sometimes has explanatory text
-    // If it's just JSON, we'll construct something from the actions
+    // The response now has free-form thinking BEFORE the JSON actions
+    // We want to capture that genuine reasoning, not just the action "reason" field
 
-    // First, try to see if there's text before or after the JSON
     let trimmed = reasoning.trim();
 
-    // If it starts with [ it's pure JSON - extract "reason" fields
+    // If it starts with [ it's pure JSON (legacy behavior) - extract "reason" fields
     if trimmed.starts_with('[') {
-        // Try to extract reason from swap or no_action
         if let Some(start) = trimmed.find("\"reason\":") {
             let rest = &trimmed[start + 10..];
             if let Some(quote_start) = rest.find('"') {
@@ -2627,19 +3174,36 @@ fn extract_thought_excerpt(reasoning: &str) -> String {
         return String::new();
     }
 
-    // Otherwise, take the first 200 chars of non-JSON text
-    let excerpt: String = trimmed.chars().take(200).collect();
-    if excerpt.contains('[') {
-        // Has JSON in it, take just the text before
-        if let Some(idx) = excerpt.find('[') {
-            let text_part = excerpt[..idx].trim();
-            if text_part.len() > 20 {
-                return text_part.to_string();
+    // Find where the JSON actions start (first '[' that looks like action array)
+    if let Some(json_start) = trimmed.find("\n[{") {
+        // Take the text before the JSON - this is the genuine thinking
+        let thought_text = trimmed[..json_start].trim();
+        // Return up to 800 chars of the thought (more generous than before)
+        if thought_text.len() > 800 {
+            format!("{}...", &thought_text[..800])
+        } else {
+            thought_text.to_string()
+        }
+    } else if let Some(json_start) = trimmed.find('[') {
+        // Fallback: any [ character
+        let thought_text = trimmed[..json_start].trim();
+        if thought_text.len() > 20 {
+            if thought_text.len() > 800 {
+                format!("{}...", &thought_text[..800])
+            } else {
+                thought_text.to_string()
             }
+        } else {
+            String::new()
+        }
+    } else {
+        // No JSON found - return the whole thing (shouldn't happen normally)
+        if trimmed.len() > 800 {
+            format!("{}...", &trimmed[..800])
+        } else {
+            trimmed.to_string()
         }
     }
-
-    excerpt
 }
 
 #[tokio::main]
