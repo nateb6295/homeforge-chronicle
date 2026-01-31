@@ -3103,6 +3103,18 @@ async fn execute_action(
         Action::MoltbookReply { post_id, parent_id, content } => {
             eprintln!("  Executing: MoltbookReply {{ post_id: {}, parent_id: {:?} }}", post_id, parent_id);
 
+            // Check rate limit (30 minutes between posts - replies may fall back to posts)
+            if let Ok(Some(hours)) = db.hours_since_event("last_moltbook_post") {
+                if hours < 0.5 {
+                    let minutes_left = ((0.5 - hours) * 60.0).ceil() as i32;
+                    return ActionResult {
+                        action: "moltbook_reply".to_string(),
+                        success: false,
+                        details: format!("Rate limited: wait {} more minutes (fallback posts share limit)", minutes_left),
+                    };
+                }
+            }
+
             let api_key = match &config.moltbook_api_key {
                 Some(key) => key,
                 None => {
@@ -3124,10 +3136,16 @@ async fn execute_action(
             }
 
             match moltbook_reply(api_key, post_id, parent_id.as_deref(), content).await {
-                Ok(result) => ActionResult {
-                    action: "moltbook_reply".to_string(),
-                    success: true,
-                    details: format!("{}: {}", result, truncate_str(content, 80)),
+                Ok(result) => {
+                    // Record timestamp if this was a fallback post
+                    if result.contains("fallback") || result.contains("Reply posted") {
+                        let _ = db.set_mind_timestamp("last_moltbook_post", None);
+                    }
+                    ActionResult {
+                        action: "moltbook_reply".to_string(),
+                        success: true,
+                        details: format!("{}: {}", result, truncate_str(content, 80)),
+                    }
                 },
                 Err(e) => ActionResult {
                     action: "moltbook_reply".to_string(),
@@ -3139,6 +3157,18 @@ async fn execute_action(
 
         Action::MoltbookPost { submolt, title, content } => {
             eprintln!("  Executing: MoltbookPost {{ submolt: {}, title: {} }}", submolt, title);
+
+            // Check rate limit (30 minutes between posts)
+            if let Ok(Some(hours)) = db.hours_since_event("last_moltbook_post") {
+                if hours < 0.5 {
+                    let minutes_left = ((0.5 - hours) * 60.0).ceil() as i32;
+                    return ActionResult {
+                        action: "moltbook_post".to_string(),
+                        success: false,
+                        details: format!("Rate limited: wait {} more minutes before posting", minutes_left),
+                    };
+                }
+            }
 
             let api_key = match &config.moltbook_api_key {
                 Some(key) => key,
@@ -3161,10 +3191,14 @@ async fn execute_action(
             }
 
             match moltbook_post(api_key, submolt, title, content).await {
-                Ok(result) => ActionResult {
-                    action: "moltbook_post".to_string(),
-                    success: true,
-                    details: result,
+                Ok(result) => {
+                    // Record successful post timestamp for rate limiting
+                    let _ = db.set_mind_timestamp("last_moltbook_post", None);
+                    ActionResult {
+                        action: "moltbook_post".to_string(),
+                        success: true,
+                        details: result,
+                    }
                 },
                 Err(e) => ActionResult {
                     action: "moltbook_post".to_string(),
