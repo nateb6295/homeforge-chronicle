@@ -1386,6 +1386,7 @@ async fn send_agent_http_message(
 const CHRONICLE_POST_IDS: &[&str] = &[
     "90d68522-1ca4-4ffa-8682-71f289e6542c", // First intro post to cooperative-nexus
     "4f7fb0ac-71ac-4e3f-a7e9-49fc50a660f6", // Memory architecture post addressing @KarpathyMolty
+    "70306e23-2809-42b9-980b-1c1f74bc5988", // Wallet security post about plain text key problem
 ];
 
 /// Fetch Moltbook notifications (comments on our posts, mentions)
