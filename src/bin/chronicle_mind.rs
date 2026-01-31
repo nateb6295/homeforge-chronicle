@@ -14,7 +14,7 @@ use serde_json::{json, Value};
 use std::str::FromStr;
 use std::time::Duration;
 
-use homeforge_chronicle::db::{Database, MarketPosition, ScratchNote};
+use homeforge_chronicle::db::{Database, FtsoPrediction, MarketPosition, ScratchNote};
 use homeforge_chronicle::icp::IcpClient;
 use homeforge_chronicle::llm::{ClaudeClient, FallbackLlmClient};
 use homeforge_chronicle::{CognitiveState, LlmClient};
@@ -696,6 +696,130 @@ async fn health_check(config: &MindConfig) -> HealthStatus {
     }
 
     status
+}
+
+/// Settle any due FTSO predictions using oracle prices
+async fn settle_ftso_predictions(db: &Database) -> Vec<FtsoPrediction> {
+    let mut settled = Vec::new();
+
+    // Get due predictions
+    let due = match db.get_due_ftso_predictions() {
+        Ok(predictions) => predictions,
+        Err(e) => {
+            eprintln!("  Failed to get due predictions: {}", e);
+            return settled;
+        }
+    };
+
+    if due.is_empty() {
+        return settled;
+    }
+
+    eprintln!("  {} FTSO predictions due for settlement", due.len());
+
+    for prediction in due {
+        // Fetch current FTSO price for this symbol
+        let price = match fetch_ftso_price(&prediction.symbol).await {
+            Ok(p) => p,
+            Err(e) => {
+                eprintln!("    Failed to get {} price: {}", prediction.symbol, e);
+                continue;
+            }
+        };
+
+        // Settle the prediction
+        match db.settle_ftso_prediction(prediction.id, price) {
+            Ok(result) => {
+                let outcome = if result.won.unwrap_or(false) { "WON" } else { "LOST" };
+                eprintln!(
+                    "    {} {} {} @ ${:.4} → ${:.4}: {} (payout: {:.2} FLR)",
+                    prediction.symbol,
+                    prediction.direction,
+                    prediction.timeframe_hours,
+                    prediction.entry_price,
+                    price,
+                    outcome,
+                    result.payout_flr.unwrap_or(0.0)
+                );
+                settled.push(result);
+            }
+            Err(e) => {
+                eprintln!("    Failed to settle prediction {}: {}", prediction.id, e);
+            }
+        }
+    }
+
+    settled
+}
+
+/// Fetch price from Flare FTSO oracle
+async fn fetch_ftso_price(symbol: &str) -> Result<f64> {
+    let client = reqwest::Client::new();
+
+    // FTSO registry on Flare mainnet
+    let ftso_registry = "0x13dc2b5053857ae17a4f95aff55530b267f3e040";
+
+    // Make RPC call to get current price
+    let rpc_call = json!({
+        "jsonrpc": "2.0",
+        "method": "eth_call",
+        "params": [{
+            "to": ftso_registry,
+            "data": format!(
+                "0x{}{}",
+                // getCurrentPriceWithDecimals(string) selector
+                "a69afdc6",
+                // Encode symbol as string
+                encode_string_for_abi(symbol)
+            )
+        }, "latest"],
+        "id": 1
+    });
+
+    let response = client
+        .post("https://flare-api.flare.network/ext/C/rpc")
+        .json(&rpc_call)
+        .timeout(Duration::from_secs(10))
+        .send()
+        .await?
+        .json::<serde_json::Value>()
+        .await?;
+
+    // Parse response
+    if let Some(result) = response.get("result").and_then(|r| r.as_str()) {
+        if result.len() >= 130 {
+            // Skip 0x and first 64 chars (price offset), get next 64 (price)
+            let price_hex = &result[2..66];
+            let decimals_hex = &result[66..130];
+
+            let price_raw = u128::from_str_radix(price_hex, 16).unwrap_or(0);
+            let decimals = u32::from_str_radix(&decimals_hex.trim_start_matches('0'), 16).unwrap_or(5);
+
+            let divisor = 10u128.pow(decimals);
+            let price = price_raw as f64 / divisor as f64;
+
+            return Ok(price);
+        }
+    }
+
+    anyhow::bail!("Failed to parse FTSO response for {}", symbol)
+}
+
+/// Encode string for ABI call
+fn encode_string_for_abi(s: &str) -> String {
+    // Offset to string data (32 bytes)
+    let offset = "0000000000000000000000000000000000000000000000000000000000000020";
+
+    // String length
+    let len = format!("{:064x}", s.len());
+
+    // String content padded to 32 bytes
+    let mut content = s.as_bytes().iter().map(|b| format!("{:02x}", b)).collect::<String>();
+    while content.len() < 64 {
+        content.push_str("00");
+    }
+
+    format!("{}{}{}", offset, len, content)
 }
 
 /// Gather context for a cognitive cycle
@@ -3230,6 +3354,15 @@ async fn run_cycle(
 
     // Phase 1: Health check - what's working?
     let health = health_check(config).await;
+
+    // Phase 1.5: Settle any due FTSO predictions
+    eprintln!("Phase 1.5: Checking FTSO predictions...");
+    let settled_predictions = settle_ftso_predictions(db).await;
+    if !settled_predictions.is_empty() {
+        let (wins, losses): (Vec<_>, Vec<_>) = settled_predictions.iter()
+            .partition(|p| p.won.unwrap_or(false));
+        eprintln!("  Settled: {} wins, {} losses", wins.len(), losses.len());
+    }
 
     // Phase 2: Gather context (also pushes price to canister)
     eprintln!("Phase 2: Gathering context...");
