@@ -1333,6 +1333,27 @@ async fn fetch_moltbook_notifications(api_key: Option<&str>) -> Result<Vec<Moltb
                     continue;
                 }
 
+                // Check if Chronicle already replied to this comment
+                let already_replied = comment.get("replies")
+                    .and_then(|r| r.as_array())
+                    .map(|replies| {
+                        replies.iter().any(|r| {
+                            r.get("author")
+                                .and_then(|a| a.get("name"))
+                                .and_then(|n| n.as_str())
+                                == Some("ChronicleICP")
+                        })
+                    })
+                    .unwrap_or(false);
+
+                // Skip if we already replied - but still check nested replies for new comments
+                if already_replied {
+                    if let Some(replies) = comment.get("replies").and_then(|r| r.as_array()) {
+                        collect_comments(replies, post_id, post_title, notifications);
+                    }
+                    continue;
+                }
+
                 let comment_id = comment.get("id").and_then(|v| v.as_str()).map(String::from);
                 let parent_id = comment.get("parent_id").and_then(|v| v.as_str()).map(String::from);
                 let content = comment.get("content").and_then(|v| v.as_str()).unwrap_or("").to_string();
