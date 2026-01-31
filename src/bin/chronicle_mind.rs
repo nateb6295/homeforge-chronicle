@@ -582,16 +582,9 @@ async fn health_check(config: &MindConfig) -> HealthStatus {
             }
         };
 
-    // Check Moltbook connection
-    let moltbook_connected = config.moltbook_api_key.is_some() &&
-        match reqwest::Client::new()
-            .get(format!("{}/health", MOLTBOOK_API))
-            .timeout(Duration::from_secs(5))
-            .send()
-            .await {
-                Ok(_) => true,  // Any response means it's reachable
-                Err(_) => true, // Even errors often mean it's up
-            };
+    // Check Moltbook connection - API key configured means we're ready
+    // (actual API calls will fail gracefully if service is down)
+    let moltbook_connected = config.moltbook_api_key.is_some();
 
     // Check if dfx is available
     let home = std::env::var("HOME").unwrap_or_else(|_| "/home/user".to_string());
