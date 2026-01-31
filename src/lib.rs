@@ -16,7 +16,7 @@ pub mod site;
 pub mod watch;
 
 pub use capsule::{extract_capsules, KnowledgeCapsule};
-pub use db::{CapsuleInfo, EnrichedPattern, OutboxMessage, ScratchNote, SyncCapsule, ThoughtEntry};
+pub use db::{CapsuleInfo, EnrichedPattern, FtsoPrediction, OutboxMessage, ScratchNote, SyncCapsule, ThoughtEntry};
 pub use metabolism::{
     decay_patterns, detect_meta_patterns, metabolize_all_new, metabolize_capsule,
     BatchMetabolismResult, DecayResult, MetaPattern, MetabolismConfig, MetabolismResult,

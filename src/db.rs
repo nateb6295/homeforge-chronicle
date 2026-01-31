@@ -26,6 +26,25 @@ pub struct MarketPosition {
     pub resolved_at: Option<i64>,
 }
 
+/// FTSO prediction - price direction bet using Flare's decentralized oracle
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct FtsoPrediction {
+    pub id: i64,
+    pub symbol: String,           // XRP, BTC, ETH, etc.
+    pub direction: String,        // UP or DOWN
+    pub entry_price: f64,         // Price when bet placed
+    pub timeframe_hours: i32,     // 1, 4, 24 hours
+    pub stake_flr: f64,           // Amount staked in FLR
+    pub confidence: f64,          // 0.5-1.0
+    pub reasoning: Option<String>,// Why this prediction
+    pub created_at: i64,          // When placed
+    pub settles_at: i64,          // When to check result
+    pub settled: bool,            // Has been settled
+    pub settlement_price: Option<f64>, // Actual price at settlement
+    pub won: Option<bool>,        // True = won, False = lost
+    pub payout_flr: Option<f64>,  // Amount won/lost
+}
+
 /// Convert f32 vector to bytes for blob storage
 fn f32_vec_to_bytes(vec: &[f32]) -> Vec<u8> {
     vec.iter()
@@ -181,6 +200,33 @@ impl Database {
              ON market_positions(status)",
             [],
         ).context("Failed to create market positions index")?;
+
+        // FTSO Predictions - real on-chain price predictions using Flare oracle
+        self.conn.execute(
+            "CREATE TABLE IF NOT EXISTS ftso_predictions (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                symbol TEXT NOT NULL,
+                direction TEXT NOT NULL,
+                entry_price REAL NOT NULL,
+                timeframe_hours INTEGER NOT NULL,
+                stake_flr REAL NOT NULL,
+                confidence REAL NOT NULL,
+                reasoning TEXT,
+                created_at INTEGER NOT NULL,
+                settles_at INTEGER NOT NULL,
+                settled INTEGER DEFAULT 0,
+                settlement_price REAL,
+                won INTEGER,
+                payout_flr REAL
+            )",
+            [],
+        ).context("Failed to create ftso_predictions table")?;
+
+        self.conn.execute(
+            "CREATE INDEX IF NOT EXISTS idx_ftso_predictions_settled
+             ON ftso_predictions(settled)",
+            [],
+        ).context("Failed to create ftso predictions index")?;
 
         // ============================================================
         // Knowledge Capsules (KIP Integration)
@@ -986,6 +1032,165 @@ impl Database {
     /// Get the database connection (for advanced operations)
     pub fn connection(&self) -> &Connection {
         &self.conn
+    }
+
+    // ============================================================
+    // FTSO Prediction Methods (Flare Oracle-Based)
+    // ============================================================
+
+    /// Insert a new FTSO prediction
+    pub fn insert_ftso_prediction(
+        &self,
+        symbol: &str,
+        direction: &str,
+        entry_price: f64,
+        timeframe_hours: i32,
+        stake_flr: f64,
+        confidence: f64,
+        reasoning: Option<&str>,
+    ) -> Result<i64> {
+        let created_at = chrono::Utc::now().timestamp();
+        let settles_at = created_at + (timeframe_hours as i64 * 3600);
+
+        self.conn.execute(
+            "INSERT INTO ftso_predictions
+             (symbol, direction, entry_price, timeframe_hours, stake_flr, confidence, reasoning, created_at, settles_at, settled)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0)",
+            params![symbol, direction, entry_price, timeframe_hours, stake_flr, confidence, reasoning, created_at, settles_at],
+        ).context("Failed to insert FTSO prediction")?;
+
+        Ok(self.conn.last_insert_rowid())
+    }
+
+    /// Settle an FTSO prediction with the settlement price
+    pub fn settle_ftso_prediction(
+        &self,
+        id: i64,
+        settlement_price: f64,
+    ) -> Result<FtsoPrediction> {
+        // Get the prediction first
+        let prediction = self.get_ftso_prediction(id)?
+            .ok_or_else(|| anyhow::anyhow!("Prediction not found"))?;
+
+        // Determine if won
+        let won = match prediction.direction.as_str() {
+            "UP" => settlement_price > prediction.entry_price,
+            "DOWN" => settlement_price < prediction.entry_price,
+            _ => false,
+        };
+
+        // Calculate payout (simple 2x for win, 0 for loss)
+        let payout_flr = if won {
+            prediction.stake_flr * 2.0
+        } else {
+            0.0
+        };
+
+        self.conn.execute(
+            "UPDATE ftso_predictions
+             SET settled = 1, settlement_price = ?, won = ?, payout_flr = ?
+             WHERE id = ?",
+            params![settlement_price, won, payout_flr, id],
+        ).context("Failed to settle FTSO prediction")?;
+
+        // Return updated prediction
+        self.get_ftso_prediction(id)?
+            .ok_or_else(|| anyhow::anyhow!("Prediction not found after update"))
+    }
+
+    /// Get unsettled FTSO predictions that are due
+    pub fn get_due_ftso_predictions(&self) -> Result<Vec<FtsoPrediction>> {
+        let now = chrono::Utc::now().timestamp();
+
+        let mut stmt = self.conn.prepare(
+            "SELECT id, symbol, direction, entry_price, timeframe_hours, stake_flr, confidence,
+             reasoning, created_at, settles_at, settled, settlement_price, won, payout_flr
+             FROM ftso_predictions
+             WHERE settled = 0 AND settles_at <= ?
+             ORDER BY settles_at ASC"
+        )?;
+
+        let predictions = stmt.query_map([now], Self::row_to_ftso_prediction)?;
+        predictions.collect::<Result<Vec<_>, _>>().context("Failed to get due FTSO predictions")
+    }
+
+    /// Get all FTSO predictions, optionally filtered by settled status
+    pub fn get_ftso_predictions(&self, settled_filter: Option<bool>) -> Result<Vec<FtsoPrediction>> {
+        let query = match settled_filter {
+            Some(_) => "SELECT id, symbol, direction, entry_price, timeframe_hours, stake_flr, confidence,
+                        reasoning, created_at, settles_at, settled, settlement_price, won, payout_flr
+                        FROM ftso_predictions WHERE settled = ? ORDER BY created_at DESC",
+            None => "SELECT id, symbol, direction, entry_price, timeframe_hours, stake_flr, confidence,
+                     reasoning, created_at, settles_at, settled, settlement_price, won, payout_flr
+                     FROM ftso_predictions ORDER BY created_at DESC",
+        };
+
+        let mut stmt = self.conn.prepare(query)?;
+
+        let predictions = if let Some(settled) = settled_filter {
+            stmt.query_map([settled as i32], Self::row_to_ftso_prediction)?
+        } else {
+            stmt.query_map([], Self::row_to_ftso_prediction)?
+        };
+
+        predictions.collect::<Result<Vec<_>, _>>().context("Failed to get FTSO predictions")
+    }
+
+    /// Get a specific FTSO prediction by ID
+    pub fn get_ftso_prediction(&self, id: i64) -> Result<Option<FtsoPrediction>> {
+        let mut stmt = self.conn.prepare(
+            "SELECT id, symbol, direction, entry_price, timeframe_hours, stake_flr, confidence,
+             reasoning, created_at, settles_at, settled, settlement_price, won, payout_flr
+             FROM ftso_predictions WHERE id = ?"
+        )?;
+
+        let mut rows = stmt.query([id])?;
+
+        if let Some(row) = rows.next()? {
+            Ok(Some(Self::row_to_ftso_prediction(row)?))
+        } else {
+            Ok(None)
+        }
+    }
+
+    /// Get FTSO prediction stats (wins, losses, total P&L)
+    pub fn get_ftso_prediction_stats(&self) -> Result<(i64, i64, f64)> {
+        let mut stmt = self.conn.prepare(
+            "SELECT
+             COUNT(CASE WHEN won = 1 THEN 1 END) as wins,
+             COUNT(CASE WHEN won = 0 THEN 1 END) as losses,
+             COALESCE(SUM(CASE WHEN won = 1 THEN payout_flr - stake_flr ELSE -stake_flr END), 0) as pnl
+             FROM ftso_predictions WHERE settled = 1"
+        )?;
+
+        let result = stmt.query_row([], |row| {
+            Ok((
+                row.get::<_, i64>(0)?,
+                row.get::<_, i64>(1)?,
+                row.get::<_, f64>(2)?,
+            ))
+        })?;
+
+        Ok(result)
+    }
+
+    fn row_to_ftso_prediction(row: &rusqlite::Row) -> rusqlite::Result<FtsoPrediction> {
+        Ok(FtsoPrediction {
+            id: row.get(0)?,
+            symbol: row.get(1)?,
+            direction: row.get(2)?,
+            entry_price: row.get(3)?,
+            timeframe_hours: row.get(4)?,
+            stake_flr: row.get(5)?,
+            confidence: row.get(6)?,
+            reasoning: row.get(7)?,
+            created_at: row.get(8)?,
+            settles_at: row.get(9)?,
+            settled: row.get::<_, i32>(10)? != 0,
+            settlement_price: row.get(11)?,
+            won: row.get::<_, Option<i32>>(12)?.map(|v| v != 0),
+            payout_flr: row.get(13)?,
+        })
     }
 
     // ============================================================
