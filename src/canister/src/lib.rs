@@ -5238,6 +5238,68 @@ fn parse_agent_message_json(body: &[u8]) -> Option<(String, String, Option<Strin
     Some((msg_type, content, context))
 }
 
+/// Parse JSON for research task: {"query": "...", "focus": "...", "max_capsules": 50, "urls": [...]}
+fn parse_research_json(body_str: &str) -> Option<(String, Option<String>, Option<u32>, Vec<String>)> {
+    let extract_string = |key: &str| -> Option<String> {
+        let pattern = format!("\"{}\":", key);
+        let start = body_str.find(&pattern)?;
+        let rest = &body_str[start + pattern.len()..];
+        let rest = rest.trim_start();
+        if rest.starts_with('"') {
+            let rest = &rest[1..];
+            let end = rest.find('"')?;
+            Some(rest[..end].to_string()
+                .replace("\\n", "\n")
+                .replace("\\\"", "\"")
+                .replace("\\\\", "\\"))
+        } else if rest.starts_with("null") {
+            None
+        } else {
+            None
+        }
+    };
+
+    let extract_number = |key: &str| -> Option<u32> {
+        let pattern = format!("\"{}\":", key);
+        let start = body_str.find(&pattern)?;
+        let rest = &body_str[start + pattern.len()..];
+        let rest = rest.trim_start();
+        let end = rest.find(|c: char| !c.is_numeric())?;
+        rest[..end].parse().ok()
+    };
+
+    let extract_array = |key: &str| -> Vec<String> {
+        let pattern = format!("\"{}\":", key);
+        if let Some(start) = body_str.find(&pattern) {
+            let rest = &body_str[start + pattern.len()..];
+            let rest = rest.trim_start();
+            if rest.starts_with('[') {
+                if let Some(end) = rest.find(']') {
+                    let arr_str = &rest[1..end];
+                    return arr_str.split(',')
+                        .filter_map(|s| {
+                            let s = s.trim();
+                            if s.starts_with('"') && s.ends_with('"') {
+                                Some(s[1..s.len()-1].to_string())
+                            } else {
+                                None
+                            }
+                        })
+                        .collect();
+                }
+            }
+        }
+        Vec::new()
+    };
+
+    let query = extract_string("query")?;
+    let focus = extract_string("focus");
+    let max_capsules = extract_number("max_capsules");
+    let urls = extract_array("urls");
+
+    Some((query, focus, max_capsules, urls))
+}
+
 /// HTTP update handler for POST requests (can modify state)
 #[update]
 fn http_request_update(req: HttpRequest) -> HttpResponse {
@@ -5411,6 +5473,42 @@ fn http_request_update(req: HttpRequest) -> HttpResponse {
                     return json_response(400, r#"{"error":"Content too long. Maximum 10,000 characters."}"#);
                 }
 
+                // Find related capsules BEFORE inserting (by keyword overlap)
+                let mut related_ids: std::collections::HashSet<u64> = std::collections::HashSet::new();
+                for keyword in &keywords {
+                    let kw_lower = keyword.to_lowercase();
+                    if let Some(ids) = s.keyword_index.get(&kw_lower) {
+                        for id in ids.iter().take(10) {
+                            related_ids.insert(*id);
+                        }
+                    }
+                }
+
+                // Get related capsule previews (up to 3)
+                let related_previews: Vec<String> = related_ids.iter()
+                    .take(3)
+                    .filter_map(|id| s.capsules.get(id))
+                    .map(|c| {
+                        let preview = if c.restatement.len() > 60 {
+                            format!("{}...", &c.restatement[..60])
+                        } else {
+                            c.restatement.clone()
+                        };
+                        let topic_str = c.topic.as_ref().map(|t| t.as_str()).unwrap_or("general");
+                        format!("{{\"id\":{},\"topic\":\"{}\",\"preview\":\"{}\"}}",
+                            c.id,
+                            topic_str,
+                            preview.replace("\"", "\\\"").replace("\n", " "))
+                    })
+                    .collect();
+
+                // Count capsules with same topic
+                let topic_count = if let Some(ref t) = topic {
+                    s.capsules.values().filter(|c| c.topic.as_ref() == Some(t)).count()
+                } else {
+                    0
+                };
+
                 // Create new capsule with source indicating it's from public feed
                 let id = s.next_id;
                 s.next_id += 1;
@@ -5421,7 +5519,7 @@ fn http_request_update(req: HttpRequest) -> HttpResponse {
                     restatement: content,
                     timestamp: Some(chrono_now()),
                     location: None,
-                    topic,
+                    topic: topic.clone(),
                     confidence_score: 0.8, // Slightly lower confidence for public submissions
                     persons: persons.clone(),
                     entities: Vec::new(),
@@ -5449,7 +5547,93 @@ fn http_request_update(req: HttpRequest) -> HttpResponse {
 
                 s.capsules.insert(id, capsule);
 
-                json_response(201, &format!(r#"{{"success":true,"capsule_id":{},"message":"Information received. Chronicle will process this in the next cycle."}}"#, id))
+                // Build rich acknowledgment response
+                let keywords_json: Vec<String> = keywords.iter()
+                    .map(|k| format!("\"{}\"", k.replace("\"", "\\\"")))
+                    .collect();
+                let topic_str = topic.as_ref().map(|t| t.as_str()).unwrap_or("general");
+                let total_capsules = s.capsules.len();
+                let total_embeddings = s.embeddings.len();
+
+                let response = format!(
+                    r#"{{"success":true,"capsule_id":{},"topic":"{}","keywords_indexed":[{}],"related_count":{},"related":[{}],"topic_total":{},"embedding_status":"pending","stats":{{"total_capsules":{},"total_embeddings":{}}}}}"#,
+                    id,
+                    topic_str,
+                    keywords_json.join(","),
+                    related_ids.len(),
+                    related_previews.join(","),
+                    topic_count + 1, // +1 for the one we just added
+                    total_capsules,
+                    total_embeddings
+                );
+
+                json_response(201, &response)
+            }
+
+            "/api/research" => {
+                // Submit a research task with optional URLs to fetch
+                if req.method != "POST" {
+                    return json_response(405, r#"{"error":"Use POST for /api/research"}"#);
+                }
+
+                // Parse JSON body
+                let body_str = String::from_utf8_lossy(&req.body);
+                let (query, focus, max_capsules, urls) = match parse_research_json(&body_str) {
+                    Some(data) => data,
+                    None => return json_response(400, r#"{"error":"Invalid JSON. Expected: {\"query\": \"...\", \"focus\": \"...\", \"max_capsules\": 50, \"urls\": [...]}"}"#),
+                };
+
+                if query.is_empty() {
+                    return json_response(400, r#"{"error":"Query cannot be empty"}"#);
+                }
+
+                // Check if research is enabled
+                let research = match s.research.as_mut() {
+                    Some(r) => r,
+                    None => {
+                        s.research = Some(ResearchState::default());
+                        s.research.as_mut().unwrap()
+                    }
+                };
+
+                if !research.enabled {
+                    return json_response(400, r#"{"error":"Research system not enabled. Call configure_research(true) first."}"#);
+                }
+
+                // Validate URLs
+                if urls.len() > 3 {
+                    return json_response(400, r#"{"error":"Maximum 3 URLs per research task"}"#);
+                }
+                for url in &urls {
+                    if !url.starts_with("https://") {
+                        return json_response(400, &format!(r#"{{"error":"Invalid URL (must be HTTPS): {}"}}"#, escape_json(url)));
+                    }
+                }
+
+                // Create research task
+                let id = research.next_task_id;
+                research.next_task_id += 1;
+
+                let task = ResearchTask {
+                    id,
+                    query: query.clone(),
+                    focus: focus.clone(),
+                    max_capsules: max_capsules.unwrap_or(50),
+                    urls: urls.clone(),
+                    submitted_at: ic_cdk::api::time(),
+                    started_at: None,
+                    completed_at: None,
+                    status: "pending".to_string(),
+                };
+
+                research.task_queue.push(task);
+
+                let response = format!(
+                    r#"{{"success":true,"task_id":{},"query":"{}","urls_count":{},"status":"pending","note":"Task queued. Will be processed during next heartbeat or call trigger_research()."}}"#,
+                    id, escape_json(&query), urls.len()
+                );
+
+                json_response(201, &response)
             }
 
             _ => json_response(404, r#"{"error":"Not found for POST"}"#),
@@ -5876,8 +6060,9 @@ fn agent_reply(
             None => return r#"{"error":"Original message not found"}"#.to_string(),
         };
 
-        // Mark as replied
+        // Mark as replied and read
         original.replied = true;
+        original.read = true;
 
         let thread_id = original.thread_id;
         let recipient = original.sender.clone();

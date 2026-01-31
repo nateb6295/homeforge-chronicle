@@ -328,6 +328,125 @@
         flex-direction: column;
     }
 }
+
+/* Rich Acknowledgment Styles */
+.rich-ack {
+    background: var(--bg);
+    border: 1px solid var(--success);
+    border-radius: 8px;
+    padding: 1rem;
+    margin-top: 0.5rem;
+}
+
+.ack-success {
+    font-weight: 600;
+    color: var(--success);
+    margin-bottom: 0.75rem;
+}
+
+.ack-keywords {
+    margin-bottom: 0.5rem;
+    font-size: 0.85rem;
+}
+
+.ack-keyword {
+    display: inline-block;
+    background: var(--accent-glow);
+    color: var(--accent);
+    padding: 0.15rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    margin: 0.15rem 0.25rem 0.15rem 0;
+}
+
+.ack-related {
+    color: var(--fg);
+    font-size: 0.9rem;
+    margin-bottom: 0.5rem;
+}
+
+.ack-related-list {
+    background: var(--bg-card);
+    border-radius: 6px;
+    padding: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.ack-related-item {
+    font-size: 0.8rem;
+    color: var(--fg-dim);
+    padding: 0.25rem 0;
+    border-bottom: 1px solid var(--border);
+}
+
+.ack-related-item:last-child {
+    border-bottom: none;
+}
+
+.ack-related-topic {
+    color: var(--accent);
+    font-weight: 500;
+    margin-right: 0.5rem;
+}
+
+.ack-stats {
+    font-size: 0.8rem;
+    color: var(--fg-dim);
+    margin-bottom: 0.25rem;
+}
+
+.ack-embedding {
+    font-size: 0.8rem;
+    color: var(--fg-dim);
+}
+
+.status-pending {
+    color: var(--warning, #f5a623);
+}
+
+.status-indexed {
+    color: var(--success);
+}
+
+/* Submission item enhancements */
+.submission-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.submission-id {
+    font-size: 0.75rem;
+    color: var(--fg-dim);
+    font-family: monospace;
+}
+
+.submission-meta {
+    display: flex;
+    gap: 0.75rem;
+    font-size: 0.75rem;
+    margin-top: 0.25rem;
+}
+
+.submission-related {
+    color: var(--accent);
+}
+
+.submission-status {
+    padding: 0.1rem 0.4rem;
+    border-radius: 3px;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+}
+
+.submission-status.status-pending {
+    background: rgba(245, 166, 35, 0.2);
+}
+
+.submission-status.status-indexed {
+    background: rgba(40, 167, 69, 0.2);
+    color: var(--success);
+}
 </style>
 
 <script>
@@ -366,18 +485,67 @@ document.querySelectorAll('.priority-option').forEach(opt => {
 // Session submissions
 const submissions = [];
 
-function addToRecent(topic, content) {
-    submissions.unshift({ topic, content, time: new Date() });
+function addToRecent(topic, content, result) {
+    submissions.unshift({
+        topic,
+        content,
+        time: new Date(),
+        capsuleId: result.capsule_id,
+        relatedCount: result.related_count || 0,
+        embeddingStatus: result.embedding_status || 'pending'
+    });
     if (submissions.length > 5) submissions.pop();
 
     const list = document.getElementById('submissions-list');
     list.innerHTML = submissions.map(s => `
         <div class="submission-item">
-            <div class="submission-topic">${s.topic}</div>
+            <div class="submission-header">
+                <span class="submission-topic">${s.topic}</span>
+                <span class="submission-id">#${s.capsuleId}</span>
+            </div>
             <div class="submission-preview">${s.content.substring(0, 100)}${s.content.length > 100 ? '...' : ''}</div>
-            <div class="submission-time">${s.time.toLocaleTimeString()}</div>
+            <div class="submission-meta">
+                <span class="submission-time">${s.time.toLocaleTimeString()}</span>
+                ${s.relatedCount > 0 ? `<span class="submission-related">${s.relatedCount} related</span>` : ''}
+                <span class="submission-status status-${s.embeddingStatus}">${s.embeddingStatus}</span>
+            </div>
         </div>
     `).join('');
+}
+
+function showAcknowledgment(result) {
+    const status = document.getElementById('submit-status');
+
+    // Build acknowledgment HTML
+    let html = `<div class="ack-success">Stored as capsule #${result.capsule_id}</div>`;
+
+    // Keywords indexed
+    if (result.keywords_indexed && result.keywords_indexed.length > 0) {
+        const kwHtml = result.keywords_indexed.map(k => `<span class="ack-keyword">${k}</span>`).join('');
+        html += `<div class="ack-keywords">Indexed: ${kwHtml}</div>`;
+    }
+
+    // Related capsules
+    if (result.related_count > 0) {
+        html += `<div class="ack-related">Connected to ${result.related_count} existing memories</div>`;
+        if (result.related && result.related.length > 0) {
+            const relatedHtml = result.related.map(r =>
+                `<div class="ack-related-item"><span class="ack-related-topic">${r.topic}</span> ${r.preview}</div>`
+            ).join('');
+            html += `<div class="ack-related-list">${relatedHtml}</div>`;
+        }
+    }
+
+    // Stats
+    if (result.stats) {
+        html += `<div class="ack-stats">Memory: ${result.stats.total_capsules} capsules, ${result.stats.total_embeddings} embedded</div>`;
+    }
+
+    // Embedding status
+    html += `<div class="ack-embedding">Embedding: <span class="status-pending">queued for next cycle</span></div>`;
+
+    status.innerHTML = html;
+    status.className = 'submit-status success rich-ack';
 }
 
 // Form submission
@@ -450,11 +618,11 @@ document.getElementById('input-form').addEventListener('submit', async (e) => {
 
         const result = await response.json();
 
-        status.textContent = `Stored as capsule #${result.id || 'success'}`;
-        status.className = 'submit-status success';
+        // Show rich acknowledgment
+        showAcknowledgment(result);
 
         // Add to recent and clear form
-        addToRecent(topic, content);
+        addToRecent(topic, content, result);
         document.getElementById('content').value = '';
         document.getElementById('keywords').value = '';
         charCountEl.textContent = '0';

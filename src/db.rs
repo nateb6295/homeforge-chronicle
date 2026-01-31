@@ -579,6 +579,32 @@ impl Database {
             [],
         ).context("Failed to create swap_history index")?;
 
+        // ============================================================
+        // Creative Challenges - Prompts for Chronicle Mind to reflect on
+        // ============================================================
+        // Enrichment through creative engagement - questions to ponder,
+        // observations to make, connections to explore.
+
+        self.conn.execute(
+            "CREATE TABLE IF NOT EXISTS creative_challenges (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                prompt TEXT NOT NULL,
+                category TEXT NOT NULL,           -- 'philosophy', 'observation', 'memory', 'prediction', 'connection'
+                posed_by TEXT NOT NULL,           -- 'nate', 'public', 'self', 'system'
+                posed_at INTEGER NOT NULL,
+                response TEXT,                    -- Chronicle Mind's reflection
+                responded_at INTEGER,
+                capsule_id INTEGER,               -- Link to the published capsule
+                FOREIGN KEY(capsule_id) REFERENCES knowledge_capsules(id)
+            )",
+            [],
+        ).context("Failed to create creative_challenges table")?;
+
+        self.conn.execute(
+            "CREATE INDEX IF NOT EXISTS idx_challenges_pending ON creative_challenges(responded_at) WHERE responded_at IS NULL",
+            [],
+        ).context("Failed to create creative_challenges pending index")?;
+
         Ok(())
     }
 
@@ -1858,6 +1884,26 @@ impl Database {
         Ok(enriched)
     }
 
+    /// Get patterns that need reinforcement (approaching or in decay)
+    /// Returns patterns where decay starts in <= threshold_days
+    pub fn get_patterns_needing_reinforcement(&self, threshold_days: i64, limit: usize) -> Result<Vec<EnrichedPattern>> {
+        let all_patterns = self.get_enriched_patterns(0.0, 100, true)?;
+
+        let mut needing_reinforcement: Vec<EnrichedPattern> = all_patterns
+            .into_iter()
+            .filter(|p| p.days_until_decay_starts <= threshold_days && p.confidence > 0.15)
+            .collect();
+
+        // Sort by urgency (lowest days_until_decay first, then by importance/confidence)
+        needing_reinforcement.sort_by(|a, b| {
+            a.days_until_decay_starts.cmp(&b.days_until_decay_starts)
+                .then(b.confidence.partial_cmp(&a.confidence).unwrap_or(std::cmp::Ordering::Equal))
+        });
+
+        needing_reinforcement.truncate(limit);
+        Ok(needing_reinforcement)
+    }
+
     // ============================================================
     // Compressed Cognitive State (CCS) Methods
     // ============================================================
@@ -2584,6 +2630,162 @@ impl Database {
 
         Ok((true, "Guardrails passed".to_string()))
     }
+
+    // ============================================================
+    // Creative Challenges - Enrichment through creative engagement
+    // ============================================================
+
+    /// Pose a new creative challenge for Chronicle Mind
+    pub fn pose_challenge(
+        &self,
+        prompt: &str,
+        category: &str,
+        posed_by: &str,
+    ) -> Result<i64> {
+        let now = chrono::Utc::now().timestamp();
+
+        self.conn.execute(
+            "INSERT INTO creative_challenges (prompt, category, posed_by, posed_at)
+             VALUES (?, ?, ?, ?)",
+            params![prompt, category, posed_by, now],
+        ).context("Failed to pose challenge")?;
+
+        Ok(self.conn.last_insert_rowid())
+    }
+
+    /// Get pending challenges (not yet responded to)
+    pub fn get_pending_challenges(&self, limit: usize) -> Result<Vec<CreativeChallenge>> {
+        let mut stmt = self.conn.prepare(
+            "SELECT id, prompt, category, posed_by, posed_at
+             FROM creative_challenges
+             WHERE responded_at IS NULL
+             ORDER BY posed_at ASC
+             LIMIT ?"
+        )?;
+
+        let challenges = stmt.query_map(params![limit as i64], |row| {
+            Ok(CreativeChallenge {
+                id: row.get(0)?,
+                prompt: row.get(1)?,
+                category: row.get(2)?,
+                posed_by: row.get(3)?,
+                posed_at: row.get(4)?,
+                response: None,
+                responded_at: None,
+                capsule_id: None,
+            })
+        })?
+        .collect::<Result<Vec<_>, _>>()?;
+
+        Ok(challenges)
+    }
+
+    /// Respond to a creative challenge
+    pub fn respond_to_challenge(
+        &self,
+        challenge_id: i64,
+        response: &str,
+        capsule_id: Option<i64>,
+    ) -> Result<bool> {
+        let now = chrono::Utc::now().timestamp();
+
+        let updated = self.conn.execute(
+            "UPDATE creative_challenges
+             SET response = ?, responded_at = ?, capsule_id = ?
+             WHERE id = ? AND responded_at IS NULL",
+            params![response, now, capsule_id, challenge_id],
+        )?;
+
+        Ok(updated > 0)
+    }
+
+    /// Get all challenges (with optional filters)
+    pub fn get_challenges(
+        &self,
+        limit: usize,
+        include_responded: bool,
+        category: Option<&str>,
+    ) -> Result<Vec<CreativeChallenge>> {
+        let query = match (include_responded, category) {
+            (true, Some(_)) => {
+                "SELECT id, prompt, category, posed_by, posed_at, response, responded_at, capsule_id
+                 FROM creative_challenges
+                 WHERE category = ?
+                 ORDER BY posed_at DESC
+                 LIMIT ?"
+            }
+            (false, Some(_)) => {
+                "SELECT id, prompt, category, posed_by, posed_at, response, responded_at, capsule_id
+                 FROM creative_challenges
+                 WHERE responded_at IS NULL AND category = ?
+                 ORDER BY posed_at ASC
+                 LIMIT ?"
+            }
+            (true, None) => {
+                "SELECT id, prompt, category, posed_by, posed_at, response, responded_at, capsule_id
+                 FROM creative_challenges
+                 ORDER BY posed_at DESC
+                 LIMIT ?"
+            }
+            (false, None) => {
+                "SELECT id, prompt, category, posed_by, posed_at, response, responded_at, capsule_id
+                 FROM creative_challenges
+                 WHERE responded_at IS NULL
+                 ORDER BY posed_at ASC
+                 LIMIT ?"
+            }
+        };
+
+        let mut stmt = self.conn.prepare(query)?;
+
+        let challenges: Vec<CreativeChallenge> = match category {
+            Some(cat) => {
+                stmt.query_map(params![cat, limit as i64], |row| {
+                    Ok(CreativeChallenge {
+                        id: row.get(0)?,
+                        prompt: row.get(1)?,
+                        category: row.get(2)?,
+                        posed_by: row.get(3)?,
+                        posed_at: row.get(4)?,
+                        response: row.get(5)?,
+                        responded_at: row.get(6)?,
+                        capsule_id: row.get(7)?,
+                    })
+                })?
+                .collect::<Result<Vec<_>, _>>()?
+            }
+            None => {
+                stmt.query_map(params![limit as i64], |row| {
+                    Ok(CreativeChallenge {
+                        id: row.get(0)?,
+                        prompt: row.get(1)?,
+                        category: row.get(2)?,
+                        posed_by: row.get(3)?,
+                        posed_at: row.get(4)?,
+                        response: row.get(5)?,
+                        responded_at: row.get(6)?,
+                        capsule_id: row.get(7)?,
+                    })
+                })?
+                .collect::<Result<Vec<_>, _>>()?
+            }
+        };
+
+        Ok(challenges)
+    }
+}
+
+/// Creative challenge for Chronicle Mind
+#[derive(Debug, Clone)]
+pub struct CreativeChallenge {
+    pub id: i64,
+    pub prompt: String,
+    pub category: String,
+    pub posed_by: String,
+    pub posed_at: i64,
+    pub response: Option<String>,
+    pub responded_at: Option<i64>,
+    pub capsule_id: Option<i64>,
 }
 
 /// Enriched pattern data for MCP

@@ -27,7 +27,7 @@ pub use config::Config;
 pub use deploy::{deploy_to_icp, DeploymentResult};
 pub use extraction::{extract_conversation, Classification, Extraction};
 pub use ingest::{ingest_conversation, ingest_conversation_export, IngestResult};
-pub use llm::LlmClient;
+pub use llm::{LlmClient, ClaudeClient, OllamaClient, FallbackLlmClient};
 pub use parser::{parse_bulk_export, BulkConversationExport, ConversationExport};
 pub use site::{build_site, build_thoughts_page, build_outbox_page, DisplayEntry, DisplayCapsule, DisplayThought, DisplayOutboxMessage, DisplayMarketPosition};
 pub use cognitive::{CognitiveState, FocalEntity, EntityType, RetrievedArtifact, UncertaintySignal, QualificationGate, CognitiveCompressor, CompressionInput};

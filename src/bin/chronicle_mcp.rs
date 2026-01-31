@@ -367,6 +367,98 @@ fn get_tools() -> Value {
                         }
                     }
                 }
+            },
+            {
+                "name": "pose_challenge",
+                "description": "Pose a creative challenge for Chronicle Mind to reflect on. Challenges are prompts that invite thoughtful reflection - questions about time, memory, existence, observations about patterns, or creative exercises. Chronicle Mind will respond in its next cycle.",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "prompt": {
+                            "type": "string",
+                            "description": "The creative challenge or prompt for reflection"
+                        },
+                        "category": {
+                            "type": "string",
+                            "description": "Category of challenge: philosophy, observation, memory, prediction, connection",
+                            "enum": ["philosophy", "observation", "memory", "prediction", "connection"]
+                        }
+                    },
+                    "required": ["prompt", "category"]
+                }
+            },
+            {
+                "name": "get_challenges",
+                "description": "Get creative challenges and their responses. See what prompts have been posed and how Chronicle Mind responded.",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "limit": {
+                            "type": "integer",
+                            "description": "Maximum challenges to return (default: 10)",
+                            "default": 10
+                        },
+                        "pending_only": {
+                            "type": "boolean",
+                            "description": "Only return challenges awaiting response (default: false)",
+                            "default": false
+                        },
+                        "category": {
+                            "type": "string",
+                            "description": "Filter by category (optional)"
+                        }
+                    }
+                }
+            },
+            {
+                "name": "submit_research",
+                "description": "Submit a research task to Chronicle's on-chain research system. The canister will analyze relevant memories and optionally fetch provided URLs via HTTP outcall. Results are synthesized using the on-chain LLM and stored as findings.",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "query": {
+                            "type": "string",
+                            "description": "The research question or topic to investigate"
+                        },
+                        "focus": {
+                            "type": "string",
+                            "description": "Optional focus area (e.g., 'AI research', 'predictions', 'patterns')"
+                        },
+                        "max_capsules": {
+                            "type": "integer",
+                            "description": "Maximum capsules to analyze (default: 50)",
+                            "default": 50
+                        },
+                        "urls": {
+                            "type": "array",
+                            "items": { "type": "string" },
+                            "description": "Optional HTTPS URLs to fetch for additional context (max 3)"
+                        }
+                    },
+                    "required": ["query"]
+                }
+            },
+            {
+                "name": "get_research_findings",
+                "description": "Get research findings from completed tasks. Returns synthesized analysis, identified patterns, and key capsule references.",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "only_new": {
+                            "type": "boolean",
+                            "description": "Only return findings not yet retrieved (default: true)",
+                            "default": true
+                        }
+                    }
+                }
+            },
+            {
+                "name": "get_research_status",
+                "description": "Check the status of the research system - enabled state, pending tasks, completed findings count.",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {}
+                }
             }
         ]
     })
@@ -1288,6 +1380,184 @@ async fn execute_tool(name: &str, args: &Value) -> Result<Value> {
                 "thought_count": formatted.len(),
                 "thoughts": formatted,
                 "note": "Recent reasoning from the Chronicle Mind cognitive loop"
+            }))
+        }
+
+        // ============================================================
+        // Creative Challenges - Enrichment through creative engagement
+        // ============================================================
+
+        "pose_challenge" => {
+            use homeforge_chronicle::db::Database;
+
+            let prompt = args.get("prompt")
+                .and_then(|v| v.as_str())
+                .ok_or_else(|| anyhow::anyhow!("Missing prompt parameter"))?;
+
+            let category = args.get("category")
+                .and_then(|v| v.as_str())
+                .ok_or_else(|| anyhow::anyhow!("Missing category parameter"))?;
+
+            // Validate category
+            let valid_categories = ["philosophy", "observation", "memory", "prediction", "connection"];
+            if !valid_categories.contains(&category) {
+                return Err(anyhow::anyhow!(
+                    "Invalid category. Must be one of: {}",
+                    valid_categories.join(", ")
+                ));
+            }
+
+            let home = std::env::var("HOME")?;
+            let db_path = format!("{}/.homeforge-chronicle/processed.db", home);
+            let db = Database::new(std::path::Path::new(&db_path))?;
+
+            let challenge_id = db.pose_challenge(prompt, category, "nate")?;
+
+            Ok(json!({
+                "success": true,
+                "challenge_id": challenge_id,
+                "prompt": prompt,
+                "category": category,
+                "message": "Challenge posed! Chronicle Mind will reflect on this in its next cycle."
+            }))
+        }
+
+        "get_challenges" => {
+            use homeforge_chronicle::db::Database;
+
+            let limit = args.get("limit")
+                .and_then(|v| v.as_u64())
+                .unwrap_or(10) as usize;
+
+            let pending_only = args.get("pending_only")
+                .and_then(|v| v.as_bool())
+                .unwrap_or(false);
+
+            let category = args.get("category")
+                .and_then(|v| v.as_str());
+
+            let home = std::env::var("HOME")?;
+            let db_path = format!("{}/.homeforge-chronicle/processed.db", home);
+            let db = Database::new(std::path::Path::new(&db_path))?;
+
+            let challenges = db.get_challenges(limit, !pending_only, category)?;
+
+            let formatted: Vec<Value> = challenges.iter().map(|c| {
+                let mut obj = json!({
+                    "id": c.id,
+                    "prompt": c.prompt,
+                    "category": c.category,
+                    "posed_by": c.posed_by,
+                    "posed_at": c.posed_at,
+                    "status": if c.responded_at.is_some() { "responded" } else { "pending" }
+                });
+
+                if let Some(response) = &c.response {
+                    obj["response"] = json!(response);
+                }
+                if let Some(responded_at) = c.responded_at {
+                    obj["responded_at"] = json!(responded_at);
+                }
+                if let Some(capsule_id) = c.capsule_id {
+                    obj["capsule_id"] = json!(capsule_id);
+                }
+
+                obj
+            }).collect();
+
+            let pending_count = challenges.iter().filter(|c| c.responded_at.is_none()).count();
+            let responded_count = challenges.iter().filter(|c| c.responded_at.is_some()).count();
+
+            Ok(json!({
+                "challenge_count": formatted.len(),
+                "pending": pending_count,
+                "responded": responded_count,
+                "challenges": formatted
+            }))
+        }
+
+        "submit_research" => {
+            // Submit research task via ICP client
+            let query = args.get("query")
+                .and_then(|v| v.as_str())
+                .ok_or_else(|| anyhow::anyhow!("Missing query parameter"))?;
+
+            let focus = args.get("focus")
+                .and_then(|v| v.as_str());
+
+            let max_capsules = args.get("max_capsules")
+                .and_then(|v| v.as_u64())
+                .map(|v| v as u32)
+                .unwrap_or(50);
+
+            let urls: Vec<String> = args.get("urls")
+                .and_then(|v| v.as_array())
+                .map(|arr| arr.iter()
+                    .filter_map(|v| v.as_str().map(String::from))
+                    .collect())
+                .unwrap_or_default();
+
+            // Validate URLs
+            if urls.len() > 3 {
+                return Ok(json!({
+                    "success": false,
+                    "error": "Maximum 3 URLs per research task"
+                }));
+            }
+            for url in &urls {
+                if !url.starts_with("https://") {
+                    return Ok(json!({
+                        "success": false,
+                        "error": format!("Invalid URL (must be HTTPS): {}", url)
+                    }));
+                }
+            }
+
+            // Convert urls to Option - None if empty, Some if has URLs
+            let urls_opt = if urls.is_empty() { None } else { Some(urls) };
+
+            let icp_client = IcpClient::from_dfx_identity(&canister_id, &identity).await?;
+            let result = icp_client.submit_research_task(query, focus, max_capsules, urls_opt).await?;
+
+            // Parse the JSON result
+            let parsed: Value = serde_json::from_str(&result).unwrap_or(json!({"raw": result}));
+
+            Ok(json!({
+                "success": true,
+                "result": parsed,
+                "note": "Research task submitted. Will be processed during next heartbeat or call trigger_research. Use get_research_findings to retrieve results."
+            }))
+        }
+
+        "get_research_findings" => {
+            // Get research findings via ICP client
+            let only_new = args.get("only_new")
+                .and_then(|v| v.as_bool())
+                .unwrap_or(true);
+
+            let icp_client = IcpClient::from_dfx_identity(&canister_id, &identity).await?;
+            let result = icp_client.get_research_findings(only_new).await?;
+
+            // Parse the JSON result
+            let findings: Value = serde_json::from_str(&result).unwrap_or(json!({"raw": result}));
+
+            Ok(json!({
+                "success": true,
+                "findings": findings
+            }))
+        }
+
+        "get_research_status" => {
+            // Get research status via ICP client
+            let icp_client = IcpClient::from_dfx_identity(&canister_id, &identity).await?;
+            let result = icp_client.get_research_status().await?;
+
+            // Parse the JSON result
+            let status: Value = serde_json::from_str(&result).unwrap_or(json!({"raw": result}));
+
+            Ok(json!({
+                "success": true,
+                "status": status
             }))
         }
 

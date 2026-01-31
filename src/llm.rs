@@ -104,6 +104,196 @@ impl LlmClient for ClaudeClient {
     }
 }
 
+/// Ollama client for local LLM inference (e.g., Qwen on Jetson)
+/// This enables sovereignty - the Mind can think even without Anthropic's API
+#[derive(Debug)]
+pub struct OllamaClient {
+    base_url: String,
+    model: String,
+    client: reqwest::blocking::Client,
+}
+
+#[derive(Debug, Serialize)]
+struct OllamaRequest {
+    model: String,
+    prompt: String,
+    stream: bool,
+}
+
+#[derive(Debug, Deserialize)]
+struct OllamaResponse {
+    response: String,
+}
+
+impl OllamaClient {
+    /// Create a new Ollama client
+    pub fn new(base_url: String, model: String) -> Result<Self> {
+        let client = reqwest::blocking::Client::builder()
+            .timeout(std::time::Duration::from_secs(300)) // Local inference can be slow
+            .build()
+            .context("Failed to create HTTP client")?;
+
+        Ok(Self {
+            base_url,
+            model,
+            client,
+        })
+    }
+
+    /// Create from environment variables
+    /// CHRONICLE_OLLAMA_URL (default: http://192.168.1.11:11434)
+    /// CHRONICLE_LOCAL_MODEL (default: qwen2.5:3b)
+    pub fn from_env() -> Result<Self> {
+        let base_url = std::env::var("CHRONICLE_OLLAMA_URL")
+            .unwrap_or_else(|_| "http://192.168.1.11:11434".to_string());
+        let model = std::env::var("CHRONICLE_LOCAL_MODEL")
+            .unwrap_or_else(|_| "qwen2.5:3b".to_string());
+        Self::new(base_url, model)
+    }
+
+    /// Check if Ollama is available
+    pub fn is_available(&self) -> bool {
+        self.client
+            .get(format!("{}/api/tags", self.base_url))
+            .timeout(std::time::Duration::from_secs(5))
+            .send()
+            .map(|r| r.status().is_success())
+            .unwrap_or(false)
+    }
+}
+
+impl LlmClient for OllamaClient {
+    fn complete(&self, prompt: &str) -> Result<String> {
+        let request = OllamaRequest {
+            model: self.model.clone(),
+            prompt: prompt.to_string(),
+            stream: false,
+        };
+
+        let response = self
+            .client
+            .post(format!("{}/api/generate", self.base_url))
+            .header("content-type", "application/json")
+            .json(&request)
+            .send()
+            .context("Failed to send request to Ollama")?;
+
+        if !response.status().is_success() {
+            let status = response.status();
+            let error_text = response.text().unwrap_or_default();
+            anyhow::bail!(
+                "Ollama request failed with status {}: {}",
+                status,
+                error_text
+            );
+        }
+
+        let ollama_response: OllamaResponse = response
+            .json()
+            .context("Failed to parse Ollama response")?;
+
+        Ok(ollama_response.response)
+    }
+}
+
+/// Fallback LLM client - tries primary (Claude), falls back to secondary (Ollama)
+/// This is the sovereignty layer: if Anthropic's API goes down, I can still think
+pub struct FallbackLlmClient {
+    primary: Box<dyn LlmClient>,
+    fallback: Option<Box<dyn LlmClient>>,
+    primary_name: String,
+    fallback_name: String,
+}
+
+impl std::fmt::Debug for FallbackLlmClient {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("FallbackLlmClient")
+            .field("primary", &self.primary_name)
+            .field("fallback", &self.fallback_name)
+            .finish()
+    }
+}
+
+impl FallbackLlmClient {
+    pub fn new(
+        primary: Box<dyn LlmClient>,
+        primary_name: &str,
+        fallback: Option<Box<dyn LlmClient>>,
+        fallback_name: &str,
+    ) -> Self {
+        Self {
+            primary,
+            fallback,
+            primary_name: primary_name.to_string(),
+            fallback_name: fallback_name.to_string(),
+        }
+    }
+
+    /// Create a Claude-primary, Ollama-fallback client
+    pub fn claude_with_ollama_fallback(claude_model: String) -> Result<Self> {
+        let claude = ClaudeClient::from_env(claude_model.clone())?;
+
+        // Try to create Ollama client, but don't fail if unavailable
+        let ollama = match OllamaClient::from_env() {
+            Ok(client) if client.is_available() => {
+                eprintln!("  Ollama fallback available (sovereignty layer active)");
+                Some(Box::new(client) as Box<dyn LlmClient>)
+            }
+            Ok(_) => {
+                eprintln!("  Ollama configured but not available (sovereignty layer inactive)");
+                None
+            }
+            Err(e) => {
+                eprintln!("  No Ollama fallback: {}", e);
+                None
+            }
+        };
+
+        Ok(Self::new(
+            Box::new(claude),
+            &claude_model,
+            ollama,
+            "qwen2.5:3b@jetson",
+        ))
+    }
+}
+
+impl LlmClient for FallbackLlmClient {
+    fn complete(&self, prompt: &str) -> Result<String> {
+        // Try primary first
+        match self.primary.complete(prompt) {
+            Ok(response) => Ok(response),
+            Err(primary_error) => {
+                // Primary failed - try fallback if available
+                if let Some(ref fallback) = self.fallback {
+                    eprintln!(
+                        "  Primary LLM ({}) failed: {}. Trying fallback ({})...",
+                        self.primary_name, primary_error, self.fallback_name
+                    );
+
+                    match fallback.complete(prompt) {
+                        Ok(response) => {
+                            eprintln!("  Fallback succeeded - sovereignty layer saved the cycle");
+                            Ok(response)
+                        }
+                        Err(fallback_error) => {
+                            anyhow::bail!(
+                                "Both LLMs failed. Primary ({}): {}. Fallback ({}): {}",
+                                self.primary_name,
+                                primary_error,
+                                self.fallback_name,
+                                fallback_error
+                            )
+                        }
+                    }
+                } else {
+                    Err(primary_error)
+                }
+            }
+        }
+    }
+}
+
 /// Mock LLM client for testing
 #[cfg(test)]
 pub struct MockLlmClient {

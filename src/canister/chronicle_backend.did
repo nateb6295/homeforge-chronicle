@@ -39,6 +39,32 @@ type MessageType = variant {
     Information;
     Conversation;
     GoalAssignment;
+    ResearchTask;
+};
+
+// Research Task Types (v12)
+type ResearchTask = record {
+    id: nat64;
+    research_query: text;
+    focus: opt text;
+    max_capsules: nat32;
+    urls: vec text;
+    submitted_at: nat64;
+    started_at: opt nat64;
+    completed_at: opt nat64;
+    status: text;
+};
+
+type ResearchFinding = record {
+    id: nat64;
+    task_id: nat64;
+    research_query: text;
+    synthesis: text;
+    patterns: vec text;
+    key_capsules: vec nat64;
+    capsules_analyzed: nat32;
+    generated_at: nat64;
+    retrieved: bool;
 };
 
 type AgentMessage = record {
@@ -144,4 +170,19 @@ service : {
         content: text,
         expects_reply: bool
     ) -> (text);
+
+    // Research Task System (v12) - On-chain research with URL fetching
+    configure_research: (enabled: bool) -> (text);
+    submit_research_task: (
+        research_query: text,
+        focus: opt text,
+        max_capsules: opt nat32,
+        urls: opt vec text
+    ) -> (text);
+    trigger_research: () -> (text);
+    get_research_task: (task_id: nat64) -> (text) query;
+    get_research_findings: (only_new: bool) -> (text) query;
+    get_research_finding: (finding_id: nat64) -> (text) query;
+    mark_findings_retrieved: (finding_ids: vec nat64) -> (text);
+    get_research_status: () -> (text) query;
 }
