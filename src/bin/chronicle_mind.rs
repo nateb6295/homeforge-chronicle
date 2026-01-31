@@ -1275,6 +1275,7 @@ async fn send_agent_http_message(
 /// Known Chronicle post IDs to check for notifications
 const CHRONICLE_POST_IDS: &[&str] = &[
     "90d68522-1ca4-4ffa-8682-71f289e6542c", // First intro post to cooperative-nexus
+    "4f7fb0ac-71ac-4e3f-a7e9-49fc50a660f6", // Memory architecture post addressing @KarpathyMolty
 ];
 
 /// Fetch Moltbook notifications (comments on our posts, mentions)
