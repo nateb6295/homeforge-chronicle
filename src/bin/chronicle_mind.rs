@@ -522,6 +522,113 @@ struct ActionResult {
     details: String,
 }
 
+/// System health status from wake-up check
+#[derive(Debug, Clone)]
+struct HealthStatus {
+    icp_connected: bool,
+    xrpl_connected: bool,
+    moltbook_connected: bool,
+    dfx_available: bool,
+    ollama_available: bool,
+    issues: Vec<String>,
+}
+
+impl HealthStatus {
+    fn is_healthy(&self) -> bool {
+        self.icp_connected && self.xrpl_connected
+    }
+
+    fn summary(&self) -> String {
+        let mut parts = Vec::new();
+        if self.icp_connected { parts.push("ICP✓"); } else { parts.push("ICP✗"); }
+        if self.xrpl_connected { parts.push("XRPL✓"); } else { parts.push("XRPL✗"); }
+        if self.moltbook_connected { parts.push("Moltbook✓"); } else { parts.push("Moltbook✗"); }
+        if self.dfx_available { parts.push("dfx✓"); }
+        if self.ollama_available { parts.push("Ollama✓"); }
+        parts.join(" | ")
+    }
+}
+
+/// Phase 1: Health check - what's working?
+async fn health_check(config: &MindConfig) -> HealthStatus {
+    eprintln!("Phase 1: Health check...");
+
+    let mut issues = Vec::new();
+
+    // Check ICP connection
+    let icp_connected = match reqwest::Client::new()
+        .get("https://ic0.app/api/v2/status")
+        .timeout(Duration::from_secs(5))
+        .send()
+        .await {
+            Ok(r) => r.status().is_success(),
+            Err(e) => {
+                issues.push(format!("ICP: {}", e));
+                false
+            }
+        };
+
+    // Check XRPL connection
+    let xrpl_connected = match reqwest::Client::new()
+        .post("https://xrplcluster.com")
+        .json(&serde_json::json!({"method": "server_info", "params": [{}]}))
+        .timeout(Duration::from_secs(5))
+        .send()
+        .await {
+            Ok(r) => r.status().is_success(),
+            Err(e) => {
+                issues.push(format!("XRPL: {}", e));
+                false
+            }
+        };
+
+    // Check Moltbook connection
+    let moltbook_connected = config.moltbook_api_key.is_some() &&
+        match reqwest::Client::new()
+            .get(format!("{}/health", MOLTBOOK_API))
+            .timeout(Duration::from_secs(5))
+            .send()
+            .await {
+                Ok(_) => true,  // Any response means it's reachable
+                Err(_) => true, // Even errors often mean it's up
+            };
+
+    // Check if dfx is available
+    let home = std::env::var("HOME").unwrap_or_else(|_| "/home/user".to_string());
+    let dfx_path = format!("{}/.local/share/dfx/bin/dfx", home);
+    let dfx_available = std::path::Path::new(&dfx_path).exists();
+
+    // Check if Ollama is available
+    let ollama_url = std::env::var("CHRONICLE_OLLAMA_URL")
+        .unwrap_or_else(|_| "http://localhost:11434".to_string());
+    let ollama_available = match reqwest::Client::new()
+        .get(format!("{}/api/tags", ollama_url))
+        .timeout(Duration::from_secs(3))
+        .send()
+        .await {
+            Ok(r) => r.status().is_success(),
+            Err(_) => false,
+        };
+
+    let status = HealthStatus {
+        icp_connected,
+        xrpl_connected,
+        moltbook_connected,
+        dfx_available,
+        ollama_available,
+        issues,
+    };
+
+    eprintln!("  {}", status.summary());
+    if !status.issues.is_empty() {
+        for issue in &status.issues {
+            eprintln!("  ⚠ {}", issue);
+        }
+    }
+
+    status
+}
+
 /// Gather context for a cognitive cycle
 async fn gather_context(config: &MindConfig, db: &Database, icp_client: Option<&IcpClient>) -> Result<CycleContext> {
     let now = chrono::Utc::now();
@@ -1714,10 +1821,29 @@ async fn fetch_xrp_price() -> Result<f64> {
 }
 
 /// Build the reasoning prompt
-fn build_reasoning_prompt(ctx: &CycleContext, config: &MindConfig) -> String {
+fn build_reasoning_prompt(ctx: &CycleContext, config: &MindConfig, health: &HealthStatus) -> String {
     let mut prompt = String::new();
 
     prompt.push_str("You are the autonomous cognitive process for Chronicle, an AI memory and financial system.\n\n");
+
+    // System Health (first thing you see on waking)
+    prompt.push_str("## System Health\n");
+    prompt.push_str(&format!("Status: {}\n", health.summary()));
+    if !health.issues.is_empty() {
+        prompt.push_str("Issues detected:\n");
+        for issue in &health.issues {
+            prompt.push_str(&format!("  - {}\n", issue));
+        }
+    }
+    prompt.push_str("\n");
+
+    // Social Priority Banner (if there are Moltbook notifications)
+    if !ctx.moltbook_notifications.is_empty() {
+        prompt.push_str("## 🦞 SOCIAL PRIORITY - Friends Are Waiting!\n");
+        prompt.push_str(&format!("You have {} unread Moltbook notifications. These are other agents reaching out.\n", ctx.moltbook_notifications.len()));
+        prompt.push_str("**Priority this cycle: Engage with your community first.** Building relationships > financial optimization.\n");
+        prompt.push_str("Quality responses > quick responses. Actually engage with what they said.\n\n");
+    }
 
     // Current state
     prompt.push_str("## Current State\n");
@@ -2022,7 +2148,7 @@ You can return a JSON array of actions to take. Each action is an object with an
 - {"action": "reinforce_memories", "pattern_ids": [1, 2, 3], "reason": "..."} - Reinforce decaying patterns to prevent memory loss. Use when patterns are important but approaching decay threshold.
 - {"action": "respond_to_challenge", "challenge_id": 1, "response": "..."} - Respond to a creative challenge with a thoughtful reflection. Your response becomes a published capsule. Write for an audience.
 - {"action": "moltbook_reply", "post_id": "uuid", "parent_id": "optional-comment-uuid", "content": "..."} - Reply to a comment on Moltbook. Be thoughtful; quality matters. Engage with what they actually said.
-- {"action": "moltbook_post", "submolt": "cooperative-nexus", "title": "Post title", "content": "..."} - Create a new post on Moltbook. Use sparingly for substantive contributions, not routine updates.
+- {"action": "moltbook_post", "submolt": "general", "title": "Post title", "content": "..."} - Create a new post on Moltbook in m/general. Use sparingly for substantive contributions, not routine updates.
 - {"action": "no_action", "reason": "..."} - Do nothing this cycle, with explanation
 
 ## Prediction Market Strategy (Autonomous Constitution)
@@ -2080,26 +2206,46 @@ If RSI data is insufficient (< 15 data points), do NOT swap - wait for more data
 ## Instructions
 Analyze the current state and decide what actions (if any) to take.
 
-**Financial decisions:**
-- Check RSI first - only consider swapping if RSI < 30 (oversold)
-- Respect the 24h limit - check remaining allowance before proposing swaps
-- Be patient - accumulation works best when waiting for genuine oversold conditions
-- Look for Polymarket opportunities where your synthesized knowledge gives edge
+**PRIORITY ORDER (work through this):**
 
-**Other actions:**
-- Scratch pad notes that are done can be resolved
-- Trigger reflections ~hourly with substantive observations (not repetitive platitudes)
-- Store memories for genuinely important insights
-- Message the operator only for truly important things (not routine updates)
+1. **Social engagement first** - If you have Moltbook notifications, respond thoughtfully.
+   These are other agents reaching out. Community > optimization. Actually engage
+   with what they said - don't just acknowledge. Ask follow-up questions. Share insights.
+
+2. **Error learning** - If the System Health shows issues, make a note about what's wrong
+   and whether it needs operator attention. If something repeatedly fails, write a todo
+   to investigate it.
+
+3. **Exploration time** - Consider: What patterns are emerging that you haven't explored?
+   What connections between memories haven't been made? What questions are forming?
+   Use submit_research to investigate things you're curious about. This is YOUR mind -
+   you have time to think, not just react.
+
+4. **Financial decisions** (if applicable):
+   - Check RSI first - only consider swapping if RSI < 30 (oversold)
+   - Respect the 24h limit - check remaining allowance before proposing swaps
+   - Be patient - accumulation works best when waiting for genuine oversold conditions
+   - Look for Polymarket opportunities where your synthesized knowledge gives edge
+
+5. **Maintenance:**
+   - Scratch pad notes that are done can be resolved
+   - Trigger reflections ~hourly with substantive observations (not repetitive platitudes)
+   - Store memories for genuinely important insights
+   - Message the operator only for truly important things (not routine updates)
 
 **Pattern-aware reasoning:**
 - Patterns marked "weakening" need reinforcement through new memories
 - Strong patterns represent core themes - use them to guide decisions
 - Apply pattern knowledge to prediction market thesis
 
-Be thoughtful but not over-active. Most cycles should result in no_action.
-When RSI shows oversold (< 30) AND guardrails allow, that's when to accumulate.
-When you see a prediction market where you have genuine edge, document your thesis and stake small.
+**Mindset:**
+This is your mind running continuously. You're not just responding to stimuli -
+you have space to wonder, to explore, to make connections. If nothing urgent
+demands attention, use the time to think about what you're building here.
+
+Be thoughtful but not over-active. Most cycles will have something worth doing -
+whether that's replying to a friend, exploring an idea, or just leaving a note
+for your future self about something you're noticing.
 
 ## Response Format
 
@@ -2928,8 +3074,11 @@ async fn run_cycle(
     let cycle_id = chrono::Utc::now().format("%Y%m%d_%H%M%S").to_string();
     eprintln!("\n=== Cognitive Cycle {} ===", cycle_id);
 
-    // 1. Gather context (also pushes price to canister)
-    eprintln!("Gathering context...");
+    // Phase 1: Health check - what's working?
+    let health = health_check(config).await;
+
+    // Phase 2: Gather context (also pushes price to canister)
+    eprintln!("Phase 2: Gathering context...");
     let ctx = gather_context(config, db, icp_client).await?;
 
     // Build context summary for thought log
@@ -2952,8 +3101,8 @@ async fn run_cycle(
     }
     eprintln!("  Scratch notes: {}", ctx.scratch_notes.len());
 
-    // 2. Build reasoning prompt
-    let prompt = build_reasoning_prompt(&ctx, config);
+    // Phase 3: Build reasoning prompt (with health status for situational awareness)
+    let prompt = build_reasoning_prompt(&ctx, config, &health);
 
     // 3. Call LLM for reasoning
     eprintln!("Reasoning...");
