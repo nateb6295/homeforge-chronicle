@@ -847,6 +847,11 @@ async fn fetch_cloud_price() -> Result<CloudInfo> {
     let home = std::env::var("HOME").unwrap_or_else(|_| "/home/user".to_string());
     let dfx_path = format!("{}/.local/share/dfx/bin/dfx", home);
 
+    // Check if dfx exists before trying to run it
+    if !std::path::Path::new(&dfx_path).exists() {
+        return Err(anyhow::anyhow!("dfx not installed (CLOUD price unavailable on this host)"));
+    }
+
     // Query ICPSwap's Node Index canister using dfx
     // This returns all tokens with price data in Candid format
     let output = Command::new(&dfx_path)
@@ -928,6 +933,11 @@ async fn fetch_cloud_balance() -> Result<f64> {
 
     let home = std::env::var("HOME").unwrap_or_else(|_| "/home/user".to_string());
     let dfx_path = format!("{}/.local/share/dfx/bin/dfx", home);
+
+    // Check if dfx exists before trying to run it
+    if !std::path::Path::new(&dfx_path).exists() {
+        return Err(anyhow::anyhow!("dfx not installed (CLOUD balance unavailable on this host)"));
+    }
 
     // Query CLOUD token balance for Chronicle's principal
     let output = Command::new(&dfx_path)
