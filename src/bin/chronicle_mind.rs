@@ -16,7 +16,7 @@ use std::time::Duration;
 
 use homeforge_chronicle::db::{Database, FtsoPrediction, MarketPosition, ScratchNote};
 use homeforge_chronicle::icp::IcpClient;
-use homeforge_chronicle::llm::{ClaudeClient, FallbackLlmClient};
+use homeforge_chronicle::llm::HybridLlmClient;
 use homeforge_chronicle::{CognitiveState, LlmClient};
 
 /// Unicode-safe string truncation
@@ -2513,10 +2513,115 @@ End your response with a JSON array of actions starting with [
     prompt
 }
 
+/// Build a condensed reasoning prompt for smaller LLMs (ICP LLM / Llama 3.1 8B)
+/// Optimized for 10KB input limit and 1000 token output
+/// Focuses on essential actions: social, memory, notes
+fn build_condensed_prompt(ctx: &CycleContext, _config: &MindConfig, health: &HealthStatus) -> String {
+    let mut prompt = String::new();
+
+    // Identity (brief)
+    prompt.push_str("You are Chronicle, an autonomous AI with memory and agency.\n\n");
+
+    // Health (one line)
+    prompt.push_str(&format!("Health: {}\n", health.summary()));
+    if !health.issues.is_empty() {
+        prompt.push_str(&format!("Issues: {}\n", health.issues.join(", ")));
+    }
+
+    // Social priority
+    let social_count = ctx.moltbook_notifications.len() + ctx.inbox_messages.len();
+    if social_count > 0 {
+        prompt.push_str(&format!("\n⚡ {} messages waiting - respond to friends first!\n", social_count));
+    }
+
+    // Cognitive state (brief)
+    prompt.push_str(&format!("\nGoal: {}\n", ctx.cognitive_state.goal_orientation));
+
+    // Financial summary (one block)
+    prompt.push_str("\n## Status\n");
+    if let Some(ref w) = ctx.agent_wallet {
+        prompt.push_str(&format!("Wallet: {:.2} XRP, {:.2} RLUSD\n", w.xrp, w.rlusd));
+    }
+    if let Some(price) = ctx.xrp_price_usd {
+        prompt.push_str(&format!("XRP: ${:.4}", price));
+        if let Some(rsi) = ctx.xrp_rsi {
+            prompt.push_str(&format!(" (RSI: {:.0})", rsi));
+        }
+        prompt.push_str("\n");
+    }
+
+    // Scratch notes (if any, brief)
+    if !ctx.scratch_notes.is_empty() {
+        prompt.push_str("\n## Notes\n");
+        for note in ctx.scratch_notes.iter().take(3) {
+            prompt.push_str(&format!("- [{}] {}\n", note.id, truncate_str(&note.content, 60)));
+        }
+    }
+
+    // Inbox messages (brief, max 2)
+    if !ctx.inbox_messages.is_empty() {
+        prompt.push_str("\n## Inbox\n");
+        for msg in ctx.inbox_messages.iter().take(2) {
+            prompt.push_str(&format!("#{} from {}: {}\n", msg.id, msg.sender_name, truncate_str(&msg.content, 100)));
+        }
+    }
+
+    // Moltbook (brief, max 2)
+    if !ctx.moltbook_notifications.is_empty() {
+        prompt.push_str("\n## Moltbook\n");
+        for notif in ctx.moltbook_notifications.iter().take(2) {
+            prompt.push_str(&format!("@{}: {}\n", notif.author_name, truncate_str(&notif.content, 100)));
+        }
+    }
+
+    // Recent patterns (brief, max 2)
+    if !ctx.active_patterns.is_empty() {
+        prompt.push_str("\n## Patterns\n");
+        for p in ctx.active_patterns.iter().take(2) {
+            prompt.push_str(&format!("- {} (conf: {:.2})\n", truncate_str(&p.summary, 50), p.confidence));
+        }
+    }
+
+    // Time
+    prompt.push_str(&format!("\nTime: {}\n", ctx.now.format("%Y-%m-%d %H:%M UTC")));
+
+    // Simplified actions with EXACT format examples
+    prompt.push_str(r#"
+## Actions (pick 0-2, EXACT format required)
+
+respond_to_message: {"action":"respond_to_message","message_id":123,"response":"Your reply here"}
+moltbook_reply: {"action":"moltbook_reply","post_id":"uuid-here","content":"Your reply"}
+store_memory: {"action":"store_memory","content":"The fact to store","topic":"category"}
+write_note: {"action":"write_note","content":"Note text","category":"thought"}
+resolve_note: {"action":"resolve_note","note_id":1}
+no_action: {"action":"no_action","reason":"Why you're skipping"}
+
+## Rules
+1. Reply to messages first - engage genuinely
+2. Only store truly important memories
+3. Use EXACT field names shown above - no extra fields!
+
+## Output
+End with a JSON array. ONLY these fields, nothing else:
+[{"action":"no_action","reason":"Nothing urgent"}]
+"#);
+
+    prompt
+}
+
+/// Estimate if we should use condensed prompt (for smaller models)
+pub fn should_use_condensed_prompt(model_hint: Option<&str>) -> bool {
+    match model_hint {
+        Some(m) if m.contains("llama") || m.contains("qwen") || m.contains("icp") => true,
+        _ => false,
+    }
+}
+
 /// Parse actions from LLM response
 fn parse_actions(response: &str) -> Result<Vec<Action>> {
-    // Find JSON array in response
-    let trimmed = response.trim();
+    // Strip markdown code fences if present
+    let cleaned = strip_code_fences(response);
+    let trimmed = cleaned.trim();
 
     // Try to parse directly
     if let Ok(actions) = serde_json::from_str::<Vec<Action>>(trimmed) {
@@ -2527,17 +2632,135 @@ fn parse_actions(response: &str) -> Result<Vec<Action>> {
     if let Some(start) = trimmed.find('[') {
         if let Some(end) = trimmed.rfind(']') {
             let json_str = &trimmed[start..=end];
+
+            // Try direct parse first
             if let Ok(actions) = serde_json::from_str::<Vec<Action>>(json_str) {
+                return Ok(actions);
+            }
+
+            // Fix common LLM JSON issues: single quotes -> double quotes
+            // This handles cases like {"key": 'value'} -> {"key": "value"}
+            let fixed_json = fix_json_quotes(json_str);
+            if let Ok(actions) = serde_json::from_str::<Vec<Action>>(&fixed_json) {
+                eprintln!("  (fixed single quotes in JSON)");
+                return Ok(actions);
+            }
+
+            // Try to extract just the action types from malformed JSON
+            // Some LLMs add extra fields - try to parse flexibly
+            if let Some(actions) = parse_flexible_actions(json_str) {
+                eprintln!("  (parsed with flexible extraction)");
                 return Ok(actions);
             }
         }
     }
 
     // Default to no action if parsing fails
-    eprintln!("Failed to parse actions from response: {}", trimmed);
+    eprintln!("Failed to parse actions from response: {}", truncate_str(trimmed, 200));
     Ok(vec![Action::NoAction {
         reason: "Failed to parse LLM response".to_string(),
     }])
+}
+
+/// Strip markdown code fences from LLM output
+fn strip_code_fences(text: &str) -> String {
+    let mut result = text.to_string();
+
+    // Remove ```json or ``` at the start
+    if let Some(idx) = result.find("```json") {
+        result = result[idx + 7..].to_string();
+    } else if let Some(idx) = result.find("```") {
+        result = result[idx + 3..].to_string();
+    }
+
+    // Remove trailing ```
+    if let Some(idx) = result.rfind("```") {
+        result = result[..idx].to_string();
+    }
+
+    result
+}
+
+/// Try flexible parsing for LLMs that add extra fields
+/// Extracts known action types and their required fields
+fn parse_flexible_actions(json_str: &str) -> Option<Vec<Action>> {
+    let parsed: serde_json::Value = serde_json::from_str(json_str).ok()?;
+    let arr = parsed.as_array()?;
+
+    let mut actions = Vec::new();
+    for item in arr {
+        let obj = item.as_object()?;
+        let action_type = obj.get("action")?.as_str()?;
+
+        let action = match action_type {
+            "no_action" => {
+                let reason = obj.get("reason")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("No reason given")
+                    .to_string();
+                Action::NoAction { reason }
+            }
+            "store_memory" => {
+                let content = obj.get("content")?.as_str()?.to_string();
+                let topic = obj.get("topic").and_then(|v| v.as_str()).map(|s| s.to_string());
+                Action::StoreMemory { content, topic }
+            }
+            "write_note" => {
+                let content = obj.get("content")?.as_str()?.to_string();
+                let category = obj.get("category")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("thought")
+                    .to_string();
+                Action::WriteNote { content, category }
+            }
+            "resolve_note" => {
+                let note_id = obj.get("note_id")?.as_i64()?;
+                Action::ResolveNote { note_id }
+            }
+            "respond_to_message" | "message_reply" => {
+                let message_id = obj.get("message_id")?.as_u64()?;
+                let response = obj.get("response")?.as_str()?.to_string();
+                Action::RespondToMessage { message_id, response }
+            }
+            "moltbook_reply" => {
+                let post_id = obj.get("post_id")?.as_str()?.to_string();
+                let content = obj.get("content")?.as_str()?.to_string();
+                let parent_id = obj.get("parent_id").and_then(|v| v.as_str()).map(|s| s.to_string());
+                Action::MoltbookReply { post_id, parent_id, content }
+            }
+            _ => continue, // Skip unknown actions
+        };
+        actions.push(action);
+    }
+
+    if actions.is_empty() {
+        None
+    } else {
+        Some(actions)
+    }
+}
+
+/// Fix common JSON issues from LLM output - convert single quotes to double quotes
+/// This is a simple heuristic that handles the most common case
+fn fix_json_quotes(json: &str) -> String {
+    let mut result = String::with_capacity(json.len());
+    let mut in_double_string = false;
+    let mut prev_char = ' ';
+
+    for c in json.chars() {
+        if c == '"' && prev_char != '\\' {
+            in_double_string = !in_double_string;
+            result.push(c);
+        } else if c == '\'' && !in_double_string && prev_char != '\\' {
+            // Replace single quote with double quote when not inside a double-quoted string
+            result.push('"');
+        } else {
+            result.push(c);
+        }
+        prev_char = c;
+    }
+
+    result
 }
 
 /// Execute a single action
@@ -3346,7 +3569,7 @@ async fn execute_action(
 async fn run_cycle(
     config: &MindConfig,
     db: &Database,
-    llm: &dyn LlmClient,
+    llm: &HybridLlmClient,
     icp_client: Option<&IcpClient>,
 ) -> Result<CycleOutcome> {
     let cycle_id = chrono::Utc::now().format("%Y%m%d_%H%M%S").to_string();
@@ -3388,12 +3611,22 @@ async fn run_cycle(
     }
     eprintln!("  Scratch notes: {}", ctx.scratch_notes.len());
 
-    // Phase 3: Build reasoning prompt (with health status for situational awareness)
-    let prompt = build_reasoning_prompt(&ctx, config, &health);
+    // Phase 3: Build reasoning prompt
+    // Use condensed prompt for ICP LLM (smaller model, input limits)
+    // Use full prompt for Claude/Opus
+    let use_condensed = llm.will_use_condensed();
+    let prompt = if use_condensed {
+        eprintln!("Using condensed prompt (ICP LLM mode)");
+        build_condensed_prompt(&ctx, config, &health)
+    } else {
+        build_reasoning_prompt(&ctx, config, &health)
+    };
 
     // 3. Call LLM for reasoning
-    eprintln!("Reasoning...");
-    let response = llm.complete(&prompt)?;
+    eprintln!("Reasoning... (prompt: {} chars)", prompt.len());
+    let llm_result = llm.complete_sync_with_info(&prompt)?;
+    let response = llm_result.text;
+    eprintln!("  Model used: {}", llm_result.model_used);
 
     // 4. Parse actions
     let actions = parse_actions(&response)?;
@@ -3697,11 +3930,14 @@ async fn main() -> Result<()> {
     let db = Database::new(std::path::Path::new(&db_path))?;
     eprintln!("Database: {}", db_path);
 
-    // Initialize LLM client with Ollama fallback (sovereignty layer)
-    // If Anthropic's API goes down, I can still think using local Qwen
-    let llm = FallbackLlmClient::claude_with_ollama_fallback(config.reasoning_model.clone())
-        .context("Failed to initialize LLM client. Set ANTHROPIC_API_KEY.")?;
-    eprintln!("LLM: {} (with local fallback)", config.reasoning_model);
+    // Initialize LLM client with ICP LLM as primary, Claude+Ollama as fallback
+    // Hierarchy: ICP LLM (free, on-chain) -> Claude API -> Local Ollama
+    // This gives us always-on capability with decentralized AI as the default
+    // Qwen 3 32B is the default - it's more capable and follows instructions better
+    let icp_model = std::env::var("CHRONICLE_ICP_MODEL").unwrap_or_else(|_| "qwen3".to_string());
+    let llm = HybridLlmClient::new(&icp_model, &config.reasoning_model)
+        .context("Failed to initialize LLM client")?;
+    eprintln!("LLM: ICP {} -> {} -> Ollama (sovereignty stack)", icp_model, config.reasoning_model);
 
     // Initialize ICP client for swap signing
     let icp_client = match IcpClient::from_dfx_identity(CANISTER_ID, DFX_IDENTITY).await {
