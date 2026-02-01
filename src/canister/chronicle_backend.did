@@ -114,6 +114,7 @@ service : {
     ) -> (nat64);
     add_embedding: (capsule_id: nat64, embedding: vec float32, model_name: text) -> (bool);
     add_capsules_bulk: (capsules: vec KnowledgeCapsule) -> (vec nat64);
+    delete_capsules: (ids: vec nat64) -> (text);
     get_capsule_count: () -> (nat64) query;
     get_embedding_count: () -> (nat64) query;
     get_capsule: (id: nat64) -> (opt KnowledgeCapsule) query;
@@ -171,6 +172,13 @@ service : {
         expects_reply: bool
     ) -> (text);
 
+    // LLM Relay (v13) - Allow off-chain clients to use ICP LLM
+    llm_prompt: (
+        prompt: text,
+        model: opt text,
+        system_prompt: opt text
+    ) -> (text);
+
     // Research Task System (v12) - On-chain research with URL fetching
     configure_research: (enabled: bool) -> (text);
     submit_research_task: (
@@ -185,4 +193,7 @@ service : {
     get_research_finding: (finding_id: nat64) -> (text) query;
     mark_findings_retrieved: (finding_ids: vec nat64) -> (text);
     get_research_status: () -> (text) query;
+
+    // Admin methods (owner only)
+    set_api_token: (token: opt text) -> (bool);
 }

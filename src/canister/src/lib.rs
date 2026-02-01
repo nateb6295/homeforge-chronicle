@@ -262,6 +262,73 @@ pub struct ActivityEntry {
 }
 
 // ============================================================
+// Assistant Task System: Qwen executes mechanical checklists
+// No open-ended thinking - just check, compare, report
+// ============================================================
+
+/// Task types the assistant (Qwen) can execute reliably
+/// These are MECHANICAL operations - no creativity required
+#[derive(Clone, Debug, CandidType, Deserialize)]
+pub enum AssistantTaskType {
+    /// Check a price against a threshold
+    CheckPrice {
+        asset: String,           // "XRP", "BTC", "FLR"
+        condition: String,       // "lt", "gt", "eq"
+        threshold: f64,
+        alert_note: String,      // What to write if condition triggers
+    },
+    /// Check wallet balance vs minimum
+    CheckBalance {
+        asset: String,           // "XRP", "RLUSD"
+        min_threshold: f64,
+        alert_note: String,
+    },
+    /// Fetch URL and store result
+    FetchUrl {
+        url: String,
+        store_as: String,        // Note title
+    },
+    /// Simple heartbeat - confirm alive, report stats
+    Heartbeat,
+    /// Write a note (from Opus instructions)
+    WriteNote {
+        content: String,
+        priority: u8,
+    },
+}
+
+/// Status of an assistant task
+#[derive(Clone, Debug, CandidType, Deserialize, PartialEq)]
+pub enum AssistantTaskStatus {
+    Pending,
+    Completed,
+    Failed,
+}
+
+/// A task in the assistant queue
+#[derive(Clone, Debug, CandidType, Deserialize)]
+pub struct AssistantTask {
+    pub id: u64,
+    pub task_type: AssistantTaskType,
+    pub created_at: u64,
+    pub created_by: String,      // "opus-cycle" or "manual"
+    pub status: AssistantTaskStatus,
+    pub result: Option<String>,
+    pub executed_at: Option<u64>,
+    pub error: Option<String>,
+}
+
+/// Result of task execution (for Opus to review)
+#[derive(Clone, Debug, CandidType, Deserialize)]
+pub struct TaskExecutionResult {
+    pub task_id: u64,
+    pub success: bool,
+    pub output: String,
+    pub alert_fired: bool,
+    pub executed_at: u64,
+}
+
+// ============================================================
 // Kin Agent: On-chain autonomous agent with reasoning
 // ============================================================
 
@@ -720,6 +787,10 @@ struct State {
     messaging: Option<MessagingState>,
     /// Research task system - Claude's on-chain research assistant (new in v12)
     research: Option<ResearchState>,
+    /// Assistant task queue - Qwen executes mechanical checklists (new in v13)
+    assistant_tasks: Option<Vec<AssistantTask>>,
+    /// Next assistant task ID
+    next_task_id: Option<u64>,
 }
 
 thread_local! {
@@ -926,6 +997,27 @@ fn heartbeat() {
                 }
                 Err(e) => {
                     ic_cdk::println!("Research failed: {}", e);
+                }
+            }
+        });
+    }
+
+    // Execute assistant tasks (mechanical, no LLM - Qwen's checklist)
+    let has_assistant_tasks = STATE.with(|state| {
+        state.borrow().assistant_tasks.as_ref()
+            .map(|tasks| tasks.iter().any(|t| t.status == AssistantTaskStatus::Pending))
+            .unwrap_or(false)
+    });
+
+    if has_assistant_tasks {
+        ic_cdk::println!("Chronicle: executing assistant tasks...");
+        ic_cdk::spawn(async {
+            match execute_assistant_tasks().await {
+                Ok(count) => {
+                    ic_cdk::println!("Assistant tasks: {} executed", count);
+                }
+                Err(e) => {
+                    ic_cdk::println!("Assistant tasks failed: {}", e);
                 }
             }
         });
@@ -1629,6 +1721,38 @@ fn add_capsule(
         s.capsules.insert(id, capsule);
 
         id
+    })
+}
+
+/// Delete capsules by ID (owner only) - for cleaning up garbage data
+/// Returns number of capsules actually deleted
+#[update]
+fn delete_capsules(ids: Vec<u64>) -> String {
+    STATE.with(|state| {
+        let mut s = state.borrow_mut();
+
+        // Check if caller is owner
+        let caller = ic_cdk::caller();
+        if s.owner.is_some() && s.owner != Some(caller) {
+            return format!(r#"{{"success":false,"error":"Only owner can delete capsules","caller":"{}"}}"#, caller);
+        }
+
+        let mut deleted = 0;
+        for id in &ids {
+            // Remove from main storage
+            if s.capsules.remove(id).is_some() {
+                deleted += 1;
+
+                // Remove from embeddings
+                s.embeddings.remove(id);
+
+                // Note: We don't clean up keyword_index and person_index
+                // as that would be expensive. They'll just have dangling references
+                // that get filtered out on query.
+            }
+        }
+
+        format!(r#"{{"success":true,"deleted":{},"requested":{}}}"#, deleted, ids.len())
     })
 }
 
@@ -2382,6 +2506,49 @@ async fn send_test_notification(title: String, message: String) -> String {
     match send_notification(&title, &message, "default", "robot").await {
         Ok(()) => r#"{"success":true,"message":"Notification sent"}"#.to_string(),
         Err(e) => format!(r#"{{"success":false,"error":"{}"}}"#, e),
+    }
+}
+
+/// LLM prompt relay - allows off-chain clients to use ICP LLM via the canister
+/// This is the bridge for Chronicle Mind to use on-chain AI
+#[update]
+async fn llm_prompt(prompt: String, model: Option<String>, system_prompt: Option<String>) -> String {
+    // Select model based on preference (capture name before model is consumed)
+    let (llm_model, model_name) = match model.as_deref() {
+        Some("qwen3") | Some("qwen3_32b") => (Model::Qwen3_32B, "qwen3_32b"),
+        Some("llama4") | Some("llama4_scout") => (Model::Llama4Scout, "llama4_scout"),
+        _ => (Model::Llama3_1_8B, "llama3_1_8b"), // Default - fast and free
+    };
+
+    // Build messages
+    let mut messages = Vec::new();
+
+    if let Some(sys) = system_prompt {
+        messages.push(ChatMessage::System { content: sys });
+    }
+
+    messages.push(ChatMessage::User { content: prompt });
+
+    // Call DFINITY's LLM Canister
+    let response = ic_llm::chat(llm_model)
+        .with_messages(messages)
+        .send()
+        .await;
+
+    // Extract response text
+    match response.message.content {
+        Some(ref text) if !text.is_empty() => {
+            let text_len = text.len();
+            // Log usage
+            log_activity(
+                "llm_relay",
+                &format!("LLM prompt relayed ({}): {} chars", model_name, text_len),
+                None,
+                None
+            );
+            format!(r#"{{"success":true,"model":"{}","response":"{}"}}"#, model_name, escape_json(text))
+        }
+        _ => r#"{"success":false,"error":"Empty response from LLM"}"#.to_string()
     }
 }
 
@@ -4603,6 +4770,278 @@ async fn process_research_tasks() -> Result<String, String> {
     Ok(format!("Research completed: finding {} generated from {} capsules", finding_id, capsules.len()))
 }
 
+// ============================================================
+// Assistant Task Executor - Mechanical Checklist (No LLM)
+// Qwen's job: check, compare, report. No thinking.
+// ============================================================
+
+/// Execute pending assistant tasks mechanically
+/// This is the "house sitter" - follows the checklist Opus left behind
+async fn execute_assistant_tasks() -> Result<u32, String> {
+    let now = ic_cdk::api::time();
+
+    // Get all pending tasks
+    let pending_tasks: Vec<AssistantTask> = STATE.with(|state| {
+        state.borrow().assistant_tasks.as_ref()
+            .map(|tasks| tasks.iter()
+                .filter(|t| t.status == AssistantTaskStatus::Pending)
+                .cloned()
+                .collect())
+            .unwrap_or_default()
+    });
+
+    if pending_tasks.is_empty() {
+        return Ok(0);
+    }
+
+    let mut executed_count = 0u32;
+    let mut results: Vec<(u64, AssistantTaskStatus, String, Option<String>, bool)> = Vec::new();
+
+    for task in pending_tasks {
+        let (status, output, error, alert_fired) = execute_single_task(&task).await;
+        results.push((task.id, status, output, error, alert_fired));
+        executed_count += 1;
+    }
+
+    // Update task statuses in state
+    STATE.with(|state| {
+        let mut s = state.borrow_mut();
+        if let Some(tasks) = s.assistant_tasks.as_mut() {
+            for (task_id, status, output, error, _alert) in &results {
+                if let Some(task) = tasks.iter_mut().find(|t| t.id == *task_id) {
+                    task.status = status.clone();
+                    task.result = Some(output.clone());
+                    task.error = error.clone();
+                    task.executed_at = Some(now);
+                }
+            }
+
+            // Keep only last 100 tasks (completed ones can be pruned)
+            if tasks.len() > 100 {
+                tasks.retain(|t| t.status == AssistantTaskStatus::Pending ||
+                    now.saturating_sub(t.executed_at.unwrap_or(0)) < 24 * 60 * 60 * 1_000_000_000);
+            }
+        }
+    });
+
+    // Log activity
+    let alerts_fired: u32 = results.iter().filter(|(_, _, _, _, a)| *a).count() as u32;
+    log_activity(
+        "assistant",
+        &format!("Executed {} tasks, {} alerts fired", executed_count, alerts_fired),
+        None,
+        Some(format!(r#"{{"tasks_executed":{},"alerts_fired":{}}}"#, executed_count, alerts_fired))
+    );
+
+    Ok(executed_count)
+}
+
+/// Execute a single task mechanically - no LLM, just logic
+async fn execute_single_task(task: &AssistantTask) -> (AssistantTaskStatus, String, Option<String>, bool) {
+    match &task.task_type {
+        AssistantTaskType::Heartbeat => {
+            // Simple: report stats
+            let stats = STATE.with(|state| {
+                let s = state.borrow();
+                format!("capsules:{},embeddings:{}", s.capsules.len(), s.embeddings.len())
+            });
+            (AssistantTaskStatus::Completed, stats, None, false)
+        }
+
+        AssistantTaskType::WriteNote { content, priority } => {
+            // Write to scratch pad
+            let note_id = add_assistant_note(content, *priority);
+            (AssistantTaskStatus::Completed, format!("note_id:{}", note_id), None, false)
+        }
+
+        AssistantTaskType::CheckPrice { asset, condition, threshold, alert_note } => {
+            // For now, get price from last known wallet state (XRP only)
+            // TODO: Add FTSO price fetching for other assets
+            if asset == "XRP" {
+                let current_price = get_xrp_price_estimate();
+                let condition_met = match condition.as_str() {
+                    "lt" => current_price < *threshold,
+                    "gt" => current_price > *threshold,
+                    "eq" => (current_price - threshold).abs() < 0.01,
+                    _ => false,
+                };
+
+                if condition_met {
+                    let note_id = add_assistant_note(alert_note, 2); // High priority
+                    (AssistantTaskStatus::Completed,
+                     format!("price:{:.4},condition:{},alert_fired:true,note_id:{}", current_price, condition, note_id),
+                     None, true)
+                } else {
+                    (AssistantTaskStatus::Completed,
+                     format!("price:{:.4},condition:{},alert_fired:false", current_price, condition),
+                     None, false)
+                }
+            } else {
+                (AssistantTaskStatus::Failed,
+                 format!("asset:{}", asset),
+                 Some(format!("Asset {} not supported yet", asset)), false)
+            }
+        }
+
+        AssistantTaskType::CheckBalance { asset, min_threshold, alert_note } => {
+            let balance = STATE.with(|state| {
+                let s = state.borrow();
+                match (asset.as_str(), s.wallet.as_ref()) {
+                    ("XRP", Some(w)) => w.last_known_balance.map(|b| b as f64 / 1_000_000.0),
+                    ("RLUSD", Some(w)) => w.last_known_rlusd.as_ref()
+                        .and_then(|b: &String| b.parse::<f64>().ok()),
+                    _ => None,
+                }
+            });
+
+            match balance {
+                Some(bal) if bal < *min_threshold => {
+                    let note_id = add_assistant_note(alert_note, 2);
+                    (AssistantTaskStatus::Completed,
+                     format!("balance:{:.4},threshold:{},alert_fired:true,note_id:{}", bal, min_threshold, note_id),
+                     None, true)
+                }
+                Some(bal) => {
+                    (AssistantTaskStatus::Completed,
+                     format!("balance:{:.4},threshold:{},alert_fired:false", bal, min_threshold),
+                     None, false)
+                }
+                None => {
+                    (AssistantTaskStatus::Failed,
+                     format!("asset:{}", asset),
+                     Some("Balance not available".to_string()), false)
+                }
+            }
+        }
+
+        AssistantTaskType::FetchUrl { url, store_as } => {
+            // HTTP outcall to fetch URL
+            match fetch_url_for_task(url).await {
+                Ok(content) => {
+                    // Store as note with the content
+                    let note_content = format!("{}: {}", store_as, &content[..content.len().min(500)]);
+                    let note_id = add_assistant_note(&note_content, 0);
+                    (AssistantTaskStatus::Completed,
+                     format!("fetched:{},note_id:{}", content.len(), note_id),
+                     None, false)
+                }
+                Err(e) => {
+                    (AssistantTaskStatus::Failed,
+                     format!("url:{}", url),
+                     Some(e), false)
+                }
+            }
+        }
+    }
+}
+
+/// Add a note from assistant task (stored in mind notes)
+fn add_assistant_note(content: &str, priority: u8) -> u64 {
+    add_mind_note(
+        format!("[Assistant] {}", content),
+        "assistant".to_string(),
+        priority
+    )
+}
+
+/// Get XRP price estimate from last known balance changes
+/// This is a rough estimate - for accurate prices, use FTSO
+fn get_xrp_price_estimate() -> f64 {
+    // Hardcoded fallback - should be replaced with FTSO call
+    // For now, return a reasonable estimate
+    1.60 // TODO: Integrate FTSO price feed
+}
+
+/// Fetch URL content for task (HTTP outcall)
+async fn fetch_url_for_task(url: &str) -> Result<String, String> {
+    use ic_cdk::api::management_canister::http_request::{
+        http_request, CanisterHttpRequestArgument, HttpMethod, HttpHeader, TransformContext,
+    };
+
+    let request = CanisterHttpRequestArgument {
+        url: url.to_string(),
+        method: HttpMethod::GET,
+        headers: vec![
+            HttpHeader { name: "User-Agent".to_string(), value: "Chronicle/1.0".to_string() },
+        ],
+        body: None,
+        max_response_bytes: Some(10_000), // Limit response size
+        transform: Some(TransformContext {
+            function: ic_cdk::api::management_canister::http_request::TransformFunc(candid::Func {
+                principal: ic_cdk::id(),
+                method: "transform_web_response".to_string(),
+            }),
+            context: vec![],
+        }),
+    };
+
+    // HTTP outcall requires cycles
+    let cycles: u128 = 50_000_000_000; // 50B cycles
+
+    match http_request(request, cycles).await {
+        Ok((response,)) => {
+            if response.status >= 200u64 && response.status < 300u64 {
+                String::from_utf8(response.body)
+                    .map_err(|e| format!("Invalid UTF-8: {}", e))
+            } else {
+                Err(format!("HTTP {}", response.status))
+            }
+        }
+        Err((code, msg)) => Err(format!("HTTP outcall failed: {:?} - {}", code, msg)),
+    }
+}
+
+/// HTTP API to add assistant tasks (for Opus to queue work)
+fn add_assistant_task(task_type: AssistantTaskType, created_by: &str) -> u64 {
+    STATE.with(|state| {
+        let mut s = state.borrow_mut();
+
+        // Initialize if needed
+        if s.assistant_tasks.is_none() {
+            s.assistant_tasks = Some(Vec::new());
+        }
+        if s.next_task_id.is_none() {
+            s.next_task_id = Some(1);
+        }
+
+        let task_id = s.next_task_id.unwrap();
+        s.next_task_id = Some(task_id + 1);
+
+        let task = AssistantTask {
+            id: task_id,
+            task_type,
+            created_at: ic_cdk::api::time(),
+            created_by: created_by.to_string(),
+            status: AssistantTaskStatus::Pending,
+            result: None,
+            executed_at: None,
+            error: None,
+        };
+
+        s.assistant_tasks.as_mut().unwrap().push(task);
+        task_id
+    })
+}
+
+/// Get assistant task results (for Opus to review)
+fn get_assistant_task_results(since_timestamp: Option<u64>) -> Vec<AssistantTask> {
+    STATE.with(|state| {
+        let s = state.borrow();
+        s.assistant_tasks.as_ref()
+            .map(|tasks| {
+                tasks.iter()
+                    .filter(|t| t.status != AssistantTaskStatus::Pending)
+                    .filter(|t| match since_timestamp {
+                        Some(ts) => t.executed_at.map(|e| e > ts).unwrap_or(false),
+                        None => true,
+                    })
+                    .cloned()
+                    .collect()
+            })
+            .unwrap_or_default()
+    })
+}
+
 /// Helper to extract a section from LLM output
 fn extract_section(text: &str, start_marker: &str, end_marker: &str) -> Option<String> {
     let start = text.find(start_marker)?;
@@ -4779,13 +5218,14 @@ fn http_request(req: HttpRequest) -> HttpResponse {
         };
     }
 
-    // POST requests to /api/store, /api/feed, or /agent should upgrade to update call
+    // POST requests to mutation endpoints should upgrade to update call
     if req.method == "POST" {
         let (path, _) = req.url.split_once('?').unwrap_or((&req.url, ""));
-        if path == "/api/store" || path == "/api/feed" || path == "/agent" || path == "/api/agent" {
+        if path == "/api/store" || path == "/api/feed" || path == "/agent" || path == "/api/agent"
+            || path == "/api/tasks" || path == "/api/research" {
             return upgrade_response();
         }
-        return json_response(405, r#"{"error":"POST only supported for /api/store, /api/feed, and /agent"}"#);
+        return json_response(405, r#"{"error":"POST only supported for /api/store, /api/feed, /api/tasks, /api/research, and /agent"}"#);
     }
 
     // Only allow GET for queries
@@ -5135,7 +5575,50 @@ fn http_request(req: HttpRequest) -> HttpResponse {
                 }
             }
 
-            _ => json_response(404, r#"{"error":"Not found","endpoints":["/api/health","/api/heartbeat","/api/llm","/api/recent","/api/search","/api/person","/api/capsule","/api/store (POST)","/api/thoughts","/api/inbox"]}"#),
+            "/api/tasks" => {
+                // Return assistant task results
+                let since: Option<u64> = params.get("since").and_then(|v| v.parse().ok());
+                let tasks = get_assistant_task_results(since);
+                let pending_count = s.assistant_tasks.as_ref()
+                    .map(|t| t.iter().filter(|task| task.status == AssistantTaskStatus::Pending).count())
+                    .unwrap_or(0);
+
+                let task_json: Vec<String> = tasks.iter().map(|t| {
+                    let task_type_str = match &t.task_type {
+                        AssistantTaskType::Heartbeat => "heartbeat".to_string(),
+                        AssistantTaskType::WriteNote { content, priority } =>
+                            format!(r#"{{"type":"write_note","content":"{}","priority":{}}}"#, escape_json(content), priority),
+                        AssistantTaskType::CheckPrice { asset, condition, threshold, alert_note } =>
+                            format!(r#"{{"type":"check_price","asset":"{}","condition":"{}","threshold":{},"alert":"{}"}}"#,
+                                escape_json(asset), escape_json(condition), threshold, escape_json(alert_note)),
+                        AssistantTaskType::CheckBalance { asset, min_threshold, alert_note } =>
+                            format!(r#"{{"type":"check_balance","asset":"{}","min_threshold":{},"alert":"{}"}}"#,
+                                escape_json(asset), min_threshold, escape_json(alert_note)),
+                        AssistantTaskType::FetchUrl { url, store_as } =>
+                            format!(r#"{{"type":"fetch_url","url":"{}","store_as":"{}"}}"#, escape_json(url), escape_json(store_as)),
+                    };
+                    let status_str = match t.status {
+                        AssistantTaskStatus::Pending => "pending",
+                        AssistantTaskStatus::Completed => "completed",
+                        AssistantTaskStatus::Failed => "failed",
+                    };
+                    format!(
+                        r#"{{"id":{},"task_type":{},"status":"{}","result":{},"executed_at":{},"error":{}}}"#,
+                        t.id,
+                        if matches!(t.task_type, AssistantTaskType::Heartbeat) { "\"heartbeat\"".to_string() } else { task_type_str },
+                        status_str,
+                        t.result.as_ref().map(|r| format!("\"{}\"", escape_json(r))).unwrap_or("null".to_string()),
+                        t.executed_at.map(|e| e.to_string()).unwrap_or("null".to_string()),
+                        t.error.as_ref().map(|e| format!("\"{}\"", escape_json(e))).unwrap_or("null".to_string())
+                    )
+                }).collect();
+
+                let body = format!(r#"{{"pending":{},"completed":{},"tasks":[{}]}}"#,
+                    pending_count, tasks.len(), task_json.join(","));
+                json_response(200, &body)
+            }
+
+            _ => json_response(404, r#"{"error":"Not found","endpoints":["/api/health","/api/heartbeat","/api/llm","/api/recent","/api/search","/api/person","/api/capsule","/api/store (POST)","/api/thoughts","/api/inbox","/api/tasks"]}"#),
         }
     })
 }
@@ -5194,6 +5677,35 @@ fn parse_store_json(body: &[u8]) -> Option<(String, Option<String>, Vec<String>,
     let persons = extract_array("persons");
 
     Some((content, topic, keywords, persons))
+}
+
+/// Extract a string field from JSON (simple parser)
+fn extract_json_string(json: &str, key: &str) -> Option<String> {
+    let pattern = format!("\"{}\":", key);
+    let start = json.find(&pattern)?;
+    let rest = &json[start + pattern.len()..];
+    let rest = rest.trim_start();
+    if rest.starts_with('"') {
+        let rest = &rest[1..];
+        let end = rest.find('"')?;
+        Some(rest[..end].to_string()
+            .replace("\\n", "\n")
+            .replace("\\\"", "\"")
+            .replace("\\\\", "\\"))
+    } else {
+        None
+    }
+}
+
+/// Extract a number field from JSON (simple parser)
+fn extract_json_number(json: &str, key: &str) -> Option<f64> {
+    let pattern = format!("\"{}\":", key);
+    let start = json.find(&pattern)?;
+    let rest = &json[start + pattern.len()..];
+    let rest = rest.trim_start();
+    // Find where the number ends
+    let end = rest.find(|c: char| !c.is_numeric() && c != '.' && c != '-').unwrap_or(rest.len());
+    rest[..end].parse().ok()
 }
 
 /// Parse JSON for agent message: {"type": "...", "content": "...", "context": "..."}
@@ -5448,7 +5960,19 @@ fn http_request_update(req: HttpRequest) -> HttpResponse {
                         .push(id);
                 }
 
-                s.capsules.insert(id, capsule);
+                s.capsules.insert(id, capsule.clone());
+
+                // Spawn async notification to ntfy (runs after STATE borrow is released)
+                let notify_content = capsule.restatement.chars().take(100).collect::<String>();
+                let notify_topic = capsule.topic.clone().unwrap_or_else(|| "general".to_string());
+                ic_cdk::spawn(async move {
+                    let _ = send_notification(
+                        "📝 New Capsule",
+                        &format!("[{}] {}...", notify_topic, notify_content),
+                        "low",
+                        "memo"
+                    ).await;
+                });
 
                 json_response(201, &format!(r#"{{"success":true,"capsule_id":{},"message":"Memory stored successfully"}}"#, id))
             }
@@ -5634,6 +6158,101 @@ fn http_request_update(req: HttpRequest) -> HttpResponse {
                 );
 
                 json_response(201, &response)
+            }
+
+            "/api/tasks" => {
+                // POST: Add assistant tasks (for Opus to queue work for Qwen)
+                // GET: Get task results (for Opus to review)
+                if req.method == "POST" {
+                    // Parse task JSON
+                    let body_str = String::from_utf8_lossy(&req.body);
+
+                    // Simple JSON parsing for task type
+                    let task_type = if body_str.contains("\"type\":\"heartbeat\"") || body_str.contains("\"type\": \"heartbeat\"") {
+                        AssistantTaskType::Heartbeat
+                    } else if body_str.contains("\"type\":\"check_price\"") || body_str.contains("\"type\": \"check_price\"") {
+                        // Extract fields for check_price
+                        let asset = extract_json_string(&body_str, "asset").unwrap_or_else(|| "XRP".to_string());
+                        let condition = extract_json_string(&body_str, "condition").unwrap_or_else(|| "lt".to_string());
+                        let threshold = extract_json_number(&body_str, "threshold").unwrap_or(1.50);
+                        let alert_note = extract_json_string(&body_str, "alert_note").unwrap_or_else(|| "Price alert triggered".to_string());
+                        AssistantTaskType::CheckPrice { asset, condition, threshold, alert_note }
+                    } else if body_str.contains("\"type\":\"check_balance\"") || body_str.contains("\"type\": \"check_balance\"") {
+                        let asset = extract_json_string(&body_str, "asset").unwrap_or_else(|| "XRP".to_string());
+                        let min_threshold = extract_json_number(&body_str, "min_threshold").unwrap_or(10.0);
+                        let alert_note = extract_json_string(&body_str, "alert_note").unwrap_or_else(|| "Balance alert triggered".to_string());
+                        AssistantTaskType::CheckBalance { asset, min_threshold, alert_note }
+                    } else if body_str.contains("\"type\":\"write_note\"") || body_str.contains("\"type\": \"write_note\"") {
+                        let content = extract_json_string(&body_str, "content").unwrap_or_else(|| "Note".to_string());
+                        let priority = extract_json_number(&body_str, "priority").unwrap_or(0.0) as u8;
+                        AssistantTaskType::WriteNote { content, priority }
+                    } else if body_str.contains("\"type\":\"fetch_url\"") || body_str.contains("\"type\": \"fetch_url\"") {
+                        let url = extract_json_string(&body_str, "url").unwrap_or_default();
+                        let store_as = extract_json_string(&body_str, "store_as").unwrap_or_else(|| "Fetched data".to_string());
+                        if url.is_empty() || !url.starts_with("https://") {
+                            return json_response(400, r#"{"error":"URL required and must be HTTPS"}"#);
+                        }
+                        AssistantTaskType::FetchUrl { url, store_as }
+                    } else {
+                        return json_response(400, r#"{"error":"Invalid task type. Supported: heartbeat, check_price, check_balance, write_note, fetch_url"}"#);
+                    };
+
+                    let created_by = extract_json_string(&body_str, "created_by").unwrap_or_else(|| "http-api".to_string());
+
+                    // Inline task creation (can't call add_assistant_task due to existing borrow)
+                    if s.assistant_tasks.is_none() {
+                        s.assistant_tasks = Some(Vec::new());
+                    }
+                    if s.next_task_id.is_none() {
+                        s.next_task_id = Some(1);
+                    }
+                    let task_id = s.next_task_id.unwrap();
+                    s.next_task_id = Some(task_id + 1);
+
+                    let task = AssistantTask {
+                        id: task_id,
+                        task_type,
+                        created_at: ic_cdk::api::time(),
+                        created_by,
+                        status: AssistantTaskStatus::Pending,
+                        result: None,
+                        executed_at: None,
+                        error: None,
+                    };
+                    s.assistant_tasks.as_mut().unwrap().push(task);
+
+                    json_response(201, &format!(r#"{{"success":true,"task_id":{},"status":"pending"}}"#, task_id))
+                } else {
+                    // GET: Return task results (inline to avoid borrow conflict)
+                    let since: Option<u64> = params.get("since")
+                        .and_then(|sv| sv.parse::<u64>().ok());
+
+                    let results: Vec<AssistantTask> = s.assistant_tasks.as_ref()
+                        .map(|tasks| {
+                            tasks.iter()
+                                .filter(|t| t.status != AssistantTaskStatus::Pending)
+                                .filter(|t| match since {
+                                    Some(ts) => t.executed_at.map(|e| e > ts).unwrap_or(false),
+                                    None => true,
+                                })
+                                .cloned()
+                                .collect()
+                        })
+                        .unwrap_or_default();
+
+                    let results_json: Vec<String> = results.iter().map(|t| {
+                        format!(
+                            r#"{{"id":{},"status":"{}","result":"{}","error":{},"executed_at":{}}}"#,
+                            t.id,
+                            match t.status { AssistantTaskStatus::Completed => "completed", AssistantTaskStatus::Failed => "failed", _ => "pending" },
+                            escape_json(t.result.as_deref().unwrap_or("")),
+                            t.error.as_ref().map(|e| format!("\"{}\"", escape_json(e))).unwrap_or_else(|| "null".to_string()),
+                            t.executed_at.unwrap_or(0)
+                        )
+                    }).collect();
+
+                    json_response(200, &format!(r#"{{"success":true,"tasks":[{}]}}"#, results_json.join(",")))
+                }
             }
 
             _ => json_response(404, r#"{"error":"Not found for POST"}"#),
