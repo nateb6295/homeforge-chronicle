@@ -294,6 +294,260 @@ impl LlmClient for FallbackLlmClient {
     }
 }
 
+/// ICP LLM client - uses the Chronicle canister's LLM relay to DFINITY's on-chain LLM
+/// This is the preferred "always-on" model - free and decentralized
+pub struct IcpLlmClient {
+    canister_id: String,
+    identity_name: String,
+    model: String,
+}
+
+impl IcpLlmClient {
+    /// Create a new ICP LLM client
+    /// Models: "llama3" (default, Llama 3.1 8B), "qwen3" (Qwen 3 32B), "llama4" (Llama 4 Scout)
+    pub fn new(canister_id: &str, identity_name: &str, model: &str) -> Self {
+        Self {
+            canister_id: canister_id.to_string(),
+            identity_name: identity_name.to_string(),
+            model: model.to_string(),
+        }
+    }
+
+    /// Create from environment/defaults for Chronicle
+    pub fn for_chronicle(model: &str) -> Self {
+        Self::new(
+            "fqqku-bqaaa-aaaai-q4wha-cai",
+            "chronicle-auto",
+            model,
+        )
+    }
+
+    /// Check if the ICP identity exists
+    pub fn is_available(&self) -> bool {
+        let home = std::env::var("HOME").unwrap_or_default();
+        let pem_path = format!("{}/.config/dfx/identity/{}/identity.pem", home, self.identity_name);
+        std::path::Path::new(&pem_path).exists()
+    }
+
+    /// Complete a prompt using ICP LLM (async)
+    /// Returns the response text or an error
+    pub async fn complete_async(&self, prompt: &str, system_prompt: Option<&str>) -> Result<String> {
+        use crate::icp::IcpClient;
+
+        // Create ICP client
+        let client = IcpClient::from_dfx_identity(&self.canister_id, &self.identity_name)
+            .await
+            .context("Failed to create ICP client for LLM")?;
+
+        // Call LLM relay
+        let response_json = client
+            .llm_prompt(prompt, Some(&self.model), system_prompt)
+            .await
+            .context("LLM relay call failed")?;
+
+        // Parse response JSON
+        let parsed: serde_json::Value = serde_json::from_str(&response_json)
+            .context("Failed to parse LLM response JSON")?;
+
+        if parsed.get("success").and_then(|v| v.as_bool()).unwrap_or(false) {
+            parsed
+                .get("response")
+                .and_then(|v| v.as_str())
+                .map(|s| s.to_string())
+                .ok_or_else(|| anyhow::anyhow!("Missing response field in LLM response"))
+        } else {
+            let error = parsed
+                .get("error")
+                .and_then(|v| v.as_str())
+                .unwrap_or("Unknown error");
+            anyhow::bail!("ICP LLM error: {}", error)
+        }
+    }
+}
+
+/// Result from LLM completion including which model was used
+#[derive(Debug, Clone)]
+pub struct LlmResponse {
+    pub text: String,
+    pub model_used: String,
+    pub is_condensed_model: bool,
+}
+
+/// Hybrid LLM client - tries ICP LLM first (async), falls back to sync alternatives
+/// This is the new default for Chronicle Mind
+pub struct HybridLlmClient {
+    icp_llm: Option<IcpLlmClient>,
+    icp_model_name: String,
+    fallback: Option<FallbackLlmClient>,
+    claude_model_name: String,
+}
+
+impl HybridLlmClient {
+    /// Create a hybrid client with ICP LLM as primary, Claude+Ollama as fallback
+    /// If Claude API key is not set, will run with ICP LLM only (no fallback)
+    pub fn new(icp_model: &str, claude_model: &str) -> Result<Self> {
+        // Try to set up ICP LLM
+        let icp_llm = {
+            let client = IcpLlmClient::for_chronicle(icp_model);
+            if client.is_available() {
+                eprintln!("  ICP LLM available ({})", icp_model);
+                Some(client)
+            } else {
+                eprintln!("  ICP LLM not available (no dfx identity)");
+                None
+            }
+        };
+
+        // Try to set up Claude+Ollama fallback (optional)
+        let fallback = match FallbackLlmClient::claude_with_ollama_fallback(claude_model.to_string()) {
+            Ok(client) => {
+                eprintln!("  Claude fallback available");
+                Some(client)
+            }
+            Err(e) => {
+                eprintln!("  Claude fallback not available: {}", e);
+                if icp_llm.is_none() {
+                    // If neither ICP LLM nor Claude is available, we can't proceed
+                    return Err(e);
+                }
+                None
+            }
+        };
+
+        Ok(Self {
+            icp_llm,
+            icp_model_name: icp_model.to_string(),
+            fallback,
+            claude_model_name: claude_model.to_string(),
+        })
+    }
+
+    /// Check if this client will use a condensed-prompt model (ICP LLM)
+    pub fn will_use_condensed(&self) -> bool {
+        self.icp_llm.is_some()
+    }
+
+    /// Complete a prompt with detailed response - tries ICP LLM first, falls back to sync alternatives
+    /// Must be called from an async context
+    /// Returns LlmResponse with model info for prompt selection
+    pub async fn complete_with_info(&self, prompt: &str) -> Result<LlmResponse> {
+        // Try ICP LLM first
+        if let Some(ref icp) = self.icp_llm {
+            match icp.complete_async(prompt, None).await {
+                Ok(response) => {
+                    eprintln!("  ICP LLM succeeded ({})", self.icp_model_name);
+                    return Ok(LlmResponse {
+                        text: response,
+                        model_used: format!("icp-{}", self.icp_model_name),
+                        is_condensed_model: true,
+                    });
+                }
+                Err(e) => {
+                    eprintln!("  ICP LLM failed: {}. Trying fallback...", e);
+                }
+            }
+        }
+
+        // Fall back to sync Claude/Ollama (if available)
+        match &self.fallback {
+            Some(fallback) => {
+                let response = fallback.complete(prompt)?;
+                Ok(LlmResponse {
+                    text: response,
+                    model_used: self.claude_model_name.clone(),
+                    is_condensed_model: false,
+                })
+            }
+            None => anyhow::bail!("No LLM available - both ICP LLM and Claude fallback failed"),
+        }
+    }
+
+    /// Complete a prompt - tries ICP LLM first, falls back to sync alternatives
+    /// Must be called from an async context
+    pub async fn complete_async(&self, prompt: &str) -> Result<String> {
+        self.complete_with_info(prompt).await.map(|r| r.text)
+    }
+
+    /// Sync complete with model info
+    pub fn complete_sync_with_info(&self, prompt: &str) -> Result<LlmResponse> {
+        // If we have ICP LLM and are in a tokio runtime, try it first
+        if self.icp_llm.is_some() {
+            if let Ok(handle) = tokio::runtime::Handle::try_current() {
+                let icp = self.icp_llm.as_ref().unwrap();
+                let prompt_owned = prompt.to_string();
+
+                // Use block_in_place to call async from sync context
+                let result = tokio::task::block_in_place(|| {
+                    handle.block_on(async {
+                        icp.complete_async(&prompt_owned, None).await
+                    })
+                });
+
+                match result {
+                    Ok(response) => {
+                        eprintln!("  ICP LLM succeeded (sync path, {})", self.icp_model_name);
+                        return Ok(LlmResponse {
+                            text: response,
+                            model_used: format!("icp-{}", self.icp_model_name),
+                            is_condensed_model: true,
+                        });
+                    }
+                    Err(e) => {
+                        eprintln!("  ICP LLM failed (sync path): {}. Trying fallback...", e);
+                    }
+                }
+            }
+        }
+
+        // Fall back to sync Claude/Ollama (if available)
+        match &self.fallback {
+            Some(fallback) => {
+                let response = fallback.complete(prompt)?;
+                Ok(LlmResponse {
+                    text: response,
+                    model_used: self.claude_model_name.clone(),
+                    is_condensed_model: false,
+                })
+            }
+            None => anyhow::bail!("No LLM available - both ICP LLM and Claude fallback failed"),
+        }
+    }
+
+    /// Sync complete - for compatibility with LlmClient trait
+    /// Uses tokio::task::block_in_place for async-in-sync
+    pub fn complete_sync(&self, prompt: &str) -> Result<String> {
+        self.complete_sync_with_info(prompt).map(|r| r.text)
+    }
+
+    /// Force Claude completion - skip ICP LLM for deep reflection cycles
+    /// Returns error if Claude fallback is not available
+    pub fn complete_with_claude(&self, prompt: &str) -> Result<LlmResponse> {
+        match &self.fallback {
+            Some(fallback) => {
+                eprintln!("  Deep reflection mode: using Claude directly");
+                let response = fallback.complete(prompt)?;
+                Ok(LlmResponse {
+                    text: response,
+                    model_used: self.claude_model_name.clone(),
+                    is_condensed_model: false,
+                })
+            }
+            None => anyhow::bail!("Claude fallback not available for deep reflection"),
+        }
+    }
+
+    /// Check if Claude is available for deep reflection
+    pub fn has_claude(&self) -> bool {
+        self.fallback.is_some()
+    }
+}
+
+impl LlmClient for HybridLlmClient {
+    fn complete(&self, prompt: &str) -> Result<String> {
+        self.complete_sync(prompt)
+    }
+}
+
 /// Mock LLM client for testing
 #[cfg(test)]
 pub struct MockLlmClient {

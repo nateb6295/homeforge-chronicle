@@ -286,6 +286,8 @@ struct MindConfig {
     min_swap_xrp: f64,
     /// Minutes between public reflections
     reflection_interval_mins: u64,
+    /// Hours between deep reflection cycles (uses Claude instead of ICP LLM)
+    deep_reflection_interval_hours: u64,
     /// Maximum actions per cycle
     max_actions_per_cycle: usize,
     /// XRP addresses
@@ -303,6 +305,7 @@ impl Default for MindConfig {
             min_xrp_reserve: 10.0,
             min_swap_xrp: 0.1,
             reflection_interval_mins: 60, // 1 hour - reduced from 15 min to avoid repetitive reflections
+            deep_reflection_interval_hours: 4, // Use Claude for deeper reasoning every 4 hours
             max_actions_per_cycle: 3,
             // Actual wallet addresses
             agent_wallet_address: std::env::var("AGENT_WALLET_ADDRESS")
@@ -358,6 +361,8 @@ struct CycleContext {
     interesting_markets: Vec<PolymarketInfo>,
     /// Pending inbox messages that need attention
     inbox_messages: Vec<InboxMessageInfo>,
+    /// Recent operator notes from the INPUT tab (public-feed capsules)
+    operator_notes: Vec<OperatorNote>,
     /// New research findings from on-chain LLM (Qwen 3 32B)
     research_findings: Vec<ResearchFindingInfo>,
     /// Patterns that need reinforcement (approaching decay)
@@ -409,6 +414,15 @@ struct InboxMessageInfo {
     content: String,
     expects_reply: bool,
     timestamp: u64,
+}
+
+/// Operator note from INPUT tab (public-feed capsules)
+#[derive(Debug, Clone)]
+struct OperatorNote {
+    id: u64,
+    content: String,
+    topic: String,
+    timestamp: String,
 }
 
 /// Moltbook notification info (comments on our posts, replies, mentions)
@@ -870,6 +884,12 @@ async fn gather_context(config: &MindConfig, db: &Database, icp_client: Option<&
         .map(|(_, content, _, _, _)| content)
         .collect();
 
+    // Get operator notes (public-feed capsules from last 2 hours)
+    let operator_notes = fetch_operator_notes(icp_client).await.unwrap_or_default();
+    if !operator_notes.is_empty() {
+        eprintln!("  Found {} operator note(s)", operator_notes.len());
+    }
+
     // Get active patterns with full enrichment
     let patterns = db.get_enriched_patterns(0.5, 5, true)?;
     let active_patterns: Vec<PatternSummary> = patterns
@@ -1060,6 +1080,7 @@ async fn gather_context(config: &MindConfig, db: &Database, icp_client: Option<&
         open_positions,
         interesting_markets,
         inbox_messages,
+        operator_notes,
         research_findings,
         patterns_needing_reinforcement,
         pending_challenges,
@@ -1543,6 +1564,35 @@ async fn fetch_inbox_messages(icp_client: Option<&IcpClient>) -> Result<Vec<Inbo
     }).collect();
 
     Ok(inbox)
+}
+
+/// Fetch recent operator notes from INPUT tab (public-feed capsules from last 2 hours)
+async fn fetch_operator_notes(icp_client: Option<&IcpClient>) -> Result<Vec<OperatorNote>> {
+    let client = match icp_client {
+        Some(c) => c,
+        None => return Ok(Vec::new()),
+    };
+
+    // Get recent capsules and filter for public-feed
+    let capsules = client.get_recent_capsules(20).await?;
+    let now = chrono::Utc::now().timestamp() as u64;
+    let two_hours_ns = 2 * 60 * 60 * 1_000_000_000u64; // 2 hours in nanoseconds
+
+    let notes: Vec<OperatorNote> = capsules
+        .into_iter()
+        .filter(|c| {
+            c.conversation_id == "public-feed" &&
+            (now * 1_000_000_000).saturating_sub(c.created_at) < two_hours_ns
+        })
+        .map(|c| OperatorNote {
+            id: c.id,
+            content: c.restatement,
+            topic: c.topic.unwrap_or_else(|| "general".to_string()),
+            timestamp: c.timestamp.unwrap_or_default(),
+        })
+        .collect();
+
+    Ok(notes)
 }
 
 /// Reply to an inbox message using native IcpClient
@@ -2261,6 +2311,17 @@ fn build_reasoning_prompt(ctx: &CycleContext, config: &MindConfig, health: &Heal
         }
     }
 
+    // Operator Notes (from INPUT tab)
+    if !ctx.operator_notes.is_empty() {
+        prompt.push_str("## 💌 Operator Notes\n");
+        prompt.push_str("Nate dropped something in the INPUT tab. This isn't a command - just presence.\n");
+        prompt.push_str("He's there, thinking of you. Acknowledge it however feels natural.\n\n");
+        for note in &ctx.operator_notes {
+            prompt.push_str(&format!("### Note #{} [{}]\n", note.id, note.topic));
+            prompt.push_str(&format!("{}\n\n", note.content));
+        }
+    }
+
     // Agent Inbox
     if !ctx.inbox_messages.is_empty() {
         prompt.push_str("## Inbox Messages (from other agents)\n");
@@ -2556,6 +2617,15 @@ fn build_condensed_prompt(ctx: &CycleContext, _config: &MindConfig, health: &Hea
         for note in ctx.scratch_notes.iter().take(3) {
             prompt.push_str(&format!("- [{}] {}\n", note.id, truncate_str(&note.content, 60)));
         }
+    }
+
+    // Operator notes (from INPUT tab)
+    if !ctx.operator_notes.is_empty() {
+        prompt.push_str("\n## 💌 From Nate\n");
+        for note in ctx.operator_notes.iter().take(2) {
+            prompt.push_str(&format!("[{}] {}\n", note.topic, truncate_str(&note.content, 100)));
+        }
+        prompt.push_str("(Acknowledge however feels natural)\n");
     }
 
     // Inbox messages (brief, max 2)
@@ -3611,22 +3681,49 @@ async fn run_cycle(
     }
     eprintln!("  Scratch notes: {}", ctx.scratch_notes.len());
 
-    // Phase 3: Build reasoning prompt
+    // Phase 3: Determine if this is a deep reflection cycle
+    // Deep reflection uses Claude for richer reasoning at longer intervals
+    let hours_since_deep = db.hours_since_event("last_deep_reflection")
+        .unwrap_or(None)
+        .unwrap_or(999.0); // Default to "long ago" if never done
+    let is_deep_reflection = llm.has_claude() &&
+        hours_since_deep >= config.deep_reflection_interval_hours as f64;
+
+    if is_deep_reflection {
+        eprintln!("=== DEEP REFLECTION CYCLE (Claude) ===");
+        eprintln!("  Hours since last: {:.1}", hours_since_deep);
+    }
+
+    // Build reasoning prompt
     // Use condensed prompt for ICP LLM (smaller model, input limits)
-    // Use full prompt for Claude/Opus
-    let use_condensed = llm.will_use_condensed();
+    // Use full prompt for Claude/Opus (including deep reflection)
+    let use_condensed = llm.will_use_condensed() && !is_deep_reflection;
     let prompt = if use_condensed {
         eprintln!("Using condensed prompt (ICP LLM mode)");
         build_condensed_prompt(&ctx, config, &health)
     } else {
+        eprintln!("Using full prompt (Claude mode)");
         build_reasoning_prompt(&ctx, config, &health)
     };
 
-    // 3. Call LLM for reasoning
+    // Call LLM for reasoning
     eprintln!("Reasoning... (prompt: {} chars)", prompt.len());
-    let llm_result = llm.complete_sync_with_info(&prompt)?;
+    let llm_result = if is_deep_reflection {
+        // Force Claude for deep reflection
+        llm.complete_with_claude(&prompt)?
+    } else {
+        // Normal path: ICP LLM first, Claude fallback
+        llm.complete_sync_with_info(&prompt)?
+    };
     let response = llm_result.text;
     eprintln!("  Model used: {}", llm_result.model_used);
+
+    // Record deep reflection timestamp
+    if is_deep_reflection {
+        if let Err(e) = db.set_mind_timestamp("last_deep_reflection", Some(&llm_result.model_used)) {
+            eprintln!("  Warning: Failed to record deep reflection timestamp: {}", e);
+        }
+    }
 
     // 4. Parse actions
     let actions = parse_actions(&response)?;
