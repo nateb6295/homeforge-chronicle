@@ -3878,12 +3878,11 @@ async fn run_cycle(
 
     // 8. Send push notification with thoughts
     // Extract a meaningful summary for the notification
+    // Note: message_operator goes to outbox, no special push notification needed
     let notification_title = if results.iter().any(|r| r.action == "swap" && r.success) {
         "Chronicle: Swap Executed"
     } else if results.iter().any(|r| r.action == "trigger_reflection") {
         "Chronicle: New Reflection"
-    } else if results.iter().any(|r| r.action == "message_operator") {
-        "Chronicle: Message for You"
     } else {
         "Chronicle: Thinking..."
     };
@@ -3892,10 +3891,9 @@ async fn run_cycle(
     let notification_body = create_notification_message(&response, &results, &ctx);
 
     // Determine priority and tags based on actions
+    // message_operator already goes to outbox - doesn't need high priority push
     let (priority, tags) = if results.iter().any(|r| r.action == "swap" && r.success) {
         (Some("high"), Some("moneybag,chart_with_upwards_trend"))
-    } else if results.iter().any(|r| r.action == "message_operator") {
-        (Some("high"), Some("envelope,robot"))
     } else if results.iter().any(|r| r.action != "no_action") {
         (Some("default"), Some("brain,sparkles"))
     } else {
