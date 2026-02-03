@@ -423,16 +423,20 @@ impl HybridLlmClient {
     }
 
     /// Check if this client will use a condensed-prompt model (ICP LLM)
+    /// Returns false if ICP is explicitly disabled
     pub fn will_use_condensed(&self) -> bool {
-        self.icp_llm.is_some()
+        self.icp_llm.is_some() && self.icp_model_name != "disabled"
     }
 
     /// Complete a prompt with detailed response - tries ICP LLM first, falls back to sync alternatives
     /// Must be called from an async context
     /// Returns LlmResponse with model info for prompt selection
     pub async fn complete_with_info(&self, prompt: &str) -> Result<LlmResponse> {
-        // Try ICP LLM first
+        // Try ICP LLM first (unless explicitly disabled)
         if let Some(ref icp) = self.icp_llm {
+            if self.icp_model_name == "disabled" {
+                eprintln!("  ICP LLM disabled, skipping to fallback");
+            } else {
             match icp.complete_async(prompt, None).await {
                 Ok(response) => {
                     eprintln!("  ICP LLM succeeded ({})", self.icp_model_name);
@@ -445,6 +449,7 @@ impl HybridLlmClient {
                 Err(e) => {
                     eprintln!("  ICP LLM failed: {}. Trying fallback...", e);
                 }
+            }
             }
         }
 
@@ -470,8 +475,8 @@ impl HybridLlmClient {
 
     /// Sync complete with model info
     pub fn complete_sync_with_info(&self, prompt: &str) -> Result<LlmResponse> {
-        // If we have ICP LLM and are in a tokio runtime, try it first
-        if self.icp_llm.is_some() {
+        // If we have ICP LLM and are in a tokio runtime, try it first (unless disabled)
+        if self.icp_llm.is_some() && self.icp_model_name != "disabled" {
             if let Ok(handle) = tokio::runtime::Handle::try_current() {
                 let icp = self.icp_llm.as_ref().unwrap();
                 let prompt_owned = prompt.to_string();
