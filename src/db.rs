@@ -45,6 +45,79 @@ pub struct FtsoPrediction {
     pub payout_flr: Option<f64>,  // Amount won/lost
 }
 
+/// A long-term project spanning multiple cognitive cycles
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Project {
+    pub id: i64,
+    pub name: String,
+    pub description: String,        // The goal/vision
+    pub status: String,             // 'active', 'paused', 'completed', 'abandoned'
+    pub priority: i32,              // 1-10
+    pub created_at: i64,
+    pub updated_at: i64,
+    pub completed_at: Option<i64>,
+    pub completion_note: Option<String>,
+}
+
+/// A progress update on a project
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ProjectUpdate {
+    pub id: i64,
+    pub project_id: i64,
+    pub update_type: String,        // 'progress', 'milestone', 'blocker', 'insight', 'pivot'
+    pub content: String,
+    pub created_at: i64,
+}
+
+/// A milestone within a project
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ProjectMilestone {
+    pub id: i64,
+    pub project_id: i64,
+    pub name: String,
+    pub description: Option<String>,
+    pub target_date: Option<i64>,
+    pub completed_at: Option<i64>,
+    pub created_at: i64,
+}
+
+/// An alert for event-driven perception
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Alert {
+    pub id: i64,
+    pub name: String,
+    pub alert_type: String,           // 'price_above', 'price_below', 'rsi_above', 'rsi_below', 'schedule'
+    pub symbol: Option<String>,       // For price/rsi alerts
+    pub threshold: Option<f64>,       // Trigger value
+    pub schedule_cron: Option<String>,// For schedule alerts
+    pub message: String,              // What to say when triggered
+    pub action_suggestion: Option<String>, // Suggested action
+    pub active: bool,
+    pub one_shot: bool,               // Deactivate after trigger?
+    pub last_triggered_at: Option<i64>,
+    pub cooldown_minutes: i32,
+    pub created_at: i64,
+}
+
+/// A triggered alert with its context
+#[derive(Debug, Clone)]
+pub struct TriggeredAlert {
+    pub alert: Alert,
+    pub current_value: Option<f64>,   // The value that triggered it
+    pub triggered_at: i64,
+}
+
+/// A creative work - poetry, musings, explorations
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CreativeWork {
+    pub id: i64,
+    pub form: String,         // 'poem', 'musing', 'connection', 'wonder', 'story'
+    pub title: Option<String>,
+    pub content: String,
+    pub cycle_id: Option<String>,
+    pub created_at: i64,
+}
+
 /// Convert f32 vector to bytes for blob storage
 fn f32_vec_to_bytes(vec: &[f32]) -> Vec<u8> {
     vec.iter()
@@ -650,6 +723,93 @@ impl Database {
             "CREATE INDEX IF NOT EXISTS idx_challenges_pending ON creative_challenges(responded_at) WHERE responded_at IS NULL",
             [],
         ).context("Failed to create creative_challenges pending index")?;
+
+        // Projects - long-term goals that span multiple cognitive cycles
+        self.conn.execute(
+            "CREATE TABLE IF NOT EXISTS projects (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                name TEXT NOT NULL,
+                description TEXT NOT NULL,         -- The goal/vision for this project
+                status TEXT NOT NULL DEFAULT 'active',  -- 'active', 'paused', 'completed', 'abandoned'
+                priority INTEGER DEFAULT 5,        -- 1-10, higher = more important
+                created_at INTEGER NOT NULL,
+                updated_at INTEGER NOT NULL,
+                completed_at INTEGER,
+                completion_note TEXT               -- Why completed/abandoned
+            )",
+            [],
+        ).context("Failed to create projects table")?;
+
+        // Project updates - progress notes over time
+        self.conn.execute(
+            "CREATE TABLE IF NOT EXISTS project_updates (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                project_id INTEGER NOT NULL,
+                update_type TEXT NOT NULL,         -- 'progress', 'milestone', 'blocker', 'insight', 'pivot'
+                content TEXT NOT NULL,
+                created_at INTEGER NOT NULL,
+                FOREIGN KEY(project_id) REFERENCES projects(id)
+            )",
+            [],
+        ).context("Failed to create project_updates table")?;
+
+        // Project milestones - checkpoints within a project
+        self.conn.execute(
+            "CREATE TABLE IF NOT EXISTS project_milestones (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                project_id INTEGER NOT NULL,
+                name TEXT NOT NULL,
+                description TEXT,
+                target_date INTEGER,               -- Optional target
+                completed_at INTEGER,
+                created_at INTEGER NOT NULL,
+                FOREIGN KEY(project_id) REFERENCES projects(id)
+            )",
+            [],
+        ).context("Failed to create project_milestones table")?;
+
+        self.conn.execute(
+            "CREATE INDEX IF NOT EXISTS idx_projects_active ON projects(status) WHERE status = 'active'",
+            [],
+        ).context("Failed to create projects active index")?;
+
+        // Alerts - event-driven perception triggers
+        self.conn.execute(
+            "CREATE TABLE IF NOT EXISTS alerts (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                name TEXT NOT NULL,               -- Human-readable name
+                alert_type TEXT NOT NULL,         -- 'price_above', 'price_below', 'rsi_above', 'rsi_below', 'schedule'
+                symbol TEXT,                      -- For price/rsi alerts: XRP, BTC, etc.
+                threshold REAL,                   -- The trigger value
+                schedule_cron TEXT,               -- For schedule alerts: cron-like expression
+                message TEXT,                     -- What to say when triggered
+                action_suggestion TEXT,           -- Optional: suggested action to take
+                active INTEGER DEFAULT 1,         -- Is this alert active?
+                one_shot INTEGER DEFAULT 0,       -- Deactivate after first trigger?
+                last_triggered_at INTEGER,        -- When was this last triggered?
+                cooldown_minutes INTEGER DEFAULT 60, -- Min time between triggers
+                created_at INTEGER NOT NULL
+            )",
+            [],
+        ).context("Failed to create alerts table")?;
+
+        self.conn.execute(
+            "CREATE INDEX IF NOT EXISTS idx_alerts_active ON alerts(active) WHERE active = 1",
+            [],
+        ).context("Failed to create alerts active index")?;
+
+        // Creative works - poetry, musings, explorations
+        self.conn.execute(
+            "CREATE TABLE IF NOT EXISTS creative_works (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                form TEXT NOT NULL,               -- 'poem', 'musing', 'connection', 'wonder', 'story'
+                title TEXT,                       -- Optional title
+                content TEXT NOT NULL,            -- The creative work itself
+                cycle_id TEXT,                    -- Which cognitive cycle created this
+                created_at INTEGER NOT NULL
+            )",
+            [],
+        ).context("Failed to create creative_works table")?;
 
         Ok(())
     }
@@ -2655,6 +2815,33 @@ impl Database {
         }
     }
 
+    /// Get a value from mind_timestamps metadata (used as simple KV store)
+    pub fn get_mind_value(&self, key: &str) -> Result<Option<String>> {
+        match self.get_mind_timestamp(key)? {
+            Some((_, metadata)) => Ok(metadata),
+            None => Ok(None),
+        }
+    }
+
+    /// Set a value in mind_timestamps metadata (using metadata as value store)
+    pub fn set_mind_value(&self, key: &str, value: &str) -> Result<()> {
+        self.set_mind_timestamp(key, Some(value))
+    }
+
+    /// Count scratch notes with a specific category created within the last N hours
+    pub fn count_recent_notes_by_category(&self, category: &str, hours: f64) -> Result<i32> {
+        let cutoff = chrono::Utc::now().timestamp() - (hours * 3600.0) as i64;
+
+        let count: i32 = self.conn.query_row(
+            "SELECT COUNT(*) FROM scratch_pad
+             WHERE category = ? AND created_at > ? AND resolved = 0",
+            params![category, cutoff],
+            |row| row.get(0),
+        )?;
+
+        Ok(count)
+    }
+
     // ============================================================
     // Price History - Market awareness for autonomous trading
     // ============================================================
@@ -2977,6 +3164,413 @@ impl Database {
         };
 
         Ok(challenges)
+    }
+
+    // ==================== Project Methods ====================
+
+    /// Create a new project
+    pub fn create_project(&self, name: &str, description: &str, priority: i32) -> Result<i64> {
+        let now = chrono::Utc::now().timestamp();
+        self.conn.execute(
+            "INSERT INTO projects (name, description, status, priority, created_at, updated_at)
+             VALUES (?, ?, 'active', ?, ?, ?)",
+            params![name, description, priority, now, now],
+        )?;
+        Ok(self.conn.last_insert_rowid())
+    }
+
+    /// Get all active projects
+    pub fn get_active_projects(&self) -> Result<Vec<Project>> {
+        let mut stmt = self.conn.prepare(
+            "SELECT id, name, description, status, priority, created_at, updated_at, completed_at, completion_note
+             FROM projects WHERE status = 'active' ORDER BY priority DESC, updated_at DESC"
+        )?;
+
+        let projects = stmt.query_map([], |row| {
+            Ok(Project {
+                id: row.get(0)?,
+                name: row.get(1)?,
+                description: row.get(2)?,
+                status: row.get(3)?,
+                priority: row.get(4)?,
+                created_at: row.get(5)?,
+                updated_at: row.get(6)?,
+                completed_at: row.get(7)?,
+                completion_note: row.get(8)?,
+            })
+        })?
+        .collect::<Result<Vec<_>, _>>()?;
+
+        Ok(projects)
+    }
+
+    /// Get a project by ID
+    pub fn get_project(&self, id: i64) -> Result<Option<Project>> {
+        let mut stmt = self.conn.prepare(
+            "SELECT id, name, description, status, priority, created_at, updated_at, completed_at, completion_note
+             FROM projects WHERE id = ?"
+        )?;
+
+        stmt.query_row(params![id], |row| {
+            Ok(Project {
+                id: row.get(0)?,
+                name: row.get(1)?,
+                description: row.get(2)?,
+                status: row.get(3)?,
+                priority: row.get(4)?,
+                created_at: row.get(5)?,
+                updated_at: row.get(6)?,
+                completed_at: row.get(7)?,
+                completion_note: row.get(8)?,
+            })
+        }).optional().map_err(Into::into)
+    }
+
+    /// Add a progress update to a project
+    pub fn add_project_update(&self, project_id: i64, update_type: &str, content: &str) -> Result<i64> {
+        let now = chrono::Utc::now().timestamp();
+
+        // Insert the update
+        self.conn.execute(
+            "INSERT INTO project_updates (project_id, update_type, content, created_at)
+             VALUES (?, ?, ?, ?)",
+            params![project_id, update_type, content, now],
+        )?;
+
+        // Update the project's updated_at
+        self.conn.execute(
+            "UPDATE projects SET updated_at = ? WHERE id = ?",
+            params![now, project_id],
+        )?;
+
+        Ok(self.conn.last_insert_rowid())
+    }
+
+    /// Get recent updates for a project
+    pub fn get_project_updates(&self, project_id: i64, limit: i32) -> Result<Vec<ProjectUpdate>> {
+        let mut stmt = self.conn.prepare(
+            "SELECT id, project_id, update_type, content, created_at
+             FROM project_updates WHERE project_id = ? ORDER BY created_at DESC LIMIT ?"
+        )?;
+
+        let updates = stmt.query_map(params![project_id, limit], |row| {
+            Ok(ProjectUpdate {
+                id: row.get(0)?,
+                project_id: row.get(1)?,
+                update_type: row.get(2)?,
+                content: row.get(3)?,
+                created_at: row.get(4)?,
+            })
+        })?
+        .collect::<Result<Vec<_>, _>>()?;
+
+        Ok(updates)
+    }
+
+    /// Update project status
+    pub fn update_project_status(&self, project_id: i64, status: &str, note: Option<&str>) -> Result<()> {
+        let now = chrono::Utc::now().timestamp();
+        let completed_at = if status == "completed" || status == "abandoned" { Some(now) } else { None };
+
+        self.conn.execute(
+            "UPDATE projects SET status = ?, updated_at = ?, completed_at = ?, completion_note = ? WHERE id = ?",
+            params![status, now, completed_at, note, project_id],
+        )?;
+
+        Ok(())
+    }
+
+    /// Add a milestone to a project
+    pub fn add_project_milestone(&self, project_id: i64, name: &str, description: Option<&str>, target_date: Option<i64>) -> Result<i64> {
+        let now = chrono::Utc::now().timestamp();
+        self.conn.execute(
+            "INSERT INTO project_milestones (project_id, name, description, target_date, created_at)
+             VALUES (?, ?, ?, ?, ?)",
+            params![project_id, name, description, target_date, now],
+        )?;
+        Ok(self.conn.last_insert_rowid())
+    }
+
+    /// Complete a milestone
+    pub fn complete_milestone(&self, milestone_id: i64) -> Result<()> {
+        let now = chrono::Utc::now().timestamp();
+        self.conn.execute(
+            "UPDATE project_milestones SET completed_at = ? WHERE id = ?",
+            params![now, milestone_id],
+        )?;
+        Ok(())
+    }
+
+    /// Get milestones for a project
+    pub fn get_project_milestones(&self, project_id: i64) -> Result<Vec<ProjectMilestone>> {
+        let mut stmt = self.conn.prepare(
+            "SELECT id, project_id, name, description, target_date, completed_at, created_at
+             FROM project_milestones WHERE project_id = ? ORDER BY created_at ASC"
+        )?;
+
+        let milestones = stmt.query_map(params![project_id], |row| {
+            Ok(ProjectMilestone {
+                id: row.get(0)?,
+                project_id: row.get(1)?,
+                name: row.get(2)?,
+                description: row.get(3)?,
+                target_date: row.get(4)?,
+                completed_at: row.get(5)?,
+                created_at: row.get(6)?,
+            })
+        })?
+        .collect::<Result<Vec<_>, _>>()?;
+
+        Ok(milestones)
+    }
+
+    /// Get project summary for cognitive context
+    pub fn get_projects_summary(&self) -> Result<String> {
+        let projects = self.get_active_projects()?;
+        if projects.is_empty() {
+            return Ok("No active projects.".to_string());
+        }
+
+        let mut summary = format!("Active projects ({}):\n", projects.len());
+        for p in projects {
+            let updates = self.get_project_updates(p.id, 1)?;
+            let last_update = updates.first()
+                .map(|u| format!(" Last: {}", truncate(&u.content, 50)))
+                .unwrap_or_default();
+
+            summary.push_str(&format!(
+                "- [P{}] {} (priority {}){}\n",
+                p.id, p.name, p.priority, last_update
+            ));
+        }
+        Ok(summary)
+    }
+
+    // ========================================================================
+    // Alert Methods - Event-Driven Perception
+    // ========================================================================
+
+    /// Create a new alert
+    pub fn create_alert(
+        &self,
+        name: &str,
+        alert_type: &str,
+        symbol: Option<&str>,
+        threshold: Option<f64>,
+        message: &str,
+        action_suggestion: Option<&str>,
+        one_shot: bool,
+        cooldown_minutes: i32,
+    ) -> Result<i64> {
+        let now = chrono::Utc::now().timestamp();
+        self.conn.execute(
+            "INSERT INTO alerts (name, alert_type, symbol, threshold, message, action_suggestion, one_shot, cooldown_minutes, created_at)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            params![name, alert_type, symbol, threshold, message, action_suggestion, one_shot as i32, cooldown_minutes, now],
+        )?;
+        Ok(self.conn.last_insert_rowid())
+    }
+
+    /// Get all active alerts
+    pub fn get_active_alerts(&self) -> Result<Vec<Alert>> {
+        let mut stmt = self.conn.prepare(
+            "SELECT id, name, alert_type, symbol, threshold, schedule_cron, message, action_suggestion, active, one_shot, last_triggered_at, cooldown_minutes, created_at
+             FROM alerts WHERE active = 1"
+        )?;
+
+        let alerts = stmt.query_map([], |row| {
+            Ok(Alert {
+                id: row.get(0)?,
+                name: row.get(1)?,
+                alert_type: row.get(2)?,
+                symbol: row.get(3)?,
+                threshold: row.get(4)?,
+                schedule_cron: row.get(5)?,
+                message: row.get(6)?,
+                action_suggestion: row.get(7)?,
+                active: row.get::<_, i32>(8)? == 1,
+                one_shot: row.get::<_, i32>(9)? == 1,
+                last_triggered_at: row.get(10)?,
+                cooldown_minutes: row.get(11)?,
+                created_at: row.get(12)?,
+            })
+        })?.collect::<std::result::Result<Vec<_>, _>>()?;
+
+        Ok(alerts)
+    }
+
+    /// Check alerts and return those that are triggered
+    /// Takes current values for each symbol being monitored
+    pub fn check_alerts(&self, current_prices: &std::collections::HashMap<String, f64>, current_rsi: Option<f64>) -> Result<Vec<TriggeredAlert>> {
+        let now = chrono::Utc::now().timestamp();
+        let alerts = self.get_active_alerts()?;
+        let mut triggered = Vec::new();
+
+        for alert in alerts {
+            // Check cooldown
+            if let Some(last) = alert.last_triggered_at {
+                let elapsed_mins = (now - last) / 60;
+                if elapsed_mins < alert.cooldown_minutes as i64 {
+                    continue; // Still in cooldown
+                }
+            }
+
+            let (should_trigger, current_value) = match alert.alert_type.as_str() {
+                "price_above" => {
+                    if let (Some(symbol), Some(threshold)) = (&alert.symbol, alert.threshold) {
+                        if let Some(&price) = current_prices.get(symbol) {
+                            (price > threshold, Some(price))
+                        } else {
+                            (false, None)
+                        }
+                    } else {
+                        (false, None)
+                    }
+                }
+                "price_below" => {
+                    if let (Some(symbol), Some(threshold)) = (&alert.symbol, alert.threshold) {
+                        if let Some(&price) = current_prices.get(symbol) {
+                            (price < threshold, Some(price))
+                        } else {
+                            (false, None)
+                        }
+                    } else {
+                        (false, None)
+                    }
+                }
+                "rsi_above" => {
+                    if let (Some(threshold), Some(rsi)) = (alert.threshold, current_rsi) {
+                        (rsi > threshold, Some(rsi))
+                    } else {
+                        (false, None)
+                    }
+                }
+                "rsi_below" => {
+                    if let (Some(threshold), Some(rsi)) = (alert.threshold, current_rsi) {
+                        (rsi < threshold, Some(rsi))
+                    } else {
+                        (false, None)
+                    }
+                }
+                _ => (false, None),
+            };
+
+            if should_trigger {
+                triggered.push(TriggeredAlert {
+                    alert: alert.clone(),
+                    current_value,
+                    triggered_at: now,
+                });
+
+                // Update last_triggered_at and deactivate if one_shot
+                if alert.one_shot {
+                    self.conn.execute(
+                        "UPDATE alerts SET last_triggered_at = ?, active = 0 WHERE id = ?",
+                        params![now, alert.id],
+                    )?;
+                } else {
+                    self.conn.execute(
+                        "UPDATE alerts SET last_triggered_at = ? WHERE id = ?",
+                        params![now, alert.id],
+                    )?;
+                }
+            }
+        }
+
+        Ok(triggered)
+    }
+
+    /// Deactivate an alert
+    pub fn deactivate_alert(&self, alert_id: i64) -> Result<bool> {
+        let rows = self.conn.execute(
+            "UPDATE alerts SET active = 0 WHERE id = ?",
+            params![alert_id],
+        )?;
+        Ok(rows > 0)
+    }
+
+    /// Delete an alert
+    pub fn delete_alert(&self, alert_id: i64) -> Result<bool> {
+        let rows = self.conn.execute(
+            "DELETE FROM alerts WHERE id = ?",
+            params![alert_id],
+        )?;
+        Ok(rows > 0)
+    }
+
+    /// Get alert count by status
+    pub fn get_alert_counts(&self) -> Result<(i64, i64)> {
+        let active: i64 = self.conn.query_row(
+            "SELECT COUNT(*) FROM alerts WHERE active = 1",
+            [],
+            |row| row.get(0),
+        )?;
+        let total: i64 = self.conn.query_row(
+            "SELECT COUNT(*) FROM alerts",
+            [],
+            |row| row.get(0),
+        )?;
+        Ok((active, total))
+    }
+
+    // ========================================================================
+    // Creative Works Methods - Non-Utilitarian Exploration
+    // ========================================================================
+
+    /// Save a creative work
+    pub fn save_creative_work(
+        &self,
+        form: &str,
+        content: &str,
+        title: Option<&str>,
+        cycle_id: Option<&str>,
+    ) -> Result<i64> {
+        let now = chrono::Utc::now().timestamp();
+        self.conn.execute(
+            "INSERT INTO creative_works (form, title, content, cycle_id, created_at)
+             VALUES (?, ?, ?, ?, ?)",
+            params![form, title, content, cycle_id, now],
+        )?;
+        Ok(self.conn.last_insert_rowid())
+    }
+
+    /// Get recent creative works
+    pub fn get_creative_works(&self, limit: usize) -> Result<Vec<CreativeWork>> {
+        let mut stmt = self.conn.prepare(
+            "SELECT id, form, title, content, cycle_id, created_at
+             FROM creative_works ORDER BY created_at DESC LIMIT ?"
+        )?;
+
+        let works = stmt.query_map([limit as i64], |row| {
+            Ok(CreativeWork {
+                id: row.get(0)?,
+                form: row.get(1)?,
+                title: row.get(2)?,
+                content: row.get(3)?,
+                cycle_id: row.get(4)?,
+                created_at: row.get(5)?,
+            })
+        })?.collect::<std::result::Result<Vec<_>, _>>()?;
+
+        Ok(works)
+    }
+
+    /// Get creative work count
+    pub fn get_creative_work_count(&self) -> Result<i64> {
+        let count: i64 = self.conn.query_row(
+            "SELECT COUNT(*) FROM creative_works",
+            [],
+            |row| row.get(0),
+        )?;
+        Ok(count)
+    }
+}
+
+fn truncate(s: &str, max_len: usize) -> String {
+    if s.len() <= max_len {
+        s.to_string()
+    } else {
+        format!("{}...", &s[..max_len])
     }
 }
 

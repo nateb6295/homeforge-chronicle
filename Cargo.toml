@@ -36,6 +36,10 @@ path = "src/bin/chronicle_base.rs"
 name = "chronicle-openchat"
 path = "src/bin/chronicle_openchat.rs"
 
+[[bin]]
+name = "chronicle-shopkeeper"
+path = "src/bin/chronicle_shopkeeper.rs"
+
 [dependencies]
 # CLI
 clap = { version = "4.5", features = ["derive", "cargo"] }
