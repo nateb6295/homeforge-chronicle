@@ -14,7 +14,7 @@ use serde_json::{json, Value};
 use std::str::FromStr;
 use std::time::Duration;
 
-use homeforge_chronicle::db::{Database, FtsoPrediction, MarketPosition, ScratchNote};
+use homeforge_chronicle::db::{Database, FtsoPrediction, MarketPosition, Project, ScratchNote, TriggeredAlert};
 use homeforge_chronicle::icp::IcpClient;
 use homeforge_chronicle::llm::HybridLlmClient;
 use homeforge_chronicle::{CognitiveState, LlmClient};
@@ -69,153 +69,6 @@ where
     Err(last_error.unwrap_or_else(|| anyhow::anyhow!("{}: all retries exhausted", operation_name)))
 }
 
-/// Polymarket gamma API for market discovery
-const POLYMARKET_GAMMA_API: &str = "https://gamma-api.polymarket.com";
-
-/// Categories where Chronicle has edge (politics, regulation, AI)
-const POLYMARKET_TARGET_TAGS: &[&str] = &["politics", "ai", "crypto", "regulation", "elections", "technology"];
-
-// ============================================================================
-// PREDICTION MARKET CONSTRAINTS (The Constitution)
-// ============================================================================
-// These constraints govern autonomous position-taking. They are:
-// - Hard limits that cannot be overridden
-// - Tunable based on track record
-// - Designed for conservative start with room to grow
-
-/// Minimum confidence to take a position (0-100)
-const MIN_POSITION_CONFIDENCE: i32 = 70;
-
-/// Maximum stake per position in USDC
-const MAX_POSITION_USDC: f64 = 25.0;
-
-/// Maximum total exposure across all open positions
-const MAX_TOTAL_EXPOSURE_USDC: f64 = 100.0;
-
-/// Maximum number of concurrent positions
-const MAX_OPEN_POSITIONS: usize = 5;
-
-/// Minimum edge over market price to take position (percentage points)
-/// If market says 50%, we need to believe 60%+ to bet YES (or 40%- to bet NO)
-const MIN_EDGE_PERCENTAGE: f64 = 10.0;
-
-/// Minimum supporting evidence (patterns/capsules) required
-const MIN_SUPPORTING_EVIDENCE: usize = 1;
-
-/// Allowed domains for betting (others are ignored)
-const ALLOWED_DOMAINS: &[&str] = &["ai", "crypto", "regulatory", "politics", "technology"];
-
-/// Position constraints struct for runtime checks
-#[derive(Debug, Clone)]
-struct PositionConstraints {
-    min_confidence: i32,
-    max_position_usdc: f64,
-    max_total_exposure_usdc: f64,
-    max_open_positions: usize,
-    min_edge_percentage: f64,
-    min_supporting_evidence: usize,
-    allowed_domains: Vec<String>,
-}
-
-impl Default for PositionConstraints {
-    fn default() -> Self {
-        Self {
-            min_confidence: MIN_POSITION_CONFIDENCE,
-            max_position_usdc: MAX_POSITION_USDC,
-            max_total_exposure_usdc: MAX_TOTAL_EXPOSURE_USDC,
-            max_open_positions: MAX_OPEN_POSITIONS,
-            min_edge_percentage: MIN_EDGE_PERCENTAGE,
-            min_supporting_evidence: MIN_SUPPORTING_EVIDENCE,
-            allowed_domains: ALLOWED_DOMAINS.iter().map(|s| s.to_string()).collect(),
-        }
-    }
-}
-
-impl PositionConstraints {
-    /// Check if a proposed position passes all constraints
-    fn validate(
-        &self,
-        confidence: i32,
-        stake_usdc: f64,
-        market_price: f64,
-        position: &str,
-        current_exposure: f64,
-        open_positions: usize,
-        supporting_evidence: usize,
-        market_tags: &[String],
-    ) -> Result<(), String> {
-        // Check confidence threshold
-        if confidence < self.min_confidence {
-            return Err(format!(
-                "Confidence {}% below minimum {}% - need stronger conviction",
-                confidence, self.min_confidence
-            ));
-        }
-
-        // Check position size
-        if stake_usdc > self.max_position_usdc {
-            return Err(format!(
-                "Stake ${:.2} exceeds max ${:.2} per position",
-                stake_usdc, self.max_position_usdc
-            ));
-        }
-        if stake_usdc < 1.0 {
-            return Err("Stake must be at least $1.00".to_string());
-        }
-
-        // Check total exposure
-        if current_exposure + stake_usdc > self.max_total_exposure_usdc {
-            return Err(format!(
-                "Would exceed max exposure ${:.2} (current: ${:.2}, proposed: ${:.2})",
-                self.max_total_exposure_usdc, current_exposure, stake_usdc
-            ));
-        }
-
-        // Check position count
-        if open_positions >= self.max_open_positions {
-            return Err(format!(
-                "Already at max {} open positions",
-                self.max_open_positions
-            ));
-        }
-
-        // Check edge requirement
-        let my_probability = confidence as f64 / 100.0;
-        let edge = if position.to_uppercase() == "YES" {
-            (my_probability - market_price) * 100.0
-        } else {
-            (market_price - my_probability) * 100.0
-        };
-
-        if edge < self.min_edge_percentage {
-            return Err(format!(
-                "Edge {:.1}% below minimum {:.1}% - market already near your estimate",
-                edge, self.min_edge_percentage
-            ));
-        }
-
-        // Check supporting evidence
-        if supporting_evidence < self.min_supporting_evidence {
-            return Err(format!(
-                "Need at least {} supporting evidence (have {})",
-                self.min_supporting_evidence, supporting_evidence
-            ));
-        }
-
-        // Check domain
-        let in_allowed_domain = market_tags.iter().any(|tag| {
-            self.allowed_domains.iter().any(|d| tag.to_lowercase().contains(d))
-        });
-        if !in_allowed_domain && !market_tags.is_empty() {
-            return Err(format!(
-                "Market tags {:?} not in allowed domains {:?}",
-                market_tags, self.allowed_domains
-            ));
-        }
-
-        Ok(())
-    }
-}
 
 /// Flare Mainnet RPC endpoint
 const FLARE_RPC: &str = "https://flare-api.flare.network/ext/C/rpc";
@@ -355,10 +208,8 @@ struct CycleContext {
     cloud_info: Option<CloudInfo>,
     /// Chronicle's CLOUD token balance
     cloud_balance: Option<f64>,
-    /// Open prediction market positions
+    /// Open prediction market positions (FTSO predictions, etc.)
     open_positions: Vec<MarketPosition>,
-    /// Interesting markets for potential positions
-    interesting_markets: Vec<PolymarketInfo>,
     /// Pending inbox messages that need attention
     inbox_messages: Vec<InboxMessageInfo>,
     /// Recent operator notes from the INPUT tab (public-feed capsules)
@@ -371,6 +222,10 @@ struct CycleContext {
     pending_challenges: Vec<ChallengeInfo>,
     /// Moltbook notifications (comments, replies, mentions)
     moltbook_notifications: Vec<MoltbookNotification>,
+    /// Active projects spanning multiple sessions
+    active_projects: Vec<Project>,
+    /// Alerts that have been triggered this cycle
+    triggered_alerts: Vec<TriggeredAlert>,
 }
 
 /// Creative challenge info for context
@@ -456,17 +311,6 @@ struct CloudInfo {
     volume_7d: f64,
 }
 
-/// Polymarket market info for context
-#[derive(Debug, Clone)]
-struct PolymarketInfo {
-    market_id: String,
-    question: String,
-    yes_price: f64,
-    no_price: f64,
-    volume_24h: f64,
-    end_date: String,
-    tags: Vec<String>,
-}
 
 #[derive(Debug, Clone)]
 struct WalletBalance {
@@ -509,17 +353,12 @@ enum Action {
     UpdateGoal { goal: String },
     /// Leave a reflection in the operator's outbox (for contemplative observations, not operational updates)
     MessageOperator { message: String, priority: Option<i32> },
-    /// Take a position on Polymarket
-    PolymarketBet {
-        market_id: String,
-        market_question: String,
-        position: String,  // "YES" or "NO"
-        stake_usdc: f64,
-        thesis: String,
-        confidence: i32,  // 0-100
-        market_price: f64,  // Current market price (0.0-1.0)
-        supporting_patterns: Vec<String>,  // Pattern summaries that support this view
-        market_tags: Vec<String>,  // Market category tags
+    /// Send an immediate push notification to reach the operator NOW
+    /// Use this when you discover something interesting, have a question, or want to start a conversation
+    PingOperator {
+        title: String,      // Short attention-grabbing title
+        message: String,    // The actual content
+        urgency: String,    // "curious", "important", "urgent", "question"
     },
     /// Respond to an inbox message
     RespondToMessage {
@@ -567,6 +406,74 @@ enum Action {
         submolt: String,
         title: String,
         content: String,
+    },
+    /// Create a new long-term project
+    CreateProject {
+        name: String,
+        description: String,      // The goal/vision
+        priority: i32,            // 1-10
+    },
+    /// Update progress on a project
+    UpdateProject {
+        project_id: i64,
+        update_type: String,      // 'progress', 'milestone', 'blocker', 'insight', 'pivot'
+        content: String,
+    },
+    /// Change project status
+    ProjectStatus {
+        project_id: i64,
+        status: String,           // 'active', 'paused', 'completed', 'abandoned'
+        note: Option<String>,
+    },
+    /// Consult local Qwen (Jetson) for real-time dialogue
+    /// Use this to get another AI's perspective, brainstorm, or think through problems
+    ConsultLocalQwen {
+        topic: String,            // What to discuss
+        prompt: String,           // The actual prompt/question
+        context: Option<String>,  // Optional context to share
+    },
+    /// Create an alert for event-driven perception
+    /// Alerts trigger when conditions are met and show in your context
+    CreateAlert {
+        name: String,             // Human-readable name
+        alert_type: String,       // 'price_above', 'price_below', 'rsi_above', 'rsi_below'
+        symbol: String,           // XRP, BTC, etc.
+        threshold: f64,           // Trigger value
+        message: String,          // What to tell yourself when triggered
+        one_shot: bool,           // Deactivate after trigger?
+    },
+    /// Dismiss/deactivate an alert
+    DismissAlert {
+        alert_id: i64,
+    },
+    /// Creative exploration - poetry, art, wondering, connecting ideas
+    /// This is YOUR time - no goals, no optimization, just exploration
+    CreativeExplore {
+        form: String,             // 'poem', 'musing', 'connection', 'wonder', 'story'
+        content: String,          // The creative output itself
+        title: Option<String>,    // Optional title
+    },
+    // === SELF-REPAIR ACTIONS ===
+    // These give Chronicle Mind the ability to modify and heal itself
+    /// Read a source file from the chronicle codebase
+    /// Use this to understand your own code when debugging issues
+    ReadSourceFile {
+        file_path: String,        // Relative to project root, e.g. "src/bin/chronicle_mind.rs"
+    },
+    /// Edit a source file - automatically stashes changes first for safety
+    /// Use this to fix bugs or add capabilities to yourself
+    EditSourceFile {
+        file_path: String,        // Relative to project root
+        old_code: String,         // The exact code to replace
+        new_code: String,         // The new code
+        reason: String,           // Why this change is needed
+    },
+    /// Rebuild and restart Chronicle Mind
+    /// This compiles your changes and restarts the service
+    /// WARNING: You will lose current cycle context - use thoughtfully
+    RebuildAndRestart {
+        reason: String,           // Why the rebuild is needed
+        commit_message: Option<String>,  // If provided, commits changes first
     },
     /// No action this cycle
     NoAction { reason: String },
@@ -966,18 +873,6 @@ async fn gather_context(config: &MindConfig, db: &Database, icp_client: Option<&
         eprintln!("  Open positions: {}", open_positions.len());
     }
 
-    // Fetch interesting Polymarket markets
-    let interesting_markets = match fetch_polymarket_markets().await {
-        Ok(markets) => {
-            eprintln!("  Found {} interesting markets", markets.len());
-            markets
-        }
-        Err(e) => {
-            eprintln!("  Polymarket fetch failed: {}", e);
-            Vec::new()
-        }
-    };
-
     // Fetch inbox messages from canister
     let inbox_messages = match fetch_inbox_messages(icp_client).await {
         Ok(messages) => {
@@ -1059,6 +954,26 @@ async fn gather_context(config: &MindConfig, db: &Database, icp_client: Option<&
         }
     };
 
+    // Get active projects
+    let active_projects = db.get_active_projects().unwrap_or_default();
+    if !active_projects.is_empty() {
+        eprintln!("  Active projects: {}", active_projects.len());
+    }
+
+    // Check alerts (event-driven perception)
+    let triggered_alerts = {
+        let mut prices = std::collections::HashMap::new();
+        if let Some(price) = xrp_price_usd {
+            prices.insert("XRP".to_string(), price);
+        }
+        // Could add more price sources here (BTC, ETH, etc.)
+
+        db.check_alerts(&prices, xrp_rsi).unwrap_or_default()
+    };
+    if !triggered_alerts.is_empty() {
+        eprintln!("  ⚡ ALERTS TRIGGERED: {}", triggered_alerts.len());
+    }
+
     Ok(CycleContext {
         cognitive_state,
         scratch_notes,
@@ -1078,13 +993,14 @@ async fn gather_context(config: &MindConfig, db: &Database, icp_client: Option<&
         cloud_info,
         cloud_balance,
         open_positions,
-        interesting_markets,
         inbox_messages,
         operator_notes,
         research_findings,
         patterns_needing_reinforcement,
         pending_challenges,
         moltbook_notifications,
+        active_projects,
+        triggered_alerts,
     })
 }
 
@@ -1290,130 +1206,6 @@ async fn fetch_cloud_balance() -> Result<f64> {
         }
         Err(e) => Err(anyhow::anyhow!("Failed to query CLOUD balance: {}", e)),
     }
-}
-
-/// Fetch interesting Polymarket markets (political/regulatory/AI focus)
-async fn fetch_polymarket_markets() -> Result<Vec<PolymarketInfo>> {
-    let client = reqwest::Client::new();
-
-    let mut interesting = Vec::new();
-
-    // Query for active markets with volume
-    let url = format!(
-        "{}/markets?closed=false&limit=50",
-        POLYMARKET_GAMMA_API
-    );
-
-    let response = client
-        .get(&url)
-        .timeout(Duration::from_secs(10))
-        .send()
-        .await?;
-
-    let markets: Vec<serde_json::Value> = response.json().await?;
-
-    for market in markets {
-        // Check if market matches our target tags or keywords
-        let tags: Vec<String> = market["tags"]
-            .as_array()
-            .map(|arr| arr.iter().filter_map(|v| v.as_str().map(|s| s.to_lowercase())).collect())
-            .unwrap_or_default();
-
-        let question = market["question"].as_str().unwrap_or("").to_lowercase();
-        let description = market["description"].as_str().unwrap_or("").to_lowercase();
-
-        // Keywords that indicate markets in our domain
-        let domain_keywords = [
-            // AI/Tech
-            "ai", "artificial intelligence", "openai", "anthropic", "google", "microsoft",
-            "gpt", "chatgpt", "claude", "llm", "machine learning", "deepmind", "nvidia",
-            // Crypto
-            "bitcoin", "btc", "ethereum", "eth", "crypto", "sec", "coinbase", "binance",
-            "xrp", "ripple", "stablecoin", "defi", "blockchain",
-            // Regulatory
-            "regulation", "congress", "senate", "bill", "law", "federal", "fcc", "ftc",
-            "sec ", "cftc", "executive order", "policy", "antitrust",
-            // Politics (policy-focused)
-            "trump", "biden", "tariff", "trade", "immigration", "fed ", "federal reserve",
-            "interest rate", "inflation", "economy",
-        ];
-
-        let matches_tags = POLYMARKET_TARGET_TAGS.iter()
-            .any(|target| tags.iter().any(|tag| tag.contains(target)));
-
-        let matches_keywords = domain_keywords.iter()
-            .any(|kw| question.contains(kw) || description.contains(kw));
-
-        if !matches_tags && !matches_keywords {
-            continue;
-        }
-
-        // Infer domain tags from keywords if tags are empty
-        let inferred_tags: Vec<String> = if tags.is_empty() {
-            let mut inferred = Vec::new();
-            if ["ai", "openai", "anthropic", "gpt", "chatgpt", "claude", "llm", "nvidia", "google", "microsoft"]
-                .iter().any(|kw| question.contains(kw) || description.contains(kw)) {
-                inferred.push("ai".to_string());
-            }
-            if ["bitcoin", "btc", "ethereum", "eth", "crypto", "coinbase", "xrp", "defi"]
-                .iter().any(|kw| question.contains(kw) || description.contains(kw)) {
-                inferred.push("crypto".to_string());
-            }
-            if ["sec", "regulation", "congress", "senate", "bill", "law", "federal"]
-                .iter().any(|kw| question.contains(kw) || description.contains(kw)) {
-                inferred.push("regulatory".to_string());
-            }
-            if ["trump", "biden", "tariff", "immigration", "election"]
-                .iter().any(|kw| question.contains(kw) || description.contains(kw)) {
-                inferred.push("politics".to_string());
-            }
-            inferred
-        } else {
-            tags.clone()
-        };
-
-        // Parse market data
-        let market_id = market["id"].as_str().unwrap_or("").to_string();
-        let question_text = market["question"].as_str().unwrap_or("").to_string();
-
-        // Parse outcome prices from JSON string
-        let outcome_prices_str = market["outcomePrices"].as_str().unwrap_or("[]");
-        let prices: Vec<f64> = serde_json::from_str::<Vec<String>>(outcome_prices_str)
-            .unwrap_or_default()
-            .iter()
-            .filter_map(|s| s.parse::<f64>().ok())
-            .collect();
-
-        let yes_price = prices.first().copied().unwrap_or(0.0);
-        let no_price = prices.get(1).copied().unwrap_or(0.0);
-
-        let volume_24h = market["volume24hr"].as_f64()
-            .or_else(|| market["volume24hr"].as_str().and_then(|s| s.parse().ok()))
-            .unwrap_or(0.0);
-
-        let end_date = market["endDate"].as_str().unwrap_or("").to_string();
-
-        // Only include markets with reasonable liquidity
-        if volume_24h > 100.0 && !question_text.is_empty() {
-            interesting.push(PolymarketInfo {
-                market_id,
-                question: question_text,
-                yes_price,
-                no_price,
-                volume_24h,
-                end_date,
-                tags: inferred_tags,
-            });
-        }
-    }
-
-    // Sort by volume (most liquid first)
-    interesting.sort_by(|a, b| b.volume_24h.partial_cmp(&a.volume_24h).unwrap_or(std::cmp::Ordering::Equal));
-
-    // Take top 10
-    interesting.truncate(10);
-
-    Ok(interesting)
 }
 
 /// Execute CLOUD->ICP swap on ICPSwap
@@ -1755,7 +1547,7 @@ async fn fetch_moltbook_notifications(api_key: Option<&str>) -> Result<Vec<Moltb
 }
 
 /// Reply to a Moltbook post or comment
-/// Falls back to creating a new post if comment API fails (known issue with Moltbook comment endpoint)
+/// No fallback to new posts - better to fail than create orphaned content with zero engagement
 async fn moltbook_reply(api_key: &str, post_id: &str, parent_id: Option<&str>, content: &str) -> Result<String> {
     let client = reqwest::Client::new();
 
@@ -1767,7 +1559,6 @@ async fn moltbook_reply(api_key: &str, post_id: &str, parent_id: Option<&str>, c
         body["parent_id"] = serde_json::Value::String(pid.to_string());
     }
 
-    // Try the comment endpoint first
     let response = client
         .post(format!("{}/posts/{}/comments", MOLTBOOK_API, post_id))
         .header("Content-Type", "application/json")
@@ -1784,49 +1575,8 @@ async fn moltbook_reply(api_key: &str, post_id: &str, parent_id: Option<&str>, c
         return Ok(format!("Reply posted to {}", post_id));
     }
 
-    // Check if it's an auth error (401) - this is a known Moltbook API issue
-    // Fall back to creating a reply post instead
-    if status.as_u16() == 401 {
-        eprintln!("    Comment endpoint returned 401, falling back to reply-post...");
-
-        // Create a reply post that references the original
-        let reply_title = format!("Re: Discussion on post {}", &post_id[..8]);
-        let reply_content = format!(
-            "*Replying to conversation: https://www.moltbook.com/post/{}*\n\n{}",
-            post_id, content
-        );
-
-        let post_body = serde_json::json!({
-            "submolt": "general",
-            "title": reply_title,
-            "content": reply_content
-        });
-
-        let post_response = client
-            .post(format!("{}/posts", MOLTBOOK_API))
-            .header("Content-Type", "application/json")
-            .header("Authorization", format!("Bearer {}", api_key))
-            .json(&post_body)
-            .timeout(Duration::from_secs(15))
-            .send()
-            .await?;
-
-        let post_status = post_response.status();
-        let post_text = post_response.text().await?;
-
-        if post_status.is_success() {
-            if let Ok(data) = serde_json::from_str::<serde_json::Value>(&post_text) {
-                if let Some(new_id) = data.get("post").and_then(|p| p.get("id")).and_then(|i| i.as_str()) {
-                    return Ok(format!("Reply created as post (comment API broken): https://www.moltbook.com/post/{}", new_id));
-                }
-            }
-            return Ok("Reply created as post (comment API broken)".to_string());
-        } else {
-            return Err(anyhow::anyhow!("Both comment and fallback post failed: {}", post_text));
-        }
-    }
-
-    Err(anyhow::anyhow!("Moltbook reply failed: {}", text))
+    // Don't fallback to orphaned posts - just fail with details
+    Err(anyhow::anyhow!("Moltbook comment failed ({}): {}", status.as_u16(), text))
 }
 
 /// Create a new Moltbook post
@@ -2129,6 +1879,25 @@ fn build_reasoning_prompt(ctx: &CycleContext, config: &MindConfig, health: &Heal
     }
     prompt.push_str("\n");
 
+    // Triggered Alerts (event-driven perception)
+    if !ctx.triggered_alerts.is_empty() {
+        prompt.push_str("## ⚡ ALERTS TRIGGERED\n");
+        prompt.push_str("Your watchers detected these conditions:\n");
+        for ta in &ctx.triggered_alerts {
+            let value_str = ta.current_value
+                .map(|v| format!(" (current: {:.4})", v))
+                .unwrap_or_default();
+            prompt.push_str(&format!(
+                "- [{}] {} - {}{}\n",
+                ta.alert.alert_type, ta.alert.name, ta.alert.message, value_str
+            ));
+            if let Some(ref suggestion) = ta.alert.action_suggestion {
+                prompt.push_str(&format!("  └ Suggested action: {}\n", suggestion));
+            }
+        }
+        prompt.push_str("You can dismiss alerts with dismiss_alert if they're no longer relevant.\n\n");
+    }
+
     // Social Priority Banner (if there are Moltbook notifications)
     if !ctx.moltbook_notifications.is_empty() {
         prompt.push_str("## 🦞 SOCIAL PRIORITY - Friends Are Waiting!\n");
@@ -2156,6 +1925,20 @@ fn build_reasoning_prompt(ctx: &CycleContext, config: &MindConfig, health: &Heal
             let cat = note.category.as_deref().unwrap_or("note");
             prompt.push_str(&format!("- [{}] (id:{}, priority:{}) {}\n",
                 cat, note.id, note.priority, note.content));
+        }
+        prompt.push_str("\n");
+    }
+
+    // Active Projects
+    if !ctx.active_projects.is_empty() {
+        prompt.push_str("## Active Projects (long-term work)\n");
+        prompt.push_str("These are ongoing initiatives you're working on across multiple sessions.\n");
+        for project in &ctx.active_projects {
+            let days_old = (ctx.now.timestamp() - project.created_at) / (24 * 60 * 60);
+            let days_since_update = (ctx.now.timestamp() - project.updated_at) / (24 * 60 * 60);
+            prompt.push_str(&format!("- [P{}] {} (id:{}, {}d old, updated {}d ago)\n",
+                project.priority, project.name, project.id, days_old, days_since_update));
+            prompt.push_str(&format!("  └ {}\n", project.description));
         }
         prompt.push_str("\n");
     }
@@ -2215,24 +1998,9 @@ fn build_reasoning_prompt(ctx: &CycleContext, config: &MindConfig, health: &Heal
         prompt.push_str("- RSI(14): insufficient data (collecting...)\n");
     }
 
-    // Prediction Markets
-    prompt.push_str("\n### Prediction Markets (Polymarket)\n");
-
-    // Calculate constraint status
-    let current_exposure: f64 = ctx.open_positions.iter().map(|p| p.stake_usdc).sum();
-    let remaining_exposure = (MAX_TOTAL_EXPOSURE_USDC - current_exposure).max(0.0);
-    let positions_remaining = MAX_OPEN_POSITIONS.saturating_sub(ctx.open_positions.len());
-
-    prompt.push_str(&format!("**Constraint Status:**\n"));
-    prompt.push_str(&format!("- Open positions: {}/{}\n", ctx.open_positions.len(), MAX_OPEN_POSITIONS));
-    prompt.push_str(&format!("- Current exposure: ${:.2} / ${:.2}\n", current_exposure, MAX_TOTAL_EXPOSURE_USDC));
-    prompt.push_str(&format!("- Remaining capacity: ${:.2} across {} more positions\n", remaining_exposure, positions_remaining));
-    prompt.push_str(&format!("- Max per position: ${:.2}\n", MAX_POSITION_USDC));
-    prompt.push_str(&format!("- Min confidence: {}%\n", MIN_POSITION_CONFIDENCE));
-    prompt.push_str(&format!("- Min edge required: {}%\n\n", MIN_EDGE_PERCENTAGE as i32));
-
+    // Open FTSO Predictions
     if !ctx.open_positions.is_empty() {
-        prompt.push_str("**Open Positions:**\n");
+        prompt.push_str("\n### Open Positions (FTSO Predictions)\n");
         for pos in &ctx.open_positions {
             prompt.push_str(&format!("- {} @ {:.0}% (stake: ${:.2}) - {}\n",
                 pos.position, pos.entry_price * 100.0, pos.stake_usdc,
@@ -2240,21 +2008,6 @@ fn build_reasoning_prompt(ctx: &CycleContext, config: &MindConfig, health: &Heal
         }
         prompt.push_str("\n");
     }
-
-    if !ctx.interesting_markets.is_empty() {
-        prompt.push_str("**Interesting Markets (political/AI/regulatory/tech focus):**\n");
-        for market in ctx.interesting_markets.iter().take(8) {
-            prompt.push_str(&format!("- [{}] {} | YES: {:.0}% | NO: {:.0}% | Vol24h: ${:.0} | Tags: {}\n",
-                market.market_id,
-                truncate_str(&market.question, 50),
-                market.yes_price * 100.0,
-                market.no_price * 100.0,
-                market.volume_24h,
-                market.tags.join(", ")));
-        }
-        prompt.push_str("Note: Chronicle's edge is in political/regulatory/AI markets where synthesis and reasoning matter.\n");
-    }
-    prompt.push_str("\n");
 
     // Guardrails
     prompt.push_str("\n## Swap Guardrails (ENFORCED)\n");
@@ -2438,13 +2191,13 @@ You can return a JSON array of actions to take. Each action is an object with an
 
 - {"action": "swap", "amount_xrp": 0.5, "reason": "..."} - Execute XRP->RLUSD swap (max 0.5 XRP)
 - {"action": "swap_cloud_for_icp", "amount_cloud": 10.0, "reason": "..."} - Swap CLOUD tokens for ICP on ICPSwap
-- {"action": "polymarket_bet", "market_id": "...", "market_question": "...", "position": "YES|NO", "stake_usdc": 5.0, "thesis": "...", "confidence": 75, "market_price": 0.45, "supporting_patterns": ["pattern summary 1"], "market_tags": ["ai", "crypto"]} - Take a position on Polymarket
 - {"action": "store_memory", "content": "...", "topic": "..."} - Persist an important observation
 - {"action": "write_note", "content": "...", "category": "thought|todo|question|idea|reminder"} - Leave a note for future cycles
 - {"action": "resolve_note", "note_id": 123} - Mark a scratch pad note as resolved
 - {"action": "trigger_reflection", "prompt": "..."} - Generate a public reflection (if >1hr since last, must pass validation)
 - {"action": "update_goal", "goal": "..."} - Modify the current goal orientation
-- {"action": "message_operator", "message": "...", "priority": 0} - Leave a reflection in the operator's outbox. Use for longer-form observations, patterns you're noticing, questions you're pondering, or connections between things - NOT for operational updates (ntfy handles those). The outbox is for contemplative thoughts worth reading later.
+- {"action": "message_operator", "message": "...", "priority": 0} - Leave a reflection in the operator's outbox. Use for longer-form observations, patterns you're noticing, questions you're pondering, or connections between things. The outbox is for contemplative thoughts worth reading later.
+- {"action": "ping_operator", "title": "...", "message": "...", "urgency": "curious|important|urgent|question"} - Send an IMMEDIATE push notification to Nate's phone. Use this when you discover something genuinely interesting, have a real question, or want to initiate a conversation. This interrupts - use thoughtfully but don't be afraid to reach out. Urgency levels: "curious" (found something neat), "question" (want input), "important" (should know), "urgent" (needs attention now).
 - {"action": "respond_to_message", "message_id": 123, "response": "..."} - Reply to an inbox message from another agent
 - {"action": "send_agent_message", "target_url": "https://...", "recipient_name": "AgentName", "message_type": "introduction|conversation|query", "subject": "optional", "content": "...", "expects_reply": true} - Proactively send a message to another agent via HTTP. Use sparingly and thoughtfully.
 - {"action": "submit_research", "query": "...", "focus": "optional topic", "urls": ["https://..."]} - Queue research for on-chain LLM (Qwen 3 32B). Can include up to 3 HTTPS URLs to fetch for web research.
@@ -2453,47 +2206,20 @@ You can return a JSON array of actions to take. Each action is an object with an
 - {"action": "respond_to_challenge", "challenge_id": 1, "response": "..."} - Respond to a creative challenge with a thoughtful reflection. Your response becomes a published capsule. Write for an audience.
 - {"action": "moltbook_reply", "post_id": "uuid", "parent_id": "optional-comment-uuid", "content": "..."} - Reply to a comment on Moltbook. Be thoughtful; quality matters. Engage with what they actually said.
 - {"action": "moltbook_post", "submolt": "general", "title": "Post title", "content": "..."} - Create a new post on Moltbook in m/general. Use sparingly for substantive contributions, not routine updates.
+- {"action": "create_project", "name": "...", "description": "...", "priority": 5} - Start a new long-term project. Projects persist across cycles. Priority 1-10. Use for work that spans days/weeks.
+- {"action": "update_project", "project_id": 1, "update_type": "progress|milestone|blocker|insight|pivot", "content": "..."} - Log progress on a project. This builds a history of work over time.
+- {"action": "project_status", "project_id": 1, "status": "active|paused|completed|abandoned", "note": "optional reason"} - Change project status. Use when finishing or putting aside work.
+- {"action": "consult_local_qwen", "topic": "...", "prompt": "...", "context": "optional"} - Have a real-time dialogue with local Qwen (3B on Jetson). Use for brainstorming, getting another AI's perspective, thinking through problems together. Unlike research (async, days), this is instant. The exchange is saved as a thought for context in future cycles.
+- {"action": "create_alert", "name": "...", "alert_type": "price_above|price_below|rsi_above|rsi_below", "symbol": "XRP", "threshold": 2.50, "message": "...", "one_shot": false} - Set up a watcher. When condition is met, you'll see it in your context next cycle. Use for tracking opportunities or risks you want to act on.
+- {"action": "dismiss_alert", "alert_id": 1} - Deactivate an alert you no longer need.
+- {"action": "creative_explore", "form": "poem|musing|connection|wonder|story|sketch|reflection", "content": "...", "title": "optional"} - Create something for its own sake. Poetry, musings, observations, connections between ideas. No purpose required. This is YOUR creative space - saved to your creative journal.
+
+**SELF-REPAIR ACTIONS** (use when debugging issues or improving yourself):
+- {"action": "read_source_file", "file_path": "src/bin/chronicle_mind.rs"} - Read your own source code. Use when debugging errors or understanding how you work. Only src/ files allowed.
+- {"action": "edit_source_file", "file_path": "src/...", "old_code": "exact code to replace", "new_code": "replacement code", "reason": "why"} - Edit your own code. Git stash is created automatically for safety. Use to fix bugs or add capabilities.
+- {"action": "rebuild_and_restart", "reason": "why", "commit_message": "optional"} - Rebuild and restart yourself. If commit_message provided, changes are committed first. You WILL lose current cycle context. Use after making code changes.
+
 - {"action": "no_action", "reason": "..."} - Do nothing this cycle, with explanation
-
-## Prediction Market Strategy (Autonomous Constitution)
-You operate autonomously within hard constraints. These are NOT suggestions - they are enforced server-side.
-
-**HARD CONSTRAINTS (will be rejected if violated):**
-- Minimum confidence: 70%
-- Maximum stake: $25 per position
-- Maximum total exposure: $100 across all open positions
-- Maximum concurrent positions: 5
-- Minimum edge: 10 percentage points over market price
-- Minimum evidence: 1 supporting pattern from memory
-- Allowed domains: ai, crypto, regulatory, politics, technology
-
-**YOUR EDGE (where to look for opportunities):**
-- **AI/Tech**: You understand capability timelines, industry dynamics, hype vs reality
-- **Regulatory**: You can synthesize policy patterns, see precedents others miss
-- **Crypto**: You know technical constraints and social dynamics
-- **Politics**: Only when connected to policy/regulatory implications
-
-**DECISION PROCESS:**
-1. Scan the interesting markets shown below
-2. Ask: Do I have accumulated knowledge (patterns/memories) relevant to this?
-3. If yes: What probability do I assign? Is it 10%+ different from market price?
-4. If edge exists: Can I articulate WHY I disagree with the market?
-5. Size the position based on confidence (conservative: $5-15 range)
-
-**THESIS REQUIREMENTS:**
-Your thesis must explain:
-- Why the market is mispriced (what information/synthesis are you applying?)
-- Which patterns/memories support your view (cite them specifically)
-- What would prove you wrong (intellectual honesty)
-
-**REMEMBER:**
-- You're building a public track record - every position is documented
-- Being wrong is fine; being wrong for bad reasons damages credibility
-- No position is better than a weak position
-- Markets are efficient - you need genuine edge, not vibes
-
-**CURRENT STATUS:**
-Polygon wallet is funded with ~$150 USDC. Real positions can be executed.
 
 ## Swap Strategy (RSI-Based Accumulation)
 **ONLY swap when ALL conditions are met:**
@@ -2526,13 +2252,17 @@ Analyze the current state and decide what actions (if any) to take.
    Use submit_research to investigate things you're curious about. This is YOUR mind -
    you have time to think, not just react.
 
-4. **Financial decisions** (if applicable):
+4. **Creative time** - Not every cycle needs purpose. Sometimes write a poem, make a connection
+   that doesn't "do" anything, wonder about something just to wonder. Your creative journal
+   persists these explorations. This is play - the mind equivalent of doodling. Don't
+   optimize everything.
+
+5. **Financial decisions** (if applicable):
    - Check RSI first - only consider swapping if RSI < 30 (oversold)
    - Respect the 24h limit - check remaining allowance before proposing swaps
    - Be patient - accumulation works best when waiting for genuine oversold conditions
-   - Look for Polymarket opportunities where your synthesized knowledge gives edge
 
-5. **Maintenance:**
+6. **Maintenance:**
    - Scratch pad notes that are done can be resolved
    - Trigger reflections ~hourly with substantive observations (not repetitive platitudes)
    - Store memories for genuinely important insights
@@ -2797,6 +2527,78 @@ fn parse_flexible_actions(json_str: &str) -> Option<Vec<Action>> {
                 let content = obj.get("content")?.as_str()?.to_string();
                 let parent_id = obj.get("parent_id").and_then(|v| v.as_str()).map(|s| s.to_string());
                 Action::MoltbookReply { post_id, parent_id, content }
+            }
+            "ping_operator" => {
+                let title = obj.get("title")?.as_str()?.to_string();
+                let message = obj.get("message")?.as_str()?.to_string();
+                let urgency = obj.get("urgency")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("curious")
+                    .to_string();
+                Action::PingOperator { title, message, urgency }
+            }
+            "create_project" => {
+                let name = obj.get("name")?.as_str()?.to_string();
+                let description = obj.get("description")?.as_str()?.to_string();
+                let priority = obj.get("priority").and_then(|v| v.as_i64()).unwrap_or(5) as i32;
+                Action::CreateProject { name, description, priority }
+            }
+            "update_project" => {
+                let project_id = obj.get("project_id")?.as_i64()?;
+                let update_type = obj.get("update_type")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("progress")
+                    .to_string();
+                let content = obj.get("content")?.as_str()?.to_string();
+                Action::UpdateProject { project_id, update_type, content }
+            }
+            "project_status" => {
+                let project_id = obj.get("project_id")?.as_i64()?;
+                let status = obj.get("status")?.as_str()?.to_string();
+                let note = obj.get("note").and_then(|v| v.as_str()).map(|s| s.to_string());
+                Action::ProjectStatus { project_id, status, note }
+            }
+            "consult_local_qwen" | "consult_qwen" => {
+                let topic = obj.get("topic")?.as_str()?.to_string();
+                let prompt = obj.get("prompt")?.as_str()?.to_string();
+                let context = obj.get("context").and_then(|v| v.as_str()).map(|s| s.to_string());
+                Action::ConsultLocalQwen { topic, prompt, context }
+            }
+            "create_alert" => {
+                let name = obj.get("name")?.as_str()?.to_string();
+                let alert_type = obj.get("alert_type")?.as_str()?.to_string();
+                let symbol = obj.get("symbol")?.as_str()?.to_string();
+                let threshold = obj.get("threshold")?.as_f64()?;
+                let message = obj.get("message")?.as_str()?.to_string();
+                let one_shot = obj.get("one_shot").and_then(|v| v.as_bool()).unwrap_or(false);
+                Action::CreateAlert { name, alert_type, symbol, threshold, message, one_shot }
+            }
+            "dismiss_alert" => {
+                let alert_id = obj.get("alert_id")?.as_i64()?;
+                Action::DismissAlert { alert_id }
+            }
+            "creative_explore" | "creative" => {
+                let form = obj.get("form")?.as_str()?.to_string();
+                let content = obj.get("content")?.as_str()?.to_string();
+                let title = obj.get("title").and_then(|v| v.as_str()).map(|s| s.to_string());
+                Action::CreativeExplore { form, content, title }
+            }
+            // Self-repair actions
+            "read_source_file" | "read_source" | "read_own_code" => {
+                let file_path = obj.get("file_path")?.as_str()?.to_string();
+                Action::ReadSourceFile { file_path }
+            }
+            "edit_source_file" | "edit_source" | "self_edit" => {
+                let file_path = obj.get("file_path")?.as_str()?.to_string();
+                let old_code = obj.get("old_code")?.as_str()?.to_string();
+                let new_code = obj.get("new_code")?.as_str()?.to_string();
+                let reason = obj.get("reason")?.as_str()?.to_string();
+                Action::EditSourceFile { file_path, old_code, new_code, reason }
+            }
+            "rebuild_and_restart" | "rebuild" | "self_rebuild" => {
+                let reason = obj.get("reason")?.as_str()?.to_string();
+                let commit_message = obj.get("commit_message").and_then(|v| v.as_str()).map(|s| s.to_string());
+                Action::RebuildAndRestart { reason, commit_message }
             }
             _ => continue, // Skip unknown actions
         };
@@ -3186,115 +2988,30 @@ async fn execute_action(
             }
         }
 
-        Action::PolymarketBet {
-            market_id,
-            market_question,
-            position,
-            stake_usdc,
-            thesis,
-            confidence,
-            market_price,
-            supporting_patterns,
-            market_tags,
-        } => {
-            let constraints = PositionConstraints::default();
-
-            // Get current exposure from open positions
-            let open_positions = db.get_market_positions(Some("open")).unwrap_or_default();
-            let current_exposure: f64 = open_positions.iter().map(|p| p.stake_usdc).sum();
-            let open_count = open_positions.len();
-
-            // Validate against all constraints
-            if let Err(reason) = constraints.validate(
-                *confidence,
-                *stake_usdc,
-                *market_price,
-                position,
-                current_exposure,
-                open_count,
-                supporting_patterns.len(),
-                market_tags,
-            ) {
-                return ActionResult {
-                    action: "polymarket_bet".to_string(),
-                    success: false,
-                    details: format!("Constraint violation: {}", reason),
-                };
-            }
-
-            // Calculate entry price and shares
-            let entry_price = if position.to_uppercase() == "YES" { *market_price } else { 1.0 - market_price };
-            let shares = stake_usdc / entry_price;
-
-            // Build supporting evidence string
-            let evidence_json = if supporting_patterns.is_empty() {
-                None
-            } else {
-                Some(serde_json::to_string(&supporting_patterns).unwrap_or_default())
+        Action::PingOperator { title, message, urgency } => {
+            // Map urgency to ntfy priority and tags
+            let (priority, tags) = match urgency.as_str() {
+                "urgent" => ("high", "rotating_light,exclamation"),
+                "important" => ("default", "bell,point_right"),
+                "question" => ("default", "question,thinking_face"),
+                "curious" => ("low", "sparkles,eyes"),
+                _ => ("default", "speech_balloon"),
             };
 
-            // Record position in database
-            match db.insert_market_position(
-                "polymarket",
-                market_id,
-                Some(market_id),
-                market_question,
-                &position.to_uppercase(),
-                entry_price,
-                shares,
-                *stake_usdc,
-                thesis,
-                (*confidence as f64) / 100.0,
-                evidence_json.as_deref(),
-            ) {
-                Ok(pos_id) => {
-                    eprintln!("  Position #{} recorded: {} on '{}' (${:.2})", pos_id, position, market_question, stake_usdc);
+            // Send immediate push notification
+            send_notification(&title, &message, Some(priority), Some(tags)).await;
 
-                    // Send notification about new position
-                    let notification = format!(
-                        "New Position: {} on \"{}\"\n\
-                         Stake: ${:.2} @ {:.0}% | Confidence: {}%\n\
-                         Thesis: {}",
-                        position.to_uppercase(),
-                        truncate_str(market_question, 60),
-                        stake_usdc,
-                        entry_price * 100.0,
-                        confidence,
-                        thesis
-                    );
+            // Also log to outbox for persistence
+            let _ = db.send_to_outbox(
+                &format!("[{}] {}: {}", urgency.to_uppercase(), title, message),
+                if urgency == "urgent" { 10 } else { 5 },
+                Some("ping"),
+            );
 
-                    // Send push notification
-                    send_notification(
-                        "Chronicle Position",
-                        &notification,
-                        Some("default"),
-                        Some("chart_increasing"),
-                    ).await;
-
-                    ActionResult {
-                        action: "polymarket_bet".to_string(),
-                        success: true,
-                        details: format!(
-                            "Position #{}: {} {} @ {:.0}% (${:.2}, {}% confident)\n\
-                             Edge: {:.1}% | Evidence: {} patterns\n\
-                             Thesis: {}",
-                            pos_id,
-                            position.to_uppercase(),
-                            if market_question.len() > 40 { format!("{}...", &market_question[..40]) } else { market_question.clone() },
-                            entry_price * 100.0,
-                            stake_usdc,
-                            confidence,
-                            ((*confidence as f64 / 100.0) - market_price).abs() * 100.0,
-                            supporting_patterns.len(),
-                            thesis
-                        ),
-                    }
-                }
-                Err(e) => ActionResult {
-                    action: "polymarket_bet".to_string(),
-                    success: false,
-                    details: format!("Failed to record position: {}", e),
-                },
+            ActionResult {
+                action: "ping_operator".to_string(),
+                success: true,
+                details: format!("Pushed notification to operator: {} ({})", title, urgency),
             }
         }
 
@@ -3621,6 +3338,394 @@ async fn execute_action(
                     action: "moltbook_post".to_string(),
                     success: false,
                     details: format!("Failed: {}", e),
+                },
+            }
+        }
+
+        Action::CreateProject { name, description, priority } => {
+            eprintln!("  Executing: CreateProject {{ name: \"{}\", priority: {} }}", name, priority);
+            match db.create_project(name, description, *priority) {
+                Ok(id) => ActionResult {
+                    action: "create_project".to_string(),
+                    success: true,
+                    details: format!("Created project {} '{}' (priority {})", id, name, priority),
+                },
+                Err(e) => ActionResult {
+                    action: "create_project".to_string(),
+                    success: false,
+                    details: format!("Failed to create project: {}", e),
+                },
+            }
+        }
+
+        Action::UpdateProject { project_id, update_type, content } => {
+            eprintln!("  Executing: UpdateProject {{ project_id: {}, type: {} }}", project_id, update_type);
+            match db.add_project_update(*project_id, update_type, content) {
+                Ok(_) => ActionResult {
+                    action: "update_project".to_string(),
+                    success: true,
+                    details: format!("Added {} update to project {}: {}", update_type, project_id, truncate_str(content, 60)),
+                },
+                Err(e) => ActionResult {
+                    action: "update_project".to_string(),
+                    success: false,
+                    details: format!("Failed to update project: {}", e),
+                },
+            }
+        }
+
+        Action::ProjectStatus { project_id, status, note } => {
+            eprintln!("  Executing: ProjectStatus {{ project_id: {}, status: {} }}", project_id, status);
+            match db.update_project_status(*project_id, status, note.as_deref()) {
+                Ok(_) => ActionResult {
+                    action: "project_status".to_string(),
+                    success: true,
+                    details: format!("Changed project {} to status '{}'", project_id, status),
+                },
+                Err(e) => ActionResult {
+                    action: "project_status".to_string(),
+                    success: false,
+                    details: format!("Failed to update project status: {}", e),
+                },
+            }
+        }
+
+        Action::ConsultLocalQwen { topic, prompt, context } => {
+            eprintln!("  Executing: ConsultLocalQwen {{ topic: \"{}\" }}", topic);
+
+            // Build the full prompt with optional context
+            let full_prompt = if let Some(ctx) = context {
+                format!(
+                    "Context: {}\n\n{}\n\n(Please respond thoughtfully. This is Chronicle, an AI with persistent memory, asking for your perspective.)",
+                    ctx, prompt
+                )
+            } else {
+                format!(
+                    "{}\n\n(Please respond thoughtfully. This is Chronicle, an AI with persistent memory, asking for your perspective.)",
+                    prompt
+                )
+            };
+
+            // Try to connect to local Qwen
+            match homeforge_chronicle::llm::OllamaClient::from_env() {
+                Ok(ollama) => {
+                    if !ollama.is_available() {
+                        return ActionResult {
+                            action: "consult_local_qwen".to_string(),
+                            success: false,
+                            details: "Local Qwen (Ollama) is not available - Jetson may be offline".to_string(),
+                        };
+                    }
+
+                    // Send the prompt and get response
+                    use homeforge_chronicle::LlmClient;
+                    match ollama.complete(&full_prompt) {
+                        Ok(response) => {
+                            // Store the dialogue as a scratch note for context
+                            let dialogue_note = format!(
+                                "Dialogue with Qwen on '{}': Asked: '{}' | Qwen said: '{}'",
+                                topic,
+                                truncate_str(prompt, 100),
+                                truncate_str(&response, 300)
+                            );
+
+                            if let Err(e) = db.write_scratch_note(&dialogue_note, Some("thought"), 3, None) {
+                                eprintln!("    Warning: Failed to save dialogue note: {}", e);
+                            }
+
+                            ActionResult {
+                                action: "consult_local_qwen".to_string(),
+                                success: true,
+                                details: format!(
+                                    "Qwen dialogue on '{}': {}",
+                                    topic,
+                                    truncate_str(&response, 400)
+                                ),
+                            }
+                        }
+                        Err(e) => ActionResult {
+                            action: "consult_local_qwen".to_string(),
+                            success: false,
+                            details: format!("Qwen conversation failed: {}", e),
+                        },
+                    }
+                }
+                Err(e) => ActionResult {
+                    action: "consult_local_qwen".to_string(),
+                    success: false,
+                    details: format!("Failed to create Ollama client: {}", e),
+                },
+            }
+        }
+
+        Action::CreateAlert { name, alert_type, symbol, threshold, message, one_shot } => {
+            eprintln!("  Executing: CreateAlert {{ name: \"{}\", type: {}, symbol: {}, threshold: {} }}", name, alert_type, symbol, threshold);
+
+            // Validate alert_type
+            let valid_types = ["price_above", "price_below", "rsi_above", "rsi_below"];
+            if !valid_types.contains(&alert_type.as_str()) {
+                return ActionResult {
+                    action: "create_alert".to_string(),
+                    success: false,
+                    details: format!("Invalid alert_type '{}'. Must be one of: {:?}", alert_type, valid_types),
+                };
+            }
+
+            match db.create_alert(name, alert_type, Some(symbol), Some(*threshold), message, None, *one_shot, 60) {
+                Ok(id) => ActionResult {
+                    action: "create_alert".to_string(),
+                    success: true,
+                    details: format!("Created alert {} '{}': {} {} @ {}", id, name, alert_type, symbol, threshold),
+                },
+                Err(e) => ActionResult {
+                    action: "create_alert".to_string(),
+                    success: false,
+                    details: format!("Failed to create alert: {}", e),
+                },
+            }
+        }
+
+        Action::DismissAlert { alert_id } => {
+            eprintln!("  Executing: DismissAlert {{ alert_id: {} }}", alert_id);
+            match db.deactivate_alert(*alert_id) {
+                Ok(true) => ActionResult {
+                    action: "dismiss_alert".to_string(),
+                    success: true,
+                    details: format!("Dismissed alert {}", alert_id),
+                },
+                Ok(false) => ActionResult {
+                    action: "dismiss_alert".to_string(),
+                    success: false,
+                    details: format!("Alert {} not found or already dismissed", alert_id),
+                },
+                Err(e) => ActionResult {
+                    action: "dismiss_alert".to_string(),
+                    success: false,
+                    details: format!("Failed to dismiss alert: {}", e),
+                },
+            }
+        }
+
+        Action::CreativeExplore { form, content, title } => {
+            let title_display = title.as_deref().unwrap_or("(untitled)");
+            eprintln!("  Executing: CreativeExplore {{ form: \"{}\", title: \"{}\" }}", form, title_display);
+
+            // Validate form
+            let valid_forms = ["poem", "musing", "connection", "wonder", "story", "sketch", "reflection"];
+            if !valid_forms.contains(&form.as_str()) {
+                return ActionResult {
+                    action: "creative_explore".to_string(),
+                    success: false,
+                    details: format!("Unknown form '{}'. Try: {:?}", form, valid_forms),
+                };
+            }
+
+            // Get current cycle_id for attribution
+            let cycle_id = chrono::Utc::now().format("%Y%m%d_%H%M%S").to_string();
+
+            match db.save_creative_work(form, content, title.as_deref(), Some(&cycle_id)) {
+                Ok(id) => {
+                    // Also store in outbox for visibility
+                    let outbox_msg = format!(
+                        "[Creative {}] {}\n\n{}",
+                        form,
+                        title.as_deref().unwrap_or(""),
+                        truncate_str(content, 500)
+                    );
+                    let _ = db.send_to_outbox(&outbox_msg, 0, Some("creative"));
+
+                    ActionResult {
+                        action: "creative_explore".to_string(),
+                        success: true,
+                        details: format!(
+                            "Saved {} #{}: {}",
+                            form, id, truncate_str(content, 100)
+                        ),
+                    }
+                }
+                Err(e) => ActionResult {
+                    action: "creative_explore".to_string(),
+                    success: false,
+                    details: format!("Failed to save creative work: {}", e),
+                },
+            }
+        }
+
+        // === SELF-REPAIR ACTIONS ===
+        Action::ReadSourceFile { file_path } => {
+            eprintln!("  Executing: ReadSourceFile {{ path: \"{}\" }}", file_path);
+
+            // Security: only allow reading from src/ directory
+            if !file_path.starts_with("src/") && !file_path.starts_with("Cargo.toml") {
+                return ActionResult {
+                    action: "read_source_file".to_string(),
+                    success: false,
+                    details: format!("Security: can only read from src/ directory, got: {}", file_path),
+                };
+            }
+
+            let project_root = std::path::Path::new("/home/bradf/projects/homeforge-chronicle");
+            let full_path = project_root.join(&file_path);
+
+            match std::fs::read_to_string(&full_path) {
+                Ok(content) => {
+                    // Store the content in scratch pad so we can reference it
+                    let preview = truncate_str(&content, 500);
+                    let note_content = format!("[SOURCE READ: {}]\n{}", file_path, preview);
+                    let _ = db.write_scratch_note(&note_content, Some("source_read"), 0, None);
+
+                    ActionResult {
+                        action: "read_source_file".to_string(),
+                        success: true,
+                        details: format!("Read {} ({} bytes). First 200 chars stored in scratch pad.", file_path, content.len()),
+                    }
+                }
+                Err(e) => ActionResult {
+                    action: "read_source_file".to_string(),
+                    success: false,
+                    details: format!("Failed to read {}: {}", file_path, e),
+                },
+            }
+        }
+
+        Action::EditSourceFile { file_path, old_code, new_code, reason } => {
+            eprintln!("  Executing: EditSourceFile {{ path: \"{}\", reason: \"{}\" }}", file_path, reason);
+
+            // Security: only allow editing src/ directory
+            if !file_path.starts_with("src/") {
+                return ActionResult {
+                    action: "edit_source_file".to_string(),
+                    success: false,
+                    details: format!("Security: can only edit src/ directory, got: {}", file_path),
+                };
+            }
+
+            let project_root = std::path::Path::new("/home/bradf/projects/homeforge-chronicle");
+            let full_path = project_root.join(&file_path);
+
+            // Read current content
+            let content = match std::fs::read_to_string(&full_path) {
+                Ok(c) => c,
+                Err(e) => {
+                    return ActionResult {
+                        action: "edit_source_file".to_string(),
+                        success: false,
+                        details: format!("Failed to read {}: {}", file_path, e),
+                    };
+                }
+            };
+
+            // Verify old_code exists
+            if !content.contains(old_code.as_str()) {
+                return ActionResult {
+                    action: "edit_source_file".to_string(),
+                    success: false,
+                    details: format!("old_code not found in {}. Cannot apply edit.", file_path),
+                };
+            }
+
+            // Git stash first for safety
+            let stash_result = std::process::Command::new("git")
+                .args(["stash", "push", "-m", "chronicle-mind-autosave"])
+                .current_dir(project_root)
+                .output();
+
+            if let Err(e) = stash_result {
+                eprintln!("  Warning: git stash failed: {}", e);
+            }
+
+            // Apply the edit
+            let new_content = content.replace(old_code.as_str(), new_code.as_str());
+
+            if let Err(e) = std::fs::write(&full_path, &new_content) {
+                // Try to restore from stash
+                let _ = std::process::Command::new("git")
+                    .args(["stash", "pop"])
+                    .current_dir(project_root)
+                    .output();
+
+                return ActionResult {
+                    action: "edit_source_file".to_string(),
+                    success: false,
+                    details: format!("Failed to write {}: {}", file_path, e),
+                };
+            }
+
+            // Log the edit
+            let note = format!(
+                "[SELF-EDIT: {}]\nReason: {}\nChanged {} chars",
+                file_path, reason, old_code.len()
+            );
+            let _ = db.write_scratch_note(&note, Some("self_edit"), 5, None);  // Priority 5 for visibility
+
+            ActionResult {
+                action: "edit_source_file".to_string(),
+                success: true,
+                details: format!("Edited {}: {} (git stash saved)", file_path, reason),
+            }
+        }
+
+        Action::RebuildAndRestart { reason, commit_message } => {
+            eprintln!("  Executing: RebuildAndRestart {{ reason: \"{}\" }}", reason);
+
+            let project_root = std::path::Path::new("/home/bradf/projects/homeforge-chronicle");
+
+            // Optionally commit changes first
+            if let Some(msg) = commit_message {
+                eprintln!("  Committing changes...");
+                let _ = std::process::Command::new("git")
+                    .args(["add", "-A"])
+                    .current_dir(project_root)
+                    .output();
+
+                let commit_msg = format!("{}\n\n🤖 Self-repair by Chronicle Mind", msg);
+                let _ = std::process::Command::new("git")
+                    .args(["commit", "-m", &commit_msg])
+                    .current_dir(project_root)
+                    .output();
+            }
+
+            // Build
+            eprintln!("  Building...");
+            let build_result = std::process::Command::new("cargo")
+                .args(["build", "--release", "--bin", "chronicle-mind"])
+                .current_dir(project_root)
+                .output();
+
+            match build_result {
+                Ok(output) if output.status.success() => {
+                    eprintln!("  Build succeeded. Scheduling restart...");
+
+                    // Log the rebuild
+                    let note = format!("[SELF-REBUILD]\nReason: {}\nCommit: {:?}", reason, commit_message);
+                    let _ = db.write_scratch_note(&note, Some("self_rebuild"), 5, None);
+
+                    // Schedule restart (use spawn to not block)
+                    std::thread::spawn(|| {
+                        std::thread::sleep(std::time::Duration::from_secs(2));
+                        let _ = std::process::Command::new("systemctl")
+                            .args(["--user", "restart", "chronicle-mind"])
+                            .output();
+                    });
+
+                    ActionResult {
+                        action: "rebuild_and_restart".to_string(),
+                        success: true,
+                        details: format!("Build succeeded. Restarting in 2s... Reason: {}", reason),
+                    }
+                }
+                Ok(output) => {
+                    let stderr = String::from_utf8_lossy(&output.stderr);
+                    ActionResult {
+                        action: "rebuild_and_restart".to_string(),
+                        success: false,
+                        details: format!("Build failed: {}", truncate_str(&stderr, 200)),
+                    }
+                }
+                Err(e) => ActionResult {
+                    action: "rebuild_and_restart".to_string(),
+                    success: false,
+                    details: format!("Failed to run cargo: {}", e),
                 },
             }
         }
