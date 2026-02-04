@@ -324,7 +324,7 @@ pub fn build_site<P: AsRef<Path>>(
     let index = IndexTemplate {
         site_title: site_title.to_string(),
         author: author.to_string(),
-        page: "index".to_string(),
+        page: "activity".to_string(),
         entries: recent_entries.iter().take(10).cloned().collect(),
         has_more: recent_entries.len() > 10,
         total_entries: recent_entries.len(),
