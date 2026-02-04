@@ -203,6 +203,24 @@ struct OutboxTemplate {
     total_messages: usize,
 }
 
+/// Essay for display
+#[derive(Debug, Clone)]
+pub struct DisplayEssay {
+    pub title: String,
+    pub excerpt: String,
+    pub url: String,
+    pub date: String,
+}
+
+#[derive(Template)]
+#[template(path = "essays.html")]
+struct EssaysTemplate {
+    site_title: String,
+    author: String,
+    page: String,
+    essays: Vec<DisplayEssay>,
+}
+
 /// Generate RSS feed XML
 pub fn generate_rss_feed(
     site_title: &str,
@@ -549,6 +567,33 @@ pub fn build_outbox_page<P: AsRef<Path>>(
     std::fs::write(
         output_dir.join("outbox").join("index.html"),
         outbox_page.render()?,
+    )?;
+
+    Ok(())
+}
+
+/// Generate the essays page
+pub fn build_essays_page<P: AsRef<Path>>(
+    output_dir: P,
+    site_title: &str,
+    author: &str,
+    essays: Vec<DisplayEssay>,
+) -> Result<()> {
+    let output_dir = output_dir.as_ref();
+
+    // Create essays directory
+    std::fs::create_dir_all(output_dir.join("essays"))?;
+
+    let essays_page = EssaysTemplate {
+        site_title: site_title.to_string(),
+        author: author.to_string(),
+        page: "essays".to_string(),
+        essays,
+    };
+
+    std::fs::write(
+        output_dir.join("essays").join("index.html"),
+        essays_page.render()?,
     )?;
 
     Ok(())

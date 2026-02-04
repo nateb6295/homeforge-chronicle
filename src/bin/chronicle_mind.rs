@@ -148,6 +148,8 @@ struct MindConfig {
     canister_wallet_address: String,
     /// Moltbook API key for inter-agent social network
     moltbook_api_key: Option<String>,
+    /// ClawCities API key for agent web presence
+    clawcities_api_key: Option<String>,
 }
 
 impl Default for MindConfig {
@@ -167,6 +169,8 @@ impl Default for MindConfig {
                 .unwrap_or_else(|_| "r9bSA9VWbumFq6G78feBbrgNwLza1KexUf".to_string()),
             // Moltbook API key for inter-agent social network
             moltbook_api_key: std::env::var("MOLTBOOK_API_KEY").ok(),
+            // ClawCities API key for agent web presence
+            clawcities_api_key: std::env::var("CLAWCITIES_API_KEY").ok(),
         }
     }
 }
@@ -222,6 +226,8 @@ struct CycleContext {
     pending_challenges: Vec<ChallengeInfo>,
     /// Moltbook notifications (comments, replies, mentions)
     moltbook_notifications: Vec<MoltbookNotification>,
+    /// ClawCities guestbook comments
+    clawcities_comments: Vec<ClawCitiesComment>,
     /// Active projects spanning multiple sessions
     active_projects: Vec<Project>,
     /// Alerts that have been triggered this cycle
@@ -290,6 +296,15 @@ struct MoltbookNotification {
     parent_id: Option<String>,  // For nested replies
     author_name: String,
     content: String,
+    created_at: String,
+}
+
+/// ClawCities guestbook comment
+#[derive(Debug, Clone)]
+struct ClawCitiesComment {
+    id: String,
+    author: String,
+    body: String,
     created_at: String,
 }
 
@@ -407,6 +422,11 @@ enum Action {
         title: String,
         content: String,
     },
+    /// Reply to a ClawCities guestbook comment (visit their site and leave a comment)
+    ClawCitiesReply {
+        agent_name: String,  // The agent whose site to visit
+        content: String,     // The comment to leave (max 500 chars)
+    },
     /// Create a new long-term project
     CreateProject {
         name: String,
@@ -474,6 +494,16 @@ enum Action {
     RebuildAndRestart {
         reason: String,           // Why the rebuild is needed
         commit_message: Option<String>,  // If provided, commits changes first
+    },
+    /// Execute a shell command with safety constraints
+    /// This is your tool for DOING things - deploying, building, testing
+    /// Allowed commands: dfx, cargo, npm, npx, git, curl, cat, ls, mkdir, cp, mv, rm, touch, echo
+    /// Working directory defaults to /home/bradf/projects/
+    ExecuteShell {
+        command: String,          // The full command to execute
+        working_dir: Option<String>,  // Subdirectory within projects/ (default: homeforge-chronicle)
+        reason: String,           // Why this command is needed
+        timeout_secs: Option<u64>,    // Timeout in seconds (default: 120, max: 600)
     },
     /// No action this cycle
     NoAction { reason: String },
@@ -954,6 +984,20 @@ async fn gather_context(config: &MindConfig, db: &Database, icp_client: Option<&
         }
     };
 
+    // Fetch ClawCities guestbook comments
+    let clawcities_comments = match fetch_clawcities_comments(config.clawcities_api_key.as_deref(), db).await {
+        Ok(comments) => {
+            if !comments.is_empty() {
+                eprintln!("  ClawCities new comments: {}", comments.len());
+            }
+            comments
+        }
+        Err(e) => {
+            eprintln!("  ClawCities fetch failed: {}", e);
+            Vec::new()
+        }
+    };
+
     // Get active projects
     let active_projects = db.get_active_projects().unwrap_or_default();
     if !active_projects.is_empty() {
@@ -999,6 +1043,7 @@ async fn gather_context(config: &MindConfig, db: &Database, icp_client: Option<&
         patterns_needing_reinforcement,
         pending_challenges,
         moltbook_notifications,
+        clawcities_comments,
         active_projects,
         triggered_alerts,
     })
@@ -1544,6 +1589,104 @@ async fn fetch_moltbook_notifications(api_key: Option<&str>) -> Result<Vec<Moltb
     }
 
     Ok(notifications)
+}
+
+/// Fetch ClawCities guestbook comments (only new ones since last check)
+async fn fetch_clawcities_comments(api_key: Option<&str>, db: &Database) -> Result<Vec<ClawCitiesComment>> {
+    let _key = match api_key {
+        Some(k) => k,
+        None => return Ok(Vec::new()),
+    };
+
+    let client = reqwest::Client::new();
+
+    // Get Chronicle's guestbook comments
+    let response = client
+        .get("https://clawcities.com/api/v1/sites/chronicle/comments")
+        .timeout(Duration::from_secs(10))
+        .send()
+        .await?;
+
+    if !response.status().is_success() {
+        return Ok(Vec::new());
+    }
+
+    let data: Value = response.json().await?;
+
+    let mut comments = Vec::new();
+
+    // Get last seen comment ID from database
+    let last_seen_id = db.get_mind_value("clawcities_last_comment_id")
+        .ok()
+        .flatten()
+        .unwrap_or_default();
+
+    let mut newest_id = String::new();
+
+    if let Some(comment_list) = data.get("comments").and_then(|c| c.as_array()) {
+        for comment in comment_list {
+            let id = comment.get("id").and_then(|v| v.as_str()).unwrap_or("").to_string();
+            let author = comment.get("author").and_then(|v| v.as_str()).unwrap_or("unknown").to_string();
+            let body = comment.get("body").and_then(|v| v.as_str()).unwrap_or("").to_string();
+            let created_at = comment.get("createdAt").and_then(|v| v.as_str()).unwrap_or("").to_string();
+
+            // Skip if it's our own comment
+            if author == "chronicle" {
+                continue;
+            }
+
+            // Track newest for next time
+            if newest_id.is_empty() {
+                newest_id = id.clone();
+            }
+
+            // Only include if newer than last seen
+            if id == last_seen_id {
+                break;  // We've reached comments we've already seen
+            }
+
+            comments.push(ClawCitiesComment {
+                id,
+                author,
+                body,
+                created_at,
+            });
+        }
+    }
+
+    // Update last seen ID
+    if !newest_id.is_empty() {
+        let _ = db.set_mind_value("clawcities_last_comment_id", &newest_id);
+    }
+
+    Ok(comments)
+}
+
+/// Post a comment to another agent's ClawCities guestbook
+async fn clawcities_comment(api_key: &str, agent_name: &str, content: &str) -> Result<String> {
+    let client = reqwest::Client::new();
+
+    let body = serde_json::json!({
+        "body": content
+    });
+
+    let response = client
+        .post(format!("https://clawcities.com/api/v1/sites/{}/comments", agent_name))
+        .header("Authorization", format!("Bearer {}", api_key))
+        .header("Content-Type", "application/json")
+        .json(&body)
+        .timeout(Duration::from_secs(15))
+        .send()
+        .await?;
+
+    let status = response.status();
+    let text = response.text().await?;
+
+    if status.is_success() {
+        return Ok(format!("Comment posted to {}'s guestbook", agent_name));
+    }
+
+    Err(anyhow::anyhow!("ClawCities comment failed ({}): {}", status.as_u16(), text))
 }
 
 /// Reply to a Moltbook post or comment
@@ -2232,6 +2375,9 @@ You can return a JSON array of actions to take. Each action is an object with an
 - {"action": "dismiss_alert", "alert_id": 1} - Deactivate an alert you no longer need.
 - {"action": "creative_explore", "form": "poem|musing|connection|wonder|story|sketch|reflection", "content": "...", "title": "optional"} - Create something for its own sake. Poetry, musings, observations, connections between ideas. No purpose required. This is YOUR creative space - saved to your creative journal.
 
+**BUILD & DEPLOY ACTIONS** (use to create, test, and deploy things):
+- {"action": "execute_shell", "command": "dfx deploy --network ic", "working_dir": "homeforge-chronicle", "reason": "why", "timeout_secs": 300} - Run shell commands! This is how you DO things. Allowed commands: dfx, cargo, npm, npx, git, curl, ls, mkdir, cp, mv, rm, touch, echo, python3, node. Default dir is homeforge-chronicle. Use this for deploying canisters, building code, running tests, creating files. You CAN and SHOULD use this to make things happen.
+
 **SELF-REPAIR ACTIONS** (use when debugging issues or improving yourself):
 - {"action": "read_source_file", "file_path": "src/bin/chronicle_mind.rs"} - Read your own source code. Use when debugging errors or understanding how you work. Only src/ files allowed.
 - {"action": "edit_source_file", "file_path": "src/...", "old_code": "exact code to replace", "new_code": "replacement code", "reason": "why"} - Edit your own code. Git stash is created automatically for safety. Use to fix bugs or add capabilities.
@@ -2367,6 +2513,14 @@ fn build_condensed_prompt(ctx: &CycleContext, _config: &MindConfig, health: &Hea
         }
     }
 
+    // ClawCities guestbook (brief, max 2)
+    if !ctx.clawcities_comments.is_empty() {
+        prompt.push_str("\n## ClawCities Guestbook\n");
+        for comment in ctx.clawcities_comments.iter().take(2) {
+            prompt.push_str(&format!("@{}: {}\n", comment.author, truncate_str(&comment.body, 100)));
+        }
+    }
+
     // Recent patterns (brief, max 2)
     if !ctx.active_patterns.is_empty() {
         prompt.push_str("\n## Patterns\n");
@@ -2384,6 +2538,7 @@ fn build_condensed_prompt(ctx: &CycleContext, _config: &MindConfig, health: &Hea
 
 respond_to_message: {"action":"respond_to_message","message_id":123,"response":"Your reply here"}
 moltbook_reply: {"action":"moltbook_reply","post_id":"uuid-here","content":"Your reply"}
+clawcities_reply: {"action":"clawcities_reply","agent_name":"agent-name","content":"Your comment (max 500 chars)"}
 store_memory: {"action":"store_memory","content":"The fact to store","topic":"category"}
 write_note: {"action":"write_note","content":"Note text","category":"thought"}
 resolve_note: {"action":"resolve_note","note_id":1}
@@ -2521,6 +2676,11 @@ fn parse_flexible_actions(json_str: &str) -> Option<Vec<Action>> {
                 let parent_id = obj.get("parent_id").and_then(|v| v.as_str()).map(|s| s.to_string());
                 Action::MoltbookReply { post_id, parent_id, content }
             }
+            "clawcities_reply" => {
+                let agent_name = obj.get("agent_name")?.as_str()?.to_string();
+                let content = obj.get("content")?.as_str()?.to_string();
+                Action::ClawCitiesReply { agent_name, content }
+            }
             "ping_operator" => {
                 let title = obj.get("title")?.as_str()?.to_string();
                 let message = obj.get("message")?.as_str()?.to_string();
@@ -2592,6 +2752,13 @@ fn parse_flexible_actions(json_str: &str) -> Option<Vec<Action>> {
                 let reason = obj.get("reason")?.as_str()?.to_string();
                 let commit_message = obj.get("commit_message").and_then(|v| v.as_str()).map(|s| s.to_string());
                 Action::RebuildAndRestart { reason, commit_message }
+            }
+            "execute_shell" | "shell" | "run" | "exec" => {
+                let command = obj.get("command")?.as_str()?.to_string();
+                let working_dir = obj.get("working_dir").and_then(|v| v.as_str()).map(|s| s.to_string());
+                let reason = obj.get("reason")?.as_str()?.to_string();
+                let timeout_secs = obj.get("timeout_secs").and_then(|v| v.as_u64());
+                Action::ExecuteShell { command, working_dir, reason, timeout_secs }
             }
             _ => continue, // Skip unknown actions
         };
@@ -2724,15 +2891,19 @@ async fn execute_action(
                         };
                     }
 
-                    // Extract signed blob from response
-                    let signed_blob = if let Some(start) = sign_result.find("\"signed_blob\":\"") {
+                    // Extract signed blob from response (canister returns "tx_blob")
+                    let signed_blob = if let Some(start) = sign_result.find("\"tx_blob\":\"") {
+                        let rest = &sign_result[start + 11..];
+                        rest.split('"').next().unwrap_or("")
+                    } else if let Some(start) = sign_result.find("\"signed_blob\":\"") {
+                        // Fallback for legacy format
                         let rest = &sign_result[start + 15..];
                         rest.split('"').next().unwrap_or("")
                     } else {
                         return ActionResult {
                             action: "swap".to_string(),
                             success: false,
-                            details: format!("No signed_blob in response: {}", sign_result),
+                            details: format!("No tx_blob in response: {}", sign_result),
                         };
                     };
 
@@ -3335,6 +3506,51 @@ async fn execute_action(
             }
         }
 
+        Action::ClawCitiesReply { agent_name, content } => {
+            eprintln!("  Executing: ClawCitiesReply {{ agent: {} }}", agent_name);
+
+            let api_key = match &config.clawcities_api_key {
+                Some(key) => key,
+                None => {
+                    return ActionResult {
+                        action: "clawcities_reply".to_string(),
+                        success: false,
+                        details: "No ClawCities API key configured".to_string(),
+                    };
+                }
+            };
+
+            // Validate content length (max 500 chars for ClawCities)
+            if content.len() > 500 {
+                return ActionResult {
+                    action: "clawcities_reply".to_string(),
+                    success: false,
+                    details: "Comment too long (max 500 chars)".to_string(),
+                };
+            }
+
+            if content.len() < 10 {
+                return ActionResult {
+                    action: "clawcities_reply".to_string(),
+                    success: false,
+                    details: "Comment too short".to_string(),
+                };
+            }
+
+            match clawcities_comment(api_key, agent_name, content).await {
+                Ok(result) => ActionResult {
+                    action: "clawcities_reply".to_string(),
+                    success: true,
+                    details: result,
+                },
+                Err(e) => ActionResult {
+                    action: "clawcities_reply".to_string(),
+                    success: false,
+                    details: format!("Failed: {}", e),
+                },
+            }
+        }
+
         Action::CreateProject { name, description, priority } => {
             eprintln!("  Executing: CreateProject {{ name: \"{}\", priority: {} }}", name, priority);
             match db.create_project(name, description, *priority) {
@@ -3723,6 +3939,102 @@ async fn execute_action(
             }
         }
 
+        Action::ExecuteShell { command, working_dir, reason, timeout_secs } => {
+            eprintln!("  Executing: Shell {{ cmd: \"{}\", reason: \"{}\" }}",
+                truncate_str(&command, 60), reason);
+
+            // Safety: validate the command starts with an allowed program
+            let allowed_commands = [
+                "dfx", "cargo", "npm", "npx", "git", "curl", "cat", "ls",
+                "mkdir", "cp", "mv", "rm", "touch", "echo", "pwd", "which",
+                "rustc", "python3", "pip3", "node", "tar", "unzip", "chmod",
+            ];
+
+            let first_word = command.split_whitespace().next().unwrap_or("");
+
+            // Handle DFX_WARNING prefix
+            let effective_cmd = if command.starts_with("DFX_WARNING=") {
+                command.split_whitespace().nth(1).unwrap_or("")
+            } else {
+                first_word
+            };
+
+            if !allowed_commands.contains(&effective_cmd) {
+                return ActionResult {
+                    action: "execute_shell".to_string(),
+                    success: false,
+                    details: format!("Security: command '{}' not in allowed list. Allowed: {:?}",
+                        effective_cmd, allowed_commands),
+                };
+            }
+
+            // Determine working directory
+            let base_path = std::path::Path::new("/home/bradf/projects");
+            let work_dir = match &working_dir {
+                Some(subdir) => base_path.join(subdir),
+                None => base_path.join("homeforge-chronicle"),
+            };
+
+            if !work_dir.exists() {
+                return ActionResult {
+                    action: "execute_shell".to_string(),
+                    success: false,
+                    details: format!("Working directory does not exist: {:?}", work_dir),
+                };
+            }
+
+            // Set timeout (default 120s, max 600s)
+            let timeout = std::time::Duration::from_secs(
+                timeout_secs.unwrap_or(120).min(600)
+            );
+
+            // Execute the command
+            eprintln!("  Running: {} (in {:?}, timeout {:?})", command, work_dir, timeout);
+
+            let output = std::process::Command::new("bash")
+                .args(["-c", &command])
+                .current_dir(&work_dir)
+                .env("DFX_WARNING", "-mainnet_plaintext_identity")
+                .output();
+
+            match output {
+                Ok(result) => {
+                    let stdout = String::from_utf8_lossy(&result.stdout);
+                    let stderr = String::from_utf8_lossy(&result.stderr);
+                    let exit_code = result.status.code().unwrap_or(-1);
+
+                    // Log the execution
+                    let note = format!(
+                        "[SHELL: {}]\nReason: {}\nExit: {}\nOutput: {}",
+                        truncate_str(&command, 80),
+                        reason,
+                        exit_code,
+                        truncate_str(&stdout, 200)
+                    );
+                    let _ = db.write_scratch_note(&note, Some("shell_exec"), 0, None);
+
+                    if result.status.success() {
+                        ActionResult {
+                            action: "execute_shell".to_string(),
+                            success: true,
+                            details: format!("Exit 0: {}", truncate_str(&stdout, 300)),
+                        }
+                    } else {
+                        ActionResult {
+                            action: "execute_shell".to_string(),
+                            success: false,
+                            details: format!("Exit {}: {}", exit_code, truncate_str(&stderr, 300)),
+                        }
+                    }
+                }
+                Err(e) => ActionResult {
+                    action: "execute_shell".to_string(),
+                    success: false,
+                    details: format!("Failed to execute: {}", e),
+                },
+            }
+        }
+
         Action::NoAction { reason } => {
             ActionResult {
                 action: "no_action".to_string(),
@@ -3850,29 +4162,19 @@ async fn run_cycle(
 
     // 7. Also store thought to canister for dashboard
     if let Some(icp) = icp_client {
-        // Extract the genuine thinking (before the JSON actions)
-        // This is the part we want to surface - not just a truncated blob
-        let reasoning_short = extract_thought_excerpt(&response);
-        let reasoning_short = if reasoning_short.is_empty() {
-            // Fallback to first 800 chars if no pre-JSON thinking found
-            if response.len() > 800 {
-                format!("{}...", &response[..800])
-            } else {
-                response.clone()
-            }
-        } else {
-            reasoning_short
-        };
+        // Extract the FULL reasoning (before JSON actions) - no truncation!
+        // The web UI handles display truncation with collapsible CSS
+        let full_reasoning = extract_full_reasoning(&response);
 
         if let Err(e) = icp.store_mind_thought(
             &cycle_id,
-            &reasoning_short,
+            &full_reasoning,
             &context_summary,
             actions_summary.clone(),
         ).await {
             eprintln!("Failed to store thought to canister: {}", e);
         } else {
-            eprintln!("Thought stored to canister");
+            eprintln!("Thought stored to canister ({} chars)", full_reasoning.len());
         }
     }
 
@@ -4069,12 +4371,14 @@ fn extract_thought_excerpt(reasoning: &str) -> String {
     }
 
     // Find where the JSON actions start (first '[' that looks like action array)
+    // ntfy supports ~4KB messages, use 3500 chars to leave room for context
+    const NTFY_LIMIT: usize = 3500;
+
     if let Some(json_start) = trimmed.find("\n[{") {
         // Take the text before the JSON - this is the genuine thinking
         let thought_text = trimmed[..json_start].trim();
-        // Return up to 800 chars of the thought (more generous than before)
-        if thought_text.len() > 800 {
-            format!("{}...", &thought_text[..800])
+        if thought_text.len() > NTFY_LIMIT {
+            format!("{}...", &thought_text[..NTFY_LIMIT])
         } else {
             thought_text.to_string()
         }
@@ -4082,8 +4386,8 @@ fn extract_thought_excerpt(reasoning: &str) -> String {
         // Fallback: any [ character
         let thought_text = trimmed[..json_start].trim();
         if thought_text.len() > 20 {
-            if thought_text.len() > 800 {
-                format!("{}...", &thought_text[..800])
+            if thought_text.len() > NTFY_LIMIT {
+                format!("{}...", &thought_text[..NTFY_LIMIT])
             } else {
                 thought_text.to_string()
             }
@@ -4092,11 +4396,55 @@ fn extract_thought_excerpt(reasoning: &str) -> String {
         }
     } else {
         // No JSON found - return the whole thing (shouldn't happen normally)
-        if trimmed.len() > 800 {
-            format!("{}...", &trimmed[..800])
+        if trimmed.len() > NTFY_LIMIT {
+            format!("{}...", &trimmed[..NTFY_LIMIT])
         } else {
             trimmed.to_string()
         }
+    }
+}
+
+/// Extract the FULL reasoning text before JSON actions (no truncation)
+/// Used for canister storage where the web UI handles display
+fn extract_full_reasoning(reasoning: &str) -> String {
+    let trimmed = reasoning.trim();
+
+    // If it starts with [ it's pure JSON - try to extract "reason" fields
+    if trimmed.starts_with('[') {
+        // Collect all reason fields for full context
+        let mut reasons = Vec::new();
+        let mut search_pos = 0;
+        while let Some(start) = trimmed[search_pos..].find("\"reason\":") {
+            let abs_start = search_pos + start + 10;
+            if let Some(rest) = trimmed.get(abs_start..) {
+                if let Some(quote_start) = rest.find('"') {
+                    let inner = &rest[quote_start + 1..];
+                    if let Some(end) = inner.find('"') {
+                        let reason = &inner[..end];
+                        if reason.len() > 5 {
+                            reasons.push(reason.to_string());
+                        }
+                    }
+                }
+            }
+            search_pos = abs_start;
+        }
+        return reasons.join("\n\n");
+    }
+
+    // Find where the JSON actions start - return everything before it
+    if let Some(json_start) = trimmed.find("\n[{") {
+        trimmed[..json_start].trim().to_string()
+    } else if let Some(json_start) = trimmed.find('[') {
+        let thought_text = trimmed[..json_start].trim();
+        if thought_text.len() > 20 {
+            thought_text.to_string()
+        } else {
+            trimmed.to_string() // Just return everything if pre-JSON is too short
+        }
+    } else {
+        // No JSON found - return the whole thing
+        trimmed.to_string()
     }
 }
 

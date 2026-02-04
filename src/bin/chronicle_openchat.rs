@@ -128,10 +128,15 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     });
 
     let routes = Router::new()
+        .route("/", get(root_handler))
         .route("/bot_definition", get(bot_definition))
         .route("/execute_command", post(execute_command))
         .route("/notify", post(handle_notify))
         .route("/health", get(health_check))
+        // Alternative paths in case OpenChat expects different format
+        .route("/api/bot_definition", get(bot_definition))
+        .route("/api/execute_command", post(execute_command))
+        .route("/api/chat", post(execute_command))
         .layer(TraceLayer::new_for_http())
         .layer(CorsLayer::permissive())
         .with_state(app_state);
@@ -473,6 +478,11 @@ async fn handle_notify(
 
     // TODO: Track installations, handle events
     StatusCode::OK
+}
+
+/// Root handler - returns bot definition for discovery
+async fn root_handler(State(state): State<Arc<AppState>>) -> Json<BotDefinition> {
+    bot_definition(State(state)).await
 }
 
 /// Health check endpoint

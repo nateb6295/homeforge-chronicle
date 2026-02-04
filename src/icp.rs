@@ -242,6 +242,28 @@ impl IcpClient {
         Ok(capsule_id)
     }
 
+    /// Call the ICP LLM via the canister relay
+    /// Models: "llama3" (default), "qwen3", "llama4"
+    /// Returns JSON with success/response or error
+    pub async fn llm_prompt(
+        &self,
+        prompt: &str,
+        model: Option<&str>,
+        system_prompt: Option<&str>,
+    ) -> Result<String> {
+        let model_opt: Option<String> = model.map(|s| s.to_string());
+        let system_opt: Option<String> = system_prompt.map(|s| s.to_string());
+
+        let response = self.agent
+            .update(&self.canister_id, "llm_prompt")
+            .with_arg(Encode!(&prompt.to_string(), &model_opt, &system_opt)?)
+            .call_and_wait()
+            .await?;
+
+        let result = Decode!(&response, String)?;
+        Ok(result)
+    }
+
     /// Sign an XRP to RLUSD swap transaction
     /// Returns JSON with signed blob and tx hash, or error
     pub async fn sign_swap_xrp_to_rlusd(

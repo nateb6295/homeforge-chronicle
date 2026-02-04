@@ -48,13 +48,16 @@
             </div>
 
             <div class="thought-reasoning">
-                <div class="reasoning-content">{{ thought.reasoning }}</div>
+                <div class="reasoning-content collapsed" onclick="toggleExpand(this)">
+                    {{ thought.reasoning }}
+                    <span class="expand-hint">Click to expand ▼</span>
+                </div>
             </div>
 
             {% if !thought.actions.is_empty() %}
             <div class="thought-actions">
                 {% for action in thought.actions %}
-                <div class="action-item">
+                <div class="action-item truncated" onclick="toggleAction(this)">
                     <span class="action-text">{{ action }}</span>
                 </div>
                 {% endfor %}
@@ -71,6 +74,30 @@
 
 <script>
 const CANISTER_ID = 'fqqku-bqaaa-aaaai-q4wha-cai';
+
+// Toggle expand/collapse for reasoning content
+function toggleExpand(element) {
+    if (element.classList.contains('collapsed')) {
+        element.classList.remove('collapsed');
+        element.classList.add('expanded');
+        element.querySelector('.expand-hint').textContent = 'Click to collapse ▲';
+    } else {
+        element.classList.remove('expanded');
+        element.classList.add('collapsed');
+        element.querySelector('.expand-hint').textContent = 'Click to expand ▼';
+    }
+}
+
+// Toggle action item expansion
+function toggleAction(element) {
+    if (element.classList.contains('truncated')) {
+        element.classList.remove('truncated');
+        element.classList.add('expanded');
+    } else {
+        element.classList.remove('expanded');
+        element.classList.add('truncated');
+    }
+}
 
 // Parse cycle_id to relative time
 function parseCycleId(cycleId) {
@@ -268,10 +295,46 @@ setInterval(refreshThoughts, 60000);
     font-size: 0.9rem;
     line-height: 1.6;
     color: var(--fg);
-    max-height: 300px;
-    overflow-y: auto;
     white-space: pre-wrap;
     word-wrap: break-word;
+    cursor: pointer;
+    position: relative;
+}
+
+.reasoning-content.collapsed {
+    max-height: 120px;
+    overflow: hidden;
+}
+
+.reasoning-content.collapsed::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 40px;
+    background: linear-gradient(transparent, var(--bg));
+    pointer-events: none;
+}
+
+.reasoning-content .expand-hint {
+    display: none;
+    text-align: center;
+    color: var(--accent);
+    font-size: 0.8rem;
+    margin-top: 0.5rem;
+}
+
+.reasoning-content.collapsed .expand-hint {
+    display: block;
+    position: absolute;
+    bottom: 8px;
+    left: 0;
+    right: 0;
+}
+
+.reasoning-content.expanded {
+    max-height: none;
 }
 
 .thought-actions {
@@ -303,6 +366,22 @@ setInterval(refreshThoughts, 60000);
     color: var(--fg-dim);
     line-height: 1.4;
     word-break: break-word;
+}
+
+.action-item.truncated .action-text {
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    cursor: pointer;
+}
+
+.action-item.truncated .action-text:hover {
+    color: var(--accent);
+}
+
+.action-item.expanded .action-text {
+    white-space: normal;
 }
 
 .more-indicator {

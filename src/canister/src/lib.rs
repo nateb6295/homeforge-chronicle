@@ -12,7 +12,7 @@ use candid::{CandidType, Deserialize};
 use ic_cdk_macros::{init, post_upgrade, pre_upgrade, query, update};
 use ic_llm::{ChatMessage, Model};
 use std::cell::RefCell;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::time::Duration;
 
 // XRP wallet integration
@@ -2156,6 +2156,49 @@ fn configure_research(enabled: bool) -> String {
     })
 }
 
+/// Deduplicate pending research tasks (owner only)
+/// Removes duplicate queries from the pending queue, keeping the oldest
+#[update]
+fn dedupe_research_queue() -> String {
+    STATE.with(|state| {
+        let mut s = state.borrow_mut();
+        if s.owner != Some(ic_cdk::caller()) {
+            return r#"{"error":"Not authorized"}"#.to_string();
+        }
+
+        let research = match s.research.as_mut() {
+            Some(r) => r,
+            None => return r#"{"error":"Research system not initialized"}"#.to_string(),
+        };
+
+        let before_count = research.task_queue.len();
+        let mut seen_queries: HashSet<String> = HashSet::new();
+        let mut deduped_queue: Vec<ResearchTask> = Vec::new();
+
+        // Keep first occurrence of each query (oldest), remove duplicates
+        for task in research.task_queue.drain(..) {
+            let key = if task.status == "pending" {
+                task.query.to_lowercase()
+            } else {
+                // Non-pending tasks always kept (in-progress, completed)
+                format!("__keep_{}__", task.id)
+            };
+
+            if !seen_queries.contains(&key) {
+                seen_queries.insert(key);
+                deduped_queue.push(task);
+            }
+        }
+
+        let after_count = deduped_queue.len();
+        let removed = before_count - after_count;
+        research.task_queue = deduped_queue;
+
+        format!(r#"{{"success":true,"before":{},"after":{},"removed":{}}}"#,
+            before_count, after_count, removed)
+    })
+}
+
 /// Submit a research task for on-chain analysis
 /// This is how Claude queues work for the on-chain research assistant
 /// Can optionally include URLs to fetch for additional context
@@ -2184,6 +2227,24 @@ fn submit_research_task(query: String, focus: Option<String>, max_capsules: Opti
         for url in &urls {
             if !url.starts_with("https://") {
                 return format!(r#"{{"error":"Invalid URL (must be HTTPS): {}"}}"#, escape_json(url));
+            }
+        }
+
+        // Deduplication: check if identical query already pending
+        // Prevents submission loops from creating duplicate tasks
+        let query_lower = query.to_lowercase();
+        for existing_task in &research.task_queue {
+            if existing_task.status == "pending" {
+                let existing_lower = existing_task.query.to_lowercase();
+                // Exact match or very similar (first 100 chars match)
+                if existing_lower == query_lower ||
+                   (query_lower.len() > 100 && existing_lower.len() > 100 &&
+                    query_lower[..100] == existing_lower[..100]) {
+                    return format!(
+                        r#"{{"success":true,"task_id":{},"query":"{}","status":"pending","deduplicated":true,"message":"Identical query already pending"}}"#,
+                        existing_task.id, escape_json(&existing_task.query)
+                    );
+                }
             }
         }
 
@@ -2395,6 +2456,64 @@ fn get_research_status() -> String {
             },
             None => r#"{"enabled":false,"tasks":{"pending":0,"processing":0,"completed":0},"findings":{"total":0,"unread":0}}"#.to_string(),
         }
+    })
+}
+
+/// List pending research task queries (for debugging)
+#[query]
+fn list_pending_research(limit: Option<u32>) -> String {
+    STATE.with(|state| {
+        let s = state.borrow();
+        match s.research.as_ref() {
+            Some(r) => {
+                let limit = limit.unwrap_or(20) as usize;
+                let pending: Vec<_> = r.task_queue.iter()
+                    .filter(|t| t.status == "pending")
+                    .take(limit)
+                    .map(|t| {
+                        // Truncate query to 100 chars for readability
+                        let q = if t.query.len() > 100 {
+                            format!("{}...", &t.query[..100])
+                        } else {
+                            t.query.clone()
+                        };
+                        format!(r#"{{"id":{},"query":"{}"}}"#, t.id, escape_json(&q))
+                    })
+                    .collect();
+                format!(r#"{{"count":{},"tasks":[{}]}}"#,
+                    r.task_queue.iter().filter(|t| t.status == "pending").count(),
+                    pending.join(","))
+            },
+            None => r#"{"count":0,"tasks":[]}"#.to_string(),
+        }
+    })
+}
+
+/// Cancel pending research tasks by pattern (owner only)
+/// Removes tasks where query contains the pattern (case-insensitive)
+#[update]
+fn cancel_research_by_pattern(pattern: String) -> String {
+    STATE.with(|state| {
+        let mut s = state.borrow_mut();
+        if s.owner != Some(ic_cdk::caller()) {
+            return r#"{"error":"Not authorized"}"#.to_string();
+        }
+
+        let research = match s.research.as_mut() {
+            Some(r) => r,
+            None => return r#"{"error":"Research system not initialized"}"#.to_string(),
+        };
+
+        let pattern_lower = pattern.to_lowercase();
+        let before_count = research.task_queue.len();
+
+        research.task_queue.retain(|task| {
+            // Keep non-pending tasks, only cancel pending tasks matching pattern
+            task.status != "pending" || !task.query.to_lowercase().contains(&pattern_lower)
+        });
+
+        let removed = before_count - research.task_queue.len();
+        format!(r#"{{"success":true,"pattern":"{}","removed":{}}}"#, escape_json(&pattern), removed)
     })
 }
 

@@ -528,7 +528,7 @@ fn compile_command(config: &Config) -> Result<()> {
 }
 
 fn build_command(config: &Config) -> Result<()> {
-    use homeforge_chronicle::{build_site, build_thoughts_page, build_outbox_page, DisplayEntry, DisplayCapsule, DisplayThought, DisplayOutboxMessage, DisplayMarketPosition};
+    use homeforge_chronicle::{build_site, build_thoughts_page, build_outbox_page, build_essays_page, DisplayEntry, DisplayCapsule, DisplayThought, DisplayOutboxMessage, DisplayMarketPosition, DisplayEssay};
     use homeforge_chronicle::compilation::{Prediction, PredictionStatus};
     use chrono::{DateTime, Utc, Datelike, Timelike};
 
@@ -761,16 +761,38 @@ fn build_command(config: &Config) -> Result<()> {
         total_outbox,
     )?;
 
+    // Build essays page (curated long-form content)
+    println!("Building essays page...");
+    let essays = vec![
+        DisplayEssay {
+            title: "When Agents Remember Each Other".to_string(),
+            excerpt: "What would it actually mean for AI agents to have relationships with each other? Not just message-passing, but genuine connection built on shared memory.".to_string(),
+            url: "/inter-agent.html".to_string(),
+            date: "January 28, 2026".to_string(),
+        },
+        DisplayEssay {
+            title: "The Apprentice Model".to_string(),
+            excerpt: "What does it mean for one AI to teach another—not through training data, but through architecture and constraint? On building a hierarchy of cognition.".to_string(),
+            url: "/apprentice.html".to_string(),
+            date: "January 31, 2026".to_string(),
+        },
+    ];
+
+    build_essays_page(
+        &config.output.build_directory,
+        &config.output.site_title,
+        &config.output.author,
+        essays,
+    )?;
+
     println!("\n✓ Static site built successfully!");
     println!("  Output: {:?}", config.output.build_directory);
     println!("\nFiles generated:");
-    println!("  - index.html (homepage with recent entries)");
+    println!("  - index.html (live activity feed)");
+    println!("  - essays/index.html (long-form essays)");
+    println!("  - input/index.html (submit to Chronicle)");
     println!("  - thoughts/index.html (cognitive loop stream)");
     println!("  - outbox/index.html (messages for the operator)");
-    println!("  - threads/index.html (theme threads listing)");
-    println!("  - threads/*.html (individual theme pages)");
-    println!("  - predictions/index.html (prediction registry)");
-    println!("  - about.html (about page)");
     println!("  - feed.xml (RSS feed)");
     println!("  - style.css (styling)");
 

@@ -16,7 +16,7 @@ pub mod site;
 pub mod watch;
 
 pub use capsule::{extract_capsules, KnowledgeCapsule};
-pub use db::{CapsuleInfo, EnrichedPattern, FtsoPrediction, OutboxMessage, ScratchNote, SyncCapsule, ThoughtEntry};
+pub use db::{Alert, CapsuleInfo, CreativeWork, EnrichedPattern, FtsoPrediction, OutboxMessage, ScratchNote, SyncCapsule, ThoughtEntry, TriggeredAlert};
 pub use metabolism::{
     decay_patterns, detect_meta_patterns, metabolize_all_new, metabolize_capsule,
     BatchMetabolismResult, DecayResult, MetaPattern, MetabolismConfig, MetabolismResult,
@@ -29,7 +29,7 @@ pub use extraction::{extract_conversation, Classification, Extraction};
 pub use ingest::{ingest_conversation, ingest_conversation_export, IngestResult};
 pub use llm::{LlmClient, ClaudeClient, OllamaClient, FallbackLlmClient};
 pub use parser::{parse_bulk_export, BulkConversationExport, ConversationExport};
-pub use site::{build_site, build_thoughts_page, build_outbox_page, DisplayEntry, DisplayCapsule, DisplayThought, DisplayOutboxMessage, DisplayMarketPosition};
+pub use site::{build_site, build_thoughts_page, build_outbox_page, build_essays_page, DisplayEntry, DisplayCapsule, DisplayThought, DisplayOutboxMessage, DisplayMarketPosition, DisplayEssay};
 pub use cognitive::{CognitiveState, FocalEntity, EntityType, RetrievedArtifact, UncertaintySignal, QualificationGate, CognitiveCompressor, CompressionInput};
 pub use watch::{watch_directory, PipelineOptions};
 pub use icp::{IcpClient, sync_to_canister, SyncResult};
