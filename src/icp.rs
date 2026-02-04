@@ -294,7 +294,7 @@ impl IcpClient {
     /// Returns JSON with result
     pub async fn submit_transaction(&self, signed_blob: &str) -> Result<String> {
         let response = self.agent
-            .update(&self.canister_id, "submit_transaction")
+            .update(&self.canister_id, "submit_xrp_transaction")
             .with_arg(Encode!(&signed_blob.to_string())?)
             .call_and_wait()
             .await?;
