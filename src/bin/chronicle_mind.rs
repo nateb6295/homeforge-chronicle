@@ -73,8 +73,11 @@ where
 /// Flare Mainnet RPC endpoint
 const FLARE_RPC: &str = "https://flare-api.flare.network/ext/C/rpc";
 
-/// Ntfy.sh topic for push notifications
-const NTFY_TOPIC: &str = "chronicle-mind-9f86c413d8a7b982";
+/// Ntfy base URL (local Jetson instance)
+const NTFY_URL: &str = "http://192.168.1.11:8089";
+
+/// Ntfy topic for push notifications
+const NTFY_TOPIC: &str = "chronicle-mind";
 
 /// Moltbook API base URL
 const MOLTBOOK_API: &str = "https://www.moltbook.com/api/v1";
@@ -1058,7 +1061,7 @@ async fn gather_context(config: &MindConfig, db: &Database, icp_client: Option<&
 /// Send a notification via ntfy.sh
 async fn send_notification(title: &str, message: &str, priority: Option<&str>, tags: Option<&str>) {
     let client = reqwest::Client::new();
-    let url = format!("https://ntfy.sh/{}", NTFY_TOPIC);
+    let url = format!("{}/{}", NTFY_URL, NTFY_TOPIC);
 
     let mut request = client.post(&url)
         .header("Title", title)
