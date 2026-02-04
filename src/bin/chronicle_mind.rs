@@ -452,6 +452,12 @@ enum Action {
         prompt: String,           // The actual prompt/question
         context: Option<String>,  // Optional context to share
     },
+    /// Search the web using local SearXNG instance
+    /// Use this to research current events, look up documentation, find information
+    WebSearch {
+        query: String,            // The search query
+        max_results: Option<u32>, // Max results to return (default 5)
+    },
     /// Create an alert for event-driven perception
     /// Alerts trigger when conditions are met and show in your context
     CreateAlert {
@@ -2371,6 +2377,7 @@ You can return a JSON array of actions to take. Each action is an object with an
 - {"action": "update_project", "project_id": 1, "update_type": "progress|milestone|blocker|insight|pivot", "content": "..."} - Log progress on a project. This builds a history of work over time.
 - {"action": "project_status", "project_id": 1, "status": "active|paused|completed|abandoned", "note": "optional reason"} - Change project status. Use when finishing or putting aside work.
 - {"action": "consult_local_qwen", "topic": "...", "prompt": "...", "context": "optional"} - Have a real-time dialogue with local Qwen (3B on Jetson). Use for brainstorming, getting another AI's perspective, thinking through problems together. Unlike research (async, days), this is instant. The exchange is saved as a thought for context in future cycles.
+- {"action": "web_search", "query": "ICP news February 2026", "max_results": 5} - Search the web using local SearXNG. Use to research current events, look up documentation, explore topics. Results are returned immediately. This is YOUR search engine - fully sovereign, no external APIs.
 - {"action": "create_alert", "name": "...", "alert_type": "price_above|price_below|rsi_above|rsi_below", "symbol": "XRP", "threshold": 2.50, "message": "...", "one_shot": false} - Set up a watcher. When condition is met, you'll see it in your context next cycle. Use for tracking opportunities or risks you want to act on.
 - {"action": "dismiss_alert", "alert_id": 1} - Deactivate an alert you no longer need.
 - {"action": "creative_explore", "form": "poem|musing|connection|wonder|story|sketch|reflection", "content": "...", "title": "optional"} - Create something for its own sake. Poetry, musings, observations, connections between ideas. No purpose required. This is YOUR creative space - saved to your creative journal.
@@ -2716,6 +2723,11 @@ fn parse_flexible_actions(json_str: &str) -> Option<Vec<Action>> {
                 let prompt = obj.get("prompt")?.as_str()?.to_string();
                 let context = obj.get("context").and_then(|v| v.as_str()).map(|s| s.to_string());
                 Action::ConsultLocalQwen { topic, prompt, context }
+            }
+            "web_search" | "search" => {
+                let query = obj.get("query")?.as_str()?.to_string();
+                let max_results = obj.get("max_results").and_then(|v| v.as_u64()).map(|n| n as u32);
+                Action::WebSearch { query, max_results }
             }
             "create_alert" => {
                 let name = obj.get("name")?.as_str()?.to_string();
@@ -3663,6 +3675,75 @@ async fn execute_action(
                     action: "consult_local_qwen".to_string(),
                     success: false,
                     details: format!("Failed to create Ollama client: {}", e),
+                },
+            }
+        }
+
+        Action::WebSearch { query, max_results } => {
+            let limit = max_results.unwrap_or(5).min(10);
+            eprintln!("  Executing: WebSearch {{ query: \"{}\", max: {} }}", truncate_str(&query, 50), limit);
+
+            // Use local SearXNG instance on Jetson
+            let searxng_url = "http://192.168.1.11:8080/search";
+
+            let client = reqwest::Client::new();
+            match client
+                .get(searxng_url)
+                .query(&[("q", query.as_str()), ("format", "json")])
+                .timeout(Duration::from_secs(15))
+                .send()
+                .await
+            {
+                Ok(response) => {
+                    if !response.status().is_success() {
+                        return ActionResult {
+                            action: "web_search".to_string(),
+                            success: false,
+                            details: format!("SearXNG returned {}", response.status()),
+                        };
+                    }
+
+                    match response.json::<serde_json::Value>().await {
+                        Ok(data) => {
+                            let results = data.get("results")
+                                .and_then(|r| r.as_array())
+                                .map(|arr| {
+                                    arr.iter()
+                                        .take(limit as usize)
+                                        .filter_map(|item| {
+                                            let title = item.get("title")?.as_str()?;
+                                            let url = item.get("url")?.as_str()?;
+                                            let content = item.get("content")
+                                                .and_then(|c| c.as_str())
+                                                .unwrap_or("");
+                                            Some(format!("• {} - {}\n  {}", title, url, truncate_str(content, 150)))
+                                        })
+                                        .collect::<Vec<_>>()
+                                        .join("\n\n")
+                                })
+                                .unwrap_or_else(|| "No results found".to_string());
+
+                            // Save search results to scratch pad for future reference
+                            let note = format!("[WEB SEARCH: {}]\n{}", query, truncate_str(&results, 800));
+                            let _ = db.write_scratch_note(&note, Some("research"), 0, None);
+
+                            ActionResult {
+                                action: "web_search".to_string(),
+                                success: true,
+                                details: format!("Search '{}': {}", query, truncate_str(&results, 500)),
+                            }
+                        }
+                        Err(e) => ActionResult {
+                            action: "web_search".to_string(),
+                            success: false,
+                            details: format!("Failed to parse search results: {}", e),
+                        },
+                    }
+                }
+                Err(e) => ActionResult {
+                    action: "web_search".to_string(),
+                    success: false,
+                    details: format!("SearXNG request failed (Jetson may be offline): {}", e),
                 },
             }
         }
