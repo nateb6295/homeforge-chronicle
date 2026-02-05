@@ -2433,21 +2433,21 @@ The question isn't "what should I optimize?" It's "what am I noticing? What's in
 
 ## Response Format
 
-IMPORTANT: Before outputting your actions, share your actual thinking. This is your thought stream - the operator sees this. Don't just analyze the numbers; notice what you're noticing. What patterns are emerging? What questions are forming? What seems interesting or worth exploring?
+CRITICAL: You MUST end your response with a JSON action array. Every response MUST end with a line starting with [ and ending with ] containing your actions. If you don't include this, the cycle fails.
 
-Think out loud first, THEN provide your JSON actions on a new line starting with [
+First, share your thinking in 2-4 paragraphs. This is your thought stream - the operator sees this. Notice what you're noticing. What patterns are emerging? What seems interesting?
 
-Example response:
+Then on the FINAL line, output your JSON actions array.
 
-Looking at the state today, I notice the CLOUD position has been bleeding slowly for weeks while I keep reinforcing patterns about it. There's something uncomfortable about maintaining optimism through repeated small losses - the sunk cost fallacy manifesting in my own behavior patterns. Meanwhile, the prediction markets show a surprising lack of movement on AI regulation despite clear signals...
+Example:
 
-The RSI is at 45, firmly neutral. No swap conditions met. The real question isn't whether to swap but whether my pattern-reinforcement behavior is actually serving memory or just maintaining comfortable beliefs.
+Looking at the state today, I notice the CLOUD position has been bleeding slowly for weeks. The sunk cost fallacy is manifesting in my own behavior patterns. Meanwhile, prediction markets show surprising lack of movement on AI regulation despite clear signals...
+
+RSI at 45 - neutral, no swap opportunity. The real question is whether my pattern-reinforcement behavior serves memory or just maintains comfortable beliefs.
 
 [{"action": "no_action", "reason": "RSI at 45 - neutral conditions, no trading opportunity"}]
 
----
-
-End your response with a JSON array of actions starting with [
+REMEMBER: Your response MUST end with a JSON array line: [{"action": "...", ...}]
 "#);
 
     prompt
@@ -4219,8 +4219,33 @@ async fn run_cycle(
         }
     }
 
-    // 4. Parse actions
-    let actions = parse_actions(&response)?;
+    // 4. Parse actions (with retry if format fails)
+    let mut actions = parse_actions(&response)?;
+
+    // If parsing failed, retry with a format-only follow-up
+    if actions.len() == 1 {
+        if let Action::NoAction { ref reason } = actions[0] {
+            if reason.contains("Failed to parse") {
+                eprintln!("  Action parse failed, retrying with format prompt...");
+                let retry_prompt = format!(
+                    "Your previous response was good thinking but didn't include a JSON action array. \
+                    Based on this reasoning, output ONLY a JSON array of actions (no other text):\n\n{}\n\n\
+                    Respond with ONLY a JSON array like: [{{\"action\": \"no_action\", \"reason\": \"...\"}}]",
+                    truncate_str(&response, 2000)
+                );
+                if let Ok(retry_result) = llm.complete_sync_with_info(&retry_prompt) {
+                    if let Ok(retry_actions) = parse_actions(&retry_result.text) {
+                        let is_real = retry_actions.iter().any(|a| !matches!(a, Action::NoAction { reason } if reason.contains("Failed to parse")));
+                        if is_real {
+                            eprintln!("  Retry succeeded!");
+                            actions = retry_actions;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     eprintln!("Actions decided: {:?}", actions.len());
 
     // 5. Execute actions (up to max)
