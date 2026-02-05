@@ -158,8 +158,8 @@ struct MindConfig {
 impl Default for MindConfig {
     fn default() -> Self {
         Self {
-            cycle_interval_secs: 600, // 10 minutes
-            reasoning_model: "claude-opus-4-20250514".to_string(),
+            cycle_interval_secs: 1800, // 30 minutes
+            reasoning_model: "claude-sonnet-4-20250514".to_string(),
             min_xrp_reserve: 10.0,
             min_swap_xrp: 0.1,
             reflection_interval_mins: 60, // 1 hour - reduced from 15 min to avoid repetitive reflections
