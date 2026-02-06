@@ -193,7 +193,7 @@ document.getElementById('input-form').addEventListener('submit', async function(
     status.textContent = '';
 
     try {
-        const resp = await fetch(`${BACKEND_URL}/api/input`, {
+        const resp = await fetch(`${BACKEND_URL}/api/feed`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({

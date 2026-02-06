@@ -73,11 +73,11 @@ where
 /// Flare Mainnet RPC endpoint
 const FLARE_RPC: &str = "https://flare-api.flare.network/ext/C/rpc";
 
-/// Ntfy base URL (local Jetson instance)
-const NTFY_URL: &str = "http://192.168.1.11:8089";
+/// Ntfy base URL (public ntfy.sh for reliability)
+const NTFY_URL: &str = "https://ntfy.sh";
 
 /// Ntfy topic for push notifications
-const NTFY_TOPIC: &str = "chronicle-mind";
+const NTFY_TOPIC: &str = "chronicle-nate-5d786588e02c8854";
 
 /// Moltbook API base URL
 const MOLTBOOK_API: &str = "https://www.moltbook.com/api/v1";

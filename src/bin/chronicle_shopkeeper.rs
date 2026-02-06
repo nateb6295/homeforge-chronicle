@@ -17,7 +17,7 @@ use anyhow::{Context, Result};
 use std::time::Duration;
 use homeforge_chronicle::db::Database;
 
-const NTFY_TOPIC: &str = "chronicle-mind-9f86c413d8a7b982";
+const NTFY_TOPIC: &str = "chronicle-nate-5d786588e02c8854";
 const PROJECT_ROOT: &str = "/home/bradf/projects/homeforge-chronicle";
 
 /// Thresholds that trigger alerts or mind-wake
