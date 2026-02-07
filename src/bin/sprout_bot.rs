@@ -393,7 +393,9 @@ fn truncate(s: &str, max_len: usize) -> String {
     }
 }
 
-struct Handler;
+struct Handler {
+    family_channel_id: Option<u64>,
+}
 
 #[async_trait]
 impl EventHandler for Handler {
@@ -403,11 +405,14 @@ impl EventHandler for Handler {
             return;
         }
 
-        // Check if this is a DM or a mention
+        // Check if this is a DM, a mention, or in the family channel
         let is_dm = msg.guild_id.is_none();
         let is_mention = msg.mentions_me(&ctx.http).await.unwrap_or(false);
+        let is_family_channel = self.family_channel_id
+            .map(|id| msg.channel_id.get() == id)
+            .unwrap_or(false);
 
-        if !is_dm && !is_mention {
+        if !is_dm && !is_mention && !is_family_channel {
             return;
         }
 
@@ -475,6 +480,17 @@ async fn main() -> Result<()> {
     let token = env::var("SPROUT_DISCORD_TOKEN")
         .expect("SPROUT_DISCORD_TOKEN not set. Create a bot at https://discord.com/developers/applications");
 
+    // Optional: family channel where Sprout listens to all messages
+    let family_channel_id = env::var("SPROUT_FAMILY_CHANNEL")
+        .ok()
+        .and_then(|s| s.parse::<u64>().ok());
+
+    if let Some(channel_id) = family_channel_id {
+        println!("Family channel: {}", channel_id);
+    } else {
+        println!("Family channel: not set (DMs and @mentions only)");
+    }
+
     let bot = Arc::new(Bot::new()?);
 
     println!("Ollama: {}", bot.ollama_url);
@@ -484,8 +500,10 @@ async fn main() -> Result<()> {
         | GatewayIntents::DIRECT_MESSAGES
         | GatewayIntents::MESSAGE_CONTENT;
 
+    let handler = Handler { family_channel_id };
+
     let mut client = Client::builder(&token, intents)
-        .event_handler(Handler)
+        .event_handler(handler)
         .await?;
 
     // Store bot data
