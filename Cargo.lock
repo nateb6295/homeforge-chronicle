@@ -1562,8 +1562,10 @@ dependencies = [
  "ic-cdk-macros",
  "ic-cdk-timers",
  "ic-llm",
+ "k256",
  "serde",
  "serde_json",
+ "sha3",
 ]
 
 [[package]]

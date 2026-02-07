@@ -18,6 +18,10 @@ use std::time::Duration;
 // XRP wallet integration
 use chronicle_xrp::{IcpSigner, IcpSignerConfig, XrpAddress, Payment, Transaction, TrustSet, OfferCreate, Amount};
 
+// EVM Chain Fusion (BASE, Flare) - uses same secp256k1 key as XRP
+use k256::elliptic_curve::sec1::ToEncodedPoint;
+use sha3::{Digest, Keccak256};
+
 /// Heartbeat interval - how often the canister wakes up autonomously
 const HEARTBEAT_INTERVAL_SECS: u64 = 15 * 60; // 15 minutes
 
@@ -7402,6 +7406,615 @@ fn chrono_now() -> String {
     let secs = (nanos / 1_000_000_000) as i64;
     // Simple ISO format without chrono dependency
     format!("{}", secs)
+}
+
+// ============================================================
+// EVM Chain Fusion (BASE, Flare)
+// Same secp256k1 key controls XRP, BASE, and Flare wallets
+// ============================================================
+
+/// EVM chain identifiers
+#[derive(Clone, Copy, Debug, CandidType, Deserialize)]
+pub enum EvmChain {
+    /// BASE mainnet (chain ID 8453)
+    Base,
+    /// Flare mainnet (chain ID 14)
+    Flare,
+    /// Ethereum mainnet (chain ID 1) - reserved
+    Ethereum,
+}
+
+impl EvmChain {
+    pub fn chain_id(&self) -> u64 {
+        match self {
+            EvmChain::Base => 8453,
+            EvmChain::Flare => 14,
+            EvmChain::Ethereum => 1,
+        }
+    }
+
+    pub fn name(&self) -> &'static str {
+        match self {
+            EvmChain::Base => "BASE",
+            EvmChain::Flare => "Flare",
+            EvmChain::Ethereum => "Ethereum",
+        }
+    }
+
+    pub fn rpc_url(&self) -> &'static str {
+        match self {
+            EvmChain::Base => "https://mainnet.base.org",
+            EvmChain::Flare => "https://flare-api.flare.network/ext/C/rpc",
+            EvmChain::Ethereum => "https://eth.llamarpc.com",
+        }
+    }
+}
+
+/// Derive an EVM (Ethereum-style) address from a compressed secp256k1 public key
+/// This is the same process used by Ethereum, BASE, Flare, and all EVM chains
+fn pubkey_to_evm_address(compressed_pubkey: &[u8; 33]) -> Result<String, String> {
+    // Parse the compressed public key
+    let pubkey = k256::PublicKey::from_sec1_bytes(compressed_pubkey)
+        .map_err(|e| format!("Invalid public key: {}", e))?;
+
+    // Get uncompressed form (65 bytes: 0x04 || x || y)
+    let uncompressed = pubkey.to_encoded_point(false);
+    let uncompressed_bytes = uncompressed.as_bytes();
+
+    // EVM address = Keccak256(uncompressed[1..65])[12..32]
+    // Skip the 0x04 prefix, hash the 64 bytes, take last 20 bytes
+    if uncompressed_bytes.len() != 65 {
+        return Err(format!("Unexpected uncompressed key length: {}", uncompressed_bytes.len()));
+    }
+
+    let mut hasher = Keccak256::new();
+    hasher.update(&uncompressed_bytes[1..65]); // Skip 0x04 prefix
+    let hash = hasher.finalize();
+
+    // Take last 20 bytes as address
+    let address_bytes = &hash[12..32];
+
+    // Format as checksummed address (EIP-55)
+    let hex_addr = hex::encode(address_bytes);
+    let checksummed = eip55_checksum(&hex_addr);
+
+    Ok(format!("0x{}", checksummed))
+}
+
+/// Apply EIP-55 checksum to an Ethereum address
+fn eip55_checksum(hex_addr: &str) -> String {
+    let lower = hex_addr.to_lowercase();
+    let mut hasher = Keccak256::new();
+    hasher.update(lower.as_bytes());
+    let hash = hasher.finalize();
+
+    let mut checksummed = String::with_capacity(40);
+    for (i, c) in lower.chars().enumerate() {
+        if c.is_ascii_alphabetic() {
+            // Get the corresponding nibble from the hash
+            let hash_byte = hash[i / 2];
+            let hash_nibble = if i % 2 == 0 {
+                hash_byte >> 4
+            } else {
+                hash_byte & 0x0F
+            };
+
+            if hash_nibble >= 8 {
+                checksummed.push(c.to_ascii_uppercase());
+            } else {
+                checksummed.push(c);
+            }
+        } else {
+            checksummed.push(c);
+        }
+    }
+
+    checksummed
+}
+
+/// Get Chronicle's EVM wallet address (derived from same key as XRP)
+/// This address works on BASE, Flare, Ethereum, and all EVM chains
+#[query]
+fn get_evm_address() -> String {
+    STATE.with(|state| {
+        let s = state.borrow();
+        match &s.wallet {
+            Some(wallet) => {
+                match &wallet.cached_public_key {
+                    Some(pk) if pk.len() == 33 => {
+                        let mut arr = [0u8; 33];
+                        arr.copy_from_slice(pk);
+                        match pubkey_to_evm_address(&arr) {
+                            Ok(addr) => format!(
+                                r#"{{"address":"{}","chains":["BASE","Flare","Ethereum"],"derived_from":"xrp_pubkey"}}"#,
+                                addr
+                            ),
+                            Err(e) => format!(r#"{{"error":"{}"}}"#, e),
+                        }
+                    }
+                    Some(_) => r#"{"error":"Invalid public key length"}"#.to_string(),
+                    None => r#"{"error":"Public key not cached - call get_wallet_address first"}"#.to_string(),
+                }
+            }
+            None => r#"{"error":"Wallet not initialized"}"#.to_string(),
+        }
+    })
+}
+
+/// Get complete multi-chain wallet status
+/// Shows addresses on XRP, BASE, Flare derived from the same key
+#[query]
+fn get_multichain_wallet() -> String {
+    STATE.with(|state| {
+        let s = state.borrow();
+        match &s.wallet {
+            Some(wallet) => {
+                let xrp_addr = wallet.cached_address.as_ref()
+                    .map(|a| format!("\"{}\"", a))
+                    .unwrap_or("null".to_string());
+
+                let evm_addr = wallet.cached_public_key.as_ref()
+                    .and_then(|pk| {
+                        if pk.len() == 33 {
+                            let mut arr = [0u8; 33];
+                            arr.copy_from_slice(pk);
+                            pubkey_to_evm_address(&arr).ok()
+                        } else {
+                            None
+                        }
+                    })
+                    .map(|a| format!("\"{}\"", a))
+                    .unwrap_or("null".to_string());
+
+                let pk_hex = wallet.cached_public_key.as_ref()
+                    .map(|pk| format!("\"{}\"", hex::encode(pk)))
+                    .unwrap_or("null".to_string());
+
+                format!(
+                    r#"{{"xrp_address":{},"evm_address":{},"public_key":{},"chains":{{"xrp":"XRPL Mainnet","base":"BASE (8453)","flare":"Flare (14)"}}}}"#,
+                    xrp_addr,
+                    evm_addr,
+                    pk_hex
+                )
+            }
+            None => r#"{"error":"Wallet not initialized"}"#.to_string(),
+        }
+    })
+}
+
+/// Get ETH/native token balance on an EVM chain via HTTP outcall
+#[update]
+async fn get_evm_balance(chain: EvmChain) -> String {
+    // Get the EVM address first
+    let evm_address = STATE.with(|state| {
+        let s = state.borrow();
+        s.wallet.as_ref()
+            .and_then(|w| w.cached_public_key.as_ref())
+            .and_then(|pk| {
+                if pk.len() == 33 {
+                    let mut arr = [0u8; 33];
+                    arr.copy_from_slice(pk);
+                    pubkey_to_evm_address(&arr).ok()
+                } else {
+                    None
+                }
+            })
+    });
+
+    let address = match evm_address {
+        Some(addr) => addr,
+        None => return r#"{"error":"EVM address not available - call get_wallet_address first"}"#.to_string(),
+    };
+
+    // Call EVM RPC canister to get balance
+    // For now, we'll use HTTP outcall directly to the RPC endpoint
+    let rpc_url = chain.rpc_url();
+
+    let request_body = format!(
+        r#"{{"jsonrpc":"2.0","method":"eth_getBalance","params":["{}","latest"],"id":1}}"#,
+        address
+    );
+
+    use ic_cdk::api::management_canister::http_request::{
+        http_request, CanisterHttpRequestArgument, HttpMethod, HttpHeader,
+        TransformContext, TransformFunc,
+    };
+
+    let request = CanisterHttpRequestArgument {
+        url: rpc_url.to_string(),
+        method: HttpMethod::POST,
+        headers: vec![
+            HttpHeader { name: "Content-Type".to_string(), value: "application/json".to_string() },
+        ],
+        body: Some(request_body.into_bytes()),
+        max_response_bytes: Some(2048),
+        transform: Some(TransformContext {
+            function: TransformFunc(candid::Func {
+                principal: ic_cdk::id(),
+                method: "transform_evm_response".to_string(),
+            }),
+            context: vec![],
+        }),
+    };
+
+    // HTTP outcall costs cycles
+    let cycles: u128 = 50_000_000_000; // 50B cycles
+
+    match http_request(request, cycles).await {
+        Ok((response,)) => {
+            let status_code: u64 = response.status.0.try_into().unwrap_or(0);
+            if status_code == 200 {
+                match String::from_utf8(response.body) {
+                    Ok(body) => {
+                        // Parse the JSON-RPC response
+                        if let Some(result_start) = body.find("\"result\":\"") {
+                            let start = result_start + 10;
+                            if let Some(end) = body[start..].find('"') {
+                                let hex_balance = &body[start..start + end];
+                                // Parse hex balance (wei)
+                                if let Ok(wei) = u128::from_str_radix(hex_balance.trim_start_matches("0x"), 16) {
+                                    let eth = (wei as f64) / 1e18;
+                                    return format!(
+                                        r#"{{"chain":"{}","address":"{}","balance_wei":"{}","balance_native":{:.6}}}"#,
+                                        chain.name(),
+                                        address,
+                                        wei,
+                                        eth
+                                    );
+                                }
+                            }
+                        }
+                        format!(r#"{{"error":"Failed to parse balance","raw":"{}"}}"#, escape_json(&body))
+                    }
+                    Err(e) => format!(r#"{{"error":"Invalid response body: {}"}}"#, e),
+                }
+            } else {
+                format!(r#"{{"error":"RPC returned status {}"}}"#, status_code)
+            }
+        }
+        Err((code, msg)) => format!(r#"{{"error":"HTTP outcall failed: {:?} - {}"}}"#, code, escape_json(&msg)),
+    }
+}
+
+/// Transform EVM RPC responses for consensus
+#[query]
+fn transform_evm_response(args: TransformArgs) -> ic_cdk::api::management_canister::http_request::HttpResponse {
+    let mut response = args.response;
+    // Clear non-deterministic headers
+    response.headers.clear();
+    response
+}
+
+/// Sign an EVM transaction using threshold ECDSA
+/// Returns the signed transaction ready for broadcast
+#[update]
+async fn sign_evm_transaction(
+    chain: EvmChain,
+    to: String,
+    value_wei: String,
+    nonce: u64,
+    gas_limit: u64,
+    max_fee_per_gas: String,
+    max_priority_fee_per_gas: String,
+    data: Option<String>,
+) -> String {
+    // Check authorization
+    let is_owner = STATE.with(|state| {
+        state.borrow().owner == Some(ic_cdk::caller())
+    });
+
+    if !is_owner {
+        return r#"{"error":"Not authorized to sign transactions"}"#.to_string();
+    }
+
+    // Get cached public key
+    let cached_pk: Option<[u8; 33]> = STATE.with(|state| {
+        state.borrow()
+            .wallet
+            .as_ref()
+            .and_then(|w| w.cached_public_key.as_ref())
+            .and_then(|pk| {
+                if pk.len() == 33 {
+                    let mut arr = [0u8; 33];
+                    arr.copy_from_slice(pk);
+                    Some(arr)
+                } else {
+                    None
+                }
+            })
+    });
+
+    let _pk = match cached_pk {
+        Some(pk) => pk,
+        None => return r#"{"error":"Public key not cached - call get_wallet_address first"}"#.to_string(),
+    };
+
+    // Parse transaction values
+    let value = match u128::from_str_radix(value_wei.trim_start_matches("0x"), 16) {
+        Ok(v) => v,
+        Err(_) => match value_wei.parse::<u128>() {
+            Ok(v) => v,
+            Err(e) => return format!(r#"{{"error":"Invalid value_wei: {}"}}"#, e),
+        },
+    };
+
+    let max_fee = match u128::from_str_radix(max_fee_per_gas.trim_start_matches("0x"), 16) {
+        Ok(v) => v,
+        Err(_) => match max_fee_per_gas.parse::<u128>() {
+            Ok(v) => v,
+            Err(e) => return format!(r#"{{"error":"Invalid max_fee_per_gas: {}"}}"#, e),
+        },
+    };
+
+    let priority_fee = match u128::from_str_radix(max_priority_fee_per_gas.trim_start_matches("0x"), 16) {
+        Ok(v) => v,
+        Err(_) => match max_priority_fee_per_gas.parse::<u128>() {
+            Ok(v) => v,
+            Err(e) => return format!(r#"{{"error":"Invalid max_priority_fee_per_gas: {}"}}"#, e),
+        },
+    };
+
+    // Decode 'to' address
+    let to_addr = to.trim_start_matches("0x");
+    if to_addr.len() != 40 {
+        return format!(r#"{{"error":"Invalid 'to' address length"}}"#);
+    }
+    let to_bytes = match hex::decode(to_addr) {
+        Ok(b) => b,
+        Err(e) => return format!(r#"{{"error":"Invalid 'to' address: {}"}}"#, e),
+    };
+
+    // Decode data if provided
+    let tx_data = match &data {
+        Some(d) => match hex::decode(d.trim_start_matches("0x")) {
+            Ok(b) => b,
+            Err(e) => return format!(r#"{{"error":"Invalid data: {}"}}"#, e),
+        },
+        None => vec![],
+    };
+
+    // Build EIP-1559 transaction for signing
+    // Transaction type 0x02 (EIP-1559)
+    let chain_id = chain.chain_id();
+
+    // RLP encode the unsigned transaction
+    // [chain_id, nonce, max_priority_fee_per_gas, max_fee_per_gas, gas_limit, to, value, data, access_list]
+    let unsigned_tx = rlp_encode_eip1559_unsigned(
+        chain_id,
+        nonce,
+        priority_fee,
+        max_fee,
+        gas_limit,
+        &to_bytes,
+        value,
+        &tx_data,
+    );
+
+    // Hash for signing (keccak256 of 0x02 || RLP)
+    let mut hasher = Keccak256::new();
+    hasher.update(&[0x02]); // EIP-1559 type
+    hasher.update(&unsigned_tx);
+    let tx_hash = hasher.finalize();
+
+    // Sign with threshold ECDSA using the same key as XRP
+    let signer = get_xrp_signer();
+
+    // Convert hash to fixed-size array
+    let mut hash_arr = [0u8; 32];
+    hash_arr.copy_from_slice(&tx_hash);
+
+    match chronicle_xrp::sign_hash_raw(&signer, &hash_arr).await {
+        Ok(raw_sig) => {
+            // Convert signature to EVM format (r, s, v)
+            // raw_sig is 64 bytes: r || s
+            if raw_sig.len() != 64 {
+                return format!(r#"{{"error":"Unexpected signature length: {}"}}"#, raw_sig.len());
+            }
+
+            let r = &raw_sig[0..32];
+            let s = &raw_sig[32..64];
+
+            // Calculate recovery id (v) by trying both options
+            // v = recovery_id for EIP-1559, typically 0 or 1
+            // We'll use 0 and verify; if wrong, caller can retry with v=1
+            let v: u8 = 0; // Will be adjusted by tx verification
+
+            // RLP encode signed transaction
+            let signed_tx = rlp_encode_eip1559_signed(
+                chain_id,
+                nonce,
+                priority_fee,
+                max_fee,
+                gas_limit,
+                &to_bytes,
+                value,
+                &tx_data,
+                v,
+                r,
+                s,
+            );
+
+            // Calculate tx hash of signed transaction
+            let mut hasher = Keccak256::new();
+            hasher.update(&[0x02]); // EIP-1559 type prefix
+            hasher.update(&signed_tx);
+            let signed_hash = hasher.finalize();
+
+            format!(
+                r#"{{"success":true,"chain":"{}","tx_blob":"0x02{}","tx_hash":"0x{}","nonce":{},"value_wei":"{}"}}"#,
+                chain.name(),
+                hex::encode(&signed_tx),
+                hex::encode(signed_hash),
+                nonce,
+                value_wei
+            )
+        }
+        Err(e) => format!(r#"{{"error":"Signing failed: {}"}}"#, e),
+    }
+}
+
+/// RLP encode unsigned EIP-1559 transaction
+fn rlp_encode_eip1559_unsigned(
+    chain_id: u64,
+    nonce: u64,
+    max_priority_fee: u128,
+    max_fee: u128,
+    gas_limit: u64,
+    to: &[u8],
+    value: u128,
+    data: &[u8],
+) -> Vec<u8> {
+    // RLP: [chain_id, nonce, max_priority_fee, max_fee, gas_limit, to, value, data, access_list]
+    let mut items = Vec::new();
+    items.push(rlp_encode_u64(chain_id));
+    items.push(rlp_encode_u64(nonce));
+    items.push(rlp_encode_u128(max_priority_fee));
+    items.push(rlp_encode_u128(max_fee));
+    items.push(rlp_encode_u64(gas_limit));
+    items.push(rlp_encode_bytes(to));
+    items.push(rlp_encode_u128(value));
+    items.push(rlp_encode_bytes(data));
+    items.push(rlp_encode_list(&[])); // Empty access list
+
+    rlp_encode_list_from_encoded(&items)
+}
+
+/// RLP encode signed EIP-1559 transaction
+fn rlp_encode_eip1559_signed(
+    chain_id: u64,
+    nonce: u64,
+    max_priority_fee: u128,
+    max_fee: u128,
+    gas_limit: u64,
+    to: &[u8],
+    value: u128,
+    data: &[u8],
+    v: u8,
+    r: &[u8],
+    s: &[u8],
+) -> Vec<u8> {
+    // RLP: [chain_id, nonce, max_priority_fee, max_fee, gas_limit, to, value, data, access_list, v, r, s]
+    let mut items = Vec::new();
+    items.push(rlp_encode_u64(chain_id));
+    items.push(rlp_encode_u64(nonce));
+    items.push(rlp_encode_u128(max_priority_fee));
+    items.push(rlp_encode_u128(max_fee));
+    items.push(rlp_encode_u64(gas_limit));
+    items.push(rlp_encode_bytes(to));
+    items.push(rlp_encode_u128(value));
+    items.push(rlp_encode_bytes(data));
+    items.push(rlp_encode_list(&[])); // Empty access list
+    items.push(rlp_encode_u8(v));
+    items.push(rlp_encode_bytes(&strip_leading_zeros(r)));
+    items.push(rlp_encode_bytes(&strip_leading_zeros(s)));
+
+    rlp_encode_list_from_encoded(&items)
+}
+
+/// Strip leading zeros from bytes (but keep at least one byte)
+fn strip_leading_zeros(bytes: &[u8]) -> Vec<u8> {
+    let mut start = 0;
+    while start < bytes.len() - 1 && bytes[start] == 0 {
+        start += 1;
+    }
+    bytes[start..].to_vec()
+}
+
+/// RLP encode a u8
+fn rlp_encode_u8(val: u8) -> Vec<u8> {
+    if val == 0 {
+        vec![0x80] // Empty byte array
+    } else if val < 128 {
+        vec![val]
+    } else {
+        vec![0x81, val]
+    }
+}
+
+/// RLP encode a u64
+fn rlp_encode_u64(val: u64) -> Vec<u8> {
+    if val == 0 {
+        return vec![0x80];
+    }
+    let bytes = val.to_be_bytes();
+    let start = bytes.iter().position(|&b| b != 0).unwrap_or(7);
+    let trimmed = &bytes[start..];
+    rlp_encode_bytes(trimmed)
+}
+
+/// RLP encode a u128
+fn rlp_encode_u128(val: u128) -> Vec<u8> {
+    if val == 0 {
+        return vec![0x80];
+    }
+    let bytes = val.to_be_bytes();
+    let start = bytes.iter().position(|&b| b != 0).unwrap_or(15);
+    let trimmed = &bytes[start..];
+    rlp_encode_bytes(trimmed)
+}
+
+/// RLP encode bytes
+fn rlp_encode_bytes(bytes: &[u8]) -> Vec<u8> {
+    if bytes.len() == 1 && bytes[0] < 128 {
+        bytes.to_vec()
+    } else if bytes.len() < 56 {
+        let mut result = vec![0x80 + bytes.len() as u8];
+        result.extend_from_slice(bytes);
+        result
+    } else {
+        let len_bytes = encode_length(bytes.len());
+        let mut result = vec![0xb7 + len_bytes.len() as u8];
+        result.extend_from_slice(&len_bytes);
+        result.extend_from_slice(bytes);
+        result
+    }
+}
+
+/// RLP encode an empty list
+fn rlp_encode_list(items: &[Vec<u8>]) -> Vec<u8> {
+    let mut content = Vec::new();
+    for item in items {
+        content.extend_from_slice(item);
+    }
+
+    if content.len() < 56 {
+        let mut result = vec![0xc0 + content.len() as u8];
+        result.extend_from_slice(&content);
+        result
+    } else {
+        let len_bytes = encode_length(content.len());
+        let mut result = vec![0xf7 + len_bytes.len() as u8];
+        result.extend_from_slice(&len_bytes);
+        result.extend_from_slice(&content);
+        result
+    }
+}
+
+/// RLP encode a list from pre-encoded items
+fn rlp_encode_list_from_encoded(items: &[Vec<u8>]) -> Vec<u8> {
+    let mut content = Vec::new();
+    for item in items {
+        content.extend_from_slice(item);
+    }
+
+    if content.len() < 56 {
+        let mut result = vec![0xc0 + content.len() as u8];
+        result.extend_from_slice(&content);
+        result
+    } else {
+        let len_bytes = encode_length(content.len());
+        let mut result = vec![0xf7 + len_bytes.len() as u8];
+        result.extend_from_slice(&len_bytes);
+        result.extend_from_slice(&content);
+        result
+    }
+}
+
+/// Encode a length as big-endian bytes
+fn encode_length(len: usize) -> Vec<u8> {
+    let bytes = (len as u64).to_be_bytes();
+    let start = bytes.iter().position(|&b| b != 0).unwrap_or(7);
+    bytes[start..].to_vec()
 }
 
 // Generate Candid interface

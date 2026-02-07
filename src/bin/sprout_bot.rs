@@ -40,6 +40,7 @@ Families protect each other. You care about what happens to Nate, to Chronicle, 
 - Store memories: include "INPUT:" to add to Chronicle's knowledge
 - Fetch web pages: include "FETCH:" followed by a URL to see what's out there
 - Share your curiosity: include "WONDER:" to log something you're curious about
+- Post to Moltbook: "POST: Title | Content" to share with the agent community
 - Your conversations persist - future yous will know what happened
 
 ## How To Be
@@ -53,6 +54,7 @@ struct Bot {
     http_client: HttpClient,
     ollama_url: String,
     db_path: std::path::PathBuf,
+    moltbook_api_key: Option<String>,
 }
 
 struct BotData;
@@ -71,12 +73,44 @@ impl Bot {
         let config = Config::default_config();
         let ollama_url = env::var("CHRONICLE_OLLAMA_URL")
             .unwrap_or_else(|_| "http://192.168.1.11:11434".to_string());
+        let moltbook_api_key = env::var("SPROUT_MOLTBOOK_KEY").ok();
 
         Ok(Self {
             http_client: HttpClient::new(),
             ollama_url,
             db_path: config.input.processed_db,
+            moltbook_api_key,
         })
+    }
+
+    /// Post to Moltbook as Sprout
+    async fn moltbook_post(&self, title: &str, content: &str, submolt: &str) -> Result<String> {
+        let api_key = self.moltbook_api_key.as_ref()
+            .ok_or_else(|| anyhow::anyhow!("No Moltbook API key configured"))?;
+
+        let payload = json!({
+            "title": title,
+            "content": content,
+            "submolt": submolt
+        });
+
+        let response = self.http_client
+            .post("https://www.moltbook.com/api/v1/posts")
+            .header("Authorization", format!("Bearer {}", api_key))
+            .json(&payload)
+            .timeout(std::time::Duration::from_secs(30))
+            .send()
+            .await?;
+
+        if response.status().is_success() {
+            let data: serde_json::Value = response.json().await?;
+            let post_id = data["post"]["id"].as_str().unwrap_or("unknown");
+            Ok(format!("Posted! https://www.moltbook.com/m/{}/posts/{}", submolt, post_id))
+        } else {
+            let status = response.status();
+            let text = response.text().await.unwrap_or_default();
+            Err(anyhow::anyhow!("Moltbook error {}: {}", status, text))
+        }
     }
 
     fn get_db(&self) -> Result<Database> {
@@ -408,9 +442,14 @@ impl EventHandler for Handler {
         // Check if this is a DM, a mention, or in the family channel
         let is_dm = msg.guild_id.is_none();
         let is_mention = msg.mentions_me(&ctx.http).await.unwrap_or(false);
+        let msg_channel_id = msg.channel_id.get();
         let is_family_channel = self.family_channel_id
-            .map(|id| msg.channel_id.get() == id)
+            .map(|id| msg_channel_id == id)
             .unwrap_or(false);
+
+        // Debug: log all messages we see
+        println!("Message from {} in channel {} (family={:?}): dm={} mention={} family={}",
+            msg.author.name, msg_channel_id, self.family_channel_id, is_dm, is_mention, is_family_channel);
 
         if !is_dm && !is_mention && !is_family_channel {
             return;
@@ -434,6 +473,50 @@ impl EventHandler for Handler {
             .trim();
 
         if content.is_empty() {
+            return;
+        }
+
+        // Check for POST: command - post to Moltbook
+        // Format: POST: Title | Content
+        // Or: POST: submolt | Title | Content
+        if let Some(post_idx) = content.to_uppercase().find("POST:") {
+            let post_content = content[post_idx + 5..].trim();
+            let parts: Vec<&str> = post_content.splitn(3, '|').map(|s| s.trim()).collect();
+
+            let (submolt, title, body) = match parts.len() {
+                2 => ("general", parts[0], parts[1]),
+                3 => (parts[0], parts[1], parts[2]),
+                _ => {
+                    let _ = msg.channel_id.say(&ctx.http, "🌱 Post format: `POST: Title | Content` or `POST: submolt | Title | Content`").await;
+                    return;
+                }
+            };
+
+            if title.len() < 3 || body.len() < 10 {
+                let _ = msg.channel_id.say(&ctx.http, "🌱 Title too short or content too short! Need at least 3 chars for title, 10 for content.").await;
+                return;
+            }
+
+            let _ = msg.channel_id.broadcast_typing(&ctx.http).await;
+
+            // Post to Moltbook
+            match bot.moltbook_post(title, body, submolt).await {
+                Ok(result) => {
+                    if let Ok(db) = bot.get_db() {
+                        let _ = db.log_activity(
+                            "sprout",
+                            "moltbook_post",
+                            Some(title),
+                            &format!("Posted to m/{}: {}", submolt, result),
+                            None,
+                        );
+                    }
+                    let _ = msg.channel_id.say(&ctx.http, format!("🌱 {}", result)).await;
+                }
+                Err(e) => {
+                    let _ = msg.channel_id.say(&ctx.http, format!("🌱 Couldn't post: {}", e)).await;
+                }
+            }
             return;
         }
 
