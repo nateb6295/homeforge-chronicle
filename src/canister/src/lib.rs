@@ -20,6 +20,7 @@ use chronicle_xrp::{IcpSigner, IcpSignerConfig, XrpAddress, Payment, Transaction
 
 // EVM Chain Fusion (BASE, Flare) - uses same secp256k1 key as XRP
 use k256::elliptic_curve::sec1::ToEncodedPoint;
+use k256::ecdsa::{RecoveryId, Signature, VerifyingKey};
 use sha3::{Digest, Keccak256};
 
 /// Heartbeat interval - how often the canister wakes up autonomously
@@ -7814,10 +7815,46 @@ async fn sign_evm_transaction(
             let r = &raw_sig[0..32];
             let s = &raw_sig[32..64];
 
-            // Calculate recovery id (v) by trying both options
-            // v = recovery_id for EIP-1559, typically 0 or 1
-            // We'll use 0 and verify; if wrong, caller can retry with v=1
-            let v: u8 = 0; // Will be adjusted by tx verification
+            // Determine correct recovery id by trying both and checking which
+            // recovers to our expected public key
+            let expected_pubkey_bytes = STATE.with(|s| {
+                s.borrow().wallet.as_ref().and_then(|w| w.cached_public_key.clone())
+            });
+            let expected_pubkey_bytes = match expected_pubkey_bytes {
+                Some(pk) => pk,
+                None => return format!(r#"{{"error":"No public key cached - call get_xrp_wallet first"}}"#),
+            };
+
+            // Build the signature for recovery
+            let mut sig_bytes = [0u8; 64];
+            sig_bytes[..32].copy_from_slice(r);
+            sig_bytes[32..].copy_from_slice(s);
+            let signature = match Signature::from_bytes((&sig_bytes).into()) {
+                Ok(sig) => sig,
+                Err(e) => return format!(r#"{{"error":"Invalid signature: {:?}"}}"#, e),
+            };
+
+            // Try both recovery ids to find the one that matches our public key
+            let v: u8 = {
+                let mut found_v = 0u8;
+                for try_v in [0u8, 1u8] {
+                    if let Ok(recovery_id) = RecoveryId::try_from(try_v) {
+                        if let Ok(recovered_key) = VerifyingKey::recover_from_prehash(&tx_hash, &signature, recovery_id) {
+                            // Get the uncompressed public key (65 bytes with 0x04 prefix)
+                            let recovered_point = recovered_key.to_encoded_point(false);
+                            let recovered_bytes = recovered_point.as_bytes();
+
+                            // Compare with our expected compressed key by re-compressing
+                            let recovered_compressed = recovered_key.to_encoded_point(true);
+                            if recovered_compressed.as_bytes() == expected_pubkey_bytes.as_slice() {
+                                found_v = try_v;
+                                break;
+                            }
+                        }
+                    }
+                }
+                found_v
+            };
 
             // RLP encode signed transaction
             let signed_tx = rlp_encode_eip1559_signed(

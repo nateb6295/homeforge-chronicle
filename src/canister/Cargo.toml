@@ -21,7 +21,7 @@ hex = "0.4"
 
 # EVM Chain Fusion (BASE, Flare)
 # Same secp256k1 key controls both XRP and EVM chains
-k256 = { version = "0.13", default-features = false, features = ["ecdsa"] }
+k256 = { version = "0.13", default-features = false, features = ["ecdsa", "ecdsa-core"] }
 sha3 = { version = "0.10", default-features = false }
 
 [profile.release]
