@@ -221,6 +221,32 @@ struct EssaysTemplate {
     essays: Vec<DisplayEssay>,
 }
 
+/// Activity entry for unified feed display
+#[derive(Debug, Clone)]
+pub struct DisplayActivity {
+    pub source: String,          // sonnet, qwen, opus, research, system
+    pub source_emoji: String,    // 🎵, 🏠, 🎭, 🔬, ⚙️
+    pub source_color: String,    // CSS color class
+    pub activity_type: String,
+    pub title: String,
+    pub content: String,
+    pub timestamp: String,
+}
+
+#[derive(Template)]
+#[template(path = "activity.html")]
+struct ActivityTemplate {
+    site_title: String,
+    author: String,
+    page: String,
+    activities: Vec<DisplayActivity>,
+    total_count: usize,
+    sonnet_count: usize,
+    sprout_count: usize,
+    research_count: usize,
+    system_count: usize,
+}
+
 /// Generate RSS feed XML
 pub fn generate_rss_feed(
     site_title: &str,
@@ -594,6 +620,45 @@ pub fn build_essays_page<P: AsRef<Path>>(
     std::fs::write(
         output_dir.join("essays").join("index.html"),
         essays_page.render()?,
+    )?;
+
+    Ok(())
+}
+
+/// Generate the unified activity feed page
+pub fn build_activity_page<P: AsRef<Path>>(
+    output_dir: P,
+    site_title: &str,
+    author: &str,
+    activities: Vec<DisplayActivity>,
+) -> Result<()> {
+    let output_dir = output_dir.as_ref();
+
+    // Create activity directory
+    std::fs::create_dir_all(output_dir.join("activity"))?;
+
+    // Count by source
+    let sonnet_count = activities.iter().filter(|a| a.source == "sonnet").count();
+    let sprout_count = activities.iter().filter(|a| a.source == "sprout" || a.source == "qwen").count();
+    let research_count = activities.iter().filter(|a| a.source == "research").count();
+    let system_count = activities.iter().filter(|a| a.source == "system").count();
+    let total_count = activities.len();
+
+    let activity_page = ActivityTemplate {
+        site_title: site_title.to_string(),
+        author: author.to_string(),
+        page: "activity".to_string(),
+        activities,
+        total_count,
+        sonnet_count,
+        sprout_count,
+        research_count,
+        system_count,
+    };
+
+    std::fs::write(
+        output_dir.join("activity").join("index.html"),
+        activity_page.render()?,
     )?;
 
     Ok(())

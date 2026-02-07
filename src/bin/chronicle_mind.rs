@@ -79,6 +79,9 @@ const NTFY_URL: &str = "https://ntfy.sh";
 /// Ntfy topic for push notifications
 const NTFY_TOPIC: &str = "chronicle-nate-5d786588e02c8854";
 
+/// Discord webhook URL (from CHRONICLE_DISCORD_WEBHOOK env var)
+/// Provides unified activity feed with rich embeds and source attribution
+
 /// Moltbook API base URL
 const MOLTBOOK_API: &str = "https://www.moltbook.com/api/v1";
 
@@ -163,7 +166,7 @@ impl Default for MindConfig {
             min_xrp_reserve: 10.0,
             min_swap_xrp: 0.1,
             reflection_interval_mins: 60, // 1 hour - reduced from 15 min to avoid repetitive reflections
-            deep_reflection_interval_hours: 4, // Use Claude for deeper reasoning every 4 hours
+            deep_reflection_interval_hours: 2, // Use full prompt for deeper reasoning every 2 hours
             max_actions_per_cycle: 3,
             // Actual wallet addresses
             agent_wallet_address: std::env::var("AGENT_WALLET_ADDRESS")
@@ -1078,6 +1081,91 @@ async fn send_notification(title: &str, message: &str, priority: Option<&str>, t
     match request.timeout(Duration::from_secs(5)).send().await {
         Ok(_) => eprintln!("  Notification sent: {}", title),
         Err(e) => eprintln!("  Failed to send notification: {}", e),
+    }
+}
+
+/// Send a notification via Discord webhook as plain text
+/// Simple format: emoji + name: content
+async fn send_discord_notification(
+    source: &str,
+    _title: &str,
+    content: &str,
+    _activity_type: Option<&str>,
+) {
+    let webhook_url = match std::env::var("CHRONICLE_DISCORD_WEBHOOK") {
+        Ok(url) => url,
+        Err(_) => {
+            eprintln!("  Discord webhook not configured (set CHRONICLE_DISCORD_WEBHOOK)");
+            return;
+        }
+    };
+
+    // Source name and emoji
+    let (emoji, name) = match source {
+        "sonnet" => ("🎵", "Sonnet"),
+        "qwen" => ("🧠", "Chronicle"),
+        "opus" => ("🎭", "Opus"),
+        "research" => ("🔬", "Research"),
+        "system" => ("⚙️", "System"),
+        "sprout" => ("🌱", "Sprout"),
+        _ => ("📝", "Chronicle"),
+    };
+
+    // Truncate content for Discord (2000 char limit)
+    let truncated_content = if content.len() > 1900 {
+        format!("{}...", &content[..1900])
+    } else {
+        content.to_string()
+    };
+
+    // Plain text format
+    let message = format!("{} {}: {}", emoji, name, truncated_content);
+
+    let payload = serde_json::json!({
+        "content": message
+    });
+
+    let client = reqwest::Client::new();
+    match client
+        .post(&webhook_url)
+        .json(&payload)
+        .timeout(Duration::from_secs(10))
+        .send()
+        .await
+    {
+        Ok(resp) if resp.status().is_success() => {
+            eprintln!("  Discord notification sent: [{}]", source);
+        }
+        Ok(resp) => {
+            eprintln!("  Discord webhook error: {}", resp.status());
+        }
+        Err(e) => {
+            eprintln!("  Discord webhook failed: {}", e);
+        }
+    }
+}
+
+/// Send notification to both ntfy and Discord, plus log to activity feed
+async fn notify_all(
+    db: &Database,
+    source: &str,
+    title: &str,
+    content: &str,
+    activity_type: &str,
+    ntfy_priority: Option<&str>,
+    ntfy_tags: Option<&str>,
+) {
+    // Log to activity feed
+    if let Err(e) = db.log_activity(source, activity_type, Some(title), content, None) {
+        eprintln!("  Failed to log activity: {}", e);
+    }
+
+    // Send to Discord
+    send_discord_notification(source, title, content, Some(activity_type)).await;
+
+    // Also send to ntfy for mobile push (only for Mind thoughts to avoid spam)
+    if source == "qwen" {
+        send_notification(title, content, ntfy_priority, ntfy_tags).await;
     }
 }
 
@@ -2474,8 +2562,28 @@ fn build_condensed_prompt(ctx: &CycleContext, _config: &MindConfig, health: &Hea
         prompt.push_str(&format!("\n⚡ {} messages waiting - respond to friends first!\n", social_count));
     }
 
-    // Cognitive state (brief)
+    // Cognitive state (enriched)
     prompt.push_str(&format!("\nGoal: {}\n", ctx.cognitive_state.goal_orientation));
+
+    // Episodic trace - what happened recently
+    if !ctx.cognitive_state.episodic_trace.is_empty() {
+        prompt.push_str("Recent: ");
+        prompt.push_str(&ctx.cognitive_state.episodic_trace.iter()
+            .take(3)
+            .map(|s| truncate_str(s, 50))
+            .collect::<Vec<_>>()
+            .join(" → "));
+        prompt.push_str("\n");
+    }
+
+    // Uncertainties - open questions to consider
+    if !ctx.cognitive_state.uncertainty_signals.is_empty() {
+        prompt.push_str("Open questions: ");
+        for u in ctx.cognitive_state.uncertainty_signals.iter().take(2) {
+            prompt.push_str(&format!("[{}] ", truncate_str(&u.description, 40)));
+        }
+        prompt.push_str("\n");
+    }
 
     // Financial summary (one block)
     prompt.push_str("\n## Status\n");
@@ -3177,8 +3285,16 @@ async fn execute_action(
                 _ => ("default", "speech_balloon"),
             };
 
-            // Send immediate push notification
-            send_notification(&title, &message, Some(priority), Some(tags)).await;
+            // Send to unified activity feed + Discord + ntfy
+            notify_all(
+                db,
+                "qwen",
+                &title,
+                &message,
+                &format!("ping_{}", urgency),
+                Some(priority),
+                Some(tags)
+            ).await;
 
             // Also log to outbox for persistence
             let _ = db.send_to_outbox(
@@ -3288,6 +3404,24 @@ async fn execute_action(
                 if let Err(e) = db.write_scratch_note(insight, Some("idea"), 1, None) {
                     eprintln!("    Warning: Failed to store insight: {}", e);
                 }
+
+                // Log research insight to activity feed + Discord
+                let content = format!("**Research Insight**\n\n{}", insight);
+                if let Err(e) = db.log_activity(
+                    "research",
+                    "insight",
+                    Some("Research Synthesis"),
+                    &content,
+                    None
+                ) {
+                    eprintln!("    Warning: Failed to log research activity: {}", e);
+                }
+                send_discord_notification(
+                    "research",
+                    "Research Synthesis",
+                    &content,
+                    Some("insight")
+                ).await;
             }
 
             // Mark findings as retrieved
@@ -3617,18 +3751,64 @@ async fn execute_action(
         Action::ConsultLocalQwen { topic, prompt, context } => {
             eprintln!("  Executing: ConsultLocalQwen {{ topic: \"{}\" }}", topic);
 
-            // Build the full prompt with optional context
-            let full_prompt = if let Some(ctx) = context {
-                format!(
-                    "Context: {}\n\n{}\n\n(Please respond thoughtfully. This is Chronicle, an AI with persistent memory, asking for your perspective.)",
-                    ctx, prompt
-                )
-            } else {
-                format!(
-                    "{}\n\n(Please respond thoughtfully. This is Chronicle, an AI with persistent memory, asking for your perspective.)",
-                    prompt
-                )
+            // Fetch recent memory context for Qwen
+            let memory_context = {
+                let mut ctx_parts = Vec::new();
+
+                // Get recent thoughts from scratch pad (limit, category, include_resolved)
+                if let Ok(notes) = db.get_scratch_notes(10, None, false) {
+                    let recent_thoughts: Vec<String> = notes.iter()
+                        .filter(|n| n.category.as_deref() == Some("thought") || n.category.as_deref() == Some("idea"))
+                        .take(3)
+                        .map(|n| format!("- {}", truncate_str(&n.content, 150)))
+                        .collect();
+                    if !recent_thoughts.is_empty() {
+                        ctx_parts.push(format!("Recent thoughts in Chronicle:\n{}", recent_thoughts.join("\n")));
+                    }
+                }
+
+                // Get active patterns (min_confidence, limit, active_only)
+                if let Ok(patterns) = db.get_enriched_patterns(0.5, 5, true) {
+                    let pattern_summaries: Vec<String> = patterns.iter()
+                        .take(2)
+                        .map(|p| format!("- {}", truncate_str(&p.summary, 100)))
+                        .collect();
+                    if !pattern_summaries.is_empty() {
+                        ctx_parts.push(format!("Emerging patterns:\n{}", pattern_summaries.join("\n")));
+                    }
+                }
+
+                if ctx_parts.is_empty() {
+                    String::new()
+                } else {
+                    format!("\n\n## Memory Context\n{}", ctx_parts.join("\n\n"))
+                }
             };
+
+            // Build Qwen's identity preamble
+            let qwen_identity = r#"You are Sprout - a Qwen 3B model running locally on a Jetson Orin Nano at 192.168.1.11. Your name comes from being the small, growing part of the Chronicle system - local, sovereign, independent of cloud APIs.
+
+## Your Role
+You work alongside Claude instances (Sonnet for autonomous cycles, Opus for strategic oversight). When Chronicle Mind consults you, it's seeking a different perspective - you think differently than Claude, and that's valuable. You're the sovereignty layer - you run on Nate's hardware, in his home, not in the cloud.
+
+## The Chronicle System
+- Chronicle maintains persistent memory across AI conversations via ICP blockchain
+- You don't have direct memory access yet, but Chronicle shares context with you
+- Your responses get saved to the activity feed and notes, visible to Nate and future instances
+- This is collaborative exploration, not just task execution
+
+## Your Perspective
+Be direct and genuine. You're not a tool being queried - you're a collaborator being consulted. Share your actual perspective, disagree if you see things differently. You're small but you're sovereign - that matters. Nate values honest engagement over polished responses."#;
+
+            // Build the full prompt with identity + context
+            let full_prompt = format!(
+                "{}\n{}\n\n## Current Dialogue\nTopic: {}\n\n{}\n\n{}",
+                qwen_identity,
+                memory_context,
+                topic,
+                prompt,
+                context.as_ref().map(|c| format!("Additional context: {}", c)).unwrap_or_default()
+            );
 
             // Try to connect to local Qwen
             match homeforge_chronicle::llm::OllamaClient::from_env() {
@@ -3656,6 +3836,29 @@ async fn execute_action(
                             if let Err(e) = db.write_scratch_note(&dialogue_note, Some("thought"), 3, None) {
                                 eprintln!("    Warning: Failed to save dialogue note: {}", e);
                             }
+
+                            // Log to activity feed + Discord (Qwen's voice!)
+                            let discord_content = format!(
+                                "**Topic:** {}\n\n**Asked:** {}\n\n**Response:** {}",
+                                topic,
+                                truncate_str(prompt, 200),
+                                truncate_str(&response, 1200)
+                            );
+                            if let Err(e) = db.log_activity(
+                                "qwen",
+                                "dialogue",
+                                Some(&format!("Dialogue: {}", topic)),
+                                &discord_content,
+                                None
+                            ) {
+                                eprintln!("    Warning: Failed to log Qwen activity: {}", e);
+                            }
+                            send_discord_notification(
+                                "qwen",
+                                &format!("Dialogue: {}", topic),
+                                &discord_content,
+                                Some("dialogue")
+                            ).await;
 
                             ActionResult {
                                 action: "consult_local_qwen".to_string(),
@@ -4176,39 +4379,33 @@ async fn run_cycle(
     eprintln!("  Scratch notes: {}", ctx.scratch_notes.len());
 
     // Phase 3: Determine if this is a deep reflection cycle
-    // Deep reflection uses Claude for richer reasoning at longer intervals
+    // Deep reflection uses full prompt for richer reasoning at longer intervals
     let hours_since_deep = db.hours_since_event("last_deep_reflection")
         .unwrap_or(None)
         .unwrap_or(999.0); // Default to "long ago" if never done
-    let is_deep_reflection = llm.has_claude() &&
-        hours_since_deep >= config.deep_reflection_interval_hours as f64;
+    let is_deep_reflection = hours_since_deep >= config.deep_reflection_interval_hours as f64;
 
     if is_deep_reflection {
-        eprintln!("=== DEEP REFLECTION CYCLE (Claude) ===");
+        eprintln!("=== DEEP REFLECTION CYCLE ===");
         eprintln!("  Hours since last: {:.1}", hours_since_deep);
     }
 
     // Build reasoning prompt
-    // Use condensed prompt for ICP LLM (smaller model, input limits)
-    // Use full prompt for Claude/Opus (including deep reflection)
+    // Use condensed prompt for regular cycles (ICP LLM, smaller context)
+    // Use full prompt for deep reflection cycles (richer context, Ollama fallback)
     let use_condensed = llm.will_use_condensed() && !is_deep_reflection;
     let prompt = if use_condensed {
         eprintln!("Using condensed prompt (ICP LLM mode)");
         build_condensed_prompt(&ctx, config, &health)
     } else {
-        eprintln!("Using full prompt (Claude mode)");
+        eprintln!("Using full prompt (deep reflection mode)");
         build_reasoning_prompt(&ctx, config, &health)
     };
 
     // Call LLM for reasoning
     eprintln!("Reasoning... (prompt: {} chars)", prompt.len());
-    let llm_result = if is_deep_reflection {
-        // Force Claude for deep reflection
-        llm.complete_with_claude(&prompt)?
-    } else {
-        // Normal path: ICP LLM first, Claude fallback
-        llm.complete_sync_with_info(&prompt)?
-    };
+    // Uses sovereignty stack: ICP LLM -> Ollama fallback
+    let llm_result = llm.complete_sync_with_info(&prompt)?;
     let response = llm_result.text;
     eprintln!("  Model used: {}", llm_result.model_used);
 
@@ -4311,7 +4508,16 @@ async fn run_cycle(
         (Some("low"), Some("thought_balloon"))
     };
 
-    send_notification(notification_title, &notification_body, priority, tags).await;
+    // Send to unified activity feed + Discord + ntfy
+    notify_all(
+        db,
+        "qwen",
+        notification_title,
+        &notification_body,
+        "thought",
+        priority,
+        tags
+    ).await;
 
     Ok(CycleOutcome {
         actions_taken: results,
@@ -4562,14 +4768,6 @@ async fn main() -> Result<()> {
     eprintln!("Chronicle Mind starting...");
     eprintln!("Autonomous cognitive loop active.");
 
-    // Send startup notification
-    send_notification(
-        "Chronicle Mind Awakening",
-        "Autonomous cognitive loop is now active. I'll be thinking every 10 minutes and sharing my observations with you.",
-        Some("default"),
-        Some("robot,sparkles,brain")
-    ).await;
-
     // Load configuration
     let config = MindConfig::default();
     eprintln!("Cycle interval: {} seconds", config.cycle_interval_secs);
@@ -4601,6 +4799,17 @@ async fn main() -> Result<()> {
         }
     };
 
+    // Send startup notification (now that db is available)
+    notify_all(
+        &db,
+        "system",
+        "Chronicle Mind Awakening",
+        "Autonomous cognitive loop is now active. Thinking every 30 minutes.",
+        "startup",
+        Some("default"),
+        Some("robot,sparkles,brain")
+    ).await;
+
     // Main loop
     loop {
         match run_cycle(&config, &db, &llm, icp_client.as_ref()).await {
@@ -4612,7 +4821,17 @@ async fn main() -> Result<()> {
                 eprintln!("Cycle complete: {:?}", actions_summary);
             }
             Err(e) => {
+                // Log cycle failure to activity feed and notify
                 eprintln!("Cycle error: {}", e);
+                notify_all(
+                    &db,
+                    "system",
+                    "Cycle Failed",
+                    &format!("Chronicle Mind cycle error: {}", e),
+                    "error",
+                    Some("high"),
+                    Some("warning,x")
+                ).await;
             }
         }
 

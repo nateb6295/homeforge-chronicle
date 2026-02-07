@@ -29,7 +29,7 @@ pub use extraction::{extract_conversation, Classification, Extraction};
 pub use ingest::{ingest_conversation, ingest_conversation_export, IngestResult};
 pub use llm::{LlmClient, ClaudeClient, OllamaClient, FallbackLlmClient};
 pub use parser::{parse_bulk_export, BulkConversationExport, ConversationExport};
-pub use site::{build_site, build_thoughts_page, build_outbox_page, build_essays_page, DisplayEntry, DisplayCapsule, DisplayThought, DisplayOutboxMessage, DisplayMarketPosition, DisplayEssay};
+pub use site::{build_site, build_thoughts_page, build_outbox_page, build_essays_page, build_activity_page, DisplayEntry, DisplayCapsule, DisplayThought, DisplayOutboxMessage, DisplayMarketPosition, DisplayEssay, DisplayActivity};
 pub use cognitive::{CognitiveState, FocalEntity, EntityType, RetrievedArtifact, UncertaintySignal, QualificationGate, CognitiveCompressor, CompressionInput};
 pub use watch::{watch_directory, PipelineOptions};
 pub use icp::{IcpClient, sync_to_canister, SyncResult};

@@ -2237,9 +2237,11 @@ fn submit_research_task(query: String, focus: Option<String>, max_capsules: Opti
             if existing_task.status == "pending" {
                 let existing_lower = existing_task.query.to_lowercase();
                 // Exact match or very similar (first 100 chars match)
+                let query_prefix: String = query_lower.chars().take(100).collect();
+                let existing_prefix: String = existing_lower.chars().take(100).collect();
                 if existing_lower == query_lower ||
-                   (query_lower.len() > 100 && existing_lower.len() > 100 &&
-                    query_lower[..100] == existing_lower[..100]) {
+                   (query_lower.chars().count() > 100 && existing_lower.chars().count() > 100 &&
+                    query_prefix == existing_prefix) {
                     return format!(
                         r#"{{"success":true,"task_id":{},"query":"{}","status":"pending","deduplicated":true,"message":"Identical query already pending"}}"#,
                         existing_task.id, escape_json(&existing_task.query)
@@ -2471,9 +2473,10 @@ fn list_pending_research(limit: Option<u32>) -> String {
                     .filter(|t| t.status == "pending")
                     .take(limit)
                     .map(|t| {
-                        // Truncate query to 100 chars for readability
-                        let q = if t.query.len() > 100 {
-                            format!("{}...", &t.query[..100])
+                        // Truncate query to 100 chars for readability (Unicode-safe)
+                        let q = if t.query.chars().count() > 100 {
+                            let truncated: String = t.query.chars().take(100).collect();
+                            format!("{}...", truncated)
                         } else {
                             t.query.clone()
                         };
@@ -6132,8 +6135,13 @@ fn http_request_update(req: HttpRequest) -> HttpResponse {
                     .take(3)
                     .filter_map(|id| s.capsules.get(id))
                     .map(|c| {
-                        let preview = if c.restatement.len() > 60 {
-                            format!("{}...", &c.restatement[..60])
+                        // Use char_indices to safely truncate at character boundaries
+                        let preview = if c.restatement.chars().count() > 60 {
+                            let end_byte = c.restatement.char_indices()
+                                .nth(60)
+                                .map(|(i, _)| i)
+                                .unwrap_or(c.restatement.len());
+                            format!("{}...", &c.restatement[..end_byte])
                         } else {
                             c.restatement.clone()
                         };

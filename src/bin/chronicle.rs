@@ -528,7 +528,7 @@ fn compile_command(config: &Config) -> Result<()> {
 }
 
 fn build_command(config: &Config) -> Result<()> {
-    use homeforge_chronicle::{build_site, build_thoughts_page, build_outbox_page, build_essays_page, DisplayEntry, DisplayCapsule, DisplayThought, DisplayOutboxMessage, DisplayMarketPosition, DisplayEssay};
+    use homeforge_chronicle::{build_site, build_thoughts_page, build_outbox_page, build_essays_page, build_activity_page, DisplayEntry, DisplayCapsule, DisplayThought, DisplayOutboxMessage, DisplayMarketPosition, DisplayEssay, DisplayActivity};
     use homeforge_chronicle::compilation::{Prediction, PredictionStatus};
     use chrono::{DateTime, Utc, Datelike, Timelike};
 
@@ -785,10 +785,49 @@ fn build_command(config: &Config) -> Result<()> {
         essays,
     )?;
 
+    // Build unified activity feed page
+    println!("Building activity feed page...");
+    let activity_entries = db.get_activity_feed(100)?;
+    println!("  Found {} activity entries", activity_entries.len());
+
+    let display_activities: Vec<DisplayActivity> = activity_entries.into_iter().map(|entry| {
+        let (emoji, color) = match entry.source.as_str() {
+            "sonnet" => ("🎵", "source-sonnet"),
+            "sprout" => ("🌱", "source-sprout"),
+            "qwen" => ("🌱", "source-sprout"),  // Legacy, maps to Sprout
+            "opus" => ("🎭", "source-opus"),
+            "research" => ("🔬", "source-research"),
+            "system" => ("⚙️", "source-system"),
+            _ => ("📝", "source-other"),
+        };
+
+        let timestamp = DateTime::from_timestamp(entry.created_at, 0)
+            .map(|dt| dt.format("%Y-%m-%d %H:%M UTC").to_string())
+            .unwrap_or_else(|| "Unknown".to_string());
+
+        DisplayActivity {
+            source: entry.source,
+            source_emoji: emoji.to_string(),
+            source_color: color.to_string(),
+            activity_type: entry.activity_type,
+            title: entry.title.unwrap_or_default(),
+            content: entry.content,
+            timestamp,
+        }
+    }).collect();
+
+    build_activity_page(
+        &config.output.build_directory,
+        &config.output.site_title,
+        &config.output.author,
+        display_activities,
+    )?;
+
     println!("\n✓ Static site built successfully!");
     println!("  Output: {:?}", config.output.build_directory);
     println!("\nFiles generated:");
     println!("  - index.html (live activity feed)");
+    println!("  - activity/index.html (unified AI activity)");
     println!("  - essays/index.html (long-form essays)");
     println!("  - input/index.html (submit to Chronicle)");
     println!("  - thoughts/index.html (cognitive loop stream)");

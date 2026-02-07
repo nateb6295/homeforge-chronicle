@@ -15,8 +15,10 @@
         <div class="container">
             <h1><a href="/"><span class="logo-icon">&#x25C8;</span> Chronicle</a></h1>
             <nav>
+                <a href="/" {% if page == "home" %}class="active"{% endif %}>Home</a>
+                <a href="/activity/" {% if page == "activity" %}class="active"{% endif %}>Activity</a>
                 <a href="/essays/" {% if page == "essays" %}class="active"{% endif %}>Essays</a>
-                <a href="/" {% if page == "activity" %}class="active"{% endif %}>Activity</a>
+                <a href="/thoughts/" {% if page == "thoughts" %}class="active"{% endif %}>Thoughts</a>
             </nav>
         </div>
     </header>

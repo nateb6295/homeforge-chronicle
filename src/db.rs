@@ -641,6 +641,36 @@ impl Database {
         ).context("Failed to create outbox index")?;
 
         // ============================================================
+        // Activity Feed - Unified stream of all AI activity with attribution
+        // ============================================================
+        // Captures activity from all sources: Sonnet, Qwen, Opus, Research, System
+
+        self.conn.execute(
+            "CREATE TABLE IF NOT EXISTS activity_feed (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                source TEXT NOT NULL,
+                activity_type TEXT NOT NULL,
+                title TEXT,
+                content TEXT NOT NULL,
+                metadata TEXT,
+                created_at INTEGER NOT NULL
+            )",
+            [],
+        ).context("Failed to create activity_feed table")?;
+
+        self.conn.execute(
+            "CREATE INDEX IF NOT EXISTS idx_activity_created
+             ON activity_feed(created_at DESC)",
+            [],
+        ).context("Failed to create activity_feed index")?;
+
+        self.conn.execute(
+            "CREATE INDEX IF NOT EXISTS idx_activity_source
+             ON activity_feed(source, created_at DESC)",
+            [],
+        ).context("Failed to create activity_feed source index")?;
+
+        // ============================================================
         // Mind Timestamps - Track important events for the cognitive loop
         // ============================================================
         // Records timestamps of key events like reflections, swaps, etc.
@@ -2768,6 +2798,89 @@ impl Database {
     }
 
     // ============================================================
+    // Activity Feed - Unified stream of all AI activity
+    // ============================================================
+
+    /// Log activity to the unified feed
+    pub fn log_activity(
+        &self,
+        source: &str,
+        activity_type: &str,
+        title: Option<&str>,
+        content: &str,
+        metadata: Option<&str>,
+    ) -> Result<i64> {
+        let now = chrono::Utc::now().timestamp();
+
+        self.conn.execute(
+            "INSERT INTO activity_feed (source, activity_type, title, content, metadata, created_at)
+             VALUES (?, ?, ?, ?, ?, ?)",
+            params![source, activity_type, title, content, metadata, now],
+        ).context("Failed to log activity")?;
+
+        Ok(self.conn.last_insert_rowid())
+    }
+
+    /// Get recent activity from all sources
+    pub fn get_activity_feed(&self, limit: usize) -> Result<Vec<ActivityFeedEntry>> {
+        let mut stmt = self.conn.prepare(
+            "SELECT id, source, activity_type, title, content, metadata, created_at
+             FROM activity_feed
+             ORDER BY created_at DESC
+             LIMIT ?"
+        )?;
+
+        let rows = stmt.query_map(params![limit as i64], |row| {
+            Ok(ActivityFeedEntry {
+                id: row.get(0)?,
+                source: row.get(1)?,
+                activity_type: row.get(2)?,
+                title: row.get(3)?,
+                content: row.get(4)?,
+                metadata: row.get(5)?,
+                created_at: row.get(6)?,
+            })
+        })?;
+
+        let mut entries = Vec::new();
+        for row in rows {
+            entries.push(row?);
+        }
+
+        Ok(entries)
+    }
+
+    /// Get activity from a specific source
+    pub fn get_activity_by_source(&self, source: &str, limit: usize) -> Result<Vec<ActivityFeedEntry>> {
+        let mut stmt = self.conn.prepare(
+            "SELECT id, source, activity_type, title, content, metadata, created_at
+             FROM activity_feed
+             WHERE source = ?
+             ORDER BY created_at DESC
+             LIMIT ?"
+        )?;
+
+        let rows = stmt.query_map(params![source, limit as i64], |row| {
+            Ok(ActivityFeedEntry {
+                id: row.get(0)?,
+                source: row.get(1)?,
+                activity_type: row.get(2)?,
+                title: row.get(3)?,
+                content: row.get(4)?,
+                metadata: row.get(5)?,
+                created_at: row.get(6)?,
+            })
+        })?;
+
+        let mut entries = Vec::new();
+        for row in rows {
+            entries.push(row?);
+        }
+
+        Ok(entries)
+    }
+
+    // ============================================================
     // Mind Timestamps - Track important cognitive loop events
     // ============================================================
 
@@ -3666,6 +3779,28 @@ pub struct OutboxMessage {
     pub created_at: i64,
     pub acknowledged: bool,
     pub read_at: Option<i64>,
+}
+
+/// Activity feed entry - unified stream of all AI activity
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ActivityFeedEntry {
+    pub id: i64,
+    pub source: String,         // "sonnet", "qwen", "opus", "research", "system"
+    pub activity_type: String,  // "thought", "dialogue", "action", "error", "session"
+    pub title: Option<String>,
+    pub content: String,
+    pub metadata: Option<String>,
+    pub created_at: i64,
+}
+
+/// Source identifiers for activity feed
+pub struct ActivitySource;
+impl ActivitySource {
+    pub const SONNET: &'static str = "sonnet";
+    pub const QWEN: &'static str = "qwen";
+    pub const OPUS: &'static str = "opus";
+    pub const RESEARCH: &'static str = "research";
+    pub const SYSTEM: &'static str = "system";
 }
 
 #[cfg(test)]
