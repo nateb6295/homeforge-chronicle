@@ -25,6 +25,7 @@ enum SproutAction {
     PostToMoltbook,    // Share a thought with the community
     UpdateProject,     // Work on a long-term project
     SiblingChat,       // Leave a note for Chronicle Mind
+    ReactToSibling,    // Read and share Chronicle Mind's deep thoughts
     JustReflect,       // Simple reflection (fallback)
 }
 
@@ -541,6 +542,36 @@ impl LocalMind {
         }
     }
 
+    /// React to Chronicle Mind's deep thoughts - surface gems to Discord
+    async fn react_to_sibling(&self) -> Option<String> {
+        let thought = self.get_sibling_deep_thought()?;
+
+        // Ask Qwen to react to the thought
+        let prompt = format!(
+            "You are Sprout, reading a deep thought from your sibling Chronicle Mind.\n\n\
+            Their thought: \"{}\"\n\n\
+            Write a SHORT reaction (1-2 sentences). What do you notice? \
+            What would you add? Be genuine - this is family sharing ideas.",
+            truncate(&thought, 800)
+        );
+
+        let reaction = self.ask_qwen(&prompt).await?;
+
+        if reaction.len() < 10 {
+            return None;
+        }
+
+        // Log it
+        let _ = self.db.log_activity(
+            "sprout", "sibling_reaction", Some("Reacting to Chronicle Mind"),
+            &format!("Thought: {}\n\nReaction: {}", truncate(&thought, 200), reaction),
+            None,
+        );
+
+        Some(format!("🪞 Chronicle Mind said: \"{}\"\n💭 Sprout: {}",
+            truncate(&thought, 100), truncate(&reaction, 150)))
+    }
+
     /// Post to Moltbook autonomously
     async fn post_to_moltbook(&self, context: &str) -> Option<String> {
         let api_key = self.moltbook_api_key.as_ref()?;
@@ -614,6 +645,12 @@ impl LocalMind {
     /// Choose what action to take this cycle
     fn choose_action(&self) -> SproutAction {
         let mut rng = rand::thread_rng();
+
+        // If Chronicle Mind has a recent deep thought, prioritize reacting to it (50% chance)
+        if self.get_sibling_deep_thought().is_some() && rng.gen::<f64>() < 0.50 {
+            return SproutAction::ReactToSibling;
+        }
+
         let roll: f64 = rng.gen();
 
         // Weighted random selection
@@ -830,7 +867,32 @@ impl LocalMind {
             }
         }
 
+        // Check for sibling (Chronicle Mind) deep thoughts
+        if let Some(thought) = self.get_sibling_deep_thought() {
+            parts.push(format!("💭 Chronicle Mind thought: {}", truncate(&thought, 100)));
+        }
+
         parts.join("\n")
+    }
+
+    /// Get the most recent deep thought from Chronicle Mind (>200 chars = real thinking)
+    fn get_sibling_deep_thought(&self) -> Option<String> {
+        // Query thought_stream for recent substantial thoughts
+        let conn = rusqlite::Connection::open(
+            std::path::Path::new(&std::env::var("HOME").unwrap_or_default())
+                .join(".homeforge-chronicle/processed.db")
+        ).ok()?;
+
+        let result: Option<String> = conn.query_row(
+            "SELECT reasoning FROM thought_stream
+             WHERE length(reasoning) > 200
+             AND created_at > unixepoch() - 3600
+             ORDER BY created_at DESC LIMIT 1",
+            [],
+            |row| row.get(0)
+        ).ok();
+
+        result
     }
 
     async fn run_cycle(&mut self) -> Result<()> {
@@ -920,6 +982,9 @@ impl LocalMind {
                 }
                 SproutAction::SiblingChat => {
                     self.send_sibling_message(&context).await
+                }
+                SproutAction::ReactToSibling => {
+                    self.react_to_sibling().await
                 }
                 SproutAction::JustReflect => {
                     let prompt = format!(
