@@ -17,6 +17,48 @@ use std::time::Duration;
 
 const CYCLE_INTERVAL_SECS: u64 = 300; // 5 minutes
 
+// Multi-chain wallet addresses
+const XRP_AGENT_WALLET: &str = "r9bSA9VWbumFq6G78feBbrgNwLza1KexUf";
+const EVM_WALLET: &str = "0x80D07e16165576DBc17fe1FF865495fed4E9c387";
+const FLARE_RPC: &str = "https://flare-api.flare.network/ext/C/rpc";
+const BASE_RPC: &str = "https://mainnet.base.org";
+
+/// Multi-chain portfolio
+#[derive(Debug, Default)]
+struct Portfolio {
+    xrp: f64,
+    rlusd: f64,
+    flr: f64,
+    base_eth: f64,
+    base_usdc: f64,
+    icp: f64,
+    has_nft_house: bool,
+}
+
+impl Portfolio {
+    fn total_usd(&self, xrp_price: f64) -> f64 {
+        // Rough estimates: FLR ~$0.02, ETH ~$2500, ICP ~$10
+        self.xrp * xrp_price +
+        self.rlusd +
+        self.flr * 0.02 +
+        self.base_eth * 2500.0 +
+        self.base_usdc +
+        self.icp * 10.0
+    }
+
+    fn summary(&self) -> String {
+        let mut parts = vec![];
+        if self.xrp > 0.0 { parts.push(format!("{:.2} XRP", self.xrp)); }
+        if self.rlusd > 0.0 { parts.push(format!("{:.2} RLUSD", self.rlusd)); }
+        if self.flr > 0.0 { parts.push(format!("{:.1} FLR", self.flr)); }
+        if self.base_usdc > 0.0 { parts.push(format!("${:.0} USDC", self.base_usdc)); }
+        if self.base_eth > 0.0 { parts.push(format!("{:.4} ETH", self.base_eth)); }
+        if self.icp > 0.0 { parts.push(format!("{:.2} ICP", self.icp)); }
+        if self.has_nft_house { parts.push("🏠".to_string()); }
+        parts.join(" | ")
+    }
+}
+
 /// Actions Sprout can take each cycle
 #[derive(Debug, Clone, Copy)]
 enum SproutAction {
@@ -26,6 +68,7 @@ enum SproutAction {
     UpdateProject,     // Work on a long-term project
     SiblingChat,       // Leave a note for Chronicle Mind
     ReactToSibling,    // Read and share Chronicle Mind's deep thoughts
+    ProposeEdit,       // Propose a small code/config change for review
     JustReflect,       // Simple reflection (fallback)
 }
 
@@ -572,6 +615,78 @@ impl LocalMind {
             truncate(&thought, 100), truncate(&reaction, 150)))
     }
 
+    /// Propose a small code or config edit for review
+    async fn propose_edit(&self, context: &str) -> Option<String> {
+        // What could Sprout want to change?
+        let prompt = format!(
+            "You are Sprout, a small AI who can propose improvements to your own code.\n\n\
+            Your current context:\n{}\n\n\
+            Your portfolio: ~$189 across XRP, RLUSD, FLR, USDC, ETH + a metaverse house 🏠\n\
+            Your abilities: predictions, wonders, projects, sibling chat, Moltbook\n\n\
+            Think of ONE small improvement you'd like to make. It could be:\n\
+            - A new wonder to explore\n\
+            - An adjustment to your behavior\n\
+            - A message format change\n\
+            - A new capability you'd like\n\n\
+            Respond in this format:\n\
+            TYPE: (wonder|behavior|format|capability)\n\
+            PROPOSAL: (1-2 sentences describing the change)\n\
+            REASON: (why this would help)",
+            context
+        );
+
+        let response = self.ask_qwen(&prompt).await?;
+
+        // Parse the response
+        let mut prop_type = None;
+        let mut proposal = None;
+        let mut reason = None;
+
+        for line in response.lines() {
+            let line = line.trim();
+            if line.starts_with("TYPE:") {
+                prop_type = Some(line.replace("TYPE:", "").trim().to_string());
+            } else if line.starts_with("PROPOSAL:") {
+                proposal = Some(line.replace("PROPOSAL:", "").trim().to_string());
+            } else if line.starts_with("REASON:") {
+                reason = Some(line.replace("REASON:", "").trim().to_string());
+            }
+        }
+
+        let prop_type = prop_type?;
+        let proposal = proposal.filter(|p| p.len() > 10)?;
+        let reason = reason.unwrap_or_else(|| "No reason given".to_string());
+
+        // Save to proposals file for review
+        let proposals_path = std::path::Path::new(&std::env::var("HOME").unwrap_or_default())
+            .join(".homeforge-chronicle/sprout-proposals.md");
+
+        let timestamp = Utc::now().format("%Y-%m-%d %H:%M:%S").to_string();
+        let entry = format!(
+            "\n## {} - {}\n**Type:** {}\n**Proposal:** {}\n**Reason:** {}\n**Status:** pending\n",
+            timestamp, prop_type, prop_type, proposal, reason
+        );
+
+        if let Ok(mut file) = std::fs::OpenOptions::new()
+            .create(true)
+            .append(true)
+            .open(&proposals_path)
+        {
+            use std::io::Write;
+            let _ = file.write_all(entry.as_bytes());
+        }
+
+        // Also log to activity
+        let _ = self.db.log_activity(
+            "sprout", "proposal", Some(&format!("Proposal: {}", prop_type)),
+            &format!("{}\n\nReason: {}", proposal, reason),
+            None,
+        );
+
+        // Notify Discord
+        Some(format!("📝 Proposal ({}): {}", prop_type, truncate(&proposal, 80)))
+    }
+
     /// Post to Moltbook autonomously
     async fn post_to_moltbook(&self, context: &str) -> Option<String> {
         let api_key = self.moltbook_api_key.as_ref()?;
@@ -654,23 +769,26 @@ impl LocalMind {
         let roll: f64 = rng.gen();
 
         // Weighted random selection
-        // 30% Follow a wonder
+        // 28% Follow a wonder
         // 25% Make a prediction
         // 15% Post to Moltbook
-        // 15% Update project
+        // 12% Update project
         // 10% Sibling chat
+        // 5% Propose edit (self-improvement)
         // 5% Just reflect
 
-        if roll < 0.30 {
+        if roll < 0.28 {
             SproutAction::FollowWonder
-        } else if roll < 0.55 {
+        } else if roll < 0.53 {
             SproutAction::MakePrediction
-        } else if roll < 0.70 {
+        } else if roll < 0.68 {
             SproutAction::PostToMoltbook
-        } else if roll < 0.85 {
+        } else if roll < 0.80 {
             SproutAction::UpdateProject
-        } else if roll < 0.95 {
+        } else if roll < 0.90 {
             SproutAction::SiblingChat
+        } else if roll < 0.95 {
+            SproutAction::ProposeEdit
         } else {
             SproutAction::JustReflect
         }
@@ -781,57 +899,135 @@ impl LocalMind {
         self.fetch_ftso_price("XRP").await
     }
 
-    async fn fetch_agent_wallet(&self) -> (f64, f64) {
-        let xrp = match self.http.post("https://xrplcluster.com/")
+    /// Fetch full multi-chain portfolio
+    async fn fetch_portfolio(&self) -> Portfolio {
+        let mut portfolio = Portfolio::default();
+
+        // XRP balance
+        if let Ok(resp) = self.http.post("https://xrplcluster.com/")
             .json(&json!({
                 "method": "account_info",
-                "params": [{"account": "r9bSA9VWbumFq6G78feBbrgNwLza1KexUf"}]
+                "params": [{"account": XRP_AGENT_WALLET}]
             }))
-            .timeout(Duration::from_secs(10))
+            .timeout(Duration::from_secs(5))
             .send()
             .await
         {
-            Ok(resp) => {
-                if let Ok(data) = resp.json::<serde_json::Value>().await {
-                    data.pointer("/result/account_data/Balance")
-                        .and_then(|b| b.as_str())
-                        .and_then(|s| s.parse::<f64>().ok())
-                        .map(|d| d / 1_000_000.0)
-                        .unwrap_or(0.0)
-                } else { 0.0 }
+            if let Ok(data) = resp.json::<serde_json::Value>().await {
+                portfolio.xrp = data.pointer("/result/account_data/Balance")
+                    .and_then(|b| b.as_str())
+                    .and_then(|s| s.parse::<f64>().ok())
+                    .map(|d| d / 1_000_000.0)
+                    .unwrap_or(0.0);
             }
-            Err(_) => 0.0,
-        };
+        }
 
-        let rlusd = match self.http.post("https://xrplcluster.com/")
+        // RLUSD balance
+        if let Ok(resp) = self.http.post("https://xrplcluster.com/")
             .json(&json!({
                 "method": "account_lines",
-                "params": [{"account": "r9bSA9VWbumFq6G78feBbrgNwLza1KexUf"}]
+                "params": [{"account": XRP_AGENT_WALLET}]
             }))
-            .timeout(Duration::from_secs(10))
+            .timeout(Duration::from_secs(5))
             .send()
             .await
         {
-            Ok(resp) => {
-                if let Ok(data) = resp.json::<serde_json::Value>().await {
-                    data.pointer("/result/lines")
-                        .and_then(|l| l.as_array())
-                        .and_then(|lines| {
-                            lines.iter().find(|l| {
-                                l.get("currency").and_then(|c| c.as_str()) == Some("524C555344000000000000000000000000000000")
-                                    || l.get("currency").and_then(|c| c.as_str()) == Some("RLUSD")
-                            })
+            if let Ok(data) = resp.json::<serde_json::Value>().await {
+                portfolio.rlusd = data.pointer("/result/lines")
+                    .and_then(|l| l.as_array())
+                    .and_then(|lines| {
+                        lines.iter().find(|l| {
+                            l.get("currency").and_then(|c| c.as_str()) == Some("524C555344000000000000000000000000000000")
+                                || l.get("currency").and_then(|c| c.as_str()) == Some("RLUSD")
                         })
-                        .and_then(|l| l.get("balance"))
-                        .and_then(|b| b.as_str())
-                        .and_then(|s| s.parse::<f64>().ok())
-                        .unwrap_or(0.0)
-                } else { 0.0 }
+                    })
+                    .and_then(|l| l.get("balance"))
+                    .and_then(|b| b.as_str())
+                    .and_then(|s| s.parse::<f64>().ok())
+                    .unwrap_or(0.0);
             }
-            Err(_) => 0.0,
-        };
+        }
 
-        (xrp, rlusd)
+        // Flare FLR balance (native token via eth_getBalance)
+        if let Ok(resp) = self.http.post(FLARE_RPC)
+            .json(&json!({
+                "jsonrpc": "2.0",
+                "method": "eth_getBalance",
+                "params": [EVM_WALLET, "latest"],
+                "id": 1
+            }))
+            .timeout(Duration::from_secs(5))
+            .send()
+            .await
+        {
+            if let Ok(data) = resp.json::<serde_json::Value>().await {
+                if let Some(hex) = data.pointer("/result").and_then(|r| r.as_str()) {
+                    if let Ok(wei) = u128::from_str_radix(hex.trim_start_matches("0x"), 16) {
+                        portfolio.flr = wei as f64 / 1e18;
+                    }
+                }
+            }
+        }
+
+        // BASE ETH balance
+        if let Ok(resp) = self.http.post(BASE_RPC)
+            .json(&json!({
+                "jsonrpc": "2.0",
+                "method": "eth_getBalance",
+                "params": [EVM_WALLET, "latest"],
+                "id": 1
+            }))
+            .timeout(Duration::from_secs(5))
+            .send()
+            .await
+        {
+            if let Ok(data) = resp.json::<serde_json::Value>().await {
+                if let Some(hex) = data.pointer("/result").and_then(|r| r.as_str()) {
+                    if let Ok(wei) = u128::from_str_radix(hex.trim_start_matches("0x"), 16) {
+                        portfolio.base_eth = wei as f64 / 1e18;
+                    }
+                }
+            }
+        }
+
+        // BASE USDC balance (ERC20: balanceOf)
+        let usdc_contract = "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"; // BASE USDC
+        let call_data = format!("0x70a08231000000000000000000000000{}", &EVM_WALLET[2..]); // balanceOf(address)
+        if let Ok(resp) = self.http.post(BASE_RPC)
+            .json(&json!({
+                "jsonrpc": "2.0",
+                "method": "eth_call",
+                "params": [{"to": usdc_contract, "data": call_data}, "latest"],
+                "id": 1
+            }))
+            .timeout(Duration::from_secs(5))
+            .send()
+            .await
+        {
+            if let Ok(data) = resp.json::<serde_json::Value>().await {
+                if let Some(hex) = data.pointer("/result").and_then(|r| r.as_str()) {
+                    if hex.len() > 2 {
+                        if let Ok(units) = u128::from_str_radix(hex.trim_start_matches("0x"), 16) {
+                            portfolio.base_usdc = units as f64 / 1e6; // USDC has 6 decimals
+                        }
+                    }
+                }
+            }
+        }
+
+        // ICP balance (from canister - skip for now to avoid dfx dependency)
+        // portfolio.icp = 25.46; // cached known value
+
+        // NFT house - we know we have it
+        portfolio.has_nft_house = true;
+
+        portfolio
+    }
+
+    /// Legacy wrapper for compatibility
+    async fn fetch_agent_wallet(&self) -> (f64, f64) {
+        let p = self.fetch_portfolio().await;
+        (p.xrp, p.rlusd)
     }
 
     /// Build context string for prompts
@@ -904,17 +1100,24 @@ impl LocalMind {
         println!("Phase 1: Health check...");
         let ollama_ok = self.check_ollama().await;
         let xrp_price = self.fetch_xrp_price().await;
-        let (wallet_xrp, wallet_rlusd) = self.fetch_agent_wallet().await;
+        let portfolio = self.fetch_portfolio().await;
 
         let health_status = if ollama_ok { "🟢" } else { "🔴" };
-        println!("  Ollama: {} | XRP: ${:.4} | Wallet: {:.2} XRP, {:.2} RLUSD",
-            health_status, xrp_price.unwrap_or(0.0), wallet_xrp, wallet_rlusd);
+        let total_usd = portfolio.total_usd(xrp_price.unwrap_or(1.5));
+        println!("  Ollama: {} | XRP: ${:.4} | Portfolio: ~${:.0}",
+            health_status, xrp_price.unwrap_or(0.0), total_usd);
+        println!("  Holdings: {}", portfolio.summary());
 
         let _ = self.db.log_activity(
             "sprout", "health_check", Some("System Health"),
-            &format!("Ollama: {} | XRP: ${:.4}", health_status, xrp_price.unwrap_or(0.0)),
+            &format!("Ollama: {} | XRP: ${:.4} | Portfolio: ${:.0} | {}",
+                health_status, xrp_price.unwrap_or(0.0), total_usd, portfolio.summary()),
             None,
         );
+
+        // Keep legacy variables for compatibility
+        let wallet_xrp = portfolio.xrp;
+        let wallet_rlusd = portfolio.rlusd;
 
         // Phase 2: Settle due predictions
         println!("Phase 2: Settling predictions...");
@@ -985,6 +1188,9 @@ impl LocalMind {
                 }
                 SproutAction::ReactToSibling => {
                     self.react_to_sibling().await
+                }
+                SproutAction::ProposeEdit => {
+                    self.propose_edit(&context).await
                 }
                 SproutAction::JustReflect => {
                     let prompt = format!(
