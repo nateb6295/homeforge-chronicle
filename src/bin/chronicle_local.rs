@@ -420,7 +420,7 @@ impl LocalMind {
             None,
         );
 
-        Some(format!("💭 Explored: {}\n→ {}", truncate(topic, 40), insight))
+        Some(format!("💭 Explored: {}\n\n→ {}", truncate(topic, 100), truncate(&insight, 600)))
     }
 
     /// Fetch a URL and return its content (simplified)
@@ -513,7 +513,7 @@ impl LocalMind {
                     "sprout", "project_update", Some(&project.name),
                     &format!("{}: {}", update_type, update_content), None,
                 );
-                Some(format!("📋 {}: {} - {}", project.name, update_type, truncate(&update_content, 60)))
+                Some(format!("📋 {}: {} - {}", project.name, update_type, truncate(&update_content, 500)))
             }
             Err(_) => None,
         }
@@ -579,7 +579,7 @@ impl LocalMind {
                     "sprout", "sibling_message", Some("To Chronicle Mind"),
                     &message, None,
                 );
-                Some(format!("💌 Left note for Chronicle Mind: {}", truncate(&message, 60)))
+                Some(format!("💌 Left note for Chronicle Mind: {}", truncate(&message, 500)))
             }
             Err(_) => None,
         }
@@ -684,7 +684,7 @@ impl LocalMind {
         );
 
         // Notify Discord
-        Some(format!("📝 Proposal ({}): {}", prop_type, truncate(&proposal, 80)))
+        Some(format!("📝 Proposal ({}): {}", prop_type, truncate(&proposal, 500)))
     }
 
     /// Post to Moltbook autonomously
