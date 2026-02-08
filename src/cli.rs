@@ -229,6 +229,25 @@ pub enum Commands {
         #[arg(long)]
         dry_run: bool,
     },
+
+    /// Sync Sprout activity feed to ICP canister as capsules
+    SyncActivity {
+        /// Backend canister ID
+        #[arg(long, default_value = "fqqku-bqaaa-aaaai-q4wha-cai")]
+        canister_id: String,
+
+        /// DFX identity to use
+        #[arg(long, default_value = "chronicle-auto")]
+        identity: String,
+
+        /// Only show what would be synced (dry run)
+        #[arg(long)]
+        dry_run: bool,
+
+        /// Limit number of activities to sync
+        #[arg(short, long)]
+        limit: Option<usize>,
+    },
 }
 
 #[cfg(test)]

@@ -72,6 +72,9 @@ fn main() -> Result<()> {
         Commands::RefreshPatterns { id, min_capsules, dry_run } => {
             refresh_patterns_command(&config, id, min_capsules, dry_run)?;
         }
+        Commands::SyncActivity { canister_id, identity, dry_run, limit } => {
+            sync_activity_command(&config, &canister_id, &identity, dry_run, limit)?;
+        }
     }
 
     Ok(())
@@ -1757,6 +1760,114 @@ fn refresh_patterns_command(config: &Config, id: Option<i64>, min_capsules: i64,
     if dry_run && refreshed > 0 {
         println!("\nRun without --dry-run to apply changes.");
     }
+
+    Ok(())
+}
+
+fn sync_activity_command(
+    config: &Config,
+    canister_id: &str,
+    identity: &str,
+    dry_run: bool,
+    limit: Option<usize>,
+) -> Result<()> {
+    use homeforge_chronicle::icp::{IcpClient, KnowledgeCapsule};
+
+    println!("Sync Activity to Canister");
+    println!("=========================\n");
+    println!("Canister: {}", canister_id);
+    println!("Identity: {}", identity);
+    if dry_run {
+        println!("Mode: DRY RUN (no changes will be made)\n");
+    }
+
+    let db = Database::new(&config.input.processed_db)?;
+
+    // Get unsynced activities
+    let activities = db.get_unsynced_activities(limit)?;
+
+    if activities.is_empty() {
+        println!("No unsynced activities found.");
+        return Ok(());
+    }
+
+    println!("Found {} unsynced activities:\n", activities.len());
+
+    // Display activities
+    for activity in &activities {
+        let time = chrono::DateTime::from_timestamp(activity.created_at, 0)
+            .map(|dt| dt.format("%Y-%m-%d %H:%M").to_string())
+            .unwrap_or_else(|| "unknown".to_string());
+        let preview = activity.content.chars().take(60).collect::<String>();
+        println!(
+            "  [{:>3}] {} | {:15} | {}{}",
+            activity.id,
+            time,
+            activity.activity_type,
+            preview,
+            if activity.content.len() > 60 { "..." } else { "" }
+        );
+    }
+    println!();
+
+    if dry_run {
+        println!("DRY RUN: Would sync {} activities to canister.", activities.len());
+        return Ok(());
+    }
+
+    // Convert to capsules
+    let capsules: Vec<KnowledgeCapsule> = activities
+        .iter()
+        .map(|a| {
+            let topic = format!("sprout/{}", a.activity_type);
+            let content = match &a.title {
+                Some(title) if !title.is_empty() => format!("{}: {}", title, a.content),
+                _ => a.content.clone(),
+            };
+
+            KnowledgeCapsule {
+                id: 0, // Assigned by canister
+                conversation_id: format!("activity-{}", a.id),
+                restatement: content,
+                timestamp: Some(
+                    chrono::DateTime::from_timestamp(a.created_at, 0)
+                        .map(|dt| dt.format("%Y-%m-%dT%H:%M:%S").to_string())
+                        .unwrap_or_default(),
+                ),
+                location: None,
+                topic: Some(topic),
+                confidence_score: 0.8,
+                persons: vec![],
+                entities: vec![a.source.clone()],
+                keywords: vec![a.activity_type.clone(), "sprout".to_string()],
+                created_at: 0, // Set by canister
+            }
+        })
+        .collect();
+
+    // Create async runtime and sync
+    let rt = tokio::runtime::Runtime::new()?;
+    let activity_ids: Vec<i64> = activities.iter().map(|a| a.id).collect();
+
+    rt.block_on(async {
+        println!("Connecting to ICP...");
+        let client = IcpClient::from_dfx_identity(canister_id, identity).await?;
+
+        let health = client.health().await?;
+        println!("Canister status: {}\n", health);
+
+        println!("Uploading {} capsules...", capsules.len());
+        let ids = client.add_capsules_bulk(capsules).await?;
+        println!("✓ Uploaded {} capsules (IDs: {:?})", ids.len(), ids);
+
+        Ok::<(), anyhow::Error>(())
+    })?;
+
+    // Mark as synced
+    let synced_count = db.mark_activities_synced(&activity_ids)?;
+    println!("✓ Marked {} activities as synced", synced_count);
+
+    println!("\nSync complete!");
 
     Ok(())
 }

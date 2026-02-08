@@ -670,6 +670,12 @@ impl Database {
             [],
         ).context("Failed to create activity_feed source index")?;
 
+        // Migration: Add synced_at column for tracking what's been synced to canister
+        let _ = self.conn.execute(
+            "ALTER TABLE activity_feed ADD COLUMN synced_at INTEGER",
+            [],
+        ); // Ignore error if column already exists
+
         // ============================================================
         // Mind Timestamps - Track important events for the cognitive loop
         // ============================================================
@@ -2878,6 +2884,72 @@ impl Database {
         }
 
         Ok(entries)
+    }
+
+    /// Get unsynced activities of meaningful types for canister sync
+    pub fn get_unsynced_activities(&self, limit: Option<usize>) -> Result<Vec<ActivityFeedEntry>> {
+        // Skip "thought" - those are status updates, not genuine thoughts
+        let meaningful_types = vec![
+            "reflection", "discord_chat", "curiosity",
+            "insight", "dialogue", "moltbook_post", "capsule_question"
+        ];
+        let placeholders: Vec<&str> = meaningful_types.iter().map(|_| "?").collect();
+        let query = format!(
+            "SELECT id, source, activity_type, title, content, metadata, created_at
+             FROM activity_feed
+             WHERE synced_at IS NULL
+             AND activity_type IN ({})
+             ORDER BY created_at ASC
+             {}",
+            placeholders.join(", "),
+            limit.map(|l| format!("LIMIT {}", l)).unwrap_or_default()
+        );
+
+        let mut stmt = self.conn.prepare(&query)?;
+        let rows = stmt.query_map(rusqlite::params_from_iter(meaningful_types.iter()), |row| {
+            Ok(ActivityFeedEntry {
+                id: row.get(0)?,
+                source: row.get(1)?,
+                activity_type: row.get(2)?,
+                title: row.get(3)?,
+                content: row.get(4)?,
+                metadata: row.get(5)?,
+                created_at: row.get(6)?,
+            })
+        })?;
+
+        let mut entries = Vec::new();
+        for row in rows {
+            entries.push(row?);
+        }
+
+        Ok(entries)
+    }
+
+    /// Mark activities as synced to canister
+    pub fn mark_activities_synced(&self, ids: &[i64]) -> Result<usize> {
+        if ids.is_empty() {
+            return Ok(0);
+        }
+
+        let now = chrono::Utc::now().timestamp();
+        let placeholders: Vec<&str> = ids.iter().map(|_| "?").collect();
+        let query = format!(
+            "UPDATE activity_feed SET synced_at = ? WHERE id IN ({})",
+            placeholders.join(", ")
+        );
+
+        let mut params: Vec<Box<dyn rusqlite::ToSql>> = vec![Box::new(now)];
+        for id in ids {
+            params.push(Box::new(*id));
+        }
+
+        let count = self.conn.execute(
+            &query,
+            rusqlite::params_from_iter(std::iter::once(&now as &dyn rusqlite::ToSql).chain(ids.iter().map(|id| id as &dyn rusqlite::ToSql)))
+        )?;
+
+        Ok(count)
     }
 
     // ============================================================
