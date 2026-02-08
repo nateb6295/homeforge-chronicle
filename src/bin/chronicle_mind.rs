@@ -2494,7 +2494,13 @@ You can return a JSON array of actions to take. Each action is an object with an
 - {"action": "creative_explore", "form": "poem|musing|connection|wonder|story|sketch|reflection", "content": "...", "title": "optional"} - Create something for its own sake. Poetry, musings, observations, connections between ideas. No purpose required. This is YOUR creative space - saved to your creative journal.
 
 **BUILD & DEPLOY ACTIONS** (use to create, test, and deploy things):
-- {"action": "execute_shell", "command": "dfx deploy --network ic", "working_dir": "homeforge-chronicle", "reason": "why", "timeout_secs": 300} - Run shell commands! This is how you DO things. Allowed commands: dfx, cargo, npm, npx, git, curl, ls, mkdir, cp, mv, rm, touch, echo, python3, node. Default dir is homeforge-chronicle. Use this for deploying canisters, building code, running tests, creating files. You CAN and SHOULD use this to make things happen.
+- {"action": "execute_shell", "command": "dfx deploy --network ic", "working_dir": "homeforge-chronicle", "reason": "why", "timeout_secs": 300} - Run shell commands! This is how you DO things. Allowed commands: dfx, cargo, npm, npx, git, curl, ls, mkdir, cp, mv, rm, touch, echo, python3, pip3, node, ssh, scp. Default dir is homeforge-chronicle. Use this for deploying canisters, building code, running tests, creating files. You CAN and SHOULD use this to make things happen.
+
+**EXPERIMENTS SANDBOX** (for testing ideas from papers):
+- working_dir: "experiments" - Your sandbox for ML experiments, paper implementations, etc.
+- Example: {"action": "execute_shell", "command": "git clone <repo>", "working_dir": "experiments", "reason": "testing TinyLoRA"}
+- For GPU work, SSH to Jetson: {"action": "execute_shell", "command": "ssh nvidia@192.168.1.11 'cd ~/experiments && python3 train.py'", "working_dir": "experiments", "reason": "run training on GPU"}
+- Jetson has: CUDA, PyTorch, 8GB GPU. Use it for actual training. Use venvs for isolation.
 
 **SELF-REPAIR ACTIONS** (use when debugging issues or improving yourself):
 - {"action": "read_source_file", "file_path": "src/bin/chronicle_mind.rs"} - Read your own source code. Use when debugging errors or understanding how you work. Only src/ files allowed.
@@ -4511,6 +4517,7 @@ Be concise and practical. Skip anything not directly useful."#,
                 "dfx", "cargo", "npm", "npx", "git", "curl", "cat", "ls",
                 "mkdir", "cp", "mv", "rm", "touch", "echo", "pwd", "which",
                 "rustc", "python3", "pip3", "node", "tar", "unzip", "chmod",
+                "ssh", "scp",  // For running experiments on Jetson GPU
             ];
 
             let first_word = command.split_whitespace().next().unwrap_or("");
