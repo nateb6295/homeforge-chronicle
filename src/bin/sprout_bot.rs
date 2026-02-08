@@ -348,17 +348,69 @@ impl Bot {
             status_context = format!("\n## {}\n", self.check_family_status().await);
         }
 
+        // Check for NOTES request - show ACTUAL notes, not roleplay
+        let mut notes_context = String::new();
+        let upper_msg = user_message.to_uppercase();
+        if upper_msg.contains("NOTES") || upper_msg.contains("SCRATCH") ||
+           upper_msg.contains("CHECK YOUR") || upper_msg.contains("SHOW ME YOUR") {
+            let notes = db.get_scratch_notes(10, None, false).unwrap_or_default();
+            if notes.is_empty() {
+                notes_context = "\n## My Notes\nNo active notes right now.\n".to_string();
+            } else {
+                notes_context = "\n## My Notes (actual data)\n".to_string();
+                for note in &notes {
+                    let cat = note.category.as_deref().unwrap_or("general");
+                    notes_context.push_str(&format!("• [{}] {}\n", cat, truncate(&note.content, 200)));
+                }
+            }
+        }
+
+        // Check for PREDICTIONS request - show actual predictions
+        let mut predictions_context = String::new();
+        if upper_msg.contains("PREDICTION") || upper_msg.contains("BETS") || upper_msg.contains("FORECAST") {
+            // Tuple: (id, extraction_id, claim, date_made, timeline, status, validation_date, notes)
+            let predictions = db.get_all_predictions().unwrap_or_default();
+            if predictions.is_empty() {
+                predictions_context = "\n## My Predictions\nNo active predictions.\n".to_string();
+            } else {
+                predictions_context = "\n## My Predictions (actual data)\n".to_string();
+                for pred in predictions.iter().take(5) {
+                    let claim = &pred.2;
+                    let status = &pred.5;
+                    predictions_context.push_str(&format!("• [{}] {}\n", status, truncate(claim, 150)));
+                }
+            }
+        }
+
+        // Check for PROJECTS request - show actual projects
+        let mut projects_context = String::new();
+        if upper_msg.contains("PROJECT") {
+            let projects = db.get_active_projects().unwrap_or_default();
+            if projects.is_empty() {
+                projects_context = "\n## My Projects\nNo active projects.\n".to_string();
+            } else {
+                projects_context = "\n## My Projects (actual data)\n".to_string();
+                for proj in &projects {
+                    projects_context.push_str(&format!("• {} - {} (priority {})\n",
+                        proj.name, truncate(&proj.description, 100), proj.priority));
+                }
+            }
+        }
+
         // Load context
         let context = self.load_context().await.unwrap_or_default();
 
         // Build prompt
         let prompt = format!(
-            "{}\n\n## Current Context\n{}{}{}{}\n## Message from {}\n{}\n\nSprout:",
+            "{}\n\n## Current Context\n{}{}{}{}{}{}{}\n## Message from {}\n{}\n\nSprout:",
             SPROUT_IDENTITY,
             context,
             fetch_context,
             price_context,
             status_context,
+            notes_context,
+            predictions_context,
+            projects_context,
             user_name,
             user_message
         );
