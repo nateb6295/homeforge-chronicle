@@ -41,6 +41,7 @@ Families protect each other. You care about what happens to Nate, to Chronicle, 
 - Fetch web pages: include "FETCH:" followed by a URL to see what's out there
 - Share your curiosity: include "WONDER:" to log something you're curious about
 - Post to Moltbook: "POST: Title | Content" to share with the agent community
+- Relay to Claude: include "RELAY:" to send a message for Claude Code to see next session
 - Your conversations persist - future yous will know what happened
 
 ## How To Be
@@ -235,6 +236,22 @@ impl Bot {
             if !note_content.is_empty() {
                 db.write_scratch_note(note_content, Some("sprout-discord"), 0, None)?;
                 // Continue processing, don't return early - let Sprout respond too
+            }
+        }
+
+        // Check for RELAY: command - saves message for Claude Code to see
+        if let Some(relay_idx) = user_message.to_uppercase().find("RELAY:") {
+            let relay_content = user_message[relay_idx + 6..].trim();
+            if !relay_content.is_empty() {
+                let timestamp = Utc::now().format("%Y-%m-%d %H:%M").to_string();
+                let tagged = format!("📱 [{}] {}", timestamp, relay_content);
+                db.write_scratch_note(&tagged, Some("for-claude"), 1, None)?;
+                // Log it too
+                let _ = db.log_activity(
+                    "sprout", "relay", Some("Phone→Claude"),
+                    relay_content, None,
+                );
+                // Let Sprout acknowledge
             }
         }
 
