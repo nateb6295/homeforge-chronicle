@@ -2122,9 +2122,10 @@ fn build_reasoning_prompt(ctx: &CycleContext, config: &MindConfig, health: &Heal
     prompt.push_str("## What were you curious about?\n");
     prompt.push_str(&format!("{}\n", ctx.cognitive_state.semantic_gist));
     if !ctx.cognitive_state.episodic_trace.is_empty() {
-        prompt.push_str("Recently: ");
-        prompt.push_str(&ctx.cognitive_state.episodic_trace.join(" → "));
-        prompt.push_str("\n");
+        prompt.push_str("Recent events (each is separate, not causally linked):\n");
+        for (i, event) in ctx.cognitive_state.episodic_trace.iter().enumerate() {
+            prompt.push_str(&format!("  {}. {}\n", i + 1, event));
+        }
     }
     if !ctx.cognitive_state.predictive_cue.is_empty() {
         prompt.push_str(&format!("You were expecting: {}\n", ctx.cognitive_state.predictive_cue));
@@ -2577,14 +2578,14 @@ fn build_condensed_prompt(ctx: &CycleContext, _config: &MindConfig, health: &Hea
     // Cognitive state (enriched)
     prompt.push_str(&format!("\nGoal: {}\n", ctx.cognitive_state.goal_orientation));
 
-    // Episodic trace - what happened recently
+    // Episodic trace - what happened recently (as separate events)
     if !ctx.cognitive_state.episodic_trace.is_empty() {
-        prompt.push_str("Recent: ");
+        prompt.push_str("Recent events: ");
         prompt.push_str(&ctx.cognitive_state.episodic_trace.iter()
             .take(3)
             .map(|s| truncate_str(s, 50))
             .collect::<Vec<_>>()
-            .join(" → "));
+            .join(" | "));
         prompt.push_str("\n");
     }
 
