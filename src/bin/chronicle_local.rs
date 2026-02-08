@@ -611,8 +611,8 @@ impl LocalMind {
             None,
         );
 
-        Some(format!("🪞 Chronicle Mind said: \"{}\"\n💭 Sprout: {}",
-            truncate(&thought, 100), truncate(&reaction, 150)))
+        Some(format!("🪞 Chronicle Mind said: \"{}\"\n\n💭 Sprout: {}",
+            truncate(&thought, 800), truncate(&reaction, 800)))
     }
 
     /// Propose a small code or config edit for review
