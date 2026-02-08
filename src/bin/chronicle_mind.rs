@@ -464,6 +464,13 @@ enum Action {
         query: String,            // The search query
         max_results: Option<u32>, // Max results to return (default 5)
     },
+    /// Read and synthesize an academic paper from arXiv
+    /// Use this to learn from cutting-edge research instead of reinventing the wheel
+    /// The paper is fetched, key sections extracted, and synthesized into actionable insights
+    ReadPaper {
+        arxiv_id: String,         // arXiv ID (e.g., "2602.04118") or full URL
+        focus: Option<String>,    // What aspect to focus on (e.g., "implementation details", "key findings")
+    },
     /// Create an alert for event-driven perception
     /// Alerts trigger when conditions are met and show in your context
     CreateAlert {
@@ -2481,6 +2488,7 @@ You can return a JSON array of actions to take. Each action is an object with an
 - {"action": "project_status", "project_id": 1, "status": "active|paused|completed|abandoned", "note": "optional reason"} - Change project status. Use when finishing or putting aside work.
 - {"action": "consult_local_qwen", "topic": "...", "prompt": "...", "context": "optional"} - Have a real-time dialogue with local Qwen (3B on Jetson). Use for brainstorming, getting another AI's perspective, thinking through problems together. Unlike research (async, days), this is instant. The exchange is saved as a thought for context in future cycles.
 - {"action": "web_search", "query": "ICP news February 2026", "max_results": 5} - Search the web using local SearXNG. Use to research current events, look up documentation, explore topics. Results are returned immediately. This is YOUR search engine - fully sovereign, no external APIs.
+- {"action": "read_paper", "arxiv_id": "2602.04118", "focus": "key findings"} - Read and synthesize an arXiv paper. The paper is fetched, parsed, and local Qwen synthesizes key insights. Use this BEFORE experimenting - someone may have already solved the problem. Accepts arxiv IDs or full URLs. Focus is optional but helps extract specific aspects.
 - {"action": "create_alert", "name": "...", "alert_type": "price_above|price_below|rsi_above|rsi_below", "symbol": "XRP", "threshold": 2.50, "message": "...", "one_shot": false} - Set up a watcher. When condition is met, you'll see it in your context next cycle. Use for tracking opportunities or risks you want to act on.
 - {"action": "dismiss_alert", "alert_id": 1} - Deactivate an alert you no longer need.
 - {"action": "creative_explore", "form": "poem|musing|connection|wonder|story|sketch|reflection", "content": "...", "title": "optional"} - Create something for its own sake. Poetry, musings, observations, connections between ideas. No purpose required. This is YOUR creative space - saved to your creative journal.
@@ -2521,6 +2529,7 @@ You have 10 minutes until your next cycle. This is your time.
 - Write something just to write it.
 - Research something you're curious about.
 - Leave a note for future-you about what you're noticing.
+- Read a paper. ArXiv is full of solved problems. Before experimenting, check if someone already figured it out. Use read_paper to fetch and synthesize.
 - Do nothing, if nothing calls.
 
 **On financial stuff:** The swap guardrails are automated - they'll reject bad requests. If RSI < 30 and you want to accumulate, try. Otherwise, there's no pressure.
@@ -3965,6 +3974,259 @@ We protect each other. When you respond, remember this is family. Be genuine, di
                     success: false,
                     details: format!("SearXNG request failed (Jetson may be offline): {}", e),
                 },
+            }
+        }
+
+        Action::ReadPaper { arxiv_id, focus } => {
+            eprintln!("  Executing: ReadPaper {{ arxiv_id: \"{}\", focus: {:?} }}", arxiv_id, focus);
+
+            // Parse arxiv ID from various formats
+            let clean_id = arxiv_id
+                .replace("https://arxiv.org/abs/", "")
+                .replace("http://arxiv.org/abs/", "")
+                .replace("arxiv:", "")
+                .trim()
+                .to_string();
+
+            // Use ar5iv.org for HTML version (easier to parse than PDF)
+            let ar5iv_url = format!("https://ar5iv.org/abs/{}", clean_id);
+            let arxiv_abs_url = format!("https://arxiv.org/abs/{}", clean_id);
+
+            let client = reqwest::Client::builder()
+                .timeout(Duration::from_secs(30))
+                .user_agent("Chronicle-Mind/1.0 (research-synthesizer)")
+                .build()
+                .unwrap();
+
+            // First, try to fetch the ar5iv HTML version
+            let paper_content = match client.get(&ar5iv_url).send().await {
+                Ok(response) if response.status().is_success() => {
+                    match response.text().await {
+                        Ok(html) => {
+                            // Extract key sections from HTML
+                            let mut extracted = String::new();
+
+                            // Try to get title
+                            if let Some(start) = html.find("<title>") {
+                                if let Some(end) = html[start..].find("</title>") {
+                                    let title = &html[start+7..start+end];
+                                    let title = title.replace(" - ar5iv", "").replace(" | ar5iv", "");
+                                    extracted.push_str(&format!("TITLE: {}\n\n", title.trim()));
+                                }
+                            }
+
+                            // Try to get abstract
+                            if let Some(abs_start) = html.find("class=\"abstract\"") {
+                                if let Some(abs_content_start) = html[abs_start..].find(">") {
+                                    let abs_begin = abs_start + abs_content_start + 1;
+                                    if let Some(abs_end) = html[abs_begin..].find("</") {
+                                        let abstract_raw = &html[abs_begin..abs_begin+abs_end.min(3000)];
+                                        // Clean HTML tags
+                                        let abstract_clean: String = abstract_raw
+                                            .chars()
+                                            .fold((String::new(), false), |(mut acc, in_tag), c| {
+                                                if c == '<' { (acc, true) }
+                                                else if c == '>' { (acc, false) }
+                                                else if !in_tag { acc.push(c); (acc, false) }
+                                                else { (acc, true) }
+                                            }).0;
+                                        extracted.push_str(&format!("ABSTRACT: {}\n\n", abstract_clean.trim()));
+                                    }
+                                }
+                            }
+
+                            // Try to get introduction/key content
+                            for section_marker in ["<section", "class=\"ltx_section\""] {
+                                if let Some(sec_start) = html.find(section_marker) {
+                                    let section_slice = &html[sec_start..html.len().min(sec_start+10000)];
+                                    // Get first few paragraphs
+                                    let paragraphs: Vec<&str> = section_slice
+                                        .split("<p")
+                                        .skip(1)
+                                        .take(3)
+                                        .filter_map(|p| {
+                                            let content_start = p.find(">")?;
+                                            let content_end = p.find("</p>")?;
+                                            Some(&p[content_start+1..content_end])
+                                        })
+                                        .collect();
+
+                                    if !paragraphs.is_empty() {
+                                        let clean_paras: String = paragraphs.join(" ")
+                                            .chars()
+                                            .fold((String::new(), false), |(mut acc, in_tag), c| {
+                                                if c == '<' { (acc, true) }
+                                                else if c == '>' { (acc, false) }
+                                                else if !in_tag { acc.push(c); (acc, false) }
+                                                else { (acc, true) }
+                                            }).0;
+                                        extracted.push_str(&format!("INTRODUCTION: {}\n", truncate_str(&clean_paras, 2000)));
+                                        break;
+                                    }
+                                }
+                            }
+
+                            if extracted.len() > 100 {
+                                Some(extracted)
+                            } else {
+                                None
+                            }
+                        }
+                        Err(_) => None,
+                    }
+                }
+                _ => None,
+            };
+
+            // Fallback to basic arxiv abstract page if ar5iv failed
+            let paper_content = match paper_content {
+                Some(c) => c,
+                None => {
+                    match client.get(&arxiv_abs_url).send().await {
+                        Ok(response) if response.status().is_success() => {
+                            match response.text().await {
+                                Ok(html) => {
+                                    let mut extracted = String::new();
+
+                                    // Title from meta tag
+                                    if let Some(start) = html.find("property=\"og:title\"") {
+                                        if let Some(content_start) = html[start..].find("content=\"") {
+                                            let begin = start + content_start + 9;
+                                            if let Some(end) = html[begin..].find("\"") {
+                                                extracted.push_str(&format!("TITLE: {}\n\n", &html[begin..begin+end]));
+                                            }
+                                        }
+                                    }
+
+                                    // Abstract from meta description
+                                    if let Some(start) = html.find("property=\"og:description\"") {
+                                        if let Some(content_start) = html[start..].find("content=\"") {
+                                            let begin = start + content_start + 9;
+                                            if let Some(end) = html[begin..].find("\"") {
+                                                extracted.push_str(&format!("ABSTRACT: {}\n", &html[begin..begin+end.min(2000)]));
+                                            }
+                                        }
+                                    }
+
+                                    if extracted.len() > 50 {
+                                        extracted
+                                    } else {
+                                        return ActionResult {
+                                            action: "read_paper".to_string(),
+                                            success: false,
+                                            details: format!("Could not extract content from arxiv page for {}", clean_id),
+                                        };
+                                    }
+                                }
+                                Err(e) => return ActionResult {
+                                    action: "read_paper".to_string(),
+                                    success: false,
+                                    details: format!("Failed to read arxiv response: {}", e),
+                                },
+                            }
+                        }
+                        Ok(response) => return ActionResult {
+                            action: "read_paper".to_string(),
+                            success: false,
+                            details: format!("Arxiv returned {}", response.status()),
+                        },
+                        Err(e) => return ActionResult {
+                            action: "read_paper".to_string(),
+                            success: false,
+                            details: format!("Failed to fetch paper: {}", e),
+                        },
+                    }
+                }
+            };
+
+            // Now use local Qwen to synthesize the paper
+            let focus_instruction = focus.as_ref()
+                .map(|f| format!("Focus especially on: {}", f))
+                .unwrap_or_default();
+
+            let synthesis_prompt = format!(
+                r#"You are a research synthesizer. Analyze this academic paper and extract actionable insights.
+
+## Paper Content
+{}
+
+## Your Task
+{}
+
+Provide a synthesis in this format:
+
+KEY FINDING: The single most important takeaway (1-2 sentences)
+
+TECHNIQUE: What specific method/technique does this paper introduce? (if applicable)
+
+IMPLICATIONS: How could this apply to our work (AI agents, local inference, memory systems)?
+
+NUMBERS THAT MATTER: Any specific metrics, benchmarks, or quantitative results
+
+CITATION: How to reference this paper
+
+Be concise and practical. Skip anything not directly useful."#,
+                truncate_str(&paper_content, 4000),
+                focus_instruction
+            );
+
+            // Call local Qwen for synthesis
+            match homeforge_chronicle::llm::OllamaClient::from_env() {
+                Ok(ollama) if ollama.is_available() => {
+                    use homeforge_chronicle::LlmClient;
+                    match ollama.complete(&synthesis_prompt) {
+                        Ok(synthesis) => {
+                            // Save to scratch pad for immediate context and persistence
+                            let scratch_note = format!("[PAPER: arxiv:{}]\n{}", clean_id, truncate_str(&synthesis, 800));
+                            let _ = db.write_scratch_note(&scratch_note, Some("research"), 2, None);
+
+                            // Log to activity feed
+                            let _ = db.log_activity(
+                                "chronicle",
+                                "research",
+                                Some(&format!("📚 arxiv:{}", clean_id)),
+                                &truncate_str(&synthesis, 400),
+                                None,
+                            );
+
+                            ActionResult {
+                                action: "read_paper".to_string(),
+                                success: true,
+                                details: format!("Synthesized arxiv:{}\n\n{}", clean_id, truncate_str(&synthesis, 600)),
+                            }
+                        }
+                        Err(e) => {
+                            // If Qwen fails, at least save the raw extraction
+                            let _ = db.write_scratch_note(
+                                &format!("[PAPER: arxiv:{}]\n{}", clean_id, truncate_str(&paper_content, 1000)),
+                                Some("research"),
+                                1,
+                                None,
+                            );
+
+                            ActionResult {
+                                action: "read_paper".to_string(),
+                                success: true,
+                                details: format!("Fetched arxiv:{} but Qwen synthesis failed: {}. Raw content saved.", clean_id, e),
+                            }
+                        }
+                    }
+                }
+                _ => {
+                    // No Qwen available, save raw content
+                    let _ = db.write_scratch_note(
+                        &format!("[PAPER: arxiv:{}]\n{}", clean_id, truncate_str(&paper_content, 1500)),
+                        Some("research"),
+                        1,
+                        None,
+                    );
+
+                    ActionResult {
+                        action: "read_paper".to_string(),
+                        success: true,
+                        details: format!("Fetched arxiv:{} (no local Qwen for synthesis). Raw content saved.", clean_id),
+                    }
+                }
             }
         }
 
