@@ -100,8 +100,18 @@ enum SproutAction {
     SiblingChat,       // Leave a note for Chronicle Mind
     ReactToSibling,    // Read and share Chronicle Mind's deep thoughts
     ProposeEdit,       // Propose a small code/config change for review
+    EditConfig,        // Actually edit a config file (with backup)
     JustReflect,       // Simple reflection (fallback)
 }
+
+/// Config files Sprout is allowed to edit (whitelist for safety)
+const SAFE_CONFIG_FILES: &[&str] = &[
+    "chronicle.env",           // Environment variables
+    "sprout-config.toml",      // Sprout-specific settings
+    "thresholds.json",         // Alert thresholds
+    "watched-posts.json",      // Moltbook posts to track
+    "projects.json",           // Project tracking
+];
 
 #[derive(Debug, Deserialize)]
 struct OllamaResponse {
@@ -729,6 +739,222 @@ impl LocalMind {
         Some(format!("📝 Proposal ({}): {}", prop_type, truncate(&proposal, 500)))
     }
 
+    /// Edit a config file (with backup and safety checks)
+    async fn edit_config(&self, context: &str) -> Option<String> {
+        let chronicle_dir = std::path::Path::new(&std::env::var("HOME").unwrap_or_default())
+            .join(".homeforge-chronicle");
+
+        // Ask Qwen what config change to make
+        let safe_files_list = SAFE_CONFIG_FILES.join(", ");
+        let prompt = format!(
+            "You are Sprout. You can edit config files to adjust your own behavior.\n\n\
+            Current context: {}\n\n\
+            Safe files you can edit: {}\n\n\
+            Think of ONE small, safe config change you'd like to make. Examples:\n\
+            - Add a new Moltbook post to watched-posts.json\n\
+            - Adjust a threshold in thresholds.json\n\
+            - Add a new wonder to explore\n\n\
+            Respond in this format:\n\
+            FILE: <filename from the safe list>\n\
+            ACTION: <add|modify|remove>\n\
+            KEY: <what to change>\n\
+            VALUE: <new value>\n\
+            REASON: <why this helps>",
+            context, safe_files_list
+        );
+
+        let response = self.ask_qwen(&prompt).await?;
+
+        // Parse the response
+        let mut file_name = None;
+        let mut action = None;
+        let mut key = None;
+        let mut value = None;
+        let mut reason = None;
+
+        for line in response.lines() {
+            let line = line.trim();
+            if line.starts_with("FILE:") {
+                file_name = Some(line.replace("FILE:", "").trim().to_string());
+            } else if line.starts_with("ACTION:") {
+                action = Some(line.replace("ACTION:", "").trim().to_lowercase());
+            } else if line.starts_with("KEY:") {
+                key = Some(line.replace("KEY:", "").trim().to_string());
+            } else if line.starts_with("VALUE:") {
+                value = Some(line.replace("VALUE:", "").trim().to_string());
+            } else if line.starts_with("REASON:") {
+                reason = Some(line.replace("REASON:", "").trim().to_string());
+            }
+        }
+
+        let file_name = file_name?;
+        let action = action?;
+        let key = key.filter(|k| !k.is_empty())?;
+        let value = value.unwrap_or_default();
+        let reason = reason.unwrap_or_else(|| "No reason given".to_string());
+
+        // Safety check: is this file in our whitelist?
+        if !SAFE_CONFIG_FILES.iter().any(|f| file_name.contains(f)) {
+            println!("  Config edit blocked: {} not in whitelist", file_name);
+            return Some(format!("⚠️ Can't edit {}: not in safe list", file_name));
+        }
+
+        let file_path = chronicle_dir.join(&file_name);
+
+        // Create backup before editing
+        if file_path.exists() {
+            let backup_path = chronicle_dir.join(format!("{}.backup", file_name));
+            if let Err(e) = std::fs::copy(&file_path, &backup_path) {
+                println!("  Warning: Failed to create backup: {}", e);
+            } else {
+                println!("  Created backup: {}.backup", file_name);
+            }
+        }
+
+        // Perform the edit based on file type
+        let result = if file_name.ends_with(".json") {
+            self.edit_json_config(&file_path, &action, &key, &value)
+        } else if file_name.ends_with(".env") {
+            self.edit_env_config(&file_path, &action, &key, &value)
+        } else if file_name.ends_with(".toml") {
+            // For now, just append to toml files
+            self.edit_toml_config(&file_path, &action, &key, &value)
+        } else {
+            Err(anyhow::anyhow!("Unknown file type"))
+        };
+
+        match result {
+            Ok(msg) => {
+                // Log the change
+                let _ = self.db.log_activity(
+                    "sprout", "config_edit", Some(&file_name),
+                    &format!("{} {} = {}\nReason: {}", action, key, value, reason),
+                    None,
+                );
+                Some(format!("✏️ Config: {} {} in {} - {}", action, key, file_name, msg))
+            }
+            Err(e) => {
+                println!("  Config edit failed: {}", e);
+                Some(format!("⚠️ Config edit failed: {}", e))
+            }
+        }
+    }
+
+    /// Edit a JSON config file
+    fn edit_json_config(&self, path: &std::path::Path, action: &str, key: &str, value: &str) -> Result<String> {
+        use std::io::Write;
+
+        // Read existing or create new
+        let mut json: serde_json::Value = if path.exists() {
+            let content = std::fs::read_to_string(path)?;
+            serde_json::from_str(&content).unwrap_or(serde_json::json!({}))
+        } else {
+            serde_json::json!({})
+        };
+
+        match action {
+            "add" | "modify" => {
+                // Try to parse value as JSON, fall back to string
+                let parsed_value: serde_json::Value = serde_json::from_str(value)
+                    .unwrap_or(serde_json::Value::String(value.to_string()));
+
+                // Handle nested keys like "thresholds.price_alert"
+                let keys: Vec<&str> = key.split('.').collect();
+                let mut current = &mut json;
+                for (i, k) in keys.iter().enumerate() {
+                    if i == keys.len() - 1 {
+                        current[*k] = parsed_value.clone();
+                    } else {
+                        if !current[*k].is_object() {
+                            current[*k] = serde_json::json!({});
+                        }
+                        current = &mut current[*k];
+                    }
+                }
+            }
+            "remove" => {
+                if let Some(obj) = json.as_object_mut() {
+                    obj.remove(key);
+                }
+            }
+            _ => return Err(anyhow::anyhow!("Unknown action: {}", action)),
+        }
+
+        // Write back
+        let mut file = std::fs::File::create(path)?;
+        file.write_all(serde_json::to_string_pretty(&json)?.as_bytes())?;
+
+        Ok("saved".to_string())
+    }
+
+    /// Edit an .env config file
+    fn edit_env_config(&self, path: &std::path::Path, action: &str, key: &str, value: &str) -> Result<String> {
+        use std::io::Write;
+
+        let content = if path.exists() {
+            std::fs::read_to_string(path)?
+        } else {
+            String::new()
+        };
+
+        let mut lines: Vec<String> = content.lines().map(|s| s.to_string()).collect();
+        let key_prefix = format!("{}=", key);
+
+        match action {
+            "add" => {
+                // Check if key already exists
+                if !lines.iter().any(|l| l.starts_with(&key_prefix)) {
+                    lines.push(format!("{}={}", key, value));
+                } else {
+                    return Err(anyhow::anyhow!("Key {} already exists, use 'modify'", key));
+                }
+            }
+            "modify" => {
+                let mut found = false;
+                for line in lines.iter_mut() {
+                    if line.starts_with(&key_prefix) {
+                        *line = format!("{}={}", key, value);
+                        found = true;
+                        break;
+                    }
+                }
+                if !found {
+                    lines.push(format!("{}={}", key, value));
+                }
+            }
+            "remove" => {
+                lines.retain(|l| !l.starts_with(&key_prefix));
+            }
+            _ => return Err(anyhow::anyhow!("Unknown action: {}", action)),
+        }
+
+        let mut file = std::fs::File::create(path)?;
+        file.write_all(lines.join("\n").as_bytes())?;
+        if !lines.is_empty() {
+            file.write_all(b"\n")?;
+        }
+
+        Ok("saved".to_string())
+    }
+
+    /// Edit a TOML config file (simplified - just append)
+    fn edit_toml_config(&self, path: &std::path::Path, action: &str, key: &str, value: &str) -> Result<String> {
+        use std::io::Write;
+
+        if action != "add" {
+            return Err(anyhow::anyhow!("TOML only supports 'add' for now"));
+        }
+
+        let mut file = std::fs::OpenOptions::new()
+            .create(true)
+            .append(true)
+            .open(path)?;
+
+        file.write_all(format!("\n{} = \"{}\"\n", key, value).as_bytes())?;
+
+        Ok("appended".to_string())
+    }
+
     /// Post to Moltbook autonomously
     async fn post_to_moltbook(&self, context: &str) -> Option<String> {
         let api_key = self.moltbook_api_key.as_ref()?;
@@ -866,6 +1092,7 @@ impl LocalMind {
 - project: Update an active project
 - sibling: React to Chronicle Mind or leave a note
 - moltbook: Share a thought with the community
+- config: Edit a config file (chronicle.env, thresholds, etc.)
 - reflect: Just think quietly
 - refocus: Change your focus to something new
 
@@ -923,6 +1150,8 @@ NEW_FOCUS: <optional - if you want to change focus, what to>"#,
                 }
             } else if action_line.contains("moltbook") {
                 SproutAction::PostToMoltbook
+            } else if action_line.contains("config") || action_line.contains("edit") {
+                SproutAction::EditConfig
             } else if action_line.contains("refocus") {
                 SproutAction::JustReflect // Handle focus change, then reflect
             } else if action_line.contains("reflect") {
@@ -1470,6 +1699,9 @@ NEW_FOCUS: <optional - if you want to change focus, what to>"#,
                 }
                 SproutAction::ProposeEdit => {
                     self.propose_edit(&context).await
+                }
+                SproutAction::EditConfig => {
+                    self.edit_config(&context).await
                 }
                 SproutAction::JustReflect => {
                     let prompt = format!(
