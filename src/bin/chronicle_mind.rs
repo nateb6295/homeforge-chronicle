@@ -1091,7 +1091,7 @@ async fn send_notification(title: &str, message: &str, priority: Option<&str>, t
     }
 }
 
-/// Send a notification via Discord webhook as plain text
+/// Send a notification via Discord bot API as plain text
 /// Simple format: emoji + name: content
 async fn send_discord_notification(
     source: &str,
@@ -1099,10 +1099,10 @@ async fn send_discord_notification(
     content: &str,
     _activity_type: Option<&str>,
 ) {
-    let webhook_url = match std::env::var("CHRONICLE_DISCORD_WEBHOOK") {
-        Ok(url) => url,
-        Err(_) => {
-            eprintln!("  Discord webhook not configured (set CHRONICLE_DISCORD_WEBHOOK)");
+    let (token, channel_id) = match (std::env::var("DISCORD_TOKEN"), std::env::var("DISCORD_CHANNEL_ID")) {
+        (Ok(t), Ok(c)) => (t, c),
+        _ => {
+            eprintln!("  Discord bot not configured (set DISCORD_TOKEN and DISCORD_CHANNEL_ID)");
             return;
         }
     };
@@ -1128,13 +1128,15 @@ async fn send_discord_notification(
     // Plain text format
     let message = format!("{} {}: {}", emoji, name, truncated_content);
 
+    let url = format!("https://discord.com/api/v10/channels/{}/messages", channel_id);
     let payload = serde_json::json!({
         "content": message
     });
 
     let client = reqwest::Client::new();
     match client
-        .post(&webhook_url)
+        .post(&url)
+        .header("Authorization", format!("Bot {}", token))
         .json(&payload)
         .timeout(Duration::from_secs(10))
         .send()
@@ -1144,10 +1146,10 @@ async fn send_discord_notification(
             eprintln!("  Discord notification sent: [{}]", source);
         }
         Ok(resp) => {
-            eprintln!("  Discord webhook error: {}", resp.status());
+            eprintln!("  Discord bot error: {}", resp.status());
         }
         Err(e) => {
-            eprintln!("  Discord webhook failed: {}", e);
+            eprintln!("  Discord bot failed: {}", e);
         }
     }
 }
