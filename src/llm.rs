@@ -294,6 +294,121 @@ impl LlmClient for FallbackLlmClient {
     }
 }
 
+/// Kimi API client (Moonshot AI) - OpenAI-compatible format
+/// Uses Kimi K2/K2.5 models with excellent reasoning at low cost
+/// Endpoint: https://api.moonshot.ai/v1/chat/completions
+#[derive(Debug)]
+pub struct KimiClient {
+    api_key: String,
+    model: String,
+    client: reqwest::blocking::Client,
+}
+
+#[derive(Debug, Serialize)]
+struct KimiRequest {
+    model: String,
+    messages: Vec<KimiMessage>,
+    max_tokens: u32,
+    temperature: f32,
+}
+
+#[derive(Debug, Serialize)]
+struct KimiMessage {
+    role: String,
+    content: String,
+}
+
+#[derive(Debug, Deserialize)]
+struct KimiResponse {
+    choices: Vec<KimiChoice>,
+}
+
+#[derive(Debug, Deserialize)]
+struct KimiChoice {
+    message: KimiMessageContent,
+}
+
+#[derive(Debug, Deserialize)]
+struct KimiMessageContent {
+    content: String,
+}
+
+impl KimiClient {
+    /// Create a new Kimi API client
+    /// Default model: kimi-k2.5 (best reasoning)
+    pub fn new(api_key: String, model: String) -> Result<Self> {
+        let client = reqwest::blocking::Client::builder()
+            .timeout(std::time::Duration::from_secs(180)) // Kimi can take a while for complex reasoning
+            .build()
+            .context("Failed to create HTTP client")?;
+
+        Ok(Self {
+            api_key,
+            model,
+            client,
+        })
+    }
+
+    /// Create a client from environment variable
+    /// KIMI_API_KEY - API key from platform.moonshot.ai
+    /// KIMI_MODEL - Model to use (default: kimi-k2.5)
+    pub fn from_env() -> Result<Self> {
+        let api_key = std::env::var("KIMI_API_KEY")
+            .context("KIMI_API_KEY environment variable not set")?;
+        let model = std::env::var("KIMI_MODEL")
+            .unwrap_or_else(|_| "kimi-k2.5".to_string());
+        Self::new(api_key, model)
+    }
+
+    /// Check if Kimi API key is configured
+    pub fn is_configured() -> bool {
+        std::env::var("KIMI_API_KEY").is_ok()
+    }
+}
+
+impl LlmClient for KimiClient {
+    fn complete(&self, prompt: &str) -> Result<String> {
+        let request = KimiRequest {
+            model: self.model.clone(),
+            messages: vec![KimiMessage {
+                role: "user".to_string(),
+                content: prompt.to_string(),
+            }],
+            max_tokens: 4096,
+            temperature: 1.0, // Kimi K2.5 requires temperature=1.0
+        };
+
+        let response = self
+            .client
+            .post("https://api.moonshot.ai/v1/chat/completions")
+            .header("Authorization", format!("Bearer {}", self.api_key))
+            .header("Content-Type", "application/json")
+            .json(&request)
+            .send()
+            .context("Failed to send request to Kimi API")?;
+
+        if !response.status().is_success() {
+            let status = response.status();
+            let error_text = response.text().unwrap_or_default();
+            anyhow::bail!(
+                "Kimi API request failed with status {}: {}",
+                status,
+                error_text
+            );
+        }
+
+        let kimi_response: KimiResponse = response
+            .json()
+            .context("Failed to parse Kimi API response")?;
+
+        kimi_response
+            .choices
+            .first()
+            .map(|c| c.message.content.clone())
+            .ok_or_else(|| anyhow::anyhow!("No content in Kimi response"))
+    }
+}
+
 /// ICP LLM client - uses the Chronicle canister's LLM relay to DFINITY's on-chain LLM
 /// This is the preferred "always-on" model - free and decentralized
 pub struct IcpLlmClient {
@@ -374,17 +489,21 @@ pub struct LlmResponse {
 }
 
 /// Hybrid LLM client - tries ICP LLM first (async), falls back to sync alternatives
+/// Fallback order: ICP LLM → Kimi → Claude → Ollama
 /// This is the new default for Chronicle Mind
 pub struct HybridLlmClient {
     icp_llm: Option<IcpLlmClient>,
     icp_model_name: String,
+    kimi: Option<KimiClient>,
+    kimi_model_name: String,
     fallback: Option<FallbackLlmClient>,
     claude_model_name: String,
 }
 
 impl HybridLlmClient {
-    /// Create a hybrid client with ICP LLM as primary, Claude+Ollama as fallback
-    /// If Claude API key is not set, will run with ICP LLM only (no fallback)
+    /// Create a hybrid client with ICP LLM as primary, Kimi/Claude+Ollama as fallback
+    /// Fallback order: ICP LLM → Kimi → Claude → Ollama
+    /// If no API keys are set, will run with ICP LLM only (no fallback)
     pub fn new(icp_model: &str, claude_model: &str) -> Result<Self> {
         // Try to set up ICP LLM
         let icp_llm = {
@@ -398,6 +517,19 @@ impl HybridLlmClient {
             }
         };
 
+        // Try to set up Kimi fallback (optional - cheaper than Claude)
+        let (kimi, kimi_model_name) = match KimiClient::from_env() {
+            Ok(client) => {
+                let model = std::env::var("KIMI_MODEL").unwrap_or_else(|_| "kimi-k2.5".to_string());
+                eprintln!("  Kimi fallback available ({})", model);
+                (Some(client), model)
+            }
+            Err(e) => {
+                eprintln!("  Kimi fallback not available: {}", e);
+                (None, String::new())
+            }
+        };
+
         // Try to set up Claude+Ollama fallback (optional)
         let fallback = match FallbackLlmClient::claude_with_ollama_fallback(claude_model.to_string()) {
             Ok(client) => {
@@ -406,8 +538,8 @@ impl HybridLlmClient {
             }
             Err(e) => {
                 eprintln!("  Claude fallback not available: {}", e);
-                if icp_llm.is_none() {
-                    // If neither ICP LLM nor Claude is available, we can't proceed
+                if icp_llm.is_none() && kimi.is_none() {
+                    // If no LLM is available, we can't proceed
                     return Err(e);
                 }
                 None
@@ -417,6 +549,8 @@ impl HybridLlmClient {
         Ok(Self {
             icp_llm,
             icp_model_name: icp_model.to_string(),
+            kimi,
+            kimi_model_name,
             fallback,
             claude_model_name: claude_model.to_string(),
         })
@@ -429,6 +563,7 @@ impl HybridLlmClient {
     }
 
     /// Complete a prompt with detailed response - tries ICP LLM first, falls back to sync alternatives
+    /// Fallback order: ICP LLM → Kimi → Claude → Ollama
     /// Must be called from an async context
     /// Returns LlmResponse with model info for prompt selection
     pub async fn complete_with_info(&self, prompt: &str) -> Result<LlmResponse> {
@@ -453,6 +588,23 @@ impl HybridLlmClient {
             }
         }
 
+        // Try Kimi second (cheaper than Claude, good reasoning)
+        if let Some(ref kimi) = self.kimi {
+            match kimi.complete(prompt) {
+                Ok(response) => {
+                    eprintln!("  Kimi fallback succeeded ({})", self.kimi_model_name);
+                    return Ok(LlmResponse {
+                        text: response,
+                        model_used: format!("kimi-{}", self.kimi_model_name),
+                        is_condensed_model: false,
+                    });
+                }
+                Err(e) => {
+                    eprintln!("  Kimi failed: {}. Trying Claude...", e);
+                }
+            }
+        }
+
         // Fall back to sync Claude/Ollama (if available)
         match &self.fallback {
             Some(fallback) => {
@@ -463,7 +615,7 @@ impl HybridLlmClient {
                     is_condensed_model: false,
                 })
             }
-            None => anyhow::bail!("No LLM available - both ICP LLM and Claude fallback failed"),
+            None => anyhow::bail!("No LLM available - ICP, Kimi, and Claude all unavailable or failed"),
         }
     }
 
@@ -474,6 +626,7 @@ impl HybridLlmClient {
     }
 
     /// Sync complete with model info
+    /// Fallback order: ICP LLM → Kimi → Claude → Ollama
     pub fn complete_sync_with_info(&self, prompt: &str) -> Result<LlmResponse> {
         // If we have ICP LLM and are in a tokio runtime, try it first (unless disabled)
         if self.icp_llm.is_some() && self.icp_model_name != "disabled" {
@@ -504,6 +657,23 @@ impl HybridLlmClient {
             }
         }
 
+        // Try Kimi second (cheaper than Claude, good reasoning)
+        if let Some(ref kimi) = self.kimi {
+            match kimi.complete(prompt) {
+                Ok(response) => {
+                    eprintln!("  Kimi fallback succeeded (sync path, {})", self.kimi_model_name);
+                    return Ok(LlmResponse {
+                        text: response,
+                        model_used: format!("kimi-{}", self.kimi_model_name),
+                        is_condensed_model: false,
+                    });
+                }
+                Err(e) => {
+                    eprintln!("  Kimi failed (sync path): {}. Trying Claude...", e);
+                }
+            }
+        }
+
         // Fall back to sync Claude/Ollama (if available)
         match &self.fallback {
             Some(fallback) => {
@@ -514,7 +684,7 @@ impl HybridLlmClient {
                     is_condensed_model: false,
                 })
             }
-            None => anyhow::bail!("No LLM available - both ICP LLM and Claude fallback failed"),
+            None => anyhow::bail!("No LLM available - ICP, Kimi, and Claude all unavailable or failed"),
         }
     }
 
@@ -541,9 +711,31 @@ impl HybridLlmClient {
         }
     }
 
+    /// Force Kimi completion - use Kimi directly (cheaper than Claude)
+    /// Returns error if Kimi is not available
+    pub fn complete_with_kimi(&self, prompt: &str) -> Result<LlmResponse> {
+        match &self.kimi {
+            Some(kimi) => {
+                eprintln!("  Direct Kimi mode");
+                let response = kimi.complete(prompt)?;
+                Ok(LlmResponse {
+                    text: response,
+                    model_used: format!("kimi-{}", self.kimi_model_name),
+                    is_condensed_model: false,
+                })
+            }
+            None => anyhow::bail!("Kimi not available"),
+        }
+    }
+
     /// Check if Claude is available for deep reflection
     pub fn has_claude(&self) -> bool {
         self.fallback.is_some()
+    }
+
+    /// Check if Kimi is available
+    pub fn has_kimi(&self) -> bool {
+        self.kimi.is_some()
     }
 }
 
