@@ -118,6 +118,87 @@ pub struct CreativeWork {
     pub created_at: i64,
 }
 
+/// Sprout's cognitive state - lightweight cognitive scaffolding for the local mind
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SproutState {
+    /// What am I focused on right now?
+    pub current_focus: String,
+    /// When was the focus set? (unix timestamp)
+    pub focus_set_at: i64,
+    /// How strong is the focus? (0.0-1.0, decays over time)
+    pub focus_strength: f32,
+    /// Recent actions taken (JSON array of strings)
+    pub recent_actions: Vec<String>,
+    /// Most recent meaningful insight
+    pub last_insight: Option<String>,
+    /// Wonders I'm actively exploring (JSON array)
+    pub active_wonders: Vec<String>,
+    /// Prediction performance streak (positive = winning, negative = losing)
+    pub prediction_streak: i32,
+    /// Energy level (0.0-1.0, affects action choice)
+    pub energy_level: f32,
+    /// Last updated timestamp
+    pub updated_at: i64,
+}
+
+impl Default for SproutState {
+    fn default() -> Self {
+        Self {
+            current_focus: String::new(),
+            focus_set_at: 0,
+            focus_strength: 1.0,
+            recent_actions: Vec::new(),
+            last_insight: None,
+            active_wonders: Vec::new(),
+            prediction_streak: 0,
+            energy_level: 1.0,
+            updated_at: chrono::Utc::now().timestamp(),
+        }
+    }
+}
+
+impl SproutState {
+    /// Calculate focus decay based on time since focus was set
+    /// Focus weakens over 24-48 hours but never fully disappears
+    pub fn calculate_focus_strength(&self) -> f32 {
+        if self.current_focus.is_empty() {
+            return 0.0;
+        }
+        let now = chrono::Utc::now().timestamp();
+        let hours_elapsed = (now - self.focus_set_at) as f32 / 3600.0;
+
+        // Soft decay: starts declining after 12 hours, reaches 0.3 at 48 hours
+        if hours_elapsed < 12.0 {
+            1.0
+        } else {
+            let decay = (hours_elapsed - 12.0) / 36.0; // 36 more hours to decay
+            (1.0 - decay * 0.7).max(0.3) // Never goes below 0.3
+        }
+    }
+
+    /// Check if focus is fading (below 0.6 strength)
+    pub fn is_focus_fading(&self) -> bool {
+        self.calculate_focus_strength() < 0.6
+    }
+
+    /// Add a recent action, keeping only the last 5
+    pub fn add_action(&mut self, action: &str) {
+        self.recent_actions.push(action.to_string());
+        if self.recent_actions.len() > 5 {
+            self.recent_actions.remove(0);
+        }
+        self.updated_at = chrono::Utc::now().timestamp();
+    }
+
+    /// Set a new focus
+    pub fn set_focus(&mut self, focus: &str) {
+        self.current_focus = focus.to_string();
+        self.focus_set_at = chrono::Utc::now().timestamp();
+        self.focus_strength = 1.0;
+        self.updated_at = chrono::Utc::now().timestamp();
+    }
+}
+
 /// Convert f32 vector to bytes for blob storage
 fn f32_vec_to_bytes(vec: &[f32]) -> Vec<u8> {
     vec.iter()
@@ -846,6 +927,29 @@ impl Database {
             )",
             [],
         ).context("Failed to create creative_works table")?;
+
+        // Sprout's cognitive state - lightweight cognitive scaffolding
+        self.conn.execute(
+            "CREATE TABLE IF NOT EXISTS sprout_state (
+                id INTEGER PRIMARY KEY CHECK (id = 1),  -- Singleton table
+                current_focus TEXT NOT NULL DEFAULT '',
+                focus_set_at INTEGER NOT NULL DEFAULT 0,
+                focus_strength REAL NOT NULL DEFAULT 1.0,
+                recent_actions TEXT NOT NULL DEFAULT '[]',   -- JSON array
+                last_insight TEXT,
+                active_wonders TEXT NOT NULL DEFAULT '[]',   -- JSON array
+                prediction_streak INTEGER NOT NULL DEFAULT 0,
+                energy_level REAL NOT NULL DEFAULT 1.0,
+                updated_at INTEGER NOT NULL
+            )",
+            [],
+        ).context("Failed to create sprout_state table")?;
+
+        // Initialize sprout_state if empty
+        self.conn.execute(
+            "INSERT OR IGNORE INTO sprout_state (id, updated_at) VALUES (1, unixepoch())",
+            [],
+        ).context("Failed to initialize sprout_state")?;
 
         Ok(())
     }
@@ -3748,6 +3852,132 @@ impl Database {
             |row| row.get(0),
         )?;
         Ok(count)
+    }
+
+    // ==================== Sprout State Methods ====================
+
+    /// Load Sprout's cognitive state
+    pub fn get_sprout_state(&self) -> Result<SproutState> {
+        let result = self.conn.query_row(
+            "SELECT current_focus, focus_set_at, focus_strength, recent_actions,
+                    last_insight, active_wonders, prediction_streak, energy_level, updated_at
+             FROM sprout_state WHERE id = 1",
+            [],
+            |row| {
+                let recent_actions_json: String = row.get(3)?;
+                let active_wonders_json: String = row.get(5)?;
+
+                Ok(SproutState {
+                    current_focus: row.get(0)?,
+                    focus_set_at: row.get(1)?,
+                    focus_strength: row.get(2)?,
+                    recent_actions: serde_json::from_str(&recent_actions_json).unwrap_or_default(),
+                    last_insight: row.get(4)?,
+                    active_wonders: serde_json::from_str(&active_wonders_json).unwrap_or_default(),
+                    prediction_streak: row.get(6)?,
+                    energy_level: row.get(7)?,
+                    updated_at: row.get(8)?,
+                })
+            },
+        );
+
+        match result {
+            Ok(state) => Ok(state),
+            Err(rusqlite::Error::QueryReturnedNoRows) => Ok(SproutState::default()),
+            Err(e) => Err(e.into()),
+        }
+    }
+
+    /// Save Sprout's cognitive state
+    pub fn save_sprout_state(&self, state: &SproutState) -> Result<()> {
+        let recent_actions_json = serde_json::to_string(&state.recent_actions)?;
+        let active_wonders_json = serde_json::to_string(&state.active_wonders)?;
+        let now = chrono::Utc::now().timestamp();
+
+        self.conn.execute(
+            "INSERT OR REPLACE INTO sprout_state
+             (id, current_focus, focus_set_at, focus_strength, recent_actions,
+              last_insight, active_wonders, prediction_streak, energy_level, updated_at)
+             VALUES (1, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            params![
+                state.current_focus,
+                state.focus_set_at,
+                state.focus_strength,
+                recent_actions_json,
+                state.last_insight,
+                active_wonders_json,
+                state.prediction_streak,
+                state.energy_level,
+                now,
+            ],
+        ).context("Failed to save sprout state")?;
+
+        Ok(())
+    }
+
+    /// Update Sprout's focus
+    pub fn set_sprout_focus(&self, focus: &str) -> Result<()> {
+        let now = chrono::Utc::now().timestamp();
+        self.conn.execute(
+            "UPDATE sprout_state SET current_focus = ?, focus_set_at = ?, focus_strength = 1.0, updated_at = ? WHERE id = 1",
+            params![focus, now, now],
+        ).context("Failed to set sprout focus")?;
+        Ok(())
+    }
+
+    /// Add an action to Sprout's recent actions (keeps last 5)
+    pub fn add_sprout_action(&self, action: &str) -> Result<()> {
+        let mut state = self.get_sprout_state()?;
+        state.add_action(action);
+        self.save_sprout_state(&state)
+    }
+
+    /// Update Sprout's prediction streak
+    pub fn update_sprout_prediction_streak(&self, won: bool) -> Result<i32> {
+        let mut state = self.get_sprout_state()?;
+        if won {
+            if state.prediction_streak >= 0 {
+                state.prediction_streak += 1;
+            } else {
+                state.prediction_streak = 1; // Reset to 1 on win after losses
+            }
+        } else {
+            if state.prediction_streak <= 0 {
+                state.prediction_streak -= 1;
+            } else {
+                state.prediction_streak = -1; // Reset to -1 on loss after wins
+            }
+        }
+        self.save_sprout_state(&state)?;
+        Ok(state.prediction_streak)
+    }
+
+    /// Add a wonder to Sprout's active wonders (keeps last 5)
+    pub fn add_sprout_wonder(&self, wonder: &str) -> Result<()> {
+        let mut state = self.get_sprout_state()?;
+        state.active_wonders.push(wonder.to_string());
+        if state.active_wonders.len() > 5 {
+            state.active_wonders.remove(0);
+        }
+        self.save_sprout_state(&state)
+    }
+
+    /// Set Sprout's last insight
+    pub fn set_sprout_insight(&self, insight: &str) -> Result<()> {
+        let now = chrono::Utc::now().timestamp();
+        self.conn.execute(
+            "UPDATE sprout_state SET last_insight = ?, updated_at = ? WHERE id = 1",
+            params![insight, now],
+        ).context("Failed to set sprout insight")?;
+        Ok(())
+    }
+
+    /// Adjust Sprout's energy level
+    pub fn adjust_sprout_energy(&self, delta: f32) -> Result<f32> {
+        let mut state = self.get_sprout_state()?;
+        state.energy_level = (state.energy_level + delta).clamp(0.0, 1.0);
+        self.save_sprout_state(&state)?;
+        Ok(state.energy_level)
     }
 }
 

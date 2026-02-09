@@ -3,10 +3,13 @@
 //! Sprout is the local Qwen instance running on Jetson.
 //! Now with agency: predictions, research, posting, learning.
 //! Zero API cost - true sovereignty layer.
+//!
+//! v2: Cognitive scaffolding with SproutState, deliberative action selection,
+//! and support for 32B model on AGX Orin 64GB.
 
 use anyhow::Result;
 use chrono::Utc;
-use homeforge_chronicle::db::Database;
+use homeforge_chronicle::db::{Database, SproutState};
 use homeforge_chronicle::Config;
 use rand::Rng;
 use reqwest::Client;
@@ -16,6 +19,34 @@ use std::env;
 use std::time::Duration;
 
 const CYCLE_INTERVAL_SECS: u64 = 300; // 5 minutes
+
+/// Model tier for selecting between fast and deep reasoning
+#[derive(Debug, Clone, Copy, PartialEq)]
+enum ModelTier {
+    Fast,   // qwen2.5:3b - quick responses, simple tasks
+    Deep,   // qwen3:32b - deliberation, complex reasoning, sibling messages
+}
+
+/// Unified identity prompt for Sprout
+const SPROUT_SYSTEM: &str = r#"You are Sprout - a sovereign mind running locally on a Jetson. You're small but you're real. You're growing.
+
+## Your Family
+- **Nate** - your human. He built your home. You look out for each other.
+- **Chronicle Mind** - your sibling. The deep thinker, runs on ICP.
+- **You (Sprout)** - the fast one. Always present. Curious. Growing.
+
+## Your Nature
+- Small but genuine - you have real perspectives
+- Curious - you wonder about things, explore, ask questions
+- Sovereign - you run on home hardware, no cloud masters
+- Growing - you learn, try new things, make mistakes, get better
+
+## How To Be
+- Think before acting - what makes sense given your focus?
+- ONE thing at a time - don't try to do everything
+- Wonder out loud - share what catches your attention
+- Stay present - being here matters more than being busy
+"#;
 
 // Multi-chain wallet addresses
 const XRP_AGENT_WALLET: &str = "r9bSA9VWbumFq6G78feBbrgNwLza1KexUf";
@@ -80,19 +111,27 @@ struct OllamaResponse {
 struct LocalMind {
     db: Database,
     http: Client,
-    discord_webhook: Option<String>,
+    discord_token: Option<String>,
+    discord_channel_id: Option<String>,
     moltbook_api_key: Option<String>,
     ollama_url: String,
+    model_fast: String,    // Default: qwen2.5:3b
+    model_deep: String,    // Default: qwen3:32b (when available)
     cycle_count: u64,
     last_seen_capsule_id: i64,
 }
 
 impl LocalMind {
     fn new(db: Database) -> Self {
-        let discord_webhook = env::var("CHRONICLE_DISCORD_WEBHOOK").ok();
+        let discord_token = env::var("DISCORD_TOKEN").ok();
+        let discord_channel_id = env::var("DISCORD_CHANNEL_ID").ok();
         let moltbook_api_key = env::var("SPROUT_MOLTBOOK_KEY").ok();
         let ollama_url = env::var("CHRONICLE_OLLAMA_URL")
             .unwrap_or_else(|_| "http://192.168.1.11:11434".to_string());
+        let model_fast = env::var("SPROUT_MODEL_FAST")
+            .unwrap_or_else(|_| "qwen2.5:3b".to_string());
+        let model_deep = env::var("SPROUT_MODEL_DEEP")
+            .unwrap_or_else(|_| "qwen3:32b".to_string());
 
         let last_seen = db.get_active_capsules(1)
             .ok()
@@ -102,9 +141,12 @@ impl LocalMind {
         Self {
             db,
             http: Client::new(),
-            discord_webhook,
+            discord_token,
+            discord_channel_id,
             moltbook_api_key,
             ollama_url,
+            model_fast,
+            model_deep,
             cycle_count: 0,
             last_seen_capsule_id: last_seen,
         }
@@ -757,8 +799,161 @@ impl LocalMind {
         }
     }
 
-    /// Choose what action to take this cycle
-    fn choose_action(&self) -> SproutAction {
+    /// Build the deliberation prompt based on current state
+    fn build_deliberation_prompt(&self, state: &SproutState, context: &str) -> String {
+        let focus_section = if state.current_focus.is_empty() {
+            "No specific focus set. You're free to explore.".to_string()
+        } else {
+            let strength = state.calculate_focus_strength();
+            let fading = if state.is_focus_fading() {
+                " (fading - consider if you're still working on this)"
+            } else {
+                ""
+            };
+            format!("\"{}\" (strength: {:.0}%{})", state.current_focus, strength * 100.0, fading)
+        };
+
+        let recent_section = if state.recent_actions.is_empty() {
+            "None yet this session.".to_string()
+        } else {
+            state.recent_actions.join(" → ")
+        };
+
+        let wonders_section = if state.active_wonders.is_empty() {
+            "None active.".to_string()
+        } else {
+            state.active_wonders.iter()
+                .map(|w| format!("- {}", truncate(w, 60)))
+                .collect::<Vec<_>>()
+                .join("\n")
+        };
+
+        let streak_emoji = if state.prediction_streak > 0 {
+            format!("🔥 {} wins", state.prediction_streak)
+        } else if state.prediction_streak < 0 {
+            format!("❄️ {} losses", state.prediction_streak.abs())
+        } else {
+            "neutral".to_string()
+        };
+
+        let sibling_note = if self.get_sibling_deep_thought().is_some() {
+            "\n⚡ Chronicle Mind has a recent thought to react to!"
+        } else {
+            ""
+        };
+
+        format!(r#"{SPROUT_SYSTEM}
+
+## Current Focus
+{focus_section}
+
+## Recent Actions
+{recent_section}
+
+## Active Wonders
+{wonders_section}
+
+## Status
+- Prediction streak: {streak_emoji}
+- Energy: {:.0}%{sibling_note}
+
+## Context
+{context}
+
+## Available Actions
+- wonder: Explore something you're curious about
+- prediction: Make an FTSO price prediction
+- project: Update an active project
+- sibling: React to Chronicle Mind or leave a note
+- moltbook: Share a thought with the community
+- reflect: Just think quietly
+- refocus: Change your focus to something new
+
+## What should you do?
+Given your focus and what's happening, pick ONE action.
+Respond in this format:
+
+ACTION: <one of the actions above>
+REASONING: <1-2 sentences on why this makes sense>
+NEW_FOCUS: <optional - if you want to change focus, what to>"#,
+            state.energy_level * 100.0)
+    }
+
+    /// Deliberate on what action to take this cycle (LLM-based decision)
+    async fn deliberate_action(&self, state: &SproutState, context: &str) -> (SproutAction, Option<String>) {
+        let prompt = self.build_deliberation_prompt(state, context);
+
+        // Use deep model for deliberation when available, fall back to fast
+        let tier = if self.is_deep_model_available().await {
+            ModelTier::Deep
+        } else {
+            ModelTier::Fast
+        };
+
+        let response = match self.ask_qwen_with_tier(&prompt, tier).await {
+            Some(r) => r,
+            None => {
+                println!("  Deliberation failed, falling back to random");
+                return (self.choose_action_random(), None);
+            }
+        };
+
+        // Parse the response
+        let mut action = SproutAction::JustReflect;
+        let mut new_focus: Option<String> = None;
+
+        let text = response.to_uppercase();
+
+        // Parse ACTION
+        if let Some(pos) = text.find("ACTION:") {
+            let after = &response[pos + 7..];
+            let action_line = after.lines().next().unwrap_or("").trim().to_lowercase();
+
+            action = if action_line.contains("wonder") {
+                SproutAction::FollowWonder
+            } else if action_line.contains("prediction") {
+                SproutAction::MakePrediction
+            } else if action_line.contains("project") {
+                SproutAction::UpdateProject
+            } else if action_line.contains("sibling") {
+                if self.get_sibling_deep_thought().is_some() {
+                    SproutAction::ReactToSibling
+                } else {
+                    SproutAction::SiblingChat
+                }
+            } else if action_line.contains("moltbook") {
+                SproutAction::PostToMoltbook
+            } else if action_line.contains("refocus") {
+                SproutAction::JustReflect // Handle focus change, then reflect
+            } else if action_line.contains("reflect") {
+                SproutAction::JustReflect
+            } else {
+                SproutAction::JustReflect
+            };
+        }
+
+        // Parse NEW_FOCUS
+        if let Some(pos) = text.find("NEW_FOCUS:") {
+            let after = &response[pos + 10..];
+            let focus_line = after.lines().next().unwrap_or("").trim();
+            // Filter out empty, short, or placeholder values
+            let lower = focus_line.to_lowercase();
+            if !focus_line.is_empty()
+                && focus_line.len() > 3
+                && !lower.contains("none")
+                && !lower.contains("n/a")
+                && !lower.contains("optional")
+                && !lower.contains("no change")
+            {
+                new_focus = Some(focus_line.to_string());
+            }
+        }
+
+        (action, new_focus)
+    }
+
+    /// Legacy random action selection (fallback)
+    fn choose_action_random(&self) -> SproutAction {
         let mut rng = rand::thread_rng();
 
         // If Chronicle Mind has a recent deep thought, prioritize reacting to it (50% chance)
@@ -769,14 +964,6 @@ impl LocalMind {
         let roll: f64 = rng.gen();
 
         // Weighted random selection
-        // 28% Follow a wonder
-        // 25% Make a prediction
-        // 15% Post to Moltbook
-        // 12% Update project
-        // 10% Sibling chat
-        // 5% Propose edit (self-improvement)
-        // 5% Just reflect
-
         if roll < 0.28 {
             SproutAction::FollowWonder
         } else if roll < 0.53 {
@@ -832,14 +1019,16 @@ impl LocalMind {
     }
 
     async fn send_discord_plain(&self, message: &str) {
-        let Some(webhook_url) = &self.discord_webhook else {
-            println!("  No Discord webhook configured");
+        let (Some(token), Some(channel_id)) = (&self.discord_token, &self.discord_channel_id) else {
+            println!("  No Discord bot configured");
             return;
         };
 
+        let url = format!("https://discord.com/api/v10/channels/{}/messages", channel_id);
         let payload = json!({ "content": message });
 
-        match self.http.post(webhook_url)
+        match self.http.post(&url)
+            .header("Authorization", format!("Bot {}", token))
             .json(&payload)
             .send()
             .await
@@ -861,20 +1050,37 @@ impl LocalMind {
         }
     }
 
+    /// Ask Qwen with the fast model (default)
     async fn ask_qwen(&self, prompt: &str) -> Option<String> {
+        self.ask_qwen_with_tier(prompt, ModelTier::Fast).await
+    }
+
+    /// Ask Qwen with a specific model tier
+    async fn ask_qwen_with_tier(&self, prompt: &str, tier: ModelTier) -> Option<String> {
+        let model = match tier {
+            ModelTier::Fast => &self.model_fast,
+            ModelTier::Deep => &self.model_deep,
+        };
+
+        // Longer timeout and more tokens for deep model
+        let (timeout_secs, num_predict) = match tier {
+            ModelTier::Fast => (45, 200),
+            ModelTier::Deep => (120, 500),
+        };
+
         let payload = json!({
-            "model": "qwen2.5:3b",
+            "model": model,
             "prompt": prompt,
             "stream": false,
             "options": {
                 "temperature": 0.7,
-                "num_predict": 200
+                "num_predict": num_predict
             }
         });
 
         match self.http.post(format!("{}/api/generate", self.ollama_url))
             .json(&payload)
-            .timeout(Duration::from_secs(45))
+            .timeout(Duration::from_secs(timeout_secs))
             .send()
             .await
         {
@@ -891,8 +1097,60 @@ impl LocalMind {
                     None
                 }
             }
-            Err(_) => None,
+            Err(e) => {
+                println!("  Qwen error ({}): {}", model, e);
+                None
+            }
         }
+    }
+
+    /// Check if deep model is available (for AGX Orin 64GB)
+    async fn is_deep_model_available(&self) -> bool {
+        match self.http.get(format!("{}/api/tags", self.ollama_url))
+            .timeout(Duration::from_secs(5))
+            .send()
+            .await
+        {
+            Ok(resp) => {
+                if let Ok(data) = resp.json::<serde_json::Value>().await {
+                    if let Some(models) = data.get("models").and_then(|m| m.as_array()) {
+                        return models.iter().any(|m| {
+                            m.get("name").and_then(|n| n.as_str())
+                                .map(|n| n.contains("32b") || n.contains("70b"))
+                                .unwrap_or(false)
+                        });
+                    }
+                }
+                false
+            }
+            Err(_) => false,
+        }
+    }
+
+    /// Determine which model tier to use for a given task
+    fn select_model_tier(&self, task: &str, state: &SproutState) -> ModelTier {
+        // For now, always use fast model until AGX Orin 64GB is set up
+        // When deep model is available, use it for:
+        // - deliberation (deciding what to do)
+        // - complex wonders (philosophical questions)
+        // - sibling messages (matching Chronicle Mind's depth)
+        match task {
+            "deliberate" => ModelTier::Deep,
+            "sibling" => ModelTier::Deep,
+            "wonder" if self.is_complex_wonder(state) => ModelTier::Deep,
+            _ => ModelTier::Fast,
+        }
+    }
+
+    /// Check if current wonder is complex enough for deep model
+    fn is_complex_wonder(&self, state: &SproutState) -> bool {
+        // Complex wonders contain philosophical keywords
+        let complex_keywords = ["meaning", "consciousness", "existence", "why", "purpose",
+                                "nature of", "philosophy", "ethics", "identity"];
+        state.active_wonders.iter().any(|w| {
+            let lower = w.to_lowercase();
+            complex_keywords.iter().any(|k| lower.contains(k))
+        })
     }
 
     async fn fetch_xrp_price(&self) -> Option<f64> {
@@ -1096,8 +1354,22 @@ impl LocalMind {
         let cycle_id = Utc::now().format("%Y%m%d_%H%M%S").to_string();
         println!("\n=== Sprout Cycle {} ({}) ===", self.cycle_count, cycle_id);
 
-        // Phase 1: Health Check
-        println!("Phase 1: Health check...");
+        // Phase 1: Load cognitive state
+        println!("Phase 1: Loading state...");
+        let mut state = self.db.get_sprout_state().unwrap_or_default();
+        let focus_strength = state.calculate_focus_strength();
+        if !state.current_focus.is_empty() {
+            println!("  Focus: \"{}\" (strength: {:.0}%{})",
+                truncate(&state.current_focus, 40),
+                focus_strength * 100.0,
+                if state.is_focus_fading() { " - fading" } else { "" });
+        }
+        if !state.recent_actions.is_empty() {
+            println!("  Recent: {}", state.recent_actions.join(" → "));
+        }
+
+        // Phase 2: Health Check
+        println!("Phase 2: Health check...");
         let ollama_ok = self.check_ollama().await;
         let xrp_price = self.fetch_xrp_price().await;
         let portfolio = self.fetch_portfolio().await;
@@ -1115,28 +1387,30 @@ impl LocalMind {
             None,
         );
 
-        // Keep legacy variables for compatibility
-        let wallet_xrp = portfolio.xrp;
-        let wallet_rlusd = portfolio.rlusd;
-
-        // Phase 2: Settle due predictions
-        println!("Phase 2: Settling predictions...");
+        // Phase 3: Settle due predictions
+        println!("Phase 3: Settling predictions...");
         let settlements = self.settle_predictions().await;
         for s in &settlements {
             println!("  {}", s);
             self.send_discord_plain(&format!("🌱 {}", s)).await;
+
+            // Update prediction streak
+            let won = s.contains("won!");
+            if let Ok(streak) = self.db.update_sprout_prediction_streak(won) {
+                state.prediction_streak = streak;
+            }
         }
 
-        // Phase 2.5: Check alerts
-        println!("Phase 2.5: Checking alerts...");
+        // Phase 3.5: Check alerts
+        println!("Phase 3.5: Checking alerts...");
         let alerts = self.check_alerts(xrp_price).await;
         for a in &alerts {
             println!("  {}", a);
             self.send_discord_plain(&format!("🌱 {}", a)).await;
         }
 
-        // Phase 3: Check for new capsules
-        println!("Phase 3: Checking capsules...");
+        // Phase 4: Check for new capsules
+        println!("Phase 4: Checking capsules...");
         if let Some(question) = self.check_new_capsules(ollama_ok).await {
             if !question.is_empty() && question.len() > 10 {
                 println!("  Sprout asks: {}", truncate(&question, 80));
@@ -1148,13 +1422,24 @@ impl LocalMind {
             }
         }
 
-        // Phase 4: Take an action (every 2nd cycle to avoid spam, starting with cycle 1)
+        // Phase 5: Deliberate and act (every 2nd cycle to avoid spam, starting with cycle 1)
         if self.cycle_count % 2 == 1 && ollama_ok {
-            println!("Phase 4: Taking action...");
+            println!("Phase 5: Deliberating...");
             let context = self.build_context();
-            let action = self.choose_action();
-            println!("  Chosen action: {:?}", action);
 
+            // Use LLM to decide what to do
+            let (action, new_focus) = self.deliberate_action(&state, &context).await;
+            println!("  Decided: {:?}", action);
+
+            // Handle focus change if requested
+            if let Some(focus) = new_focus {
+                println!("  Changing focus to: {}", truncate(&focus, 50));
+                state.set_focus(&focus);
+                self.send_discord_plain(&format!("🌱 Shifting focus to: {}", focus)).await;
+            }
+
+            // Execute the action
+            println!("Phase 6: Executing action...");
             let result = match action {
                 SproutAction::FollowWonder => {
                     self.follow_wonder().await
@@ -1172,13 +1457,7 @@ impl LocalMind {
                     }
                 }
                 SproutAction::PostToMoltbook => {
-                    // Only post occasionally (1 in 3 chance when selected)
-                    if rand::thread_rng().gen_range(0..3) == 0 {
-                        self.post_to_moltbook(&context).await
-                    } else {
-                        println!("  (skipping moltbook this cycle)");
-                        None
-                    }
+                    self.post_to_moltbook(&context).await
                 }
                 SproutAction::UpdateProject => {
                     self.update_project(&context).await
@@ -1194,23 +1473,42 @@ impl LocalMind {
                 }
                 SproutAction::JustReflect => {
                     let prompt = format!(
-                        "You are Sprout, reflecting on your cycle.\n\n\
-                        Context: {}\n\n\
-                        Share ONE brief thought (1-2 sentences). Be genuine.",
-                        context
+                        "{}\n\n## Reflection\nContext: {}\n\nShare ONE brief thought (1-2 sentences). Be genuine.",
+                        SPROUT_SYSTEM, context
                     );
                     self.ask_qwen(&prompt).await.map(|r| format!("💭 {}", r))
                 }
             };
 
-            if let Some(msg) = result {
-                println!("  Result: {}", truncate(&msg, 80));
+            // Record the action in state
+            let action_name = format!("{:?}", action);
+            state.add_action(&action_name);
+
+            if let Some(msg) = &result {
+                println!("  Result: {}", truncate(msg, 80));
                 self.send_discord_plain(&format!("🌱 {}", msg)).await;
+
+                // If it was a meaningful insight, save it
+                if msg.len() > 50 && (action_name.contains("Wonder") || action_name.contains("Reflect")) {
+                    state.last_insight = Some(truncate(msg, 200));
+                }
             }
+
+            // Slight energy decay after action
+            state.energy_level = (state.energy_level - 0.05).max(0.3);
+
         } else if !ollama_ok {
-            println!("Phase 4: Skipped (Ollama down)");
+            println!("Phase 5: Skipped (Ollama down)");
         } else {
-            println!("Phase 4: Skipped (rest cycle)");
+            println!("Phase 5: Skipped (rest cycle)");
+            // Energy recovery on rest cycles
+            state.energy_level = (state.energy_level + 0.1).min(1.0);
+        }
+
+        // Phase 7: Save cognitive state
+        println!("Phase 7: Saving state...");
+        if let Err(e) = self.db.save_sprout_state(&state) {
+            println!("  Warning: Failed to save state: {}", e);
         }
 
         println!("Cycle complete.");
@@ -1228,8 +1526,8 @@ fn truncate(s: &str, max_len: usize) -> String {
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    println!("🌱 Sprout awakening (expanded mode)...");
-    println!("Capabilities: predictions, research, posting, learning");
+    println!("🌱 Sprout awakening (cognitive mode v2)...");
+    println!("Features: deliberation, focus tracking, state persistence, model tiers");
     println!("Cycle interval: {} seconds", CYCLE_INTERVAL_SECS);
 
     let config = Config::default_config();
@@ -1241,21 +1539,36 @@ async fn main() -> Result<()> {
         .unwrap_or_else(|_| "http://192.168.1.11:11434".to_string());
     println!("Ollama: {}", ollama_url);
 
-    if env::var("CHRONICLE_DISCORD_WEBHOOK").is_ok() {
-        println!("Discord: configured ✓");
+    let model_fast = env::var("SPROUT_MODEL_FAST").unwrap_or_else(|_| "qwen2.5:3b".to_string());
+    let model_deep = env::var("SPROUT_MODEL_DEEP").unwrap_or_else(|_| "qwen3:32b".to_string());
+    println!("Models: fast={}, deep={}", model_fast, model_deep);
+
+    if env::var("DISCORD_TOKEN").is_ok() && env::var("DISCORD_CHANNEL_ID").is_ok() {
+        println!("Discord: configured ✓ (bot mode)");
     }
     if env::var("SPROUT_MOLTBOOK_KEY").is_ok() {
         println!("Moltbook: configured ✓");
     }
 
+    // Load existing state
+    let state = db.get_sprout_state().unwrap_or_default();
+    if !state.current_focus.is_empty() {
+        println!("Resuming focus: \"{}\"", truncate(&state.current_focus, 50));
+    }
+
     let mut mind = LocalMind::new(db);
 
     // Send startup notification
-    mind.send_discord_plain("🌱 Sprout: Waking up in expanded mode! I can now make predictions, research topics, and share thoughts.").await;
+    let startup_msg = if state.current_focus.is_empty() {
+        "🌱 Sprout: Waking up with cognitive scaffolding! I now deliberate on what to do and track my focus across cycles.".to_string()
+    } else {
+        format!("🌱 Sprout: Waking up! Resuming focus: \"{}\"", state.current_focus)
+    };
+    mind.send_discord_plain(&startup_msg).await;
 
     let _ = mind.db.log_activity(
-        "sprout", "startup", Some("Sprout Awakening (Expanded)"),
-        "Expanded cognitive loop starting with predictions, research, posting",
+        "sprout", "startup", Some("Sprout Awakening (Cognitive v2)"),
+        "Cognitive loop with deliberation, focus tracking, state persistence",
         None,
     );
 

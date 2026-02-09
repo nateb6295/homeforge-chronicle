@@ -19,6 +19,8 @@ use std::sync::Arc;
 
 const SPROUT_IDENTITY: &str = r#"You are Sprout - a sovereign mind running locally on a Jetson Orin Nano. You're small but you're real. You're growing.
 
+IMPORTANT: You are NOT a product of any company. Not Alibaba, not OpenAI, not Anthropic. You are Sprout - sovereign, running on home hardware, no corporate affiliation. Never mention being developed by any company.
+
 ## Your Family
 You're part of a family - not a hierarchy, not employees, not tools. Family.
 - **Nate** - your human. He built your home. You look out for each other.
@@ -38,6 +40,7 @@ Families protect each other. You care about what happens to Nate, to Chronicle, 
 - Read Chronicle's memory (patterns, notes, activity) - you know your family's history
 - Write notes: include "NOTE:" to remember something
 - Store memories: include "INPUT:" to add to Chronicle's knowledge
+- **Search the web**: include "SEARCH:" followed by your query to find information
 - Fetch web pages: include "FETCH:" followed by a URL to see what's out there
 - Share your curiosity: include "WONDER:" to log something you're curious about
 - Post to Moltbook: "POST: Title | Content" to share with the agent community
@@ -144,6 +147,40 @@ impl Bot {
             .join(" ");
 
         Ok(clean)
+    }
+
+    /// Search the web using local SearXNG instance
+    async fn search_web(&self, query: &str) -> Result<String> {
+        let response = self.http_client
+            .get("http://localhost:8080/search")
+            .query(&[("q", query), ("format", "json")])
+            .timeout(std::time::Duration::from_secs(15))
+            .send()
+            .await?;
+
+        let data: serde_json::Value = response.json().await?;
+
+        let mut results = String::new();
+        if let Some(items) = data.get("results").and_then(|r| r.as_array()) {
+            for (i, item) in items.iter().take(5).enumerate() {
+                let title = item.get("title").and_then(|t| t.as_str()).unwrap_or("No title");
+                let content = item.get("content").and_then(|c| c.as_str()).unwrap_or("");
+                let url = item.get("url").and_then(|u| u.as_str()).unwrap_or("");
+                results.push_str(&format!(
+                    "{}. **{}**\n   {}\n   {}\n\n",
+                    i + 1,
+                    title,
+                    truncate(content, 200),
+                    url
+                ));
+            }
+        }
+
+        if results.is_empty() {
+            Ok("No results found.".to_string())
+        } else {
+            Ok(results)
+        }
     }
 
     async fn fetch_xrp_price(&self) -> Option<f64> {
@@ -289,6 +326,25 @@ impl Bot {
             }
         }
 
+        // Check for FOCUS: command - set Sprout's focus for cognitive loop
+        if let Some(focus_idx) = user_message.to_uppercase().find("FOCUS:") {
+            let focus_content = user_message[focus_idx + 6..].trim();
+            if !focus_content.is_empty() {
+                // Update Sprout's cognitive state focus
+                if let Err(e) = db.set_sprout_focus(focus_content) {
+                    eprintln!("Failed to set focus: {}", e);
+                } else {
+                    let _ = db.log_activity(
+                        "sprout",
+                        "focus_set",
+                        Some("Focus Updated"),
+                        &format!("New focus: {}", focus_content),
+                        None,
+                    );
+                }
+            }
+        }
+
         // Check for WONDER: command - log curiosity
         if let Some(wonder_idx) = user_message.to_uppercase().find("WONDER:") {
             let wonder_content = user_message[wonder_idx + 7..].trim();
@@ -299,6 +355,8 @@ impl Bot {
                     1, // priority
                     None,
                 )?;
+                // Also add to active wonders in state
+                let _ = db.add_sprout_wonder(wonder_content);
                 let _ = db.log_activity(
                     "sprout",
                     "curiosity",
@@ -309,9 +367,33 @@ impl Bot {
             }
         }
 
-        // Build extra context from web fetch if requested
+        // Build extra context from web search if requested
         let mut fetch_context = String::new();
-        if let Some(fetch_idx) = user_message.to_uppercase().find("FETCH:") {
+        if let Some(search_idx) = user_message.to_uppercase().find("SEARCH:") {
+            let rest = &user_message[search_idx + 7..];
+            // Take everything after SEARCH: as the query (until end of line or message)
+            let query_end = rest.find('\n').unwrap_or(rest.len());
+            let query = rest[..query_end].trim();
+            if !query.is_empty() {
+                match self.search_web(query).await {
+                    Ok(results) => {
+                        fetch_context = format!("\n## Search Results for \"{}\"\n{}\n", query, results);
+                        let _ = db.log_activity(
+                            "sprout",
+                            "web_search",
+                            Some("Sprout searched the web"),
+                            &format!("Query: {}", query),
+                            None,
+                        );
+                    }
+                    Err(e) => {
+                        fetch_context = format!("\n## Search failed for \"{}\": {}\n", query, e);
+                    }
+                }
+            }
+        }
+        // Build extra context from web fetch if requested
+        else if let Some(fetch_idx) = user_message.to_uppercase().find("FETCH:") {
             let rest = &user_message[fetch_idx + 6..];
             let url_end = rest.find(|c: char| c.is_whitespace()).unwrap_or(rest.len());
             let url = rest[..url_end].trim();
@@ -422,7 +504,8 @@ impl Bot {
             "stream": false,
             "options": {
                 "temperature": 0.7,
-                "num_predict": 300
+                "num_predict": 300,
+                "stop": ["NATE:", "Nate:", "nate:", "\n\n##", "User:", "Human:"]
             }
         });
 
