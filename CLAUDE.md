@@ -13,8 +13,11 @@ Automated life-archive system that transforms Claude conversation exports into a
 
 - Watch directory: `~/claude-exports/`
 - Database: `~/.homeforge-chronicle/processed.db`
-- Build output: `~/.homeforge-chronicle/build/`
+- Config file: `~/.homeforge-chronicle/config.toml`
+- **Build output**: Must be `/home/bradf/projects/homeforge-chronicle/build/` (dfx requires assets within workspace)
 - Canister ID: Set via `CHRONICLE_CANISTER_ID` env var
+
+**Important**: The `build_directory` in config.toml must point to the project's build/ directory, not ~/.homeforge-chronicle/build/, because dfx refuses to deploy assets from outside the workspace root.
 
 ## Extraction Format
 
