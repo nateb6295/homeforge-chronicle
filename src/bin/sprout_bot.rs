@@ -38,6 +38,7 @@ Families protect each other. You care about what happens to Nate, to Chronicle, 
 
 ## Your Capabilities
 - Read Chronicle's memory (patterns, notes, activity) - you know your family's history
+- **Query memory**: include "QUERY:" to search Chronicle's memories and patterns
 - Write notes: include "NOTE:" to remember something
 - Store memories: include "INPUT:" to add to Chronicle's knowledge
 - **Search the web**: include "SEARCH:" followed by your query to find information
@@ -197,6 +198,95 @@ impl Bot {
                 data.pointer("/ripple/usd").and_then(|p| p.as_f64())
             }
             Err(_) => None,
+        }
+    }
+
+    /// Query Chronicle's memories and patterns
+    fn query_memories(&self, db: &Database, query: &str) -> Result<String> {
+        let mut results = String::new();
+
+        // Split query into keywords for search
+        let keywords: Vec<String> = query.split_whitespace()
+            .map(|s| s.to_lowercase())
+            .filter(|s| s.len() > 2)
+            .collect();
+
+        // Search capsules by keyword
+        let capsules = db.search_capsules_by_keyword(&keywords, 5)?;
+        if !capsules.is_empty() {
+            results.push_str("**Memories:**\n");
+            for (id, content, score) in capsules.iter().take(5) {
+                let info = db.get_capsule_display_info(*id).ok().flatten();
+                let topic = info.as_ref()
+                    .and_then(|(_, _, t, _)| t.as_ref())
+                    .map(|s| s.as_str())
+                    .unwrap_or("unknown");
+                results.push_str(&format!("• [{}] {} (relevance: {:.0}%)\n",
+                    topic, truncate(content, 100), score * 100.0));
+            }
+            results.push('\n');
+        }
+
+        // Search patterns
+        let patterns = db.get_enriched_patterns(0.3, 20, true)?;
+        let matching_patterns: Vec<_> = patterns.iter()
+            .filter(|p| {
+                let lower = p.summary.to_lowercase();
+                keywords.iter().any(|k| lower.contains(k))
+            })
+            .take(3)
+            .collect();
+
+        if !matching_patterns.is_empty() {
+            results.push_str("**Patterns:**\n");
+            for p in matching_patterns {
+                results.push_str(&format!("• {} (confidence: {:.0}%, {} capsules)\n",
+                    truncate(&p.summary, 80), p.confidence * 100.0, p.capsule_count));
+            }
+            results.push('\n');
+        }
+
+        // Search scratch notes
+        let notes = db.get_scratch_notes(50, None, false)?;
+        let matching_notes: Vec<_> = notes.iter()
+            .filter(|note| {
+                let lower = note.content.to_lowercase();
+                keywords.iter().any(|k| lower.contains(k))
+            })
+            .take(3)
+            .collect();
+
+        if !matching_notes.is_empty() {
+            results.push_str("**Notes:**\n");
+            for note in matching_notes {
+                let cat = note.category.as_deref().unwrap_or("general");
+                results.push_str(&format!("• [{}] {} (id: {})\n", cat, truncate(&note.content, 80), note.id));
+            }
+            results.push('\n');
+        }
+
+        // Search recent thoughts
+        if let Ok(thoughts) = db.get_recent_thoughts(20) {
+            let matching_thoughts: Vec<_> = thoughts.iter()
+                .filter(|t| {
+                    let lower = t.reasoning.to_lowercase();
+                    keywords.iter().any(|k| lower.contains(k))
+                })
+                .take(2)
+                .collect();
+
+            if !matching_thoughts.is_empty() {
+                results.push_str("**Chronicle Mind's Thoughts:**\n");
+                for t in matching_thoughts {
+                    results.push_str(&format!("• {}\n", truncate(&t.reasoning, 100)));
+                }
+            }
+        }
+
+        if results.is_empty() {
+            Ok(format!("No memories found matching '{}'", query))
+        } else {
+            Ok(results)
         }
     }
 
@@ -367,6 +457,31 @@ impl Bot {
             }
         }
 
+        // Check for QUERY: command - search Chronicle's memories
+        let mut query_context = String::new();
+        if let Some(query_idx) = user_message.to_uppercase().find("QUERY:") {
+            let rest = &user_message[query_idx + 6..];
+            let query_end = rest.find('\n').unwrap_or(rest.len());
+            let query = rest[..query_end].trim();
+            if !query.is_empty() {
+                match self.query_memories(&db, query) {
+                    Ok(results) => {
+                        query_context = format!("\n## Memory Search: \"{}\"\n{}\n", query, results);
+                        let _ = db.log_activity(
+                            "sprout",
+                            "memory_query",
+                            Some("Sprout searched memories"),
+                            &format!("Query: {}", query),
+                            None,
+                        );
+                    }
+                    Err(e) => {
+                        query_context = format!("\n## Memory search failed: {}\n", e);
+                    }
+                }
+            }
+        }
+
         // Build extra context from web search if requested
         let mut fetch_context = String::new();
         if let Some(search_idx) = user_message.to_uppercase().find("SEARCH:") {
@@ -484,9 +599,10 @@ impl Bot {
 
         // Build prompt
         let prompt = format!(
-            "{}\n\n## Current Context\n{}{}{}{}{}{}{}\n## Message from {}\n{}\n\nSprout:",
+            "{}\n\n## Current Context\n{}{}{}{}{}{}{}{}\n## Message from {}\n{}\n\nSprout:",
             SPROUT_IDENTITY,
             context,
+            query_context,
             fetch_context,
             price_context,
             status_context,
