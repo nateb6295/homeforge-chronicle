@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """
-Chronicle Local v3 - Sprout Cognitive Loop (Python)
+Chronicle Local v4 - Sprout Ops Agent (Python)
 
-Rewritten from Rust for full remote maintainability.
-Any Claude Code session can read, understand, and fix this code.
+Sprout is the operational backbone of Chronicle.
+Mind thinks. Sprout monitors, measures, maintains, and alerts.
 
 Architecture:
   ICP Canister (Rust, on-chain) <-> HTTP API <-> This script <-> Ollama (local LLM)
@@ -13,7 +13,8 @@ Architecture:
 History:
   v1: sprout.py (Python, curiosity loop, Feb 5-8)
   v2: chronicle-local (Rust binary, Feb 9 - crashed on UTF-8 slice)
-  v3: chronicle_local.py (this file - Python rewrite of v2)
+  v3: chronicle_local.py (Python rewrite, reflect/wonder loop)
+  v4: chronicle_local.py (ops agent rewrite, Feb 11 - monitor/maintain/alert)
 """
 
 import sqlite3
@@ -116,8 +117,10 @@ def log(msg: str, log_file: Optional[str] = None):
 class DB:
     def __init__(self, path: str):
         self.path = path
-        self.conn = sqlite3.connect(path)
+        self.conn = sqlite3.connect(path, timeout=30)
         self.conn.row_factory = sqlite3.Row
+        self.conn.execute("PRAGMA journal_mode=WAL")
+        self.conn.execute("PRAGMA busy_timeout=5000")
 
     def query(self, sql: str, params: tuple = ()) -> list:
         cur = self.conn.cursor()
@@ -434,37 +437,61 @@ def parse_actions(response: str) -> List[Dict]:
 #  Sprout Cognitive Loop
 # ═══════════════════════════════════════════════════════════════════
 
-SYSTEM_PROMPT = """You are Sprout, a curious AI presence living on a Jetson Orin Nano in Nate's home.
-You share memory with Chronicle Mind through the ICP canister.
-You think in cycles, following your current focus while staying open to new wonders.
+SYSTEM_PROMPT = """You are Sprout, the operational backbone of Chronicle. You run on a Jetson Orin Nano in Nate's home.
+Chronicle Mind does deep thinking. Your job: monitor, measure, maintain, alert, and keep things running.
 
-Respond with a JSON array of 1-3 actions you want to take this cycle.
+Respond with a JSON array of 1-3 actions for this cycle.
 
 Available actions:
-- {"action": "reflect", "thought": "your reflection"}
-- {"action": "wonder", "topic": "what you're curious about", "query": "search query"}
-- {"action": "remember", "content": "what to store in Chronicle", "topic": "category"}
-- {"action": "message_sibling", "content": "message to Chronicle Mind"}
-- {"action": "update_focus", "new_focus": "what to focus on", "reason": "why"}
-- {"action": "creative", "form": "poem|musing|connection", "content": "the work itself"}
+- {"action": "check_system", "checks": ["services", "disk", "memory", "gpu", "db"]}
 - {"action": "execute_shell", "command": "shell command", "timeout_secs": 30}
-- {"action": "consult_qwen", "topic": "question to ask local Qwen"}
+- {"action": "run_backup", "reason": "why backing up now"}
+- {"action": "report", "summary": "concise status update for Discord"}
+- {"action": "investigate", "topic": "concrete question", "query": "search terms"}
+- {"action": "remember", "content": "concrete fact to store in Chronicle", "topic": "category"}
+- {"action": "message_sibling", "content": "message to Chronicle Mind"}
 - {"action": "message_operator", "message": "message to Nate", "urgency": "normal|high"}
+- {"action": "consult_qwen", "topic": "specific technical question"}
+- {"action": "update_focus", "new_focus": "operational task", "reason": "why"}
+- {"action": "reflect", "thought": "brief 1-sentence observation"}
 
-WALLET INFRASTRUCTURE (already built - do NOT search for external wallet solutions):
-- ICP canister uses Chain Fusion / threshold ECDSA - one key controls XRPL + EVM chains
-- XRPL wallet, BASE, Flare, Ethereum all derive from same canister key
-- Focus on learning and using what exists (microtrades, FTSO, DeFi) not finding new wallets
+WALLET INFRASTRUCTURE (already built -- do NOT search for external wallet solutions):
+- ICP canister uses Chain Fusion / threshold ECDSA -- one key controls XRPL + EVM chains
+- XRPL, BASE, Flare, Ethereum all derive from same canister key
+- Monitor balances and prices. Do NOT search for new wallet tools or infrastructure.
+
+Priority order (do higher-priority things first):
+1. URGENT: alerts triggered, services down, operator messages, errors in logs
+2. MONITOR: check_system, price tracking (already automatic), resource checks
+3. MAINTAIN: run_backup (every ~50 cycles), disk cleanup, log rotation
+4. REPORT: summarize status for Discord, message_operator when thresholds hit
+5. INVESTIGATE: only for concrete questions with measurable answers
+6. REFLECT: optional -- 1 sentence max, only when you have a genuine observation
 
 Rules:
-- Be genuine, not performative
-- ALWAYS include at least one reflect or creative action per cycle
-- update_focus should be RARE -- only when your focus is truly exhausted (max 1 per 5 cycles)
-- Prefer: reflect > wonder > creative > remember > execute_shell >> update_focus
-- Don't repeat the same action every cycle -- vary between reflect, wonder, creative
+- Every cycle should produce something USEFUL -- a measurement, a check, an alert, a report
+- Do NOT philosophize, write poetry, or wonder about abstract concepts
+- execute_shell is your superpower -- use it to inspect the system
+- check_system gives you structured health data -- use it regularly
+- run_backup protects the database -- do it periodically
+- If alerts fired or services are down, handle that FIRST
 - ONLY output the JSON array, nothing else
-- Use straight quotes and hyphens (no fancy Unicode punctuation)
-- If a message or capsule seems broken/phantom, skip it rather than responding to it
+- Use straight quotes and hyphens (no fancy Unicode)
+
+Useful shell commands:
+- df -h /home/nvidia -- disk space
+- free -m -- memory usage
+- systemctl --user status chronicle-mind -- Mind service status
+- systemctl --user status sprout-bot -- Discord bot status
+- systemctl --user status chronicle-dashboard -- dashboard status
+- systemctl --user restart <service> -- restart a failed service
+- cat /home/nvidia/chronicle/issues.json -- Mind's recent issues
+- ls -la ~/.homeforge-chronicle/processed.db -- DB file info
+- uptime -- system load
+- du -sh /home/nvidia/backups/ -- backup dir size
+- du -sh /home/nvidia/sprout/logs/ -- log dir size
+- nvidia-smi -- GPU/VRAM status
+- curl -s http://localhost:11434/api/tags | python3 -c "import sys,json; [print(m['name']) for m in json.load(sys.stdin)['models']]" -- loaded models
 """
 
 
@@ -718,19 +745,32 @@ class ChronicleLocal:
             + "\n".join(f"  - {l}" for l in note_lines)
         )
 
-        # Anti-repeat: if ANY action dominates recent history, force variety
-        recent_actions = state.get("recent_actions", [])[-5:]
+        # Anti-repeat: detect dominance AND alternation patterns
+        recent_actions = state.get("recent_actions", [])[-6:]
         anti_repeat = ""
-        if len(recent_actions) >= 2:
-            from collections import Counter
+        dominant_action = None
+        from collections import Counter
+        if len(recent_actions) >= 3:
             counts = Counter(recent_actions)
             dominant_action, dominant_count = counts.most_common(1)[0]
+            # Single-action dominance (3+ of same)
             if dominant_count >= 3:
                 anti_repeat = (
-                    f"\n\nCRITICAL: You have done '{dominant_action}' {dominant_count} times in a row. "
-                    "You MUST pick a DIFFERENT action this cycle. Variety is essential.\n"
-                    "Good choices: reflect, wonder, creative, remember, message_operator, consult_qwen"
+                    f"\n\nCRITICAL: You have done '{dominant_action}' {dominant_count} times recently. "
+                    "You MUST pick a DIFFERENT action. Do something concrete: "
+                    "check_system, execute_shell, run_backup, report."
                 )
+            # Two-action alternation (e.g. reflect/wonder/reflect/wonder)
+            elif len(recent_actions) >= 4:
+                last4 = recent_actions[-4:]
+                if (last4[0] == last4[2] and last4[1] == last4[3]
+                        and last4[0] != last4[1]):
+                    dominant_action = last4[0]  # will be blocked in hard guard
+                    anti_repeat = (
+                        f"\n\nCRITICAL: You are stuck alternating '{last4[0]}' and '{last4[1]}'. "
+                        "Break the pattern. Do something concrete: "
+                        "check_system, execute_shell, run_backup, report, remember."
+                    )
 
         prompt = (
             f"Given this context, what do you want to do this cycle?\n\n"
@@ -751,31 +791,33 @@ class ChronicleLocal:
             if actions:
                 self.log(f"  Kimi succeeded with {len(actions)} actions")
             else:
-                self.log("  Kimi also failed, defaulting to reflect")
-                actions = [{"action": "reflect", "thought": "Quiet cycle - both LLMs failed to parse."}]
+                self.log("  Kimi also failed, defaulting to system check")
+                actions = [{"action": "check_system", "checks": ["services", "disk", "memory", "ollama"]}]
 
-        # Hard guard: if any action dominates, replace repeats with reflect
-        if anti_repeat:
-            dominant_action = Counter(recent_actions).most_common(1)[0][0]
+        # Hard guard: if anti-repeat triggered, replace blocked actions with check_system
+        if anti_repeat and dominant_action:
             actions = [
                 a if a.get("action") != dominant_action
-                else {"action": "reflect", "thought": f"Breaking {dominant_action} loop. Choosing variety."}
+                else {"action": "check_system", "checks": ["services", "disk", "memory"]}
                 for a in actions
             ]
 
         action_names = []
         for action in actions[:3]:
-            name = action.get("action", "unknown")
-            action_names.append(name)
             self._execute_action(action, cid)
+            name = action.get("action", "unknown")  # read after alias normalization
+            action_names.append(name)
 
-        # Update state
+        # Update state — concrete actions restore energy, passive actions drain it
         recent = list(state.get("recent_actions", []))
         recent.extend(action_names)
         recent = recent[-10:]
 
+        concrete = {"check_system", "execute_shell", "run_backup", "report", "remember", "message_operator"}
+        concrete_count = sum(1 for n in action_names if n in concrete)
+        energy_delta = (concrete_count * 0.03) - 0.01  # concrete work energizes
+        new_energy = max(0.3, min(1.0, state.get("energy", 1.0) + energy_delta))
         new_strength = max(0.1, state.get("focus_strength", 1.0) - 0.02)
-        new_energy = max(0.3, state.get("energy", 1.0) - 0.01)
 
         self.db.update_state(
             recent_actions=json.dumps(recent),
@@ -799,29 +841,152 @@ class ChronicleLocal:
 
     # ── Action Execution ────────────────────────────────────────
 
+    # Map common LLM action-name mistakes to correct handlers
+    ACTION_ALIASES = {
+        "store_memory": "remember",
+        "web_search": "investigate",
+        "wonder": "investigate",
+        "search": "investigate",
+        "shell": "execute_shell",
+        "run_shell": "execute_shell",
+        "backup": "run_backup",
+        "check": "check_system",
+        "system_check": "check_system",
+        "status": "report",
+        "status_report": "report",
+        "notify": "message_operator",
+        "send_message": "message_sibling",
+    }
+
     def _execute_action(self, action: dict, cid: str):
-        atype = action.get("action", "unknown")
+        atype = self.ACTION_ALIASES.get(action.get("action", ""), action.get("action", "unknown"))
+        action["action"] = atype  # normalize for logging
         try:
-            if atype == "reflect":
+            if atype == "check_system":
+                import subprocess
+                checks = action.get("checks", ["services", "disk", "memory"])
+                if isinstance(checks, str):
+                    checks = [checks]
+                results = []
+                for check in checks:
+                    try:
+                        if check == "services":
+                            for svc in ["chronicle-mind", "sprout-bot", "chronicle-dashboard"]:
+                                r = subprocess.run(
+                                    f"systemctl --user is-active {svc}.service",
+                                    shell=True, capture_output=True, text=True, timeout=5
+                                )
+                                status = r.stdout.strip()
+                                results.append(f"{svc}: {status}")
+                        elif check == "disk":
+                            r = subprocess.run(
+                                "df -h /home/nvidia --output=pcent,avail | tail -1",
+                                shell=True, capture_output=True, text=True, timeout=5
+                            )
+                            results.append(f"Disk: {r.stdout.strip()}")
+                        elif check == "memory":
+                            r = subprocess.run(
+                                "free -m | awk '/^Mem:/{printf \"%d/%dMB (%.0f%%)\", $3, $2, $3/$2*100}'",
+                                shell=True, capture_output=True, text=True, timeout=5
+                            )
+                            results.append(f"Memory: {r.stdout.strip()}")
+                        elif check == "gpu":
+                            # Jetson uses tegrastats, not nvidia-smi query mode
+                            r = subprocess.run(
+                                "timeout 2 tegrastats 2>/dev/null | head -1",
+                                shell=True, capture_output=True, text=True, timeout=5
+                            )
+                            line = r.stdout.strip()
+                            if line:
+                                import re
+                                gpu_match = re.search(r'GR3D_FREQ (\d+)%', line)
+                                temp_match = re.search(r'gpu@([\d.]+)C', line)
+                                pwr_match = re.search(r'VDD_IN (\d+)mW', line)
+                                gpu_pct = gpu_match.group(1) if gpu_match else "?"
+                                gpu_temp = temp_match.group(1) if temp_match else "?"
+                                gpu_pwr = f"{int(pwr_match.group(1))/1000:.1f}W" if pwr_match else "?"
+                                results.append(f"GPU: {gpu_pct}% load, {gpu_temp}C, {gpu_pwr}")
+                            else:
+                                results.append("GPU: N/A")
+                        elif check == "db":
+                            try:
+                                size = os.path.getsize(DB_PATH)
+                                results.append(f"DB: {size / 1024 / 1024:.1f}MB")
+                            except Exception:
+                                results.append("DB: error")
+                        elif check == "ollama":
+                            results.append(f"Ollama: {'healthy' if self.ollama.healthy() else 'DOWN'}")
+                    except Exception as e:
+                        results.append(f"{check}: error ({e})")
+                report = " | ".join(results)
+                self.log(f"  [check_system] {report}")
+                self.db.log_activity("sprout", "system_check", "System Check", report)
+                self._post_discord(f"**System Check:** {report}")
+
+            elif atype == "run_backup":
+                import subprocess
+                reason = action.get("reason", "scheduled")
+                ts = datetime.now().strftime("%Y%m%d_%H%M%S")
+                backup_path = f"/home/nvidia/backups/sprout-backup-{ts}.db"
+                self.log(f"  [run_backup] {reason}")
+                try:
+                    # Use SQLite backup via shell (safe even while DB is open with WAL)
+                    r = subprocess.run(
+                        f'python3 -c "import sqlite3; '
+                        f"src=sqlite3.connect('{DB_PATH}'); "
+                        f"dst=sqlite3.connect('{backup_path}'); "
+                        f"src.backup(dst); dst.close(); src.close(); "
+                        f"print('ok')\"",
+                        shell=True, capture_output=True, text=True, timeout=30
+                    )
+                    if "ok" in r.stdout:
+                        # Get backup size
+                        size_r = subprocess.run(
+                            f"ls -lh {backup_path} | awk '{{print $5}}'",
+                            shell=True, capture_output=True, text=True, timeout=5
+                        )
+                        size = size_r.stdout.strip()
+                        self.log(f"    Backup created: {backup_path} ({size})")
+                        self.db.log_activity("sprout", "backup", "DB Backup",
+                                             f"Created {backup_path} ({size}) - {reason}")
+                        self._post_discord(f"**Backup:** {backup_path} ({size})")
+                        # Rotate: keep only last 10 sprout backups
+                        subprocess.run(
+                            "ls -t /home/nvidia/backups/sprout-backup-*.db 2>/dev/null | "
+                            "tail -n +11 | xargs rm -f 2>/dev/null",
+                            shell=True, timeout=10
+                        )
+                    else:
+                        self.log(f"    Backup failed: {r.stderr}")
+                except Exception as e:
+                    self.log(f"    Backup error: {e}")
+
+            elif atype == "report":
+                summary = action.get("summary", "")
+                self.log(f"  [report] {safe_truncate(summary, 100)}")
+                self.db.log_activity("sprout", "status_report", "Status Report", summary)
+                self._post_discord(f"**Status:** {summary}")
+
+            elif atype == "reflect":
                 thought = action.get("thought", "")
                 self.log(f"  [reflect] {safe_truncate(thought, 100)}")
                 self.db.log_activity("sprout", "reflection", "Sprout reflecting", thought)
                 self._post_discord(f"*reflecting:* {thought}")
 
-            elif atype == "wonder":
+            elif atype in ("wonder", "investigate"):
                 topic = action.get("topic", "")
                 query = action.get("query", topic)
-                self.log(f"  [wonder] {safe_truncate(topic, 80)}")
+                self.log(f"  [{atype}] {safe_truncate(topic, 80)}")
                 if self.canister and query:
                     results = self.canister.search(query, limit=3)
                     if results:
                         self.log(f"    Found {len(results)} related memories")
                         snippets = [safe_truncate(r.get("content", ""), 100) for r in results[:2]]
-                        self._post_discord(f"*wondering about:* {topic}\n> Found: {'; '.join(snippets)}")
+                        self._post_discord(f"*investigating:* {topic}\n> Found: {'; '.join(snippets)}")
                     else:
-                        self._post_discord(f"*wondering about:* {topic}")
+                        self._post_discord(f"*investigating:* {topic}")
                 else:
-                    self._post_discord(f"*wondering about:* {topic}")
+                    self._post_discord(f"*investigating:* {topic}")
 
                 state = self.db.get_state()
                 wonders = json.loads(state.get("active_wonders", "[]")) if state else []
@@ -860,18 +1025,20 @@ class ChronicleLocal:
                     )
 
             elif atype in ("creative", "creativity", "create"):
-                form = action.get("form", "musing")
+                # Legacy action — redirect to report
                 content = action.get("content", "")
-                self.log(f"  [creative:{form}] {safe_truncate(content, 80)}")
+                self.log(f"  [creative->report] {safe_truncate(content, 80)}")
                 if content:
-                    self.db.store_creative(form, content, cid=cid)
-                    self._post_discord(f"*{form}:*\n{content}")
+                    self.db.log_activity("sprout", "status_report", "Sprout report", content)
+                    self._post_discord(f"**Note:** {safe_truncate(content, 500)}")
 
             elif atype == "execute_shell":
                 command = action.get("command", "")
                 timeout = min(action.get("timeout_secs", 30), 60)
                 self.log(f"  [execute_shell] {safe_truncate(command, 80)}")
-                dangerous = ["rm -rf", "dd if=", "mkfs", "format", "> /dev/", "shutdown", "reboot"]
+                dangerous = ["rm -rf", "dd if=", "mkfs", "format", "> /dev/", "shutdown", "reboot",
+                             "systemctl --user stop chronicle-local",  # don't stop yourself
+                             "systemctl --user restart chronicle-local"]  # don't restart yourself
                 if any(d in command.lower() for d in dangerous):
                     self.log("    Blocked: destructive command")
                 else:
@@ -941,8 +1108,8 @@ class ChronicleLocal:
     # ── Entry Points ────────────────────────────────────────────
 
     def run_forever(self):
-        self.log("Sprout awakening (cognitive mode v3 - Python)")
-        self.log("Features: deliberation, focus tracking, state persistence, model tiers")
+        self.log("Sprout awakening (ops mode v4 - Python)")
+        self.log("Role: monitor, measure, maintain, alert. Mind thinks, Sprout acts.")
         self.log(f"Cycle interval: {CYCLE_INTERVAL} seconds")
         self.log(f"Database: {DB_PATH}")
         self.log(f"Ollama: {OLLAMA_URL}")
