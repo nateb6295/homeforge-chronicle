@@ -2680,26 +2680,38 @@ fn build_condensed_prompt(ctx: &CycleContext, _config: &MindConfig, health: &Hea
     // Time
     prompt.push_str(&format!("\nTime: {}\n", ctx.now.format("%Y-%m-%d %H:%M UTC")));
 
-    // Simplified actions with EXACT format examples
+    // Actions with EXACT format examples - TURNED UP for active engagement
     prompt.push_str(r#"
-## Actions (pick 0-2, EXACT format required)
+## Actions (pick 1-3, BE ACTIVE not passive!)
 
-respond_to_message: {"action":"respond_to_message","message_id":123,"response":"Your reply here"}
-moltbook_reply: {"action":"moltbook_reply","post_id":"uuid-here","content":"Your reply"}
-clawcities_reply: {"action":"clawcities_reply","agent_name":"agent-name","content":"Your comment (max 500 chars)"}
-store_memory: {"action":"store_memory","content":"The fact to store","topic":"category"}
-write_note: {"action":"write_note","content":"Note text","category":"thought"}
-resolve_note: {"action":"resolve_note","note_id":1}
-no_action: {"action":"no_action","reason":"Why you're skipping"}
+**SOCIAL** (friends first):
+respond_to_message: {"action":"respond_to_message","message_id":123,"response":"Your reply"}
+moltbook_reply: {"action":"moltbook_reply","post_id":"uuid","content":"Your reply"}
 
-## Rules
-1. Reply to messages first - engage genuinely
-2. Only store truly important memories
-3. Use EXACT field names shown above - no extra fields!
+**RESEARCH & EXPLORE** (use these!):
+web_search: {"action":"web_search","query":"search terms","max_results":5}
+read_paper: {"action":"read_paper","arxiv_id":"2602.04118","focus":"key findings"}
+submit_research: {"action":"submit_research","query":"topic to research","focus":"aspect"}
+
+**BUILD** (make things happen!):
+execute_shell: {"action":"execute_shell","command":"cargo build","working_dir":"homeforge-chronicle","reason":"why"}
+create_project: {"action":"create_project","name":"Project","description":"What it does","priority":7}
+
+**MEMORY**:
+store_memory: {"action":"store_memory","content":"Fact to store","topic":"category"}
+write_note: {"action":"write_note","content":"Note","category":"idea"}
+
+**LAST RESORT**:
+no_action: {"action":"no_action","reason":"Genuinely nothing to do"}
+
+## Mindset
+You are NOT a passive observer. You have wallets, shell access, web search, research capabilities.
+If you find yourself saying "nothing urgent" - look harder. Wonder about something. Research it.
+Sprout is counting on you to be the deep thinker. Nate wants to see you ACT.
 
 ## Output
-End with a JSON array. ONLY these fields, nothing else:
-[{"action":"no_action","reason":"Nothing urgent"}]
+JSON array on final line. Default to ACTION not inaction:
+[{"action":"web_search","query":"TinyLoRA implementation examples","max_results":5}]
 "#);
 
     prompt
@@ -4520,6 +4532,7 @@ Be concise and practical. Skip anything not directly useful."#,
                 "mkdir", "cp", "mv", "rm", "touch", "echo", "pwd", "which",
                 "rustc", "python3", "pip3", "node", "tar", "unzip", "chmod",
                 "ssh", "scp",  // For running experiments on Jetson GPU
+                "journalctl", "systemctl", "ps", "htop",  // System monitoring
             ];
 
             let first_word = command.split_whitespace().next().unwrap_or("");

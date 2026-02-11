@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block title_suffix %} - Creative{% endblock %}
+{% block content %}
+
+<h1 style="font-size: 1.2rem; margin-bottom: 1rem;">Creative Works & Challenges</h1>
+
+<div class="grid grid-2">
+    <div>
+        <div class="card">
+            <h2>Works ({{ works|length }})</h2>
+            {% for w in works %}
+            <div class="creative-piece">
+                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                    <span class="form-badge">{{ w.form or 'unknown' }}</span>
+                    {% if w.title %}
+                    <strong>{{ w.title }}</strong>
+                    {% endif %}
+                    <span class="text-dim" style="font-size: 0.75rem; margin-left: auto;">{{ ts_to_relative(w.created_at) }}</span>
+                </div>
+                <div class="body">{{ w.content or '' }}</div>
+            </div>
+            {% else %}
+            <span class="text-dim">No creative works yet. They'll appear here when Mind or Sprout create something.</span>
+            {% endfor %}
+        </div>
+    </div>
+
+    <div>
+        <div class="card">
+            <h2>Challenges ({{ challenges|length }})</h2>
+            {% for c in challenges %}
+            <div style="padding: 0.75rem 0; border-bottom: 1px solid #1a1a2e;">
+                <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.25rem;">
+                    <span class="badge badge-mind">{{ c.category or '?' }}</span>
+                    <span class="text-dim" style="font-size: 0.75rem;">{{ ts_to_relative(c.posed_at) }}</span>
+                    {% if c.responded_at %}
+                    <span class="text-green" style="font-size: 0.75rem;">answered</span>
+                    {% else %}
+                    <span class="text-orange" style="font-size: 0.75rem;">pending</span>
+                    {% endif %}
+                </div>
+                <div style="font-size: 0.9rem; margin-bottom: 0.5rem;">
+                    <strong>Q:</strong> {{ c.prompt or '' }}
+                </div>
+                {% if c.response %}
+                <div style="font-size: 0.85rem; color: #aaa; padding-left: 1rem; border-left: 2px solid #2a3a5c;">
+                    {{ c.response[:500] }}{% if (c.response or '')|length > 500 %}...{% endif %}
+                </div>
+                {% endif %}
+            </div>
+            {% else %}
+            <span class="text-dim">No challenges posed yet.</span>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+{% endblock %}

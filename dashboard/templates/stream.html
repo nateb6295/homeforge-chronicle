@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title_suffix %} - Stream{% endblock %}
+{% block content %}
+
+<h1 style="font-size: 1.2rem; margin-bottom: 1rem;">Activity Stream</h1>
+
+<!-- Source filter -->
+<div class="tabs">
+    <a href="/stream?source=all" class="{% if source == 'all' %}active{% endif %}">All</a>
+    {% for s in sources %}
+    <a href="/stream?source={{ s }}" class="{% if source == s %}active{% endif %}">{{ s }}</a>
+    {% endfor %}
+</div>
+
+<div class="card">
+    {% for item in items %}
+    <div class="activity-item">
+        <div class="meta">
+            <span class="badge badge-{{ item.source or 'system' }}">{{ item.source or '?' }}</span>
+            <span class="type">{{ item.activity_type or '' }}</span>
+            <span class="time">{{ ts_to_str(item.created_at) }} ({{ ts_to_relative(item.created_at) }})</span>
+        </div>
+        <div class="title">{{ item.title or '' }}</div>
+        {% if item.content %}
+        <div class="content">{{ item.content[:500] }}{% if item.content|length > 500 %}...{% endif %}</div>
+        {% endif %}
+    </div>
+    {% else %}
+    <span class="text-dim">No activity found</span>
+    {% endfor %}
+</div>
+
+<!-- Pagination -->
+{% set total_pages = (total / per_page)|int + (1 if total % per_page else 0) %}
+{% if total_pages > 1 %}
+<div class="pagination">
+    {% if page > 1 %}
+    <a href="/stream?page={{ page-1 }}&source={{ source }}">&laquo; Prev</a>
+    {% endif %}
+    <span class="current">Page {{ page }} of {{ total_pages }}</span>
+    {% if page < total_pages %}
+    <a href="/stream?page={{ page+1 }}&source={{ source }}">Next &raquo;</a>
+    {% endif %}
+</div>
+{% endif %}
+
+<div class="text-dim" style="text-align: center; margin-top: 0.5rem; font-size: 0.8rem;">
+    {{ total }} total entries
+</div>
+
+{% endblock %}

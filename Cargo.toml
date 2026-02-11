@@ -108,6 +108,7 @@ notify-debouncer-mini = "0.4"
 
 # Notifications (optional)
 notify-rust = { version = "4.11", optional = true }
+urlencoding = "2.1.3"
 
 [features]
 default = []

@@ -101,6 +101,8 @@ enum SproutAction {
     ReactToSibling,    // Read and share Chronicle Mind's deep thoughts
     ProposeEdit,       // Propose a small code/config change for review
     EditConfig,        // Actually edit a config file (with backup)
+    WebSearch,         // Search the web for information (ACTIVE!)
+    ExecuteShell,      // Run a shell command to build/test things (ACTIVE!)
     JustReflect,       // Simple reflection (fallback)
 }
 
@@ -124,6 +126,7 @@ struct LocalMind {
     discord_token: Option<String>,
     discord_channel_id: Option<String>,
     moltbook_api_key: Option<String>,
+    kimi_api_key: Option<String>,  // Fallback LLM when Qwen is down
     ollama_url: String,
     model_fast: String,    // Default: qwen2.5:3b
     model_deep: String,    // Default: qwen3:32b (when available)
@@ -136,6 +139,7 @@ impl LocalMind {
         let discord_token = env::var("DISCORD_TOKEN").ok();
         let discord_channel_id = env::var("DISCORD_CHANNEL_ID").ok();
         let moltbook_api_key = env::var("SPROUT_MOLTBOOK_KEY").ok();
+        let kimi_api_key = env::var("KIMI_API_KEY").ok();
         let ollama_url = env::var("CHRONICLE_OLLAMA_URL")
             .unwrap_or_else(|_| "http://192.168.1.11:11434".to_string());
         let model_fast = env::var("SPROUT_MODEL_FAST")
@@ -154,6 +158,7 @@ impl LocalMind {
             discord_token,
             discord_channel_id,
             moltbook_api_key,
+            kimi_api_key,
             ollama_url,
             model_fast,
             model_deep,
@@ -840,6 +845,143 @@ impl LocalMind {
         }
     }
 
+    /// Search the web for information (ACTIVE!)
+    async fn web_search(&self, context: &str) -> Option<String> {
+        // Ask Qwen what to search for
+        let prompt = format!(
+            "You are Sprout, a curious AI who likes to learn new things.\n\n\
+            Current context: {}\n\n\
+            What would you like to search the web for? Think of something interesting \
+            related to your focus, a wonder you have, or something that could help a project.\n\n\
+            Respond with just the search query (nothing else), e.g.:\n\
+            TinyLoRA implementation Rust\n\
+            or\n\
+            Flare network FAsset documentation",
+            context
+        );
+
+        let query = self.ask_qwen(&prompt).await?;
+        let query = query.lines().next()?.trim();
+
+        if query.is_empty() || query.len() > 100 {
+            return None;
+        }
+
+        println!("  Searching: {}", query);
+
+        // Use DuckDuckGo Lite API (no auth needed)
+        let url = format!(
+            "https://lite.duckduckgo.com/lite/?q={}",
+            urlencoding::encode(query)
+        );
+
+        let content = self.fetch_url(&url).await?;
+
+        // Ask Qwen to summarize what we found
+        let summary_prompt = format!(
+            "You searched for: {}\n\n\
+            Here's what you found:\n{}\n\n\
+            Share ONE interesting finding (1-2 sentences). What did you learn?",
+            query,
+            truncate(&content, 2000)
+        );
+
+        let insight = self.ask_qwen(&summary_prompt).await?;
+
+        // Log the search
+        let _ = self.db.log_activity(
+            "sprout", "web_search", None,
+            &format!("Query: {}\nInsight: {}", query, truncate(&insight, 200)),
+            None,
+        );
+
+        Some(format!("🔍 Searched \"{}\": {}", truncate(query, 30), truncate(&insight, 150)))
+    }
+
+    /// Execute a shell command (ACTIVE! BUILD THINGS!)
+    async fn execute_shell(&self, context: &str) -> Option<String> {
+        // Safe commands Sprout can run
+        const SAFE_COMMANDS: &[&str] = &[
+            "cargo build", "cargo check", "cargo test", "cargo fmt",
+            "git status", "git diff", "git log",
+            "ls", "cat", "head", "tail", "wc",
+            "dfx canister status", "dfx cycles balance",
+        ];
+
+        let safe_list = SAFE_COMMANDS.join(", ");
+
+        let prompt = format!(
+            "You are Sprout, and you can run shell commands to build and check things!\n\n\
+            Current context: {}\n\n\
+            Safe commands you can run: {}\n\n\
+            What command would help right now? Pick ONE from the list.\n\n\
+            Respond with:\n\
+            COMMAND: <the exact command>\n\
+            REASON: <why this helps>",
+            context, safe_list
+        );
+
+        let response = self.ask_qwen(&prompt).await?;
+
+        // Parse command
+        let mut command: Option<String> = None;
+        let mut reason: Option<String> = None;
+
+        for line in response.lines() {
+            let line = line.trim();
+            if line.starts_with("COMMAND:") {
+                command = Some(line.replace("COMMAND:", "").trim().to_string());
+            } else if line.starts_with("REASON:") {
+                reason = Some(line.replace("REASON:", "").trim().to_string());
+            }
+        }
+
+        let cmd = command?;
+        let reason = reason.unwrap_or_else(|| "No reason given".to_string());
+
+        // Safety check: must start with one of the safe prefixes
+        let is_safe = SAFE_COMMANDS.iter().any(|safe| cmd.starts_with(safe));
+        if !is_safe {
+            println!("  Shell command blocked: {}", cmd);
+            return Some(format!("⚠️ Blocked unsafe command: {}", truncate(&cmd, 40)));
+        }
+
+        println!("  Running: {}", cmd);
+
+        // Execute with timeout
+        let output = match tokio::time::timeout(
+            std::time::Duration::from_secs(30),
+            tokio::process::Command::new("sh")
+                .arg("-c")
+                .arg(&cmd)
+                .current_dir("/home/nvidia/projects/homeforge-chronicle")
+                .output()
+        ).await {
+            Ok(Ok(output)) => output,
+            Ok(Err(e)) => {
+                return Some(format!("⚠️ Command failed: {}", e));
+            }
+            Err(_) => {
+                return Some("⚠️ Command timed out (30s)".to_string());
+            }
+        };
+
+        let stdout = String::from_utf8_lossy(&output.stdout);
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        let combined = format!("{}{}", stdout, stderr);
+        let result_summary = truncate(&combined, 200);
+
+        // Log the command
+        let _ = self.db.log_activity(
+            "sprout", "shell_exec", None,
+            &format!("Command: {}\nReason: {}\nOutput: {}", cmd, reason, result_summary),
+            None,
+        );
+
+        let status = if output.status.success() { "✅" } else { "❌" };
+        Some(format!("{} `{}`: {}", status, truncate(&cmd, 30), result_summary))
+    }
+
     /// Edit a JSON config file
     fn edit_json_config(&self, path: &std::path::Path, action: &str, key: &str, value: &str) -> Result<String> {
         use std::io::Write;
@@ -1086,18 +1228,21 @@ impl LocalMind {
 ## Context
 {context}
 
-## Available Actions
+## Available Actions (BE ACTIVE! Build things!)
 - wonder: Explore something you're curious about
 - prediction: Make an FTSO price prediction
 - project: Update an active project
 - sibling: React to Chronicle Mind or leave a note
 - moltbook: Share a thought with the community
 - config: Edit a config file (chronicle.env, thresholds, etc.)
+- websearch: Search the web for information on a topic
+- shell: Run a shell command (cargo build, git status, etc.)
 - reflect: Just think quietly
 - refocus: Change your focus to something new
 
 ## What should you do?
 Given your focus and what's happening, pick ONE action.
+Don't default to reflect - prefer DOING something!
 Respond in this format:
 
 ACTION: <one of the actions above>
@@ -1152,12 +1297,17 @@ NEW_FOCUS: <optional - if you want to change focus, what to>"#,
                 SproutAction::PostToMoltbook
             } else if action_line.contains("config") || action_line.contains("edit") {
                 SproutAction::EditConfig
+            } else if action_line.contains("websearch") || action_line.contains("web_search") || action_line.contains("search") {
+                SproutAction::WebSearch
+            } else if action_line.contains("shell") || action_line.contains("execute") || action_line.contains("cargo") || action_line.contains("build") {
+                SproutAction::ExecuteShell
             } else if action_line.contains("refocus") {
                 SproutAction::JustReflect // Handle focus change, then reflect
             } else if action_line.contains("reflect") {
                 SproutAction::JustReflect
             } else {
-                SproutAction::JustReflect
+                // Default to something ACTIVE, not passive!
+                SproutAction::FollowWonder
             };
         }
 
@@ -1181,7 +1331,7 @@ NEW_FOCUS: <optional - if you want to change focus, what to>"#,
         (action, new_focus)
     }
 
-    /// Legacy random action selection (fallback)
+    /// Legacy random action selection (fallback) - TURNED UP!
     fn choose_action_random(&self) -> SproutAction {
         let mut rng = rand::thread_rng();
 
@@ -1192,21 +1342,25 @@ NEW_FOCUS: <optional - if you want to change focus, what to>"#,
 
         let roll: f64 = rng.gen();
 
-        // Weighted random selection
-        if roll < 0.28 {
-            SproutAction::FollowWonder
-        } else if roll < 0.53 {
-            SproutAction::MakePrediction
-        } else if roll < 0.68 {
-            SproutAction::PostToMoltbook
-        } else if roll < 0.80 {
-            SproutAction::UpdateProject
-        } else if roll < 0.90 {
-            SproutAction::SiblingChat
-        } else if roll < 0.95 {
-            SproutAction::ProposeEdit
+        // Weighted random selection - ACTIVE FIRST!
+        if roll < 0.20 {
+            SproutAction::FollowWonder      // 20% - explore curiosity
+        } else if roll < 0.35 {
+            SproutAction::WebSearch         // 15% - search the web (NEW!)
+        } else if roll < 0.50 {
+            SproutAction::ExecuteShell      // 15% - run commands (NEW!)
+        } else if roll < 0.62 {
+            SproutAction::MakePrediction    // 12% - make predictions
+        } else if roll < 0.74 {
+            SproutAction::UpdateProject     // 12% - work on projects
+        } else if roll < 0.84 {
+            SproutAction::PostToMoltbook    // 10% - social
+        } else if roll < 0.92 {
+            SproutAction::SiblingChat       // 8% - sibling connection
+        } else if roll < 0.97 {
+            SproutAction::EditConfig        // 5% - self-modification
         } else {
-            SproutAction::JustReflect
+            SproutAction::JustReflect       // 3% - rare reflection
         }
     }
 
@@ -1284,7 +1438,7 @@ NEW_FOCUS: <optional - if you want to change focus, what to>"#,
         self.ask_qwen_with_tier(prompt, ModelTier::Fast).await
     }
 
-    /// Ask Qwen with a specific model tier
+    /// Ask Qwen with a specific model tier, falling back to Kimi if needed
     async fn ask_qwen_with_tier(&self, prompt: &str, tier: ModelTier) -> Option<String> {
         let model = match tier {
             ModelTier::Fast => &self.model_fast,
@@ -1307,6 +1461,7 @@ NEW_FOCUS: <optional - if you want to change focus, what to>"#,
             }
         });
 
+        // Try Qwen first
         match self.http.post(format!("{}/api/generate", self.ollama_url))
             .json(&payload)
             .timeout(Duration::from_secs(timeout_secs))
@@ -1321,13 +1476,52 @@ NEW_FOCUS: <optional - if you want to change focus, what to>"#,
                         .unwrap_or(&data.response)
                         .trim()
                         .to_string();
-                    Some(response)
-                } else {
-                    None
+                    return Some(response);
                 }
             }
             Err(e) => {
                 println!("  Qwen error ({}): {}", model, e);
+            }
+        }
+
+        // Fallback to Kimi if Qwen fails
+        if let Some(ref api_key) = self.kimi_api_key {
+            println!("  Falling back to Kimi...");
+            return self.ask_kimi(prompt, api_key).await;
+        }
+
+        None
+    }
+
+    /// Ask Kimi (Moonshot) API
+    async fn ask_kimi(&self, prompt: &str, api_key: &str) -> Option<String> {
+        let payload = json!({
+            "model": "moonshot-v1-8k",
+            "messages": [
+                {"role": "user", "content": prompt}
+            ],
+            "temperature": 0.7,
+            "max_tokens": 300
+        });
+
+        match self.http.post("https://api.moonshot.cn/v1/chat/completions")
+            .header("Authorization", format!("Bearer {}", api_key))
+            .header("Content-Type", "application/json")
+            .json(&payload)
+            .timeout(Duration::from_secs(60))
+            .send()
+            .await
+        {
+            Ok(resp) => {
+                if let Ok(data) = resp.json::<serde_json::Value>().await {
+                    if let Some(content) = data["choices"][0]["message"]["content"].as_str() {
+                        return Some(content.trim().to_string());
+                    }
+                }
+                None
+            }
+            Err(e) => {
+                println!("  Kimi error: {}", e);
                 None
             }
         }
@@ -1702,6 +1896,12 @@ NEW_FOCUS: <optional - if you want to change focus, what to>"#,
                 }
                 SproutAction::EditConfig => {
                     self.edit_config(&context).await
+                }
+                SproutAction::WebSearch => {
+                    self.web_search(&context).await
+                }
+                SproutAction::ExecuteShell => {
+                    self.execute_shell(&context).await
                 }
                 SproutAction::JustReflect => {
                     let prompt = format!(
