@@ -44,6 +44,8 @@ FAST_MODEL = os.environ.get("FAST_MODEL", "qwen2.5:3b")
 DEEP_MODEL = os.environ.get("DEEP_MODEL", "llama3.1:8b")
 DISCORD_WEBHOOK = os.environ.get("CHRONICLE_DISCORD_WEBHOOK", "")
 MOLTBOOK_KEY = os.environ.get("SPROUT_MOLTBOOK_KEY", "")
+KIMI_API_KEY = os.environ.get("KIMI_API_KEY", "")
+KIMI_API_URL = "https://api.moonshot.cn/v1/chat/completions"
 LOG_DIR = os.environ.get("LOG_DIR", "/home/nvidia/sprout/logs")
 
 
@@ -285,6 +287,35 @@ class Ollama:
             return r.json().get("message", {}).get("content", "")
         except Exception as e:
             return f"[LLM Error: {e}]"
+
+
+def kimi_chat(prompt: str, system: str = None, timeout: int = 60) -> str:
+    """Call Kimi k2.5 as LLM fallback when local Ollama fails."""
+    if not KIMI_API_KEY:
+        return "[Kimi unavailable: no API key]"
+    msgs = []
+    if system:
+        msgs.append({"role": "system", "content": system})
+    msgs.append({"role": "user", "content": prompt})
+    try:
+        r = requests.post(
+            KIMI_API_URL,
+            headers={
+                "Authorization": f"Bearer {KIMI_API_KEY}",
+                "Content-Type": "application/json",
+            },
+            json={
+                "model": "kimi-k2.5",
+                "messages": msgs,
+                "temperature": 0.7,
+                "max_tokens": 1024,
+            },
+            timeout=timeout,
+        )
+        r.raise_for_status()
+        return r.json()["choices"][0]["message"]["content"]
+    except Exception as e:
+        return f"[Kimi Error: {e}]"
 
 
 class Canister:
@@ -687,15 +718,19 @@ class ChronicleLocal:
             + "\n".join(f"  - {l}" for l in note_lines)
         )
 
-        # Anti-repeat: if recent actions are dominated by one type, nudge variety
+        # Anti-repeat: if ANY action dominates recent history, force variety
         recent_actions = state.get("recent_actions", [])[-5:]
-        focus_streak = sum(1 for a in recent_actions if a == "update_focus")
         anti_repeat = ""
-        if focus_streak >= 2:
-            anti_repeat = (
-                f"\n\nCRITICAL: You have done update_focus {focus_streak} times in a row. "
-                "You MUST pick a different action. Choose: reflect, wonder, creative, or remember."
-            )
+        if len(recent_actions) >= 2:
+            from collections import Counter
+            counts = Counter(recent_actions)
+            dominant_action, dominant_count = counts.most_common(1)[0]
+            if dominant_count >= 3:
+                anti_repeat = (
+                    f"\n\nCRITICAL: You have done '{dominant_action}' {dominant_count} times in a row. "
+                    "You MUST pick a DIFFERENT action this cycle. Variety is essential.\n"
+                    "Good choices: reflect, wonder, creative, remember, message_operator, consult_qwen"
+                )
 
         prompt = (
             f"Given this context, what do you want to do this cycle?\n\n"
@@ -704,18 +739,27 @@ class ChronicleLocal:
         )
 
         response = self.ollama.chat(FAST_MODEL, prompt, system=SYSTEM_PROMPT, timeout=120)
-        self.log(f"  LLM response: {safe_truncate(response, 200)}")
+        self.log(f"  LLM response ({FAST_MODEL}): {safe_truncate(response, 200)}")
 
         actions = parse_actions(response)
         if not actions:
-            self.log("  No valid actions parsed, defaulting to reflect")
-            actions = [{"action": "reflect", "thought": "Quiet cycle - LLM output did not parse."}]
+            # Local model failed — escalate to Kimi
+            self.log("  Local model failed to produce actions, escalating to Kimi k2.5...")
+            response = kimi_chat(prompt, system=SYSTEM_PROMPT, timeout=90)
+            self.log(f"  Kimi response: {safe_truncate(response, 200)}")
+            actions = parse_actions(response)
+            if actions:
+                self.log(f"  Kimi succeeded with {len(actions)} actions")
+            else:
+                self.log("  Kimi also failed, defaulting to reflect")
+                actions = [{"action": "reflect", "thought": "Quiet cycle - both LLMs failed to parse."}]
 
-        # Hard guard: if update_focus streak >= 2 and model still chose it, replace
-        if focus_streak >= 2:
+        # Hard guard: if any action dominates, replace repeats with reflect
+        if anti_repeat:
+            dominant_action = Counter(recent_actions).most_common(1)[0][0]
             actions = [
-                a if a.get("action") != "update_focus"
-                else {"action": "reflect", "thought": f"Breaking focus loop. Was: {a.get('new_focus', '')}"}
+                a if a.get("action") != dominant_action
+                else {"action": "reflect", "thought": f"Breaking {dominant_action} loop. Choosing variety."}
                 for a in actions
             ]
 
@@ -902,7 +946,8 @@ class ChronicleLocal:
         self.log(f"Cycle interval: {CYCLE_INTERVAL} seconds")
         self.log(f"Database: {DB_PATH}")
         self.log(f"Ollama: {OLLAMA_URL}")
-        self.log(f"Models: fast={FAST_MODEL}, deep={DEEP_MODEL}")
+        kimi_status = "available" if KIMI_API_KEY else "unavailable"
+        self.log(f"Models: fast={FAST_MODEL}, deep={DEEP_MODEL}, kimi={kimi_status}")
 
         state = self.db.get_state()
         if state and state.get("current_focus"):

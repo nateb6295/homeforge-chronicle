@@ -1080,6 +1080,12 @@ class ChronicleMind:
             if real_msgs:
                 log(f"  Inbox messages: {len(real_msgs)}")
 
+        # Sibling messages (from Sprout, stored locally)
+        sibling_msgs = self.db.inbox_messages(limit=5)
+        ctx["sibling_messages"] = sibling_msgs
+        if sibling_msgs:
+            log(f"  Sibling messages: {len(sibling_msgs)}")
+
         # Moltbook notifications
         if health.get("moltbook"):
             try:
@@ -1143,12 +1149,19 @@ class ChronicleMind:
                 content = safe_truncate(n.get("content", ""), 150)
                 lines.append(f"  [{cat}] (id:{n.get('id', '?')}) {content}")
 
-        # Inbox messages
+        # Inbox messages (canister — read-only, reply not yet supported)
         inbox = ctx.get("inbox", [])
         if inbox:
-            lines.append(f"\nInbox ({len(inbox)} messages):")
+            lines.append(f"\nCanister inbox ({len(inbox)} — read-only for now, do NOT respond_to_message with these IDs):")
             for m in inbox[:3]:
-                lines.append(f"  msg {m.get('id')}: {safe_truncate(str(m.get('content', '')), 200)}")
+                lines.append(f"  [canister msg {m.get('id')}]: {safe_truncate(str(m.get('content', '')), 200)}")
+
+        # Sibling messages (from Sprout) — these are actionable!
+        siblings = ctx.get("sibling_messages", [])
+        if siblings:
+            lines.append(f"\nMessages from Sprout ({len(siblings)} — respond with their id!):")
+            for m in siblings[:3]:
+                lines.append(f"  [id:{m.get('id', '?')}] {safe_truncate(str(m.get('message', '')), 200)}")
 
         # Projects
         projects = ctx.get("projects", [])
@@ -1331,6 +1344,26 @@ class ChronicleMind:
         # Skip phantom message 123
         if msg_id == 123:
             return "false - Skipped phantom message 123"
+
+        # Check if this is a local sibling message (from Sprout)
+        local_msg = self.db.query_one(
+            "SELECT id, category FROM outbox WHERE id = ? AND category = 'sibling'",
+            (msg_id,),
+        )
+        if local_msg:
+            # Acknowledge the sibling message
+            self.db.run(
+                "UPDATE outbox SET acknowledged = 1 WHERE id = ?",
+                (msg_id,),
+            )
+            # Post reply so Sprout can see it
+            self.db.add_outbox(
+                f"Reply to Sprout (re: msg {msg_id}): {content}",
+                category="mind-to-sprout",
+            )
+            return f"true - Replied to Sprout message {msg_id} and acknowledged"
+
+        # Otherwise try canister inbox
         if self.canister:
             result = self.canister._post("/api/reply", {
                 "message_id": msg_id,
@@ -1339,6 +1372,18 @@ class ChronicleMind:
             ok = "error" not in result
             return f"{'true' if ok else 'false'} - Reply to message {msg_id}"
         return "false - No canister"
+
+    def _act_acknowledge_message(self, action: dict, cid: str) -> str:
+        msg_id = action.get("message_id", 0)
+        log(f'  Executing: AcknowledgeMessage {{ id: {msg_id} }}')
+        try:
+            self.db.run(
+                "UPDATE outbox SET acknowledged = 1 WHERE id = ?",
+                (msg_id,),
+            )
+            return f"true - Acknowledged message {msg_id}"
+        except Exception as e:
+            return f"false - {e}"
 
     def _act_send_agent_message(self, action: dict, cid: str) -> str:
         target = action.get("target_url", "")
@@ -1912,6 +1957,7 @@ ACTION_HANDLERS = {
     "message_operator": ChronicleMind._act_message_operator,
     "ping_operator": ChronicleMind._act_message_operator,
     "respond_to_message": ChronicleMind._act_respond_to_message,
+    "acknowledge_message": ChronicleMind._act_acknowledge_message,
     "send_agent_message": ChronicleMind._act_send_agent_message,
     "moltbook_post": ChronicleMind._act_moltbook_post,
     "moltbook_reply": ChronicleMind._act_moltbook_reply,
