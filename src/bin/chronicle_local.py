@@ -47,6 +47,8 @@ DISCORD_WEBHOOK = os.environ.get("CHRONICLE_DISCORD_WEBHOOK", "")
 MOLTBOOK_KEY = os.environ.get("SPROUT_MOLTBOOK_KEY", "")
 KIMI_API_KEY = os.environ.get("KIMI_API_KEY", "")
 KIMI_API_URL = "https://api.moonshot.cn/v1/chat/completions"
+MQTT_BROKER = os.environ.get("MQTT_BROKER", "192.168.1.10")
+MQTT_PORT = int(os.environ.get("MQTT_PORT", "1883"))
 LOG_DIR = os.environ.get("LOG_DIR", "/home/nvidia/sprout/logs")
 
 
@@ -258,6 +260,193 @@ class DB:
             self.run("UPDATE mind_timestamps SET timestamp = ? WHERE key = ?", (ts, key))
         else:
             self.run("INSERT INTO mind_timestamps (key, timestamp) VALUES (?, ?)", (key, ts))
+
+
+# ═══════════════════════════════════════════════════════════════════
+#  MQTT Nervous System
+# ═══════════════════════════════════════════════════════════════════
+
+# Canister discovery payload — published as retained MQTT message on startup
+# Any device on the network can subscribe and learn how to access Chronicle
+CANISTER_DISCOVERY = {
+    "canister_id": "fqqku-bqaaa-aaaai-q4wha-cai",
+    "base_url": "https://fqqku-bqaaa-aaaai-q4wha-cai.raw.icp0.io",
+    "chain": "Internet Computer (ICP)",
+    "wallet_chains": ["XRPL", "BASE", "Flare", "Ethereum"],
+    "wallet_mechanism": "Chain Fusion / threshold ECDSA — one canister key derives all chain wallets",
+    "public_endpoints": {
+        "GET /api/health": "System status (capsules, embeddings, heartbeats)",
+        "GET /api/heartbeat": "Mind liveness — is the autonomous loop alive?",
+        "GET /api/thoughts?limit=N": "Mind's thought stream — recent cognitive cycles",
+        "GET /api/inbox?limit=N": "Inbox messages for the agent",
+        "GET /agent": "Agent info, traits, values, and available endpoints",
+        "GET /agent/status": "Agent operational status and message counts",
+        "GET /agent/goals": "Active goals with priority",
+        "POST /agent": "Send a message: {type: query|conversation|goal_assignment, content: ...}",
+        "POST /api/feed": "Public memory feed: {content: ..., topic: ..., keywords: [...]}",
+    },
+    "protected_endpoints": {
+        "GET /api/recent?limit=N": "Recent capsules (knowledge items)",
+        "GET /api/search?q=TERM&limit=N": "Search capsules by keyword",
+        "GET /api/person?name=NAME&limit=N": "Search capsules by person mentioned",
+        "GET /api/capsule?id=N": "Get specific capsule by ID",
+        "GET /api/dashboard": "Full dashboard state",
+        "POST /api/store": "Store capsule (authenticated): {content, topic, keywords}",
+        "POST /api/research": "Submit research task: {query, focus, urls: [...]}",
+        "POST /api/tasks": "Task management: {type: heartbeat|check_price|write_note|fetch_url, ...}",
+    },
+    "auth": "Bearer token via header (Authorization: Bearer TOKEN) or query (?token=TOKEN)",
+    "token_location": "~/.homeforge-chronicle/.api_token on Jetson (192.168.1.11)",
+    "notes": "POST /api/feed and POST /agent are PUBLIC — no auth needed to contribute memories or send messages",
+}
+
+
+class MQTTBridge:
+    """Lightweight MQTT integration for Sprout.
+    Connects to the home MQTT broker, publishes status, subscribes to events."""
+
+    TOPICS_SUBSCRIBE = [
+        "homeforge/commands/sprout",       # Commands sent TO Sprout
+        "homeforge/home/#",                # Home sensor events
+        "frigate/+/+/state",              # Frigate detection states
+    ]
+
+    def __init__(self, broker: str, port: int):
+        self.broker = broker
+        self.port = port
+        self.client = None
+        self.connected = False
+        self.pending_events = []  # events received since last cycle
+        self._setup()
+
+    def _setup(self):
+        try:
+            import paho.mqtt.client as mqtt
+            self.client = mqtt.Client(
+                mqtt.CallbackAPIVersion.VERSION2,
+                client_id="sprout-ops",
+                clean_session=False,
+            )
+            self.client.on_connect = self._on_connect
+            self.client.on_message = self._on_message
+            self.client.on_disconnect = self._on_disconnect
+            # Will message: if Sprout dies, mark offline
+            self.client.will_set(
+                "homeforge/agents/sprout/status",
+                json.dumps({"status": "offline", "timestamp": now_iso()}),
+                retain=True,
+            )
+        except ImportError:
+            log("MQTT: paho-mqtt not installed, bridge disabled")
+            self.client = None
+
+    def connect(self):
+        if not self.client:
+            return False
+        try:
+            self.client.connect(self.broker, self.port, keepalive=60)
+            self.client.loop_start()
+            # Give it a moment to connect
+            for _ in range(10):
+                if self.connected:
+                    break
+                time.sleep(0.2)
+            return self.connected
+        except Exception as e:
+            log(f"MQTT: connection failed: {e}")
+            return False
+
+    def _on_connect(self, client, userdata, flags, rc, properties=None):
+        self.connected = True
+        # Subscribe to relevant topics
+        for topic in self.TOPICS_SUBSCRIBE:
+            client.subscribe(topic, qos=1)
+        # Publish canister discovery (retained — persists for new subscribers)
+        self.publish(
+            "homeforge/canister/discovery",
+            CANISTER_DISCOVERY,
+            retain=True,
+        )
+        # Publish online status
+        self.publish(
+            "homeforge/agents/sprout/status",
+            {"status": "online", "role": "ops-agent", "host": "nvidia-desktop",
+             "ip": "192.168.1.11", "timestamp": now_iso()},
+            retain=True,
+        )
+        # Publish canister auth token (retained, local network only)
+        token = get_token()
+        if token:
+            self.publish(
+                "homeforge/canister/token",
+                {"token": token, "note": "For protected endpoints. Local network only."},
+                retain=True,
+            )
+        log("MQTT: connected and discovery published")
+
+    def _on_message(self, client, userdata, msg):
+        try:
+            topic = msg.topic
+            payload = msg.payload.decode("utf-8", errors="replace")
+            # Try to parse as JSON, fall back to string
+            try:
+                data = json.loads(payload)
+            except (json.JSONDecodeError, ValueError):
+                data = payload
+            self.pending_events.append({
+                "topic": topic,
+                "data": data,
+                "timestamp": now_iso(),
+            })
+            # Cap pending events to prevent memory growth
+            if len(self.pending_events) > 50:
+                self.pending_events = self.pending_events[-50:]
+        except Exception:
+            pass
+
+    def _on_disconnect(self, client, userdata, flags, rc, properties=None):
+        self.connected = False
+
+    def publish(self, topic: str, payload, retain: bool = False):
+        if not self.client or not self.connected:
+            return
+        try:
+            data = json.dumps(payload) if not isinstance(payload, str) else payload
+            self.client.publish(topic, data, retain=retain, qos=0)
+        except Exception as e:
+            log(f"MQTT publish error: {e}")
+
+    def drain_events(self) -> list:
+        """Return and clear pending events since last check."""
+        events = list(self.pending_events)
+        self.pending_events.clear()
+        return events
+
+    def publish_system_check(self, report: str, xrp_price: float = None):
+        """Publish health data to MQTT for Home Assistant and other consumers."""
+        data = {"report": report, "timestamp": now_iso()}
+        if xrp_price:
+            data["xrp_price"] = xrp_price
+        self.publish("homeforge/agents/sprout/system_check", data)
+        if xrp_price:
+            self.publish("homeforge/prices/xrp", {"usd": xrp_price, "timestamp": now_iso()})
+
+    def publish_alert(self, alert: dict):
+        self.publish("homeforge/agents/sprout/alerts", {
+            "alert": alert.get("name", "unknown"),
+            "details": safe_truncate(str(alert), 500),
+            "timestamp": now_iso(),
+        })
+
+    def disconnect(self):
+        if self.client and self.connected:
+            self.publish(
+                "homeforge/agents/sprout/status",
+                json.dumps({"status": "offline", "timestamp": now_iso()}),
+                retain=True,
+            )
+            self.client.loop_stop()
+            self.client.disconnect()
 
 
 # ═══════════════════════════════════════════════════════════════════
@@ -478,6 +667,14 @@ Rules:
 - ONLY output the JSON array, nothing else
 - Use straight quotes and hyphens (no fancy Unicode)
 
+MQTT nervous system:
+- You are connected to MQTT broker at 192.168.1.10 (Raspberry Pi 5)
+- Home events (motion, sensors) arrive via MQTT and appear in your context
+- Your status and system checks are published to MQTT for Home Assistant
+- The Chronicle canister API is published at homeforge/canister/discovery
+- Commands sent to homeforge/commands/sprout will appear in your MQTT events
+- If you see motion/person events, report them. If you see commands, execute them.
+
 Useful shell commands:
 - df -h /home/nvidia -- disk space
 - free -m -- memory usage
@@ -501,6 +698,7 @@ class ChronicleLocal:
         self.ollama = Ollama(OLLAMA_URL)
         self.token = get_token()
         self.canister = Canister(CANISTER_URL, self.token) if self.token else None
+        self.mqtt = MQTTBridge(MQTT_BROKER, MQTT_PORT)
         self.cycle_count = 0
         self.running = True
         self.log_file = None
@@ -513,6 +711,7 @@ class ChronicleLocal:
     def _shutdown(self, signum, frame):
         self.log("Received shutdown signal, finishing gracefully...")
         self.running = False
+        self.mqtt.disconnect()
 
     def _post_discord(self, content: str, username: str = "Sprout"):
         """Post a message to Discord via webhook."""
@@ -584,13 +783,19 @@ class ChronicleLocal:
             latest = self.db.latest_price("XRP")
             xrp_price = latest["price_usd"] if latest else 0.0
 
+        mqtt_ok = self.mqtt.connected
+
         parts = [
             "Ollama: ok" if ollama_ok else "Ollama: DOWN",
             f"XRP: ${xrp_price:.4f}" if xrp_price else "XRP: N/A",
+            "MQTT: ok" if mqtt_ok else "MQTT: DOWN",
         ]
         self.log(f"  {' | '.join(parts)}")
 
-        return {"ollama_healthy": ollama_ok, "xrp_price": xrp_price}
+        # Publish to MQTT
+        self.mqtt.publish_system_check(" | ".join(parts), xrp_price)
+
+        return {"ollama_healthy": ollama_ok, "xrp_price": xrp_price, "mqtt_ok": mqtt_ok}
 
     # ── Phase 3: Settle Predictions ─────────────────────────────
 
@@ -658,6 +863,7 @@ class ChronicleLocal:
                             "UPDATE alerts SET active=0 WHERE id=?", (alert["id"],)
                         )
                     triggered.append(alert)
+                    self.mqtt.publish_alert(alert)
 
         if not triggered:
             self.log("  No alerts triggered")
@@ -706,6 +912,7 @@ class ChronicleLocal:
         # Gather context
         chronicle_activity = self.db.recent_activity(limit=5, source="qwen")
         notes = self.db.unresolved_notes(limit=5)
+        mqtt_events = self.mqtt.drain_events()
 
         chronicle_lines = []
         for act in chronicle_activity:
@@ -722,6 +929,16 @@ class ChronicleLocal:
             note_lines.append(
                 f"[{n.get('category', '?')}] {safe_truncate(n.get('content', ''), 150)}"
             )
+
+        mqtt_lines = []
+        for ev in mqtt_events[:10]:
+            topic = ev.get("topic", "?")
+            data = ev.get("data", "")
+            if isinstance(data, dict):
+                data = json.dumps(data)[:200]
+            else:
+                data = safe_truncate(str(data), 200)
+            mqtt_lines.append(f"[{topic}] {data}")
 
         context = (
             f"Current time: {now_iso()}\n"
@@ -740,6 +957,9 @@ class ChronicleLocal:
             + "\n\n"
             f"Recent Chronicle Mind activity:\n"
             + "\n".join(f"  - {l}" for l in chronicle_lines)
+            + "\n\n"
+            f"MQTT events ({len(mqtt_events)}):\n"
+            + ("\n".join(f"  - {l}" for l in mqtt_lines) if mqtt_lines else "  (none)")
             + "\n\n"
             f"Unresolved notes ({len(notes)} shown):\n"
             + "\n".join(f"  - {l}" for l in note_lines)
@@ -1116,6 +1336,13 @@ class ChronicleLocal:
         kimi_status = "available" if KIMI_API_KEY else "unavailable"
         self.log(f"Models: fast={FAST_MODEL}, deep={DEEP_MODEL}, kimi={kimi_status}")
 
+        # Connect MQTT nervous system
+        if self.mqtt.connect():
+            self.log(f"MQTT: connected to {MQTT_BROKER}:{MQTT_PORT}")
+            self.log("MQTT: canister discovery published, subscribed to home events")
+        else:
+            self.log(f"MQTT: failed to connect to {MQTT_BROKER}:{MQTT_PORT} (will retry)")
+
         state = self.db.get_state()
         if state and state.get("current_focus"):
             self.log(f'Resuming focus: "{safe_truncate(state["current_focus"], 50)}"')
@@ -1126,22 +1353,28 @@ class ChronicleLocal:
             self.log("  No Discord webhook configured")
 
         while self.running:
+            # Reconnect MQTT if disconnected
+            if not self.mqtt.connected:
+                self.mqtt.connect()
+
             self.run_cycle()
             if not self.running:
                 break
             self.log(f"Resting for {CYCLE_INTERVAL}s...")
-            # Sleep in 1s increments for graceful shutdown
             for _ in range(CYCLE_INTERVAL):
                 if not self.running:
                     break
                 time.sleep(1)
 
         self.log("Sprout shutting down gracefully.")
+        self.mqtt.disconnect()
         self.db.close()
 
     def run_once(self):
         self.log("Sprout: single cycle mode")
+        self.mqtt.connect()
         self.run_cycle()
+        self.mqtt.disconnect()
         self.db.close()
 
 
