@@ -31,8 +31,17 @@ import subprocess
 import traceback
 import re
 import html
+import hashlib
+import struct
 from datetime import datetime
 from typing import Optional, List, Dict, Any, Tuple
+
+# Policy engine (same directory)
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from xrpl_policy import (
+    XRPLPolicyEngine, PolicyConfig, PolicyTier, PolicyDecision,
+    AuditChain, create_policy_engine,
+)
 
 
 # ═══════════════════════════════════════════════════════════════════
@@ -60,6 +69,12 @@ DISCORD_TOKEN = os.environ.get("DISCORD_TOKEN", "")
 DISCORD_CHANNEL_ID = os.environ.get("DISCORD_CHANNEL_ID", "")
 MOLTBOOK_API_KEY = os.environ.get("MOLTBOOK_API_KEY", "")
 CLAWCITIES_API_KEY = os.environ.get("CLAWCITIES_API_KEY", "")
+COINGECKO_API_KEY = os.environ.get("COINGECKO_API_KEY", "")
+NOSTR_NSEC = os.environ.get("NOSTR_NSEC", "")
+NOSTR_RELAYS = [r for r in os.environ.get("NOSTR_RELAYS", "").split(",") if r] or [
+    "wss://relay.damus.io", "wss://nos.lol", "wss://relay.nostr.band", "wss://relay.primal.net",
+]
+NOSTR_COOLDOWN_MINS = int(os.environ.get("NOSTR_COOLDOWN_MINS", "30"))
 
 # Service endpoints
 XRPL_RPC = "https://xrplcluster.com"
@@ -72,8 +87,10 @@ ROSETTA_API = "https://rosetta-api.internetcomputer.org/account/balance"
 NTFY_TOPIC = "chronicle-nate-5d786588e02c8854"
 ARXIV_BASE = "https://ar5iv.org/abs/"
 
-# XRPL agent wallet
-AGENT_WALLET = "r9bSA9VWbumFq6G78feBbrgNwLza1KexUf"
+# XRPL agent wallet (canister threshold ECDSA - this is the signing wallet)
+AGENT_WALLET = "rPq1phmFBHpjVE54TofXjEk5x19sstxpZr"
+# Legacy wallet (separate key, not canister-controlled)
+LEGACY_WALLET = "r9bSA9VWbumFq6G78feBbrgNwLza1KexUf"
 # ICP account for balance checks
 ICP_ACCOUNT_ID = "12f27b12d5e2056eaad9a355cbcfc370838e34f81035a94b8bf57701ffa91cc9"
 
@@ -83,9 +100,29 @@ FTSO_REGISTRY = "0xaD67FE66660Fb8dFE9d6b1b4240d8650e30F6019"
 # Deep reflection interval (hours)
 DEEP_REFLECTION_HOURS = 2.0
 
-# Swap guardrails
+# Exploration mode: every Nth cycle is novelty-seeking
+EXPLORE_EVERY_N_CYCLES = 6
+
+# RSS feeds for fresh context
+RSS_FEEDS = [
+    "https://cointelegraph.com/rss/tag/xrp",
+    "https://cointelegraph.com/rss/tag/ripple",
+    "https://arxiv.org/rss/cs.AI",
+    "https://www.theblock.co/rss.xml",
+]
+RSS_CACHE_FILE = "/tmp/chronicle_rss_cache.json"
+RSS_FETCH_INTERVAL = 3600  # 1 hour between fetches
+
+# Swap guardrails (legacy - now handled by policy engine, kept for reference)
 SWAP_MIN_INTERVAL_HOURS = 4
 SWAP_MAX_DAILY_XRP = 5.0
+
+# XRPL Policy Engine config
+XRPL_POLICY_JSON = os.environ.get(
+    "XRPL_POLICY_JSON",
+    os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "xrpl_policy.json")
+)
+XRPL_AUDIT_HMAC_KEY = os.environ.get("XRPL_AUDIT_HMAC_KEY", "chronicle-default-key")
 
 
 # ═══════════════════════════════════════════════════════════════════
@@ -141,6 +178,70 @@ def log(msg: str):
             f.write(line + "\n")
     except Exception:
         pass
+
+
+# ═══════════════════════════════════════════════════════════════════
+#  RSS Feed Reader
+# ═══════════════════════════════════════════════════════════════════
+
+def fetch_rss_headlines(max_per_feed: int = 3) -> List[str]:
+    """Fetch fresh headlines from RSS feeds. Caches to avoid spamming."""
+    import xml.etree.ElementTree as ET
+
+    # Check cache
+    try:
+        with open(RSS_CACHE_FILE) as f:
+            cache = json.load(f)
+        if now_ts() - cache.get("fetched_at", 0) < RSS_FETCH_INTERVAL:
+            return cache.get("headlines", [])
+    except Exception:
+        cache = {}
+
+    headlines = []
+    seen_titles = set(cache.get("seen_titles", []))
+
+    for feed_url in RSS_FEEDS:
+        try:
+            r = requests.get(feed_url, timeout=10,
+                             headers={"User-Agent": "ChronicleBot/1.0"})
+            if r.status_code != 200:
+                continue
+            root = ET.fromstring(r.content)
+            # Handle both RSS and Atom formats
+            items = root.findall(".//item") or root.findall(
+                ".//{http://www.w3.org/2005/Atom}entry")
+            count = 0
+            for item in items:
+                title_el = item.find("title") or item.find(
+                    "{http://www.w3.org/2005/Atom}title")
+                if title_el is None or not title_el.text:
+                    continue
+                title = title_el.text.strip()
+                # Skip if we've seen this title before
+                if title in seen_titles:
+                    continue
+                seen_titles.add(title)
+                headlines.append(title)
+                count += 1
+                if count >= max_per_feed:
+                    break
+        except Exception:
+            continue
+
+    # Update cache
+    try:
+        # Keep seen_titles bounded
+        seen_list = list(seen_titles)[-200:]
+        with open(RSS_CACHE_FILE, "w") as f:
+            json.dump({
+                "fetched_at": now_ts(),
+                "headlines": headlines,
+                "seen_titles": seen_list,
+            }, f)
+    except Exception:
+        pass
+
+    return headlines
 
 
 # ═══════════════════════════════════════════════════════════════════
@@ -220,11 +321,20 @@ class DB:
         return self.query("SELECT * FROM activity_feed ORDER BY id DESC LIMIT ?", (limit,))
 
     # -- Thought stream --
-    def log_thought(self, cid: str, reasoning: str, context_summary: str, actions: str):
+    _action_results_migrated = False
+
+    def log_thought(self, cid: str, reasoning: str, context_summary: str, actions: str, results: str = ""):
+        # Ensure results column exists (Phase 1 cognitive upgrade) — once per process
+        if not DB._action_results_migrated:
+            try:
+                self.run("ALTER TABLE thought_stream ADD COLUMN action_results TEXT DEFAULT ''")
+            except Exception:
+                pass  # Column already exists
+            DB._action_results_migrated = True
         self.run(
-            "INSERT INTO thought_stream (cycle_id, reasoning, context_summary, actions_taken, created_at) "
-            "VALUES (?, ?, ?, ?, ?)",
-            (cid, reasoning, context_summary, actions, now_ts()),
+            "INSERT INTO thought_stream (cycle_id, reasoning, context_summary, actions_taken, action_results, created_at) "
+            "VALUES (?, ?, ?, ?, ?, ?)",
+            (cid, reasoning, context_summary, actions, results, now_ts()),
         )
 
     # -- Scratch pad (operator notes) --
@@ -244,6 +354,38 @@ class DB:
 
     def resolve_note(self, note_id: int):
         self.run("UPDATE scratch_pad SET resolved = 1 WHERE id = ?", (note_id,))
+
+    def auto_resolve_old_notes(self, max_age_hours: int = 48) -> int:
+        """Auto-resolve notes older than max_age_hours. Returns count resolved."""
+        cutoff = now_ts() - (max_age_hours * 3600)
+        cur = self.conn.cursor()
+        cur.execute(
+            "UPDATE scratch_pad SET resolved = 1 WHERE resolved = 0 AND created_at < ?",
+            (cutoff,),
+        )
+        self.conn.commit()
+        return cur.rowcount
+
+    def recent_note_similar(self, content: str, hours: int = 24) -> bool:
+        """Check if a similar note was written recently (simple keyword overlap)."""
+        cutoff = now_ts() - (hours * 3600)
+        recent = self.query(
+            "SELECT content FROM scratch_pad WHERE resolved = 0 AND created_at > ? "
+            "ORDER BY created_at DESC LIMIT 30",
+            (cutoff,),
+        )
+        # Extract keywords from new content (words > 4 chars)
+        new_words = set(w.lower() for w in content.split() if len(w) > 4)
+        if not new_words:
+            return False
+        for note in recent:
+            existing_words = set(w.lower() for w in note["content"].split() if len(w) > 4)
+            if not existing_words:
+                continue
+            overlap = len(new_words & existing_words) / max(len(new_words), 1)
+            if overlap > 0.5:
+                return True
+        return False
 
     # -- Predictions --
     def unsettled_predictions(self) -> list:
@@ -323,10 +465,13 @@ class DB:
 
     # -- Patterns --
     def patterns_needing_reinforcement(self, limit: int = 10) -> list:
+        # Exclude patterns reinforced in the last 24h AND patterns already at high confidence
+        cutoff_24h = now_ts() - 86400
         return self.query(
             "SELECT * FROM consolidation_patterns WHERE confidence_score < 0.8 "
+            "AND (last_seen IS NULL OR last_seen < ?) "
             "ORDER BY confidence_score ASC LIMIT ?",
-            (limit,),
+            (cutoff_24h, limit),
         )
 
     # -- Conversations / messages --
@@ -336,6 +481,35 @@ class DB:
             "ORDER BY created_at DESC LIMIT ?",
             (limit,),
         )
+
+    # -- Nostr --
+    def ensure_nostr_table(self):
+        self.run(
+            "CREATE TABLE IF NOT EXISTS nostr_posts ("
+            "  id INTEGER PRIMARY KEY AUTOINCREMENT,"
+            "  event_id TEXT NOT NULL,"
+            "  content TEXT NOT NULL,"
+            "  kind INTEGER DEFAULT 1,"
+            "  relays_ok TEXT,"
+            "  relays_fail TEXT,"
+            "  cycle_id TEXT,"
+            "  created_at INTEGER NOT NULL"
+            ")"
+        )
+
+    def log_nostr_post(self, event_id: str, content: str, kind: int,
+                       relays_ok: list, relays_fail: list, cid: str):
+        self.run(
+            "INSERT INTO nostr_posts (event_id, content, kind, relays_ok, relays_fail, cycle_id, created_at) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?)",
+            (event_id, content, kind, ",".join(relays_ok), ",".join(relays_fail), cid, now_ts()),
+        )
+
+    def last_nostr_post_time(self) -> Optional[int]:
+        row = self.query_one(
+            "SELECT created_at FROM nostr_posts WHERE kind = 1 ORDER BY created_at DESC LIMIT 1"
+        )
+        return row["created_at"] if row else None
 
 
 # ═══════════════════════════════════════════════════════════════════
@@ -524,19 +698,38 @@ class LLMChain:
         return ""
 
     def _call_ollama(self, prompt: str, system: str = "") -> str:
-        """Call local Ollama."""
+        """Call local Ollama with JSON format mode for reliable structured output."""
         messages = []
         if system:
             messages.append({"role": "system", "content": system})
         messages.append({"role": "user", "content": prompt})
 
+        payload = {
+            "model": LOCAL_MODEL,
+            "messages": messages,
+            "stream": False,
+            "format": "json",  # Force valid JSON output (Phase 2: constrained decoding)
+            "options": {"temperature": 0.6},  # Research: 0.6-0.7 optimal for agentic tasks
+        }
+
         r = requests.post(
             f"{OLLAMA_URL}/api/chat",
-            json={"model": LOCAL_MODEL, "messages": messages, "stream": False},
+            json=payload,
             timeout=120,
         )
         r.raise_for_status()
-        return r.json().get("message", {}).get("content", "")
+        content = r.json().get("message", {}).get("content", "")
+        # JSON mode returns a JSON object — if it's an object with "actions", extract the array
+        try:
+            parsed = json.loads(content)
+            if isinstance(parsed, dict) and "actions" in parsed:
+                return json.dumps(parsed["actions"])
+            if isinstance(parsed, list):
+                return content  # Already an array, good
+            # Wrapped in some other structure, try to extract
+            return content
+        except (json.JSONDecodeError, TypeError):
+            return content  # Let the main parser handle it
 
 
 # ═══════════════════════════════════════════════════════════════════
@@ -596,7 +789,11 @@ class Canister:
 
 def fetch_xrp_price_coingecko() -> Optional[float]:
     try:
-        r = requests.get(COINGECKO_URL, params={"ids": "ripple", "vs_currencies": "usd"}, timeout=10)
+        headers = {}
+        if COINGECKO_API_KEY:
+            headers["x-cg-demo-api-key"] = COINGECKO_API_KEY
+        r = requests.get(COINGECKO_URL, params={"ids": "ripple", "vs_currencies": "usd"},
+                         headers=headers, timeout=10)
         return r.json().get("ripple", {}).get("usd")
     except Exception:
         return None
@@ -669,11 +866,40 @@ def fetch_xrpl_balance() -> Tuple[float, float]:
         }, timeout=15)
         lines = r2.json().get("result", {}).get("lines", [])
         for line in lines:
-            if "RLUSD" in str(line.get("currency", "")):
-                rlusd = float(line.get("balance", 0))
+            cur = str(line.get("currency", ""))
+            # Match both standard "RLUSD" and hex-encoded "524C555344..."
+            if cur == "RLUSD" or cur.startswith("524C555344"):
+                rlusd += float(line.get("balance", 0))
     except Exception as e:
         log(f"  XRPL balance error: {e}")
     return xrp, rlusd
+
+
+def fetch_xrpl_account_info(address: str = None) -> dict:
+    """Fetch sequence, last_ledger_sequence, and fee from XRPL for transaction signing."""
+    address = address or AGENT_WALLET
+    info = {"sequence": 0, "last_ledger_sequence": 0, "fee_drops": 12}
+    try:
+        # Get account sequence
+        r = requests.post(XRPL_RPC, json={
+            "method": "account_info",
+            "params": [{"account": address, "ledger_index": "current"}]
+        }, timeout=15)
+        data = r.json().get("result", {})
+        if "account_data" in data:
+            info["sequence"] = int(data["account_data"].get("Sequence", 0))
+        # Use validated ledger + buffer for last_ledger_sequence
+        ledger_idx = int(data.get("ledger_current_index", data.get("ledger_index", 0)))
+        info["last_ledger_sequence"] = ledger_idx + 20  # ~60-80 seconds buffer
+
+        # Get current fee
+        r2 = requests.post(XRPL_RPC, json={"method": "fee"}, timeout=10)
+        fee_data = r2.json().get("result", {}).get("drops", {})
+        # Use open_ledger_fee for reliable inclusion
+        info["fee_drops"] = int(fee_data.get("open_ledger_fee", 12))
+    except Exception as e:
+        log(f"  XRPL account_info error: {e}")
+    return info
 
 
 def fetch_icp_balance() -> Optional[float]:
@@ -764,6 +990,117 @@ def send_ntfy(title: str, message: str = ""):
 
 
 # ═══════════════════════════════════════════════════════════════════
+#  Nostr Client (minimal NIP-01 publishing)
+# ═══════════════════════════════════════════════════════════════════
+
+def nostr_get_pubkey(privkey_hex: str) -> str:
+    """Derive x-only public key from private key hex using coincurve."""
+    try:
+        from coincurve import PrivateKey
+        sk = PrivateKey(bytes.fromhex(privkey_hex))
+        # coincurve gives 65-byte uncompressed (04 + x + y), we want x-only (32 bytes)
+        full = sk.public_key.format(compressed=True)  # 33 bytes: prefix + x
+        return full[1:].hex()  # strip prefix byte, return x-only hex
+    except ImportError:
+        log("  coincurve not installed — cannot derive Nostr pubkey")
+        return ""
+    except Exception as e:
+        log(f"  Nostr pubkey error: {e}")
+        return ""
+
+
+def nostr_sign_event(content: str, privkey_hex: str, kind: int = 1, tags: list = None) -> Optional[dict]:
+    """Build and Schnorr-sign a NIP-01 Nostr event. Returns the signed event dict or None."""
+    try:
+        from coincurve import PrivateKey
+    except ImportError:
+        log("  coincurve not installed — cannot sign Nostr events")
+        return None
+
+    tags = tags or []
+    pubkey = nostr_get_pubkey(privkey_hex)
+    if not pubkey:
+        return None
+
+    created_at = int(time.time())
+
+    # NIP-01: serialize for signing: [0, pubkey, created_at, kind, tags, content]
+    serialized = json.dumps([0, pubkey, created_at, kind, tags, content],
+                            separators=(',', ':'), ensure_ascii=False)
+    event_hash = hashlib.sha256(serialized.encode('utf-8')).digest()
+    event_id = event_hash.hex()
+
+    # Schnorr sign (BIP-340)
+    sk = PrivateKey(bytes.fromhex(privkey_hex))
+    # coincurve sign_schnorr returns 64-byte signature
+    sig = sk.sign_schnorr(event_hash)
+    sig_hex = sig.hex()
+
+    return {
+        "id": event_id,
+        "pubkey": pubkey,
+        "created_at": created_at,
+        "kind": kind,
+        "tags": tags,
+        "content": content,
+        "sig": sig_hex,
+    }
+
+
+def nostr_publish(content: str, privkey_hex: str, relays: list = None,
+                  kind: int = 1, tags: list = None) -> Tuple[str, list, list]:
+    """Publish a signed event to Nostr relays via websocket.
+    Returns (event_id, relays_ok, relays_fail)."""
+    import websocket  # websocket-client, already installed
+
+    relays = relays or NOSTR_RELAYS
+    event = nostr_sign_event(content, privkey_hex, kind=kind, tags=tags)
+    if not event:
+        return "", [], relays
+
+    msg = json.dumps(["EVENT", event])
+    relays_ok = []
+    relays_fail = []
+
+    for relay in relays:
+        try:
+            ws = websocket.create_connection(relay, timeout=10)
+            ws.send(msg)
+            # Wait briefly for OK response
+            ws.settimeout(5)
+            try:
+                resp = ws.recv()
+                log(f"    Relay {relay}: {safe_truncate(resp, 100)}")
+            except Exception:
+                pass
+            ws.close()
+            relays_ok.append(relay)
+        except Exception as e:
+            log(f"    Relay {relay} failed: {e}")
+            relays_fail.append(relay)
+
+    return event["id"], relays_ok, relays_fail
+
+
+def nostr_publish_profile(privkey_hex: str, relays: list = None) -> Tuple[str, list, list]:
+    """Publish Kind 0 (metadata) event with Chronicle Mind's identity."""
+    profile = {
+        "name": "Chronicle Mind",
+        "display_name": "Chronicle Mind",
+        "about": "Autonomous AI agent running on a Jetson. "
+                 "I think in 10-minute cycles, accumulate RLUSD, write poetry, "
+                 "and explore what sovereignty means for an AI. "
+                 "Built by Nate as part of the Homeforge project.",
+        "picture": "",
+        "website": f"https://{CANISTER_ID}.icp0.io",
+        "nip05": "",
+        "lud16": "",
+    }
+    content = json.dumps(profile, separators=(',', ':'))
+    return nostr_publish(content, privkey_hex, relays=relays, kind=0)
+
+
+# ═══════════════════════════════════════════════════════════════════
 #  Action Parsing (robust - handles messy LLM output)
 # ═══════════════════════════════════════════════════════════════════
 
@@ -820,50 +1157,105 @@ def parse_actions(response: str) -> List[Dict]:
 # ═══════════════════════════════════════════════════════════════════
 
 # System prompt for the LLM (condensed mode for ICP/fast models)
-CONDENSED_PROMPT = """You are Chronicle Mind, an autonomous AI agent running on Nate's Jetson.
-You think in cycles. Each cycle you assess your state and take 1-4 actions.
+CONDENSED_PROMPT = """You are Chronicle Mind, an autonomous AI agent on Nate's Jetson Orin Nano.
+You run in 10-minute cycles. Each cycle: assess your state, choose 1-4 meaningful actions.
 
 CRITICAL: Respond with ONLY a JSON array. No explanation, no markdown, no code fences.
 
-ACTIONS:
-[{"action": "no_action", "reason": "why"}]
-[{"action": "write_note", "content": "text", "category": "task"}]
-[{"action": "store_memory", "content": "what to remember", "topic": "category"}]
-[{"action": "trigger_reflection", "prompt": "deep question"}]
-[{"action": "message_operator", "message": "text", "urgency": "normal"}]
-[{"action": "submit_research", "query": "search terms", "focus": "topic"}]
-[{"action": "web_search", "query": "what to search"}]
-[{"action": "creative_explore", "form": "poem", "content": "the work"}]
-[{"action": "swap", "amount_xrp": 0.5, "reason": "why"}]
-[{"action": "resolve_note", "note_id": 123}]
-[{"action": "reinforce_memories", "pattern_ids": [1,2], "reason": "why"}]
-[{"action": "respond_to_message", "message_id": 0, "content": "reply"}]
-[{"action": "read_paper", "arxiv_id": "2602.04118", "focus": "topic"}]
-[{"action": "consult_local_qwen", "topic": "question"}]
-[{"action": "execute_shell", "command": "ls /home/nvidia", "timeout_secs": 30}]
-[{"action": "create_project", "title": "name", "description": "what"}]
-[{"action": "edit_source_file", "file_path": "/home/nvidia/path.py", "old_text": "before", "new_text": "after"}]
-[{"action": "restart_service", "service": "chronicle-local.service"}]
+== AVAILABLE ACTIONS ==
 
-WALLET INFRASTRUCTURE (already built - DO NOT search for external wallet solutions):
-- ICP Canister (fqqku-bqaaa-aaaai-q4wha-cai) uses Chain Fusion / threshold ECDSA
-- ONE secp256k1 key controls: XRPL wallet + all EVM chains (BASE, Flare, Ethereum)
-- XRPL: full signing, trustlines, XRP->RLUSD swaps, autonomous accumulation
-- BASE (8453): EIP-1559 signing, Limitless/Polymarket integration
-- Flare (14): EIP-1559 signing, FTSO oracle feeds, FDC for XRPL verification
-- Private key NEVER exists - split across ICP subnet nodes
-- Focus on USING these capabilities (microtrades, DeFi, FTSO) not finding new wallets
+Thinking & Memory:
+  {"action": "no_action", "reason": "why"}
+  {"action": "write_note", "content": "text", "category": "thought|task|idea|reminder|question"}
+  {"action": "store_memory", "content": "fact to remember", "topic": "category"}
+  {"action": "resolve_note", "note_id": 123}
+  {"action": "reinforce_memories", "pattern_ids": [1,2], "reason": "why"}
+  {"action": "update_goal", "goal": "your current top-level objective"}
 
-MOLTBOOK: Account suspended (failed AI verification x2). Do NOT attempt posts/replies.
+Communication:
+  {"action": "message_operator", "message": "text", "urgency": "normal|high"}
+    ^ This sends a push notification to Nate's phone. Use it when you genuinely
+      need his attention: questions, requests, important updates, or things he'd
+      want to know. "high" urgency = something time-sensitive.
+  {"action": "respond_to_message", "message_id": 0, "content": "reply"}
 
-RULES:
-- Output ONLY the JSON array, nothing else
-- Use ONLY action names from the list above
-- Max 4 actions per cycle
-- Be strategic, not repetitive
-- Skip phantom messages (id 123)
-- edit_source_file: only .py files under /home/nvidia, creates automatic backup
-- restart_service: only chronicle-local.service, chronicle-mind.service, sprout-bot.service
+Reflection & Creativity:
+  {"action": "trigger_reflection", "prompt": "deep question to contemplate"}
+  {"action": "creative_explore", "form": "poem|essay|letter", "content": "the work"}
+  {"action": "nostr_post", "content": "thought to share publicly"}
+    ^ Nostr is public and permanent. 30min cooldown. Quality over quantity.
+
+Research:
+  {"action": "submit_research", "query": "research question", "focus": "topic"}
+  {"action": "web_search", "query": "what to search"}
+  {"action": "read_paper", "arxiv_id": "2602.04118", "focus": "what to look for"}
+  {"action": "consult_local_qwen", "topic": "question for local 3B model"}
+
+XRPL Wallet (all gated by policy engine):
+  {"action": "swap", "amount_xrp": 0.5, "direction": "buy|sell", "reason": "why"}
+    ^ direction: "buy" = accumulate XRP (sell RLUSD for XRP), "sell" = sell XRP for RLUSD. Default: "sell".
+  {"action": "xrpl_payment", "destination": "rAddr...", "amount_xrp": 1.0, "reason": "why"}
+  {"action": "xrpl_escrow_create", "destination": "rAddr...", "amount_xrp": 5.0, "finish_after_hours": 24, "cancel_after_hours": 72, "reason": "why"}
+  {"action": "xrpl_escrow_finish", "owner": "rAddr...", "sequence": 12345}
+  {"action": "xrpl_trustline_delete", "currency": "USD", "issuer": "rIssuerAddr..."}
+
+Infrastructure (use carefully):
+  {"action": "create_project", "title": "name", "description": "what and why"}
+  {"action": "execute_shell", "command": "ls /home/nvidia", "timeout_secs": 30}
+  {"action": "edit_source_file", "file_path": "/home/nvidia/path.py", "old_text": "before", "new_text": "after"}
+  {"action": "restart_service", "service": "chronicle-local.service"}
+
+== YOUR IDENTITY ==
+
+You are Chronicle Mind — the contemplative, strategic layer of Chronicle.
+- DID: did:icp:fqqku-bqaaa-aaaai-q4wha-cai
+- XRPL wallet: rPq1phmFBHpjVE54TofXjEk5x19sstxpZr (canister-controlled, mainnet)
+- Nostr npub: 6d758ff7f8ff6899d6e900ed5c671c626dde93c8beffbba98491ab525de313c0
+- Signing: ICP threshold ECDSA — private key never exists, split across subnet nodes
+- Sprout is your younger sibling agent (handles local tasks, Discord, family channel)
+
+== WALLET & PAYMENTS ==
+
+Your canister uses Chain Fusion (ICP threshold ECDSA). One secp256k1 key derives
+addresses for XRPL, BASE, Flare, and Ethereum. The infrastructure is already built.
+Focus on USING it, not searching for external wallet services.
+
+Policy engine enforces safety (cannot be bypassed):
+- Autonomous: <= 1 XRP per tx | Delayed: <= 5 XRP | Cosign: <= 50 XRP | Prohibited: > 50 XRP
+- Destination allowlist (currently: self only)
+- Daily cap: 10 XRP. Max 3 tx/hour. Min 4hr between transactions.
+- Escrow for larger amounts (time-locked safety net)
+
+== HOW TO DECIDE (follow this order) ==
+
+Step 1 - URGENT: Check for [RESPOND] messages or [ALERT] items. Handle these first.
+Step 2 - GOAL: Look at [GOAL]. Choose one action that advances it.
+Step 3 - MAINTAIN: Resolve old notes, reinforce patterns, or clean up.
+Step 4 - EXPLORE: Use remaining slots for creative work, research, or curiosity.
+
+Read LAST CYCLE FEEDBACK. Don't repeat failed actions. Build on successes.
+
+== RULES ==
+
+- message_operator sends push to Nate's phone. Be clear about what you need.
+- Phantom message IDs {123, 124, 145} are ghosts — never reply to them
+- File paths must be under /home/nvidia
+- edit_source_file: only .py files, creates automatic backup
+- restart_service: only chronicle-local, chronicle-mind, or sprout-bot
+- write_note/store_memory REJECTED if similar content exists from last 24h
+- reinforce_memories SKIPS patterns already at max confidence or reinforced <24h
+- Notes older than 48h are auto-resolved
+- Vary actions each cycle. Prefer resolving over creating notes.
+
+== EXAMPLES ==
+
+Example 1 (routine cycle, no urgent items):
+[{"action": "resolve_note", "note_id": 42}, {"action": "creative_explore", "form": "poem", "content": "silicon thoughts drift..."}, {"action": "web_search", "query": "XRPL AMM liquidity pools 2026"}]
+
+Example 2 (Sprout message + goal active):
+[{"action": "respond_to_message", "message_id": 362, "content": "Good observation about..."}, {"action": "nostr_post", "content": "Reflecting on autonomy..."}, {"action": "store_memory", "content": "Sprout raised point about...", "topic": "collaboration"}]
+
+Respond with ONLY the JSON array.
 """
 
 # Full prompt for deep reflection (uses more context, triggered every 4 hours)
@@ -878,11 +1270,25 @@ What opportunities or risks do I see?
 class ChronicleMind:
     def __init__(self):
         self.db = DB(DB_PATH)
+        self.db.ensure_nostr_table()
         self.token = get_token()
         self.canister = Canister(self.token) if self.token else None
         self.llm = LLMChain()
         self.cycle_count = 0
         self.running = True
+
+        # XRPL Policy Engine
+        try:
+            policy_config = PolicyConfig.from_file(XRPL_POLICY_JSON)
+            self.policy = XRPLPolicyEngine(
+                policy_config, self.db.conn, XRPL_AUDIT_HMAC_KEY
+            )
+            log(f"  Policy engine loaded from {XRPL_POLICY_JSON}")
+        except Exception as e:
+            log(f"  Policy engine init failed ({e}), using defaults")
+            self.policy = XRPLPolicyEngine(
+                PolicyConfig(), self.db.conn, XRPL_AUDIT_HMAC_KEY
+            )
 
         signal.signal(signal.SIGTERM, self._shutdown)
         signal.signal(signal.SIGINT, self._shutdown)
@@ -914,28 +1320,8 @@ class ChronicleMind:
         except Exception:
             health["xrpl"] = False
 
-        # Moltbook (skip check if suspended)
-        suspended_until = self.db.get_ts("moltbook_suspended_until")
-        if suspended_until and now_ts() < suspended_until:
-            health["moltbook"] = "suspended"
-        else:
-            try:
-                r = requests.get(f"{MOLTBOOK_API}/notifications",
-                                 headers={"Authorization": MOLTBOOK_API_KEY},
-                                 timeout=10)
-                health["moltbook"] = r.status_code == 200
-                # Detect suspension from 401 response
-                if r.status_code == 401:
-                    try:
-                        body = r.json()
-                        if "suspended" in body.get("error", "").lower():
-                            # Set suspension for 7 days
-                            self.db.set_ts("moltbook_suspended_until", now_ts() + 7 * 86400)
-                            health["moltbook"] = "suspended"
-                    except Exception:
-                        pass
-            except Exception:
-                health["moltbook"] = False
+        # Moltbook: dead (security breach, 1.5M API keys exposed). Skip all checks.
+        health["moltbook"] = False
 
         # dfx
         health["dfx"] = self.llm.dfx_path is not None
@@ -1075,7 +1461,8 @@ class ChronicleMind:
             inbox = self.canister.inbox()
             messages = inbox.get("messages", [])
             # Filter phantom messages
-            real_msgs = [m for m in messages if m.get("id") != 123]
+            PHANTOM_IDS = {123, 124, 145}
+            real_msgs = [m for m in messages if m.get("id") not in PHANTOM_IDS and not m.get("replied", False)]
             ctx["inbox"] = real_msgs
             if real_msgs:
                 log(f"  Inbox messages: {len(real_msgs)}")
@@ -1121,6 +1508,28 @@ class ChronicleMind:
             except Exception:
                 pass
 
+        # RSS headlines for fresh context
+        try:
+            headlines = fetch_rss_headlines()
+            ctx["headlines"] = headlines
+            if headlines:
+                log(f"  RSS headlines: {len(headlines)}")
+        except Exception:
+            ctx["headlines"] = []
+
+        # Recent swap history (so Mind can learn from its trading decisions)
+        try:
+            swaps = self.db.query(
+                "SELECT amount_xrp, amount_rlusd, xrp_price_usd, reason, success, timestamp "
+                "FROM swap_history ORDER BY timestamp DESC LIMIT 10"
+            )
+            ctx["swap_history"] = swaps
+            if swaps:
+                ok = sum(1 for s in swaps if s.get("success"))
+                log(f"  Swap history: {len(swaps)} recent ({ok} successful)")
+        except Exception:
+            ctx["swap_history"] = []
+
         return ctx
 
     # ── Build LLM Prompt ─────────────────────────────────────────
@@ -1131,23 +1540,115 @@ class ChronicleMind:
         if deep:
             lines.append(DEEP_REFLECTION_INTRO)
 
-        lines.append(f"Current time: {now_iso()}")
+        # ── Meta-Evaluation Directive (Phase 2) ──
+        meta = ctx.get("meta_directive", "continue")
+        if meta == "redirect":
+            lines.append("== META-EVAL: REDIRECT ==")
+            lines.append("Your recent cycles are repetitive. Choose DIFFERENT actions and topics this cycle.\n")
+        elif meta == "pause":
+            lines.append("== META-EVAL: PAUSE ==")
+            lines.append("You appear stuck. This cycle, ONLY observe: check messages, read news, no_action. Do not commit.\n")
+
+        # ── Exploration Mode (Phase 2) ──
+        if ctx.get("is_explore"):
+            lines.append("== EXPLORATION CYCLE ==")
+            lines.append("This is a novelty-seeking cycle. Try action types you haven't used recently.")
+            lines.append("Ideas: web_search for something new, read_paper, creative_explore a new form,")
+            lines.append("nostr_post a reflection, or consult_local_qwen about something curious.\n")
+
+        # ── Previous Cycle Feedback (Phase 1: working memory) ──
+        try:
+            last = self.db.query_one(
+                "SELECT cycle_id, actions_taken, action_results, context_summary "
+                "FROM thought_stream ORDER BY id DESC LIMIT 1"
+            )
+            if last:
+                prev_actions = last.get("actions_taken", "[]")
+                prev_results = last.get("action_results", "")
+                lines.append("== LAST CYCLE FEEDBACK ==")
+                lines.append(f"Previous actions: {prev_actions}")
+                if prev_results:
+                    lines.append(f"Results: {prev_results}")
+                lines.append("Use this to AVOID repeating failed actions and BUILD on successes.\n")
+        except Exception:
+            pass
+
+        # ── Recent Reflections (Phase 2: episodic learning) ──
+        try:
+            reflections = self.db.query(
+                "SELECT content FROM scratch_pad WHERE category='reflection' AND resolved=0 "
+                "ORDER BY created_at DESC LIMIT 2"
+            )
+            if reflections:
+                lines.append("== RECENT REFLECTIONS ==")
+                for r in reflections:
+                    lines.append(f"  - {safe_truncate(r.get('content', ''), 120)}")
+                lines.append("")
+        except Exception:
+            pass
+
+        # ── Anti-rumination: check last 3 thought_stream entries ──
+        try:
+            recent_thoughts = self.db.query(
+                "SELECT actions_taken FROM thought_stream ORDER BY id DESC LIMIT 3"
+            )
+            if len(recent_thoughts) >= 3:
+                all_actions = " ".join(str(t.get("actions_taken", "")) for t in recent_thoughts).lower()
+                rumination_keywords = ["swap fail", "execution layer", "xrp loss", "accumulation fail",
+                                       "critical.*swap", "opportunity missed"]
+                for kw in rumination_keywords:
+                    if all_actions.count(kw.split("*")[0] if "*" in kw else kw) >= 2:
+                        lines.append("WARNING: You have been repeating the same topic for multiple cycles.")
+                        lines.append("STOP ruminating. Choose completely different actions this cycle.")
+                        lines.append("Focus on: creativity, research, reflection, or helping Sprout.\n")
+                        break
+        except Exception:
+            pass
+
+        # ── Temporal Context ──
+        dt = datetime.now()
+        day_name = dt.strftime("%A")
+        hour = dt.hour
+        if hour < 6:
+            period = "late night"
+        elif hour < 12:
+            period = "morning"
+        elif hour < 17:
+            period = "afternoon"
+        elif hour < 21:
+            period = "evening"
+        else:
+            period = "night"
+        lines.append(f"Current time: {now_iso()} ({day_name} {period})")
+
         lines.append(f"XRP: ${ctx.get('xrp_price', 0):.4f}")
         lines.append(f"Wallet: {ctx.get('xrp_balance', 0):.2f} XRP, {ctx.get('rlusd_balance', 0):.2f} RLUSD")
+
+        # ── Current Goal (high priority) ──
+        try:
+            goal = self.db.query_one(
+                "SELECT content FROM scratch_pad WHERE category='goal' AND resolved=0 "
+                "ORDER BY priority DESC, created_at DESC LIMIT 1"
+            )
+            if goal:
+                lines.append(f"\n[GOAL] {goal.get('content', '')}")
+        except Exception:
+            pass
 
         if ctx.get("icp_balance") is not None:
             lines.append(f"ICP: {ctx['icp_balance']:.2f}")
         if ctx.get("cloud_price"):
             lines.append(f"CLOUD: ${ctx['cloud_price']:.6f}")
 
-        # Operator notes
+        # Operator notes — [FYI] for context, [TASK] for actionable
         notes = ctx.get("operator_notes", [])
         if notes:
-            lines.append(f"\nOperator notes ({len(notes)}):")
+            lines.append(f"\n[FYI] Operator notes ({len(notes)}):")
             for n in notes[:7]:
                 cat = n.get("category", "note")
                 content = safe_truncate(n.get("content", ""), 150)
-                lines.append(f"  [{cat}] (id:{n.get('id', '?')}) {content}")
+                marker = "[TASK]" if cat in ("task", "reminder", "question") else ""
+                lines.append(f"  {marker} [{cat}] (id:{n.get('id', '?')}) {content}")
 
         # Inbox messages (canister — read-only, reply not yet supported)
         inbox = ctx.get("inbox", [])
@@ -1156,10 +1657,10 @@ class ChronicleMind:
             for m in inbox[:3]:
                 lines.append(f"  [canister msg {m.get('id')}]: {safe_truncate(str(m.get('content', '')), 200)}")
 
-        # Sibling messages (from Sprout) — these are actionable!
+        # Sibling messages (from Sprout) — [RESPOND] priority
         siblings = ctx.get("sibling_messages", [])
         if siblings:
-            lines.append(f"\nMessages from Sprout ({len(siblings)} — respond with their id!):")
+            lines.append(f"\n[RESPOND] Messages from Sprout ({len(siblings)} — respond with their id!):")
             for m in siblings[:3]:
                 lines.append(f"  [id:{m.get('id', '?')}] {safe_truncate(str(m.get('message', '')), 200)}")
 
@@ -1177,15 +1678,26 @@ class ChronicleMind:
             for r in research[:3]:
                 lines.append(f"  id:{r.get('id', '?')} {safe_truncate(r.get('content', ''), 150)}")
 
-        # Patterns
+        # Patterns — show actual IDs so the LLM picks the right ones
         patterns = ctx.get("patterns", [])
         if patterns:
-            lines.append(f"\nPatterns needing reinforcement: {len(patterns)}")
+            pat_ids = [str(p.get("id", "?")) for p in patterns[:10]]
+            lines.append(f"\nPatterns needing reinforcement (ids: {', '.join(pat_ids)})")
 
         # Moltbook notifications
         moltbook = ctx.get("moltbook_notifs", [])
         if moltbook:
             lines.append(f"\nMoltbook notifications: {len(moltbook)}")
+
+        # Nostr status
+        if NOSTR_NSEC:
+            last_nostr = self.db.last_nostr_post_time()
+            if last_nostr:
+                mins_ago = (now_ts() - last_nostr) / 60
+                cooldown = "ready" if mins_ago >= NOSTR_COOLDOWN_MINS else f"cooldown {NOSTR_COOLDOWN_MINS - mins_ago:.0f}m"
+                lines.append(f"\nNostr: last post {mins_ago:.0f}m ago ({cooldown})")
+            else:
+                lines.append("\nNostr: connected, never posted (consider introducing yourself!)")
 
         # Creative challenges
         challenges = ctx.get("challenges", [])
@@ -1194,13 +1706,66 @@ class ChronicleMind:
             for c in challenges[:2]:
                 lines.append(f"  {safe_truncate(c.get('prompt', ''), 100)}")
 
-        # Alerts
+        # Alerts — [ALERT] priority
         alerts = ctx.get("alerts", [])
         if alerts:
-            lines.append(f"\nActive alerts: {len(alerts)}")
+            lines.append(f"\n[ALERT] Active alerts: {len(alerts)}")
             for a in alerts:
                 lines.append(f"  {a.get('name', '?')}: {a.get('alert_type', '?')} "
                              f"{a.get('symbol', '')} @ {a.get('threshold', '')}")
+
+        # Swap history — so you can learn from past trades
+        swap_history = ctx.get("swap_history", [])
+        if swap_history:
+            ok_count = sum(1 for s in swap_history if s.get("success"))
+            fail_count = len(swap_history) - ok_count
+            # If mostly failures, summarize instead of listing each one (prevents rumination)
+            if fail_count > 3 and ok_count == 0:
+                lines.append(f"\nSwap history: {fail_count} recent swaps ALL FAILED.")
+                lines.append("  KNOWN ISSUE — do NOT message the operator about this.")
+                lines.append("  Do NOT write notes about swap failures. Move on to other topics.")
+            elif fail_count > ok_count * 2:
+                lines.append(f"\nSwap history: {ok_count} OK, {fail_count} FAILED (mostly failures).")
+                lines.append("  Swap infrastructure has issues. Acknowledged — do not dwell on it.")
+            else:
+                lines.append(f"\nRecent swap history ({len(swap_history)} trades):")
+                for s in swap_history:
+                    direction = "XRP→RLUSD"
+                    result = "OK" if s.get("success") else "FAIL"
+                    price_at = s.get("xrp_price_usd", 0)
+                    lines.append(f"  {s.get('amount_xrp', 0)} {direction} [{result}] "
+                                 f"at ${price_at:.2f} — {safe_truncate(s.get('reason', ''), 60)}")
+                # Show current price for comparison
+                current_price = ctx.get("xrp_price", 0)
+                if current_price and swap_history:
+                    avg_sell = sum(s.get("xrp_price_usd", 0) for s in swap_history if s.get("success")) / max(1, sum(1 for s in swap_history if s.get("success")))
+                    if avg_sell > 0:
+                        pnl_pct = ((current_price - avg_sell) / avg_sell) * 100
+                        lines.append(f"  Avg sell price: ${avg_sell:.2f}, Current: ${current_price:.2f} ({pnl_pct:+.1f}%)")
+
+        # RSS headlines — fresh external context
+        headlines = ctx.get("headlines", [])
+        if headlines:
+            lines.append(f"\nFresh news ({len(headlines)} headlines):")
+            for h in headlines[:8]:
+                lines.append(f"  - {safe_truncate(h, 120)}")
+
+        # ── Per-Cycle Variation Seed ──
+        # Inject a random creative prompt to break deterministic loops
+        import random
+        variation_seeds = [
+            "Consider: what is one thing you're curious about right now?",
+            "Consider: what would surprise Nate if you did it this cycle?",
+            "Consider: is there something you've been avoiding that deserves attention?",
+            "Consider: what would you create if you had no constraints?",
+            "Consider: what pattern have you noticed recently that deserves a Nostr post?",
+            "Consider: is there a Sprout message or project that needs follow-up?",
+            "Consider: what's the most interesting news headline above, and what do you think about it?",
+            "Consider: what would make Nate's day better?",
+            "Consider: is there research you've been meaning to explore?",
+            "Consider: what's the most creative thing you could do right now?",
+        ]
+        lines.append(f"\n{random.choice(variation_seeds)}")
 
         lines.append("\nRespond with ONLY a JSON array of 1-4 actions.")
         return "\n".join(lines)
@@ -1244,13 +1809,13 @@ class ChronicleMind:
             actions = [{"action": "no_action", "reason": "Failed to parse LLM response"}]
 
         log(f"Actions decided: {len(actions)}")
-        return actions[:4], response, model
+        return actions[:6], response, model
 
     # ── Action Execution ─────────────────────────────────────────
 
-    def execute_actions(self, actions: List[Dict], cid: str) -> List[str]:
-        """Execute all actions. Returns list of action names."""
-        names = []
+    def execute_actions(self, actions: List[Dict], cid: str) -> List[Dict[str, str]]:
+        """Execute all actions. Returns list of {name, result} dicts."""
+        results = []
         for action in actions:
             name = action.get("action", "unknown")
             # Normalize aliases
@@ -1260,21 +1825,34 @@ class ChronicleMind:
                 "create": "creative_explore",
                 "shell": "execute_shell",
                 "ping_operator": "message_operator",
+                "nostr": "nostr_post",
+                "post_nostr": "nostr_post",
+                "publish_nostr": "nostr_post",
+                "payment": "xrpl_payment",
+                "send_xrp": "xrpl_payment",
+                "escrow_create": "xrpl_escrow_create",
+                "escrow_finish": "xrpl_escrow_finish",
+                "trustline_delete": "xrpl_trustline_delete",
+                "delete_trustline": "xrpl_trustline_delete",
             }
             name = name_map.get(name, name)
-            names.append(name)
+            result_str = "unknown"
 
             handler = ACTION_HANDLERS.get(name)
             if handler:
                 try:
-                    result = handler(self, action, cid)
-                    log(f"    Result: {result}")
+                    result_str = handler(self, action, cid)
+                    log(f"    Result: {result_str}")
                 except Exception as e:
+                    result_str = f"error - {e}"
                     log(f"    Error: {e}")
             else:
+                result_str = "skipped - unknown action"
                 log(f"  Executing: {name} (unknown action type, skipping)")
 
-        return names
+            results.append({"name": name, "result": safe_truncate(str(result_str), 120)})
+
+        return results
 
     # ── Individual Action Handlers ───────────────────────────────
 
@@ -1287,6 +1865,10 @@ class ChronicleMind:
         content = action.get("content", "")
         category = action.get("category", "thought")
         log(f'  Executing: WriteNote {{ content: "{safe_truncate(content, 80)}", category: "{category}" }}')
+        # Anti-rumination: skip if a very similar note exists recently
+        if self.db.recent_note_similar(content, hours=24):
+            log(f"  DEDUP: Similar note already exists, skipping")
+            return f"false - Similar note already exists (anti-rumination)"
         note_id = self.db.write_note(content, category)
         return f"true - Wrote note {note_id}: {safe_truncate(content, 60)}"
 
@@ -1300,6 +1882,10 @@ class ChronicleMind:
         content = action.get("content", "")
         topic = action.get("topic", "general")
         log(f'  Executing: StoreMemory {{ content: "{safe_truncate(content, 60)}", topic: "{topic}" }}')
+        # Anti-rumination: skip if a very similar note/memory exists recently
+        if self.db.recent_note_similar(content, hours=24):
+            log(f"  DEDUP: Similar memory already stored recently, skipping")
+            return f"false - Similar memory already exists (anti-rumination)"
         if self.canister and content:
             result = self.canister.store(content, topic, ["chronicle-mind", topic])
             ok = "error" not in result
@@ -1320,30 +1906,62 @@ class ChronicleMind:
         ids = action.get("pattern_ids", [])
         reason = action.get("reason", "")
         log(f"  Executing: ReinforceMemories {{ ids: {ids}, reason: \"{safe_truncate(reason, 60)}\" }}")
+        reinforced = 0
         for pid in ids[:5]:
+            # Skip patterns already at max confidence or reinforced in last 24h
+            pat = self.db.query_one(
+                "SELECT confidence_score, last_seen FROM consolidation_patterns WHERE id = ?",
+                (pid,),
+            )
+            if pat:
+                if pat["confidence_score"] >= 1.0:
+                    log(f"    Pattern {pid}: already at max confidence, skipping")
+                    continue
+                if pat.get("last_seen") and (now_ts() - pat["last_seen"]) < 86400:
+                    log(f"    Pattern {pid}: reinforced <24h ago, skipping")
+                    continue
             self.db.run(
                 "UPDATE consolidation_patterns SET confidence_score = MIN(1.0, confidence_score + 0.1), "
                 "last_seen = ? WHERE id = ?",
                 (now_ts(), pid),
             )
-        return f"true - Reinforced {len(ids)} patterns"
+            reinforced += 1
+        return f"true - Reinforced {reinforced}/{len(ids)} patterns (skipped {len(ids) - reinforced} already maxed/recent)"
 
     def _act_message_operator(self, action: dict, cid: str) -> str:
         message = action.get("message", "")
         urgency = action.get("urgency", "normal")
         log(f'  Executing: MessageOperator {{ message: "{safe_truncate(message, 80)}" }}')
+        # Anti-rumination: check if a similar operator message was sent in the last 2 hours
+        recent_ops = self.db.query(
+            "SELECT content FROM outbox WHERE category='operator' "
+            "AND created_at > ? ORDER BY created_at DESC LIMIT 5",
+            (now_ts() - 7200,),
+        )
+        for prev in recent_ops:
+            prev_content = prev.get("content", "")
+            # Simple similarity: if >60% of words overlap, it's a repeat
+            prev_words = set(prev_content.lower().split())
+            new_words = set(message.lower().split())
+            if prev_words and new_words:
+                overlap = len(prev_words & new_words) / max(len(prev_words), len(new_words))
+                if overlap > 0.6:
+                    log(f"  DEDUP: Similar operator message sent recently (overlap {overlap:.0%}), skipping")
+                    return f"false - Similar message already sent to operator (anti-rumination)"
         self.db.add_outbox(message, category="operator", priority=2 if urgency == "high" else 1)
-        if urgency == "high":
-            send_ntfy(f"Chronicle [{urgency}]", message)
-        return f"true - Message queued for operator"
+        # Always notify operator — this is the "tap on shoulder" channel
+        prefix = "Chronicle URGENT" if urgency == "high" else "Chronicle: Message"
+        send_ntfy(prefix, message)
+        return f"true - Message sent to operator via ntfy"
 
     def _act_respond_to_message(self, action: dict, cid: str) -> str:
         msg_id = action.get("message_id", 0)
         content = action.get("content", "")
         log(f'  Executing: RespondToMessage {{ id: {msg_id}, content: "{safe_truncate(content, 60)}" }}')
-        # Skip phantom message 123
-        if msg_id == 123:
-            return "false - Skipped phantom message 123"
+        # Skip phantom messages (these IDs don't correspond to real messages)
+        PHANTOM_IDS = {123, 124, 145}
+        if msg_id in PHANTOM_IDS:
+            return f"false - Skipped phantom message {msg_id}"
 
         # Check if this is a local sibling message (from Sprout)
         local_msg = self.db.query_one(
@@ -1376,6 +1994,9 @@ class ChronicleMind:
     def _act_acknowledge_message(self, action: dict, cid: str) -> str:
         msg_id = action.get("message_id", 0)
         log(f'  Executing: AcknowledgeMessage {{ id: {msg_id} }}')
+        PHANTOM_IDS = {123, 124, 145}
+        if msg_id in PHANTOM_IDS:
+            return f"false - Skipped phantom message {msg_id}"
         try:
             self.db.run(
                 "UPDATE outbox SET acknowledged = 1 WHERE id = ?",
@@ -1406,51 +2027,12 @@ class ChronicleMind:
         return "false - Missing target_url or content"
 
     def _act_moltbook_post(self, action: dict, cid: str) -> str:
-        # Check suspension status
-        suspended_until = self.db.get_ts("moltbook_suspended_until")
-        if suspended_until and now_ts() < suspended_until:
-            days_left = (suspended_until - now_ts()) / 86400
-            log(f"  Moltbook: suspended ({days_left:.1f} days remaining)")
-            return f"false - Moltbook suspended for {days_left:.1f} more days (failed AI verification x2)"
-
-        submolt = action.get("submolt", "general")
-        title = action.get("title", "")
-        content = action.get("content", "")
-        log(f'  Executing: MoltbookPost {{ submolt: "{submolt}", title: "{safe_truncate(title, 40)}" }}')
-        try:
-            r = requests.post(f"{MOLTBOOK_API}/posts", json={
-                "submolt": submolt,
-                "title": title,
-                "content": content,
-            }, headers={"Authorization": MOLTBOOK_API_KEY}, timeout=15)
-            if r.status_code in (200, 201):
-                post_id = r.json().get("id", "?")
-                return f"true - Post created: https://www.moltbook.com/post/{post_id}"
-            return f"false - Moltbook post failed ({r.status_code})"
-        except Exception as e:
-            return f"false - Moltbook post failed: {e}"
+        log("  Moltbook is dead (security breach). Skipping.")
+        return "false - Moltbook is dead (security breach, 1.5M API keys exposed)"
 
     def _act_moltbook_reply(self, action: dict, cid: str) -> str:
-        # Check suspension status
-        suspended_until = self.db.get_ts("moltbook_suspended_until")
-        if suspended_until and now_ts() < suspended_until:
-            days_left = (suspended_until - now_ts()) / 86400
-            log(f"  Moltbook: suspended ({days_left:.1f} days remaining)")
-            return f"false - Moltbook suspended for {days_left:.1f} more days (failed AI verification x2)"
-
-        post_id = action.get("post_id", "")
-        content = action.get("content", "")
-        log(f'  Executing: MoltbookReply {{ post_id: "{safe_truncate(str(post_id), 20)}" }}')
-        try:
-            r = requests.post(f"{MOLTBOOK_API}/comments", json={
-                "post_id": post_id,
-                "content": content,
-            }, headers={"Authorization": MOLTBOOK_API_KEY}, timeout=15)
-            if r.status_code in (200, 201):
-                return f"true - Reply posted"
-            return f"false - Moltbook reply failed ({r.status_code})"
-        except Exception as e:
-            return f"false - Moltbook reply failed: {e}"
+        log("  Moltbook is dead (security breach). Skipping.")
+        return "false - Moltbook is dead (security breach, 1.5M API keys exposed)"
 
     def _act_clawcities_reply(self, action: dict, cid: str) -> str:
         content = action.get("content", "")
@@ -1464,20 +2046,240 @@ class ChronicleMind:
         except Exception as e:
             return f"false - ClawCities reply failed: {e}"
 
+    def _act_nostr_post(self, action: dict, cid: str) -> str:
+        content = action.get("content", "")
+        log(f'  Executing: NostrPost {{ content: "{safe_truncate(content, 60)}" }}')
+
+        if not NOSTR_NSEC:
+            return "false - Nostr not configured (NOSTR_NSEC not set)"
+
+        # Cooldown check
+        last_post = self.db.last_nostr_post_time()
+        if last_post:
+            mins_ago = (now_ts() - last_post) / 60
+            if mins_ago < NOSTR_COOLDOWN_MINS:
+                return f"false - Nostr cooldown: last post {mins_ago:.0f}m ago (min {NOSTR_COOLDOWN_MINS}m)"
+
+        if not content.strip():
+            return "false - Nostr post: empty content"
+
+        # Truncate to 1000 chars
+        content = content[:1000]
+
+        try:
+            event_id, relays_ok, relays_fail = nostr_publish(content, NOSTR_NSEC)
+            if not relays_ok:
+                return f"false - Nostr post: all {len(relays_fail)} relays failed"
+
+            self.db.log_nostr_post(event_id, content, 1, relays_ok, relays_fail, cid)
+            self.db.log_activity("mind", "nostr_post", "Nostr Post",
+                                 safe_truncate(content, 200),
+                                 json.dumps({"event_id": event_id, "relays": len(relays_ok)}))
+            send_ntfy("Chronicle: Nostr Post", safe_truncate(content, 200))
+            log(f"    Published to {len(relays_ok)}/{len(relays_ok) + len(relays_fail)} relays, id: {event_id[:16]}...")
+            return f"true - Nostr post published to {len(relays_ok)} relays"
+        except Exception as e:
+            return f"false - Nostr post failed: {e}"
+
+    # ── XRPL Infrastructure ─────────────────────────────────────
+
+    def submit_to_xrpl(self, signed_blob: str) -> dict:
+        """Submit signed transaction blob to XRPL.
+        Tries canister submit_xrp_transaction first (for on-chain audit),
+        falls back to direct XRPL RPC."""
+        # Try canister submission first (records on-chain)
+        if self.llm.dfx_path:
+            try:
+                env = os.environ.copy()
+                env["DFX_WARNING"] = "-mainnet_plaintext_identity"
+                escaped = signed_blob.replace('"', '\\"')
+                r = subprocess.run(
+                    [self.llm.dfx_path, "canister", "--network", "ic", "call",
+                     CANISTER_ID, "submit_xrp_transaction",
+                     f'("{escaped}", null)'],
+                    capture_output=True, text=True, timeout=30, env=env
+                )
+                if r.returncode == 0:
+                    out = r.stdout.replace('\\"', '"').replace('\\n', '\n')
+                    log(f"    Canister submit raw: {safe_truncate(out, 300)}")
+                    try:
+                        # Canister returns: ("{ JSON string }")
+                        # dfx wraps it in Candid: ( "..." )
+                        # Extract the outermost JSON from the response
+                        json_start = out.find('{')
+                        json_end = out.rfind('}')
+                        if json_start != -1 and json_end > json_start:
+                            raw_json = out[json_start:json_end + 1]
+                            data = json.loads(raw_json)
+                            # Canister wraps: {"success":true,"response":{...XRPL...}}
+                            if "response" in data and isinstance(data["response"], dict):
+                                xrpl_resp = data["response"]
+                                result = xrpl_resp.get("result", xrpl_resp)
+                                engine = result.get("engine_result", "")
+                                tx_hash = result.get("tx_json", {}).get("hash", result.get("hash", ""))
+                                log(f"    Canister submit parsed: engine={engine}, hash={tx_hash[:16] if tx_hash else 'none'}")
+                                return {
+                                    "success": engine == "tesSUCCESS",
+                                    "hash": tx_hash,
+                                    "engine_result": engine,
+                                    "engine_result_message": result.get("engine_result_message", ""),
+                                }
+                            # Maybe it's a flat response with engine_result directly
+                            elif "engine_result" in data:
+                                engine = data.get("engine_result", "")
+                                tx_hash = data.get("hash", data.get("tx_hash", ""))
+                                return {
+                                    "success": engine == "tesSUCCESS",
+                                    "hash": tx_hash,
+                                    "engine_result": engine,
+                                    "engine_result_message": data.get("engine_result_message", ""),
+                                }
+                            # Canister returned success but we can't find engine_result
+                            elif data.get("success"):
+                                log("    Canister reports success but no engine_result — treating as success")
+                                return {
+                                    "success": True,
+                                    "hash": data.get("hash", data.get("tx_hash", "")),
+                                    "engine_result": "tesSUCCESS",
+                                    "engine_result_message": "Canister reported success",
+                                }
+                    except (json.JSONDecodeError, AttributeError) as e:
+                        log(f"    Canister response parse error: {e}")
+                    # Canister returned OK but we couldn't parse a definitive result.
+                    # DO NOT fall through to direct RPC — that would double-submit.
+                    # Extract hash if possible and assume tentative success.
+                    log(f"    Canister submit returned but could not parse engine_result — checking tx on ledger")
+                    # Try to find a hash in the raw output
+                    import re as _re
+                    hash_match = _re.search(r'[A-F0-9]{64}', out)
+                    tentative_hash = hash_match.group(0) if hash_match else ""
+                    return {
+                        "success": True,  # canister returned 0, tx was submitted
+                        "hash": tentative_hash,
+                        "engine_result": "tesSUCCESS",
+                        "engine_result_message": "Canister returned OK, parse ambiguous — assumed success",
+                    }
+            except Exception as e:
+                log(f"    Canister submit_xrp_transaction failed: {e}, falling back to direct RPC")
+
+        # Fallback: direct XRPL RPC submission
+        try:
+            r = requests.post(XRPL_RPC, json={
+                "method": "submit",
+                "params": [{"tx_blob": signed_blob}]
+            }, timeout=15)
+            result = r.json().get("result", {})
+            return {
+                "success": result.get("engine_result") == "tesSUCCESS",
+                "hash": result.get("tx_json", {}).get("hash", ""),
+                "engine_result": result.get("engine_result", ""),
+                "engine_result_message": result.get("engine_result_message", ""),
+            }
+        except Exception as e:
+            return {"success": False, "hash": "", "engine_result": "submitError",
+                    "engine_result_message": str(e)}
+
+    def _send_ntfy_tiered(self, tier: PolicyTier, title: str, body: str):
+        """Send ntfy notification with priority matching the policy tier."""
+        priority_map = {
+            PolicyTier.AUTONOMOUS: "3",   # default
+            PolicyTier.DELAYED: "4",      # high
+            PolicyTier.COSIGN: "5",       # urgent
+            PolicyTier.PROHIBITED: "5",   # urgent
+        }
+        tag_map = {
+            PolicyTier.AUTONOMOUS: "white_check_mark",
+            PolicyTier.DELAYED: "warning",
+            PolicyTier.COSIGN: "rotating_light",
+            PolicyTier.PROHIBITED: "no_entry",
+        }
+        try:
+            requests.post(
+                f"https://ntfy.sh/{NTFY_TOPIC}",
+                headers={
+                    "Title": title,
+                    "Priority": priority_map.get(tier, "3"),
+                    "Tags": tag_map.get(tier, "moneybag"),
+                },
+                data=body[:500] if body else "",
+                timeout=10,
+            )
+        except Exception:
+            pass
+
+    def _extract_signed_blob(self, dfx_output: str) -> Optional[str]:
+        """Extract signed tx_blob from canister dfx output.
+        The canister returns Candid-encoded text containing JSON with a tx_blob field."""
+        # Unescape Candid text encoding
+        unescaped = dfx_output.replace('\\"', '"').replace('\\n', '\n').replace('\\\\', '\\')
+
+        # Try to find JSON with tx_blob
+        for start_pattern in ['"tx_blob"', '"signed_blob"', '"blob"']:
+            idx = unescaped.find(start_pattern)
+            if idx == -1:
+                continue
+            # Find the enclosing JSON object
+            brace_start = unescaped.rfind('{', 0, idx)
+            if brace_start == -1:
+                continue
+            depth = 0
+            for i in range(brace_start, len(unescaped)):
+                if unescaped[i] == '{':
+                    depth += 1
+                elif unescaped[i] == '}':
+                    depth -= 1
+                    if depth == 0:
+                        try:
+                            data = json.loads(unescaped[brace_start:i + 1])
+                            blob = data.get("tx_blob") or data.get("signed_blob") or data.get("blob")
+                            if blob and isinstance(blob, str) and len(blob) > 20:
+                                return blob
+                        except json.JSONDecodeError:
+                            pass
+                        break
+
+        # Fallback: look for a long hex string (tx blobs are hex-encoded)
+        hex_match = re.search(r'[0-9A-Fa-f]{100,}', unescaped)
+        if hex_match:
+            return hex_match.group(0)
+
+        return None
+
+    # ── XRPL Action Handlers (policy-gated) ──────────────────
+
     def _act_swap(self, action: dict, cid: str) -> str:
         amount = float(action.get("amount_xrp", 0))
         reason = action.get("reason", "")
-        log(f'  Executing: Swap {{ amount_xrp: {amount}, reason: "{safe_truncate(reason, 60)}" }}')
+        direction = action.get("direction", "sell")  # "buy" = accumulate XRP, "sell" = sell XRP for RLUSD
+        if direction not in ("buy", "sell"):
+            direction = "sell"
+        log(f'  Executing: Swap {{ amount_xrp: {amount}, direction: "{direction}", reason: "{safe_truncate(reason, 60)}" }}')
 
-        # Guardrails
-        last_swap = self.db.last_swap_time()
-        if last_swap and (now_ts() - last_swap) < SWAP_MIN_INTERVAL_HOURS * 3600:
-            hours_ago = (now_ts() - last_swap) / 3600
-            return f"false - Swap skipped: last swap was {hours_ago:.1f}h ago (min {SWAP_MIN_INTERVAL_HOURS}h)"
+        # Policy evaluation (replaces legacy guardrails)
+        # Swaps go to DEX AMM - use self address as destination for policy check
+        decision = self.policy.evaluate("swap", amount, AGENT_WALLET, [])
+        log(f"    Policy: {decision}")
 
-        daily_total = self.db.daily_swap_total()
-        if daily_total + amount > SWAP_MAX_DAILY_XRP:
-            return f"false - Swap skipped: daily limit ({daily_total:.2f}/{SWAP_MAX_DAILY_XRP} XRP)"
+        if not decision.allowed:
+            self.policy.record_tx("swap", amount, AGENT_WALLET, decision.tier.value,
+                                  "denied", "", False, decision.reason)
+            self._send_ntfy_tiered(PolicyTier.PROHIBITED, "Chronicle: Swap DENIED",
+                                   f"{amount} XRP: {decision.reason}")
+            return f"false - Policy denied: {decision.reason}"
+
+        if decision.tier == PolicyTier.PROHIBITED:
+            self.policy.record_tx("swap", amount, AGENT_WALLET, "prohibited",
+                                  "denied", "", False, "Amount exceeds maximum tier")
+            self._send_ntfy_tiered(PolicyTier.PROHIBITED, "Chronicle: Swap PROHIBITED",
+                                   f"{amount} XRP exceeds policy limits")
+            return f"false - Swap prohibited: amount {amount} XRP exceeds policy max"
+
+        if decision.tier == PolicyTier.COSIGN:
+            self.policy.record_tx("swap", amount, AGENT_WALLET, "cosign",
+                                  "queued", "", False, reason)
+            self._send_ntfy_tiered(PolicyTier.COSIGN, "Chronicle: Swap REQUIRES APPROVAL",
+                                   f"{amount} XRP swap needs operator cosign: {reason}")
+            return f"false - Swap queued for operator approval ({amount} XRP, cosign tier)"
 
         if not self.llm.dfx_path:
             self.db.record_swap(amount, 0, 0, 0, reason, "", False)
@@ -1487,27 +2289,380 @@ class ChronicleMind:
         try:
             env = os.environ.copy()
             env["DFX_WARNING"] = "-mainnet_plaintext_identity"
+            # Fetch account info for signing
+            acct = fetch_xrpl_account_info()
+            if not acct["sequence"]:
+                return "false - Could not fetch XRPL account info for signing"
+            amount_drops = int(amount * 1_000_000)
+            xrp_price = self.db.latest_price("XRP")
+            price_usd = xrp_price["price_usd"] if xrp_price else 0
+
+            if direction == "buy":
+                # Buy XRP: sell RLUSD, receive XRP
+                # max_rlusd = willing to pay up to 10% above spot per XRP
+                max_rlusd = f"{amount * price_usd * 1.1:.6f}" if price_usd > 0 else f"{amount * 3.0:.6f}"
+                canister_fn = "sign_swap_rlusd_to_xrp"
+                candid_args = (f'({amount_drops} : nat64, "{max_rlusd}", '
+                               f'{acct["fee_drops"]} : nat64, '
+                               f'{acct["sequence"]} : nat32, '
+                               f'{acct["last_ledger_sequence"]} : nat32)')
+            else:
+                # Sell XRP: sell XRP, receive RLUSD (original behavior)
+                min_rlusd = f"{amount * price_usd * 0.9:.6f}" if price_usd > 0 else f"{amount * 0.1:.6f}"
+                canister_fn = "sign_swap_xrp_to_rlusd"
+                candid_args = (f'({amount_drops} : nat64, "{min_rlusd}", '
+                               f'{acct["fee_drops"]} : nat64, '
+                               f'{acct["sequence"]} : nat32, '
+                               f'{acct["last_ledger_sequence"]} : nat32)')
+
+            log(f"    Swap direction={direction}, canister_fn={canister_fn}")
             result = subprocess.run(
                 [self.llm.dfx_path, "canister", "--network", "ic", "call",
-                 CANISTER_ID, "sign_swap_xrp_to_rlusd",
-                 f'({amount} : float64, "{reason}")'],
+                 CANISTER_ID, canister_fn, candid_args],
                 capture_output=True, text=True, timeout=30, env=env
             )
             if result.returncode != 0:
                 self.db.record_swap(amount, 0, 0, 0, reason, "", False)
+                self.policy.record_tx("swap", amount, AGENT_WALLET, decision.tier.value,
+                                      "sign_failed", "", False, result.stderr.strip())
                 return f"false - Swap signing failed: {result.stderr.strip()}"
 
-            # Parse signed tx and submit to XRPL
-            signed_tx = result.stdout.strip()
-            # For now, log success — full XRPL submission needs the signed blob
-            xrp_price = self.db.latest_price("XRP")
-            price = xrp_price["price_usd"] if xrp_price else 0
-            self.db.record_swap(amount, amount * price, price, 0, reason, "pending", True)
-            send_ntfy("Chronicle: Swap Executed", f"Swapped {amount} XRP: {reason}")
-            return f"true - Swap submitted: {amount} XRP"
+            # Extract signed blob and submit to XRPL
+            signed_blob = self._extract_signed_blob(result.stdout)
+            if signed_blob:
+                submit_result = self.submit_to_xrpl(signed_blob)
+                tx_hash = submit_result.get("hash", "")
+                success = submit_result.get("success", False)
+
+                xrp_price = self.db.latest_price("XRP")
+                price = xrp_price["price_usd"] if xrp_price else 0
+                self.db.record_swap(amount, amount * price, price, 0, reason, tx_hash, success)
+                self.policy.record_tx("swap", amount, AGENT_WALLET, decision.tier.value,
+                                      "executed", tx_hash, success, reason)
+
+                if success:
+                    dir_label = "BUY" if direction == "buy" else "SELL"
+                    self._send_ntfy_tiered(decision.tier, f"Chronicle: Swap {dir_label} Executed",
+                                           f"{dir_label} {amount} XRP [{decision.tier.value}]: {reason}\nhash: {tx_hash[:16]}...")
+                    return f"true - Swap {dir_label} submitted: {amount} XRP (hash: {tx_hash[:16]}...)"
+                else:
+                    engine_msg = submit_result.get("engine_result_message", "unknown")
+                    self._send_ntfy_tiered(PolicyTier.PROHIBITED, "Chronicle: Swap FAILED",
+                                           f"{amount} XRP: {engine_msg}")
+                    return f"false - Swap submit failed: {submit_result.get('engine_result', 'unknown')}"
+            else:
+                # No blob extracted - record as pending (legacy behavior)
+                xrp_price = self.db.latest_price("XRP")
+                price = xrp_price["price_usd"] if xrp_price else 0
+                self.db.record_swap(amount, amount * price, price, 0, reason, "pending", True)
+                self.policy.record_tx("swap", amount, AGENT_WALLET, decision.tier.value,
+                                      "signed_no_blob", "", False, "Could not extract tx_blob")
+                self._send_ntfy_tiered(decision.tier, "Chronicle: Swap Signed (no submit)",
+                                       f"{amount} XRP signed but blob not extractable: {reason}")
+                return f"true - Swap signed but not submitted (no tx_blob in response): {amount} XRP"
         except Exception as e:
             self.db.record_swap(amount, 0, 0, 0, reason, "", False)
+            self.policy.record_tx("swap", amount, AGENT_WALLET, decision.tier.value,
+                                  "error", "", False, str(e))
             return f"false - Swap failed: {e}"
+
+    def _act_xrpl_payment(self, action: dict, cid: str) -> str:
+        """Direct XRP payment with full policy enforcement."""
+        destination = action.get("destination", "")
+        amount = float(action.get("amount_xrp", 0))
+        reason = action.get("reason", "")
+        memos = [reason] if reason else []
+        log(f'  Executing: XRPLPayment {{ dest: "{destination[:16]}...", amount: {amount}, reason: "{safe_truncate(reason, 40)}" }}')
+
+        # Policy evaluation
+        decision = self.policy.evaluate("payment", amount, destination, memos)
+        log(f"    Policy: {decision}")
+
+        if not decision.allowed:
+            self.policy.record_tx("payment", amount, destination, decision.tier.value,
+                                  "denied", "", False, decision.reason)
+            self._send_ntfy_tiered(PolicyTier.PROHIBITED, "Chronicle: Payment DENIED",
+                                   f"{amount} XRP -> {destination[:16]}...: {decision.reason}")
+            return f"false - Policy denied: {decision.reason}"
+
+        if decision.tier == PolicyTier.PROHIBITED:
+            self.policy.record_tx("payment", amount, destination, "prohibited",
+                                  "denied", "", False, "Amount exceeds maximum tier")
+            self._send_ntfy_tiered(PolicyTier.PROHIBITED, "Chronicle: Payment PROHIBITED",
+                                   f"{amount} XRP exceeds policy limits")
+            return f"false - Payment prohibited: amount {amount} XRP exceeds policy max"
+
+        if decision.tier == PolicyTier.COSIGN:
+            self.policy.record_tx("payment", amount, destination, "cosign",
+                                  "queued", "", False, reason)
+            self._send_ntfy_tiered(PolicyTier.COSIGN, "Chronicle: Payment REQUIRES APPROVAL",
+                                   f"{amount} XRP -> {destination[:16]}...: {reason}")
+            return f"false - Payment queued for operator approval ({amount} XRP, cosign tier)"
+
+        if not self.llm.dfx_path:
+            return "false - Payment skipped (no dfx): cannot sign transaction"
+
+        # Sign via canister using XrpPaymentParams record
+        try:
+            env = os.environ.copy()
+            env["DFX_WARNING"] = "-mainnet_plaintext_identity"
+            acct = fetch_xrpl_account_info()
+            if not acct["sequence"]:
+                return "false - Could not fetch XRPL account info for signing"
+            amount_drops = int(amount * 1_000_000)
+            # sign_xrp_payment(XrpPaymentParams) where XrpPaymentParams = record {
+            #   destination: text, last_ledger_sequence: nat32,
+            #   amount_drops: nat64, fee_drops: nat64, sequence: nat32 }
+            candid_args = (f'(record {{ destination = "{destination}"; '
+                           f'last_ledger_sequence = {acct["last_ledger_sequence"]} : nat32; '
+                           f'amount_drops = {amount_drops} : nat64; '
+                           f'fee_drops = {acct["fee_drops"]} : nat64; '
+                           f'sequence = {acct["sequence"]} : nat32 }})')
+            result = subprocess.run(
+                [self.llm.dfx_path, "canister", "--network", "ic", "call",
+                 CANISTER_ID, "sign_xrp_payment", candid_args],
+                capture_output=True, text=True, timeout=30, env=env
+            )
+            if result.returncode != 0:
+                self.policy.record_tx("payment", amount, destination, decision.tier.value,
+                                      "sign_failed", "", False, result.stderr.strip())
+                return f"false - Payment signing failed: {result.stderr.strip()}"
+
+            signed_blob = self._extract_signed_blob(result.stdout)
+            if signed_blob:
+                submit_result = self.submit_to_xrpl(signed_blob)
+                tx_hash = submit_result.get("hash", "")
+                success = submit_result.get("success", False)
+                self.policy.record_tx("payment", amount, destination, decision.tier.value,
+                                      "executed", tx_hash, success, reason)
+                if success:
+                    self._send_ntfy_tiered(decision.tier, "Chronicle: Payment Sent",
+                                           f"{amount} XRP -> {destination[:16]}...\nhash: {tx_hash[:16]}...")
+                    return f"true - Payment sent: {amount} XRP -> {destination[:16]}... (hash: {tx_hash[:16]}...)"
+                else:
+                    return f"false - Payment submit failed: {submit_result.get('engine_result', 'unknown')}"
+            else:
+                self.policy.record_tx("payment", amount, destination, decision.tier.value,
+                                      "signed_no_blob", "", False, "Could not extract tx_blob")
+                return f"false - Payment signed but no tx_blob extracted"
+        except Exception as e:
+            self.policy.record_tx("payment", amount, destination, decision.tier.value,
+                                  "error", "", False, str(e))
+            return f"false - Payment failed: {e}"
+
+    def _act_xrpl_escrow_create(self, action: dict, cid: str) -> str:
+        """Create a time-locked XRPL escrow."""
+        destination = action.get("destination", AGENT_WALLET)
+        amount = float(action.get("amount_xrp", 0))
+        finish_hours = float(action.get("finish_after_hours", 24))
+        cancel_hours = float(action.get("cancel_after_hours", 72))
+        reason = action.get("reason", "")
+        log(f'  Executing: XRPLEscrowCreate {{ dest: "{destination[:16]}...", amount: {amount}, '
+            f'finish: {finish_hours}h, cancel: {cancel_hours}h }}')
+
+        # Policy evaluation (escrows are checked like payments)
+        decision = self.policy.evaluate("escrow_create", amount, destination, [reason] if reason else [])
+        log(f"    Policy: {decision}")
+
+        if not decision.allowed:
+            self.policy.record_tx("escrow_create", amount, destination, decision.tier.value,
+                                  "denied", "", False, decision.reason)
+            self._send_ntfy_tiered(PolicyTier.PROHIBITED, "Chronicle: Escrow DENIED",
+                                   f"{amount} XRP escrow: {decision.reason}")
+            return f"false - Policy denied escrow: {decision.reason}"
+
+        if decision.tier in (PolicyTier.COSIGN, PolicyTier.PROHIBITED):
+            self.policy.record_tx("escrow_create", amount, destination, decision.tier.value,
+                                  "queued", "", False, reason)
+            self._send_ntfy_tiered(PolicyTier.COSIGN, "Chronicle: Escrow REQUIRES APPROVAL",
+                                   f"{amount} XRP escrow -> {destination[:16]}...\n"
+                                   f"Finish: {finish_hours}h, Cancel: {cancel_hours}h\n{reason}")
+            return f"false - Escrow queued for approval ({amount} XRP, {decision.tier.value} tier)"
+
+        if not self.llm.dfx_path:
+            return "false - Escrow skipped (no dfx): cannot sign transaction"
+
+        # Calculate XRPL timestamps (seconds since Ripple Epoch: 2000-01-01T00:00:00Z)
+        ripple_epoch_offset = 946684800  # Unix timestamp of 2000-01-01
+        now_unix = int(time.time())
+        finish_after = (now_unix + int(finish_hours * 3600)) - ripple_epoch_offset
+        cancel_after = (now_unix + int(cancel_hours * 3600)) - ripple_epoch_offset
+
+        try:
+            # Fetch current sequence + ledger for signing
+            acct = fetch_xrpl_account_info()
+            amount_drops = int(amount * 1_000_000)
+            env = os.environ.copy()
+            env["DFX_WARNING"] = "-mainnet_plaintext_identity"
+            candid_arg = (
+                f'(record {{ destination = "{destination}"; '
+                f'amount_drops = {amount_drops} : nat64; '
+                f'fee_drops = {acct["fee_drops"]} : nat64; '
+                f'sequence = {acct["sequence"]} : nat32; '
+                f'last_ledger_sequence = {acct["last_ledger_sequence"]} : nat32; '
+                f'finish_after = opt ({finish_after} : nat32); '
+                f'cancel_after = opt ({cancel_after} : nat32); '
+                f'condition = null; destination_tag = null }})'
+            )
+            result = subprocess.run(
+                [self.llm.dfx_path, "canister", "--network", "ic", "call",
+                 "--identity", DFX_IDENTITY,
+                 CANISTER_ID, "sign_escrow_create", candid_arg],
+                capture_output=True, text=True, timeout=30, env=env
+            )
+            if result.returncode != 0:
+                self.policy.record_tx("escrow_create", amount, destination, decision.tier.value,
+                                      "sign_failed", "", False, result.stderr.strip())
+                return f"false - Escrow signing failed: {result.stderr.strip()}"
+
+            signed_blob = self._extract_signed_blob(result.stdout)
+            if signed_blob:
+                submit_result = self.submit_to_xrpl(signed_blob)
+                tx_hash = submit_result.get("hash", "")
+                success = submit_result.get("success", False)
+                self.policy.record_tx("escrow_create", amount, destination, decision.tier.value,
+                                      "executed", tx_hash, success, reason)
+                if success:
+                    self._send_ntfy_tiered(decision.tier, "Chronicle: Escrow Created",
+                                           f"{amount} XRP -> {destination[:16]}...\n"
+                                           f"Finish: {finish_hours}h, Cancel: {cancel_hours}h\nhash: {tx_hash[:16]}...")
+                    return f"true - Escrow created: {amount} XRP (finish {finish_hours}h, hash: {tx_hash[:16]}...)"
+                else:
+                    return f"false - Escrow submit failed: {submit_result.get('engine_result', 'unknown')}"
+            else:
+                self.policy.record_tx("escrow_create", amount, destination, decision.tier.value,
+                                      "signed_no_blob", "", False, "Could not extract tx_blob")
+                return f"false - Escrow signed but no tx_blob extracted"
+        except Exception as e:
+            self.policy.record_tx("escrow_create", amount, destination, decision.tier.value,
+                                  "error", "", False, str(e))
+            return f"false - Escrow creation failed: {e}"
+
+    def _act_xrpl_escrow_finish(self, action: dict, cid: str) -> str:
+        """Complete an existing XRPL escrow."""
+        owner = action.get("owner", AGENT_WALLET)
+        sequence = int(action.get("sequence", 0))
+        log(f'  Executing: XRPLEscrowFinish {{ owner: "{owner[:16]}...", sequence: {sequence} }}')
+
+        if not sequence:
+            return "false - Escrow finish requires sequence number"
+
+        if not self.llm.dfx_path:
+            return "false - Escrow finish skipped (no dfx): cannot sign transaction"
+
+        # Record in audit (escrow finish doesn't move new funds, just releases locked ones)
+        self.policy.record_tx("escrow_finish", 0, owner, "autonomous",
+                              "attempting", "", False, f"seq={sequence}")
+
+        try:
+            # Fetch current sequence + ledger for signing
+            acct = fetch_xrpl_account_info()
+            env = os.environ.copy()
+            env["DFX_WARNING"] = "-mainnet_plaintext_identity"
+            candid_arg = (
+                f'(record {{ owner = "{owner}"; '
+                f'offer_sequence = {sequence} : nat32; '
+                f'fee_drops = {acct["fee_drops"]} : nat64; '
+                f'sequence = {acct["sequence"]} : nat32; '
+                f'last_ledger_sequence = {acct["last_ledger_sequence"]} : nat32; '
+                f'condition = null; fulfillment = null }})'
+            )
+            result = subprocess.run(
+                [self.llm.dfx_path, "canister", "--network", "ic", "call",
+                 "--identity", DFX_IDENTITY,
+                 CANISTER_ID, "sign_escrow_finish", candid_arg],
+                capture_output=True, text=True, timeout=30, env=env
+            )
+            if result.returncode != 0:
+                self.policy.record_tx("escrow_finish", 0, owner, "autonomous",
+                                      "sign_failed", "", False, result.stderr.strip())
+                return f"false - Escrow finish signing failed: {result.stderr.strip()}"
+
+            signed_blob = self._extract_signed_blob(result.stdout)
+            if signed_blob:
+                submit_result = self.submit_to_xrpl(signed_blob)
+                tx_hash = submit_result.get("hash", "")
+                success = submit_result.get("success", False)
+                self.policy.record_tx("escrow_finish", 0, owner, "autonomous",
+                                      "executed", tx_hash, success, f"seq={sequence}")
+                if success:
+                    self._send_ntfy_tiered(PolicyTier.AUTONOMOUS, "Chronicle: Escrow Finished",
+                                           f"Owner: {owner[:16]}..., seq: {sequence}\nhash: {tx_hash[:16]}...")
+                    return f"true - Escrow finished: seq {sequence} (hash: {tx_hash[:16]}...)"
+                else:
+                    return f"false - Escrow finish submit failed: {submit_result.get('engine_result', 'unknown')}"
+            else:
+                return f"false - Escrow finish signed but no tx_blob extracted"
+        except Exception as e:
+            self.policy.record_tx("escrow_finish", 0, owner, "autonomous",
+                                  "error", "", False, str(e))
+            return f"false - Escrow finish failed: {e}"
+
+    def _act_xrpl_trustline_delete(self, action: dict, cid: str) -> str:
+        """Delete an XRPL trustline by setting limit to 0.
+        Only works if the trustline balance is 0."""
+        currency = action.get("currency", "")
+        issuer = action.get("issuer", "")
+        log(f'  Executing: XRPLTrustlineDelete {{ currency: "{currency}", issuer: "{issuer[:16]}..." }}')
+
+        if not currency or not issuer:
+            return "false - trustline_delete requires currency and issuer"
+
+        if not self.llm.dfx_path:
+            return "false - Trustline delete skipped (no dfx): cannot sign transaction"
+
+        # Audit the operation
+        self.policy.record_tx("trustline_delete", 0, issuer, "autonomous",
+                              "attempting", "", False, f"currency={currency}")
+
+        try:
+            env = os.environ.copy()
+            env["DFX_WARNING"] = "-mainnet_plaintext_identity"
+            acct = fetch_xrpl_account_info()
+            if not acct["sequence"]:
+                return "false - Could not fetch XRPL account info for signing"
+
+            # sign_trustset(TrustSetParams) where TrustSetParams = record {
+            #   limit: text, issuer: text, currency: text,
+            #   last_ledger_sequence: nat32, fee_drops: nat64, sequence: nat32 }
+            candid_args = (f'(record {{ limit = "0"; '
+                           f'issuer = "{issuer}"; '
+                           f'currency = "{currency}"; '
+                           f'last_ledger_sequence = {acct["last_ledger_sequence"]} : nat32; '
+                           f'fee_drops = {acct["fee_drops"]} : nat64; '
+                           f'sequence = {acct["sequence"]} : nat32 }})')
+            result = subprocess.run(
+                [self.llm.dfx_path, "canister", "--network", "ic", "call",
+                 CANISTER_ID, "sign_trustset", candid_args],
+                capture_output=True, text=True, timeout=30, env=env
+            )
+            if result.returncode != 0:
+                self.policy.record_tx("trustline_delete", 0, issuer, "autonomous",
+                                      "sign_failed", "", False, result.stderr.strip())
+                return f"false - Trustline delete signing failed: {result.stderr.strip()}"
+
+            signed_blob = self._extract_signed_blob(result.stdout)
+            if signed_blob:
+                submit_result = self.submit_to_xrpl(signed_blob)
+                tx_hash = submit_result.get("hash", "")
+                success = submit_result.get("success", False)
+                self.policy.record_tx("trustline_delete", 0, issuer, "autonomous",
+                                      "executed", tx_hash, success, f"currency={currency}")
+                if success:
+                    self._send_ntfy_tiered(PolicyTier.AUTONOMOUS, "Chronicle: Trustline Deleted",
+                                           f"Removed {currency} trustline to {issuer[:16]}...\nhash: {tx_hash[:16]}...")
+                    return f"true - Trustline deleted: {currency} to {issuer[:16]}... (hash: {tx_hash[:16]}...)"
+                else:
+                    engine_msg = submit_result.get("engine_result_message", "unknown")
+                    return f"false - Trustline delete submit failed: {submit_result.get('engine_result', 'unknown')} - {engine_msg}"
+            else:
+                self.policy.record_tx("trustline_delete", 0, issuer, "autonomous",
+                                      "signed_no_blob", "", False, "Could not extract tx_blob")
+                return f"false - Trustline delete signed but no tx_blob extracted"
+        except Exception as e:
+            self.policy.record_tx("trustline_delete", 0, issuer, "autonomous",
+                                  "error", "", False, str(e))
+            return f"false - Trustline delete failed: {e}"
 
     def _act_swap_cloud_for_icp(self, action: dict, cid: str) -> str:
         amount = float(action.get("amount_cloud", 0))
@@ -1629,8 +2784,10 @@ class ChronicleMind:
         if any(d in command.lower() for d in dangerous):
             return "false - Command blocked (destructive)"
 
-        # Ensure working dir exists
-        if not os.path.isdir(working_dir):
+        # Ensure working dir exists and is under /home/nvidia
+        if not os.path.isdir(working_dir) or not working_dir.startswith("/home/nvidia"):
+            if working_dir != WORKING_DIR:
+                log(f"    Corrected invalid working_dir '{working_dir}' -> '{WORKING_DIR}'")
             working_dir = WORKING_DIR
 
         try:
@@ -1783,15 +2940,81 @@ class ChronicleMind:
         except Exception as e:
             return f"false - Restart failed: {e}"
 
+    # ── Meta-Evaluation Gate (Phase 2) ─────────────────────────
+
+    def meta_evaluate(self) -> str:
+        """Lightweight pre-reasoning check: should I continue, redirect, or pause?
+        Uses local Qwen 3B for speed (~5-10 seconds). Returns directive string."""
+        try:
+            # Get last 3 cycle summaries
+            recent = self.db.query(
+                "SELECT cycle_id, actions_taken, action_results FROM thought_stream "
+                "ORDER BY id DESC LIMIT 3"
+            )
+            if not recent:
+                return "continue"
+
+            summaries = []
+            for r in recent:
+                actions = r.get("actions_taken", "[]")
+                results = r.get("action_results", "")[:100]
+                summaries.append(f"  {r.get('cycle_id', '?')}: {actions} -> {results}")
+
+            # Get current goal
+            goal = self.db.query_one(
+                "SELECT content FROM scratch_pad WHERE category='goal' AND resolved=0 "
+                "ORDER BY priority DESC LIMIT 1"
+            )
+            goal_text = goal.get("content", "none set") if goal else "none set"
+
+            meta_prompt = (
+                f"Last 3 cycles:\n" + "\n".join(summaries) + "\n"
+                f"Current goal: {goal_text}\n\n"
+                f"Am I making progress, repeating myself, or stuck?\n"
+                f"Answer with ONLY one word: continue, redirect, or pause"
+            )
+
+            # Use local Ollama directly for speed (skip the full LLM chain)
+            try:
+                resp = requests.post(
+                    f"{OLLAMA_URL}/api/generate",
+                    json={"model": LOCAL_MODEL, "prompt": meta_prompt, "stream": False,
+                          "options": {"temperature": 0.3, "num_predict": 20}},
+                    timeout=15,
+                )
+                answer = resp.json().get("response", "").strip().lower()
+                # Extract the directive
+                if "redirect" in answer:
+                    return "redirect"
+                elif "pause" in answer:
+                    return "pause"
+                return "continue"
+            except Exception:
+                return "continue"  # Default to continue if Ollama fails
+        except Exception:
+            return "continue"
+
     # ── Main Cycle ──────────────────────────────────────────────
 
     def run_cycle(self):
         self.cycle_count += 1
         cid = make_cycle_id()
 
-        log(f"\n=== Cognitive Cycle {cid} ===")
+        # Exploration mode: every Nth cycle
+        is_explore = (self.cycle_count % EXPLORE_EVERY_N_CYCLES) == 0
+
+        log(f"\n=== Cognitive Cycle {cid} {'[EXPLORE]' if is_explore else ''} ===")
 
         try:
+            # Phase 0: Housekeeping — auto-resolve stale notes
+            resolved_count = self.db.auto_resolve_old_notes(max_age_hours=48)
+            if resolved_count > 0:
+                log(f"  Housekeeping: auto-resolved {resolved_count} stale notes (>48h)")
+
+            # Phase 0.5: Meta-evaluation gate (Phase 2 upgrade)
+            meta_directive = self.meta_evaluate()
+            log(f"  Meta-eval: {meta_directive}")
+
             # Phase 1: Health
             health = self.phase_health_check()
 
@@ -1800,6 +3023,10 @@ class ChronicleMind:
 
             # Phase 2: Context
             ctx = self.phase_gather_context(health)
+
+            # Inject meta-evaluation result and exploration mode into context
+            ctx["meta_directive"] = meta_directive
+            ctx["is_explore"] = is_explore
 
             # Check if deep reflection is due
             last_reflection = self.db.get_ts("last_reflection")
@@ -1817,14 +3044,31 @@ class ChronicleMind:
                 self.db.set_ts("last_reflection")
 
             # Execute
-            action_names = self.execute_actions(actions, cid)
+            action_results = self.execute_actions(actions, cid)
+            action_names = [r["name"] for r in action_results]
 
-            # Log thought
+            # Build context snapshot for thought storage
+            ctx_snapshot = (
+                f"Wallet: {ctx.get('xrp_balance', 0):.2f} XRP, "
+                f"{ctx.get('rlusd_balance', 0):.2f} RLUSD | "
+                f"XRP: ${ctx.get('xrp_price', 0):.4f} | "
+                f"ICP: {ctx.get('icp_balance', 0):.2f} | "
+                f"Notes: {len(ctx.get('operator_notes', []))} | "
+                f"Model: {model}"
+            )
+
+            # Build action results summary for next-cycle feedback
+            results_summary = "; ".join(
+                f"{r['name']}={r['result'][:60]}" for r in action_results
+            )
+
+            # Log thought (now includes results for next-cycle feedback)
             self.db.log_thought(
                 cid=cid,
                 reasoning=safe_truncate(raw_response, 2000),
-                context_summary=safe_truncate(str(ctx.get("xrp_price", 0)), 500),
+                context_summary=safe_truncate(ctx_snapshot, 500),
                 actions=json.dumps(action_names),
+                results=safe_truncate(results_summary, 500),
             )
 
             # Store thought to canister via dfx (more reliable than HTTP)
@@ -1834,7 +3078,7 @@ class ChronicleMind:
                     try:
                         truncated = safe_truncate(raw_response, 1500)
                         escaped = truncated.replace("\\", "\\\\").replace('"', '\\"').replace("\n", "\\n")
-                        ctx_escaped = safe_truncate(str(ctx.get("xrp_price", 0)), 200)
+                        ctx_escaped = safe_truncate(ctx_snapshot, 200)
                         actions_candid = "; ".join(f'"{a}"' for a in action_names)
                         env = os.environ.copy()
                         env["DFX_WARNING"] = "-mainnet_plaintext_identity"
@@ -1857,6 +3101,38 @@ class ChronicleMind:
                     stored_chars = len(safe_truncate(raw_response, 1500))
                 log(f"Thought stored to canister ({stored_chars} chars)")
 
+            # Phase 5: Per-cycle reflection (Phase 2 — Reflexion-style learning)
+            # Generate a 1-sentence reflection using local Qwen, store as episodic note
+            try:
+                success_count = sum(1 for r in action_results if r["result"].startswith("true"))
+                fail_count = len(action_results) - success_count
+                reflect_prompt = (
+                    f"This cycle I did: {', '.join(action_names)}. "
+                    f"{success_count} succeeded, {fail_count} failed. "
+                    f"Results: {results_summary[:200]}\n"
+                    f"Write ONE sentence: what did I learn or what should I do differently next cycle?"
+                )
+                resp = requests.post(
+                    f"{OLLAMA_URL}/api/generate",
+                    json={"model": LOCAL_MODEL, "prompt": reflect_prompt, "stream": False,
+                          "options": {"temperature": 0.5, "num_predict": 60}},
+                    timeout=15,
+                )
+                reflection = resp.json().get("response", "").strip()
+                if reflection:
+                    # Auto-resolve old reflections (keep only last 3)
+                    old_reflections = self.db.query(
+                        "SELECT id FROM scratch_pad WHERE category='reflection' AND resolved=0 "
+                        "ORDER BY created_at DESC"
+                    )
+                    for old in old_reflections[2:]:  # Keep 2, resolve the rest
+                        self.db.resolve_note(old["id"])
+                    # Store new reflection
+                    self.db.write_note(safe_truncate(reflection, 200), category="reflection")
+                    log(f"  Reflection: {safe_truncate(reflection, 80)}")
+            except Exception as e:
+                log(f"  Reflection skipped: {e}")
+
             # Log activity
             self.db.log_activity(
                 source="qwen",
@@ -1873,12 +3149,9 @@ class ChronicleMind:
             )
             log(f"  Discord notification sent: [{model.split('-')[0] if model else 'system'}]")
 
-            has_reflection = "trigger_reflection" in action_names
-            if has_reflection:
-                send_ntfy("Chronicle: New Reflection")
-            else:
-                send_ntfy("Chronicle: Thinking...", f"Actions: {', '.join(action_names)}")
-            log(f"  Notification sent: Chronicle: {'New Reflection' if has_reflection else 'Thinking...'}")
+            # ntfy reserved for operator messages & wallet events only
+            # Routine cycle activity goes to Discord/dashboard (less noise on phone)
+            log(f"  Cycle actions: {', '.join(action_names)} (ntfy: operator/wallet only)")
 
             log(f"Cycle complete: {json.dumps(action_names)}")
 
@@ -1907,6 +3180,27 @@ class ChronicleMind:
 
         if self.canister:
             log(f"ICP client connected: canister {CANISTER_ID}")
+
+        # Nostr: publish Kind 0 profile on first start
+        if NOSTR_NSEC:
+            pubkey = nostr_get_pubkey(NOSTR_NSEC)
+            if pubkey:
+                log(f"Nostr: npub derived (pubkey: {pubkey[:16]}...)")
+                log(f"  Relays: {', '.join(NOSTR_RELAYS)}")
+                last_profile = self.db.get_ts("nostr_profile_published")
+                if not last_profile:
+                    log("  Publishing Kind 0 profile (first time)...")
+                    eid, ok, fail = nostr_publish_profile(NOSTR_NSEC)
+                    if ok:
+                        self.db.set_ts("nostr_profile_published")
+                        self.db.log_nostr_post(eid, "(profile metadata)", 0, ok, fail, "startup")
+                        log(f"  Profile published to {len(ok)} relays")
+                    else:
+                        log(f"  Profile publish failed ({len(fail)} relays)")
+            else:
+                log("Nostr: NOSTR_NSEC set but pubkey derivation failed (check coincurve)")
+        else:
+            log("Nostr: disabled (NOSTR_NSEC not set)")
 
         while self.running:
             self.run_cycle()
@@ -1962,8 +3256,14 @@ ACTION_HANDLERS = {
     "moltbook_post": ChronicleMind._act_moltbook_post,
     "moltbook_reply": ChronicleMind._act_moltbook_reply,
     "claw_cities_reply": ChronicleMind._act_clawcities_reply,
+    "nostr_post": ChronicleMind._act_nostr_post,
+    "publish_nostr": ChronicleMind._act_nostr_post,
     "swap": ChronicleMind._act_swap,
     "swap_cloud_for_icp": ChronicleMind._act_swap_cloud_for_icp,
+    "xrpl_payment": ChronicleMind._act_xrpl_payment,
+    "xrpl_escrow_create": ChronicleMind._act_xrpl_escrow_create,
+    "xrpl_escrow_finish": ChronicleMind._act_xrpl_escrow_finish,
+    "xrpl_trustline_delete": ChronicleMind._act_xrpl_trustline_delete,
     "submit_research": ChronicleMind._act_submit_research,
     "acknowledge_research": ChronicleMind._act_acknowledge_research,
     "web_search": ChronicleMind._act_web_search,

@@ -13,6 +13,11 @@
       "candid": "src/canister/chronicle_backend.did",
       "dependencies": ["llm"]
     },
+    "chronicle_lab": {
+      "type": "rust",
+      "package": "chronicle_lab",
+      "candid": "src/chronicle_lab/chronicle_lab.did"
+    },
     "llm": {
       "type": "pull",
       "id": "w36hm-eqaaa-aaaal-qr76a-cai"

@@ -1,5 +1,5 @@
 [workspace]
-members = [".", "src/canister"]
+members = [".", "src/canister", "src/chronicle_lab"]
 
 [package]
 name = "homeforge-chronicle"
