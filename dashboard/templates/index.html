@@ -148,6 +148,48 @@
     </div>
 </div>
 
+<!-- Cognitive Metrics (Phase 3) -->
+<div class="grid grid-2" style="margin-bottom: 1rem;">
+    <div class="card">
+        <h2>Mind - Cognitive Loop</h2>
+        {% if cognitive %}
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; margin-bottom: 0.75rem;">
+            <div>
+                <div style="font-size: 1.5rem; font-weight: bold;" class="{% if cognitive.success_rate >= 80 %}text-green{% elif cognitive.success_rate >= 50 %}text-orange{% else %}text-red{% endif %}">
+                    {{ cognitive.success_rate }}%
+                </div>
+                <div class="text-dim" style="font-size: 0.75rem;">Action Success Rate</div>
+            </div>
+            <div>
+                <div style="font-size: 1.5rem; font-weight: bold;">{{ cognitive.total_actions }}</div>
+                <div class="text-dim" style="font-size: 0.75rem;">Actions (last 10 cycles)</div>
+            </div>
+        </div>
+        {% if cognitive.goal %}
+        <div style="margin-bottom: 0.5rem; padding: 0.4rem; background: rgba(255, 165, 0, 0.1); border-left: 3px solid orange;">
+            <strong>Goal:</strong> {{ cognitive.goal.content[:150] }}
+            <span class="text-dim" style="font-size: 0.7rem;">{{ ts_to_relative(cognitive.goal.created_at) }}</span>
+        </div>
+        {% endif %}
+        {% else %}
+        <span class="text-dim">No cognitive data yet</span>
+        {% endif %}
+    </div>
+    <div class="card">
+        <h2>Reflections</h2>
+        {% if cognitive and cognitive.reflections %}
+        {% for r in cognitive.reflections %}
+        <div style="margin-bottom: 0.5rem; padding: 0.3rem 0; border-bottom: 1px solid rgba(255,255,255,0.05);">
+            <span class="text-dim" style="font-size: 0.7rem;">{{ ts_to_relative(r.created_at) }}</span>
+            <div style="font-size: 0.85rem;">{{ r.content[:180] }}{% if r.content|length > 180 %}...{% endif %}</div>
+        </div>
+        {% endfor %}
+        {% else %}
+        <span class="text-dim">No reflections yet</span>
+        {% endif %}
+    </div>
+</div>
+
 <!-- Recent activity (full width) -->
 <div class="card">
     <h2>Recent Activity | <a href="/stream">full stream</a></h2>

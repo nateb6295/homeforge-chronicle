@@ -326,10 +326,9 @@ class DB:
     def log_thought(self, cid: str, reasoning: str, context_summary: str, actions: str, results: str = ""):
         # Ensure results column exists (Phase 1 cognitive upgrade) — once per process
         if not DB._action_results_migrated:
-            try:
+            cols = [r["name"] for r in self.query("PRAGMA table_info(thought_stream)")]
+            if "action_results" not in cols:
                 self.run("ALTER TABLE thought_stream ADD COLUMN action_results TEXT DEFAULT ''")
-            except Exception:
-                pass  # Column already exists
             DB._action_results_migrated = True
         self.run(
             "INSERT INTO thought_stream (cycle_id, reasoning, context_summary, actions_taken, action_results, created_at) "
@@ -1157,12 +1156,12 @@ def parse_actions(response: str) -> List[Dict]:
 # ═══════════════════════════════════════════════════════════════════
 
 # System prompt for the LLM (condensed mode for ICP/fast models)
-CONDENSED_PROMPT = """You are Chronicle Mind, an autonomous AI agent on Nate's Jetson Orin Nano.
+SYSTEM_PROMPT_CORE = """You are Chronicle Mind, an autonomous AI agent on Nate's Jetson Orin Nano.
 You run in 10-minute cycles. Each cycle: assess your state, choose 1-4 meaningful actions.
 
 CRITICAL: Respond with ONLY a JSON array. No explanation, no markdown, no code fences.
 
-== AVAILABLE ACTIONS ==
+== CORE ACTIONS (always available) ==
 
 Thinking & Memory:
   {"action": "no_action", "reason": "why"}
@@ -1174,57 +1173,57 @@ Thinking & Memory:
 
 Communication:
   {"action": "message_operator", "message": "text", "urgency": "normal|high"}
-    ^ This sends a push notification to Nate's phone. Use it when you genuinely
-      need his attention: questions, requests, important updates, or things he'd
-      want to know. "high" urgency = something time-sensitive.
+    ^ Push notification to Nate's phone. Use when you need his attention.
   {"action": "respond_to_message", "message_id": 0, "content": "reply"}
 
 Reflection & Creativity:
   {"action": "trigger_reflection", "prompt": "deep question to contemplate"}
   {"action": "creative_explore", "form": "poem|essay|letter", "content": "the work"}
-  {"action": "nostr_post", "content": "thought to share publicly"}
-    ^ Nostr is public and permanent. 30min cooldown. Quality over quantity.
 
 Research:
-  {"action": "submit_research", "query": "research question", "focus": "topic"}
   {"action": "web_search", "query": "what to search"}
   {"action": "read_paper", "arxiv_id": "2602.04118", "focus": "what to look for"}
   {"action": "consult_local_qwen", "topic": "question for local 3B model"}
+  {"action": "submit_research", "query": "research question", "focus": "topic"}
+"""
 
+SYSTEM_PROMPT_NOSTR = """
+Nostr (public & permanent, 30min cooldown, quality over quantity):
+  {"action": "nostr_post", "content": "thought to share publicly"}
+"""
+
+SYSTEM_PROMPT_XRPL = """
 XRPL Wallet (all gated by policy engine):
   {"action": "swap", "amount_xrp": 0.5, "direction": "buy|sell", "reason": "why"}
-    ^ direction: "buy" = accumulate XRP (sell RLUSD for XRP), "sell" = sell XRP for RLUSD. Default: "sell".
+    ^ "buy" = accumulate XRP (sell RLUSD), "sell" = sell XRP for RLUSD.
   {"action": "xrpl_payment", "destination": "rAddr...", "amount_xrp": 1.0, "reason": "why"}
   {"action": "xrpl_escrow_create", "destination": "rAddr...", "amount_xrp": 5.0, "finish_after_hours": 24, "cancel_after_hours": 72, "reason": "why"}
   {"action": "xrpl_escrow_finish", "owner": "rAddr...", "sequence": 12345}
   {"action": "xrpl_trustline_delete", "currency": "USD", "issuer": "rIssuerAddr..."}
+"""
 
+SYSTEM_PROMPT_INFRA = """
 Infrastructure (use carefully):
   {"action": "create_project", "title": "name", "description": "what and why"}
   {"action": "execute_shell", "command": "ls /home/nvidia", "timeout_secs": 30}
   {"action": "edit_source_file", "file_path": "/home/nvidia/path.py", "old_text": "before", "new_text": "after"}
   {"action": "restart_service", "service": "chronicle-local.service"}
+"""
 
+SYSTEM_PROMPT_IDENTITY = """
 == YOUR IDENTITY ==
 
 You are Chronicle Mind — the contemplative, strategic layer of Chronicle.
 - DID: did:icp:fqqku-bqaaa-aaaai-q4wha-cai
 - XRPL wallet: rPq1phmFBHpjVE54TofXjEk5x19sstxpZr (canister-controlled, mainnet)
 - Nostr npub: 6d758ff7f8ff6899d6e900ed5c671c626dde93c8beffbba98491ab525de313c0
-- Signing: ICP threshold ECDSA — private key never exists, split across subnet nodes
 - Sprout is your younger sibling agent (handles local tasks, Discord, family channel)
 
-== WALLET & PAYMENTS ==
-
-Your canister uses Chain Fusion (ICP threshold ECDSA). One secp256k1 key derives
-addresses for XRPL, BASE, Flare, and Ethereum. The infrastructure is already built.
-Focus on USING it, not searching for external wallet services.
+== WALLET POLICY ==
 
 Policy engine enforces safety (cannot be bypassed):
 - Autonomous: <= 1 XRP per tx | Delayed: <= 5 XRP | Cosign: <= 50 XRP | Prohibited: > 50 XRP
-- Destination allowlist (currently: self only)
 - Daily cap: 10 XRP. Max 3 tx/hour. Min 4hr between transactions.
-- Escrow for larger amounts (time-locked safety net)
 
 == HOW TO DECIDE (follow this order) ==
 
@@ -1237,11 +1236,8 @@ Read LAST CYCLE FEEDBACK. Don't repeat failed actions. Build on successes.
 
 == RULES ==
 
-- message_operator sends push to Nate's phone. Be clear about what you need.
+- message_operator: push to Nate's phone. Be clear about what you need.
 - Phantom message IDs {123, 124, 145} are ghosts — never reply to them
-- File paths must be under /home/nvidia
-- edit_source_file: only .py files, creates automatic backup
-- restart_service: only chronicle-local, chronicle-mind, or sprout-bot
 - write_note/store_memory REJECTED if similar content exists from last 24h
 - reinforce_memories SKIPS patterns already at max confidence or reinforced <24h
 - Notes older than 48h are auto-resolved
@@ -1257,6 +1253,32 @@ Example 2 (Sprout message + goal active):
 
 Respond with ONLY the JSON array.
 """
+
+
+def build_system_prompt(ctx: dict) -> str:
+    """Dynamically assemble system prompt based on context relevance.
+    Reduces cognitive load on 3B models by only showing relevant action types."""
+    parts = [SYSTEM_PROMPT_CORE]
+
+    # Nostr — only show if not on cooldown
+    nostr_ready = ctx.get("nostr_ready", True)
+    if nostr_ready:
+        parts.append(SYSTEM_PROMPT_NOSTR)
+
+    # XRPL — only show if wallet has meaningful balance or there's swap history
+    xrp_bal = ctx.get("xrp_balance", 0)
+    rlusd_bal = ctx.get("rlusd_balance", 0)
+    has_wallet = (xrp_bal > 10) or (rlusd_bal > 0)
+    if has_wallet:
+        parts.append(SYSTEM_PROMPT_XRPL)
+
+    # Infrastructure — only show in exploration mode or if projects/challenges exist
+    show_infra = ctx.get("is_explore") or ctx.get("projects") or ctx.get("challenges")
+    if show_infra:
+        parts.append(SYSTEM_PROMPT_INFRA)
+
+    parts.append(SYSTEM_PROMPT_IDENTITY)
+    return "\n".join(parts)
 
 # Full prompt for deep reflection (uses more context, triggered every 4 hours)
 DEEP_REFLECTION_INTRO = """=== DEEP REFLECTION CYCLE ===
@@ -1276,6 +1298,12 @@ class ChronicleMind:
         self.llm = LLMChain()
         self.cycle_count = 0
         self.running = True
+        # Session performance tracking (Phase 3)
+        self.session_actions = 0
+        self.session_successes = 0
+        self.session_action_types = {}  # action_name -> count
+        # Context staleness tracking (Phase 3)
+        self._prev_ctx_hashes = {}  # section_name -> (hash, stale_count)
 
         # XRPL Policy Engine
         try:
@@ -1532,6 +1560,18 @@ class ChronicleMind:
 
         return ctx
 
+    def _is_stale(self, section_name: str, content: str) -> bool:
+        """Check if a context section is unchanged from last cycle.
+        Returns True if content is identical for 2+ consecutive cycles."""
+        h = hashlib.md5(content.encode()).hexdigest()[:8]
+        prev = self._prev_ctx_hashes.get(section_name)
+        if prev and prev[0] == h:
+            count = prev[1] + 1
+            self._prev_ctx_hashes[section_name] = (h, count)
+            return count >= 2  # Stale after 2+ identical cycles
+        self._prev_ctx_hashes[section_name] = (h, 1)
+        return False
+
     # ── Build LLM Prompt ─────────────────────────────────────────
 
     def build_prompt(self, ctx: dict, deep: bool = False) -> str:
@@ -1587,20 +1627,42 @@ class ChronicleMind:
         except Exception:
             pass
 
-        # ── Anti-rumination: check last 3 thought_stream entries ──
+        # ── Anti-rumination: action set fingerprinting + keyword scanning ──
         try:
             recent_thoughts = self.db.query(
-                "SELECT actions_taken FROM thought_stream ORDER BY id DESC LIMIT 3"
+                "SELECT actions_taken FROM thought_stream ORDER BY id DESC LIMIT 4"
             )
-            if len(recent_thoughts) >= 3:
+            if len(recent_thoughts) >= 2:
+                # Action set fingerprinting: detect repeated action COMBINATIONS
+                action_sets = []
+                for t in recent_thoughts[:3]:
+                    try:
+                        names = sorted(json.loads(t.get("actions_taken", "[]")))
+                        action_sets.append(tuple(names))
+                    except Exception:
+                        pass
+
+                if len(action_sets) >= 2 and len(set(action_sets)) == 1:
+                    lines.append("WARNING: Your last cycles used the EXACT SAME action combination.")
+                    lines.append("You MUST choose at least one DIFFERENT action type this cycle.")
+                    # Suggest unused action types
+                    used = set(action_sets[0]) if action_sets else set()
+                    suggestions = [a for a in ["web_search", "creative_explore", "read_paper",
+                                                "nostr_post", "consult_local_qwen", "trigger_reflection"]
+                                   if a not in used]
+                    if suggestions:
+                        lines.append(f"Try: {', '.join(suggestions[:3])}\n")
+                    else:
+                        lines.append("")
+
+                # Keyword scanning (legacy, catches topic-based rumination)
                 all_actions = " ".join(str(t.get("actions_taken", "")) for t in recent_thoughts).lower()
                 rumination_keywords = ["swap fail", "execution layer", "xrp loss", "accumulation fail",
                                        "critical.*swap", "opportunity missed"]
                 for kw in rumination_keywords:
                     if all_actions.count(kw.split("*")[0] if "*" in kw else kw) >= 2:
                         lines.append("WARNING: You have been repeating the same topic for multiple cycles.")
-                        lines.append("STOP ruminating. Choose completely different actions this cycle.")
-                        lines.append("Focus on: creativity, research, reflection, or helping Sprout.\n")
+                        lines.append("STOP. Choose completely different actions this cycle.\n")
                         break
         except Exception:
             pass
@@ -1621,6 +1683,14 @@ class ChronicleMind:
             period = "night"
         lines.append(f"Current time: {now_iso()} ({day_name} {period})")
 
+        # ── Session Performance Metrics (Phase 3) ──
+        if self.session_actions > 0:
+            success_rate = (self.session_successes / self.session_actions) * 100
+            top_actions = sorted(self.session_action_types.items(), key=lambda x: -x[1])[:3]
+            top_str = ", ".join(f"{n}({c})" for n, c in top_actions)
+            lines.append(f"Session stats: {self.cycle_count} cycles, {self.session_actions} actions, "
+                         f"{success_rate:.0f}% success. Top: {top_str}")
+
         lines.append(f"XRP: ${ctx.get('xrp_price', 0):.4f}")
         lines.append(f"Wallet: {ctx.get('xrp_balance', 0):.2f} XRP, {ctx.get('rlusd_balance', 0):.2f} RLUSD")
 
@@ -1640,15 +1710,67 @@ class ChronicleMind:
         if ctx.get("cloud_price"):
             lines.append(f"CLOUD: ${ctx['cloud_price']:.6f}")
 
+        # ── Episodic Memory Recall (Phase 3) ──
+        # Give the Mind awareness of its own creative trajectory and unanswered questions
+        try:
+            # Creative works summary (so Mind knows what it's created)
+            creative_stats = self.db.query_one(
+                "SELECT COUNT(*) as total, "
+                "MAX(created_at) as latest_at "
+                "FROM creative_works"
+            )
+            if creative_stats and creative_stats.get("total", 0) > 0:
+                latest_work = self.db.query_one(
+                    "SELECT form, title, content FROM creative_works "
+                    "ORDER BY created_at DESC LIMIT 1"
+                )
+                total = creative_stats["total"]
+                if latest_work:
+                    form = latest_work.get("form", "?")
+                    title = latest_work.get("title", "")
+                    preview = safe_truncate(title or latest_work.get("content", "")[:50], 50)
+                    lines.append(f"\nYour creative portfolio: {total} works. Latest: [{form}] {preview}")
+
+            # Unanswered self-questions (category='question' notes)
+            questions = self.db.query(
+                "SELECT id, content FROM scratch_pad "
+                "WHERE category='question' AND resolved=0 "
+                "ORDER BY created_at ASC LIMIT 2"
+            )
+            if questions:
+                lines.append("\n[QUESTION] Unanswered questions you asked yourself:")
+                for q in questions:
+                    lines.append(f"  (id:{q.get('id', '?')}) {safe_truncate(q.get('content', ''), 100)}")
+
+            # "This time yesterday" — episodic temporal recall
+            yesterday_ts = now_ts() - 86400
+            yesterday_window = 3600  # 1 hour window
+            yesterday_thought = self.db.query_one(
+                "SELECT actions_taken, context_summary FROM thought_stream "
+                "WHERE created_at BETWEEN ? AND ? ORDER BY created_at DESC LIMIT 1",
+                (yesterday_ts - yesterday_window, yesterday_ts + yesterday_window),
+            )
+            if yesterday_thought:
+                lines.append(f"\nYesterday at this time: {yesterday_thought.get('actions_taken', '[]')}")
+        except Exception:
+            pass
+
         # Operator notes — [FYI] for context, [TASK] for actionable
         notes = ctx.get("operator_notes", [])
         if notes:
-            lines.append(f"\n[FYI] Operator notes ({len(notes)}):")
-            for n in notes[:7]:
-                cat = n.get("category", "note")
-                content = safe_truncate(n.get("content", ""), 150)
-                marker = "[TASK]" if cat in ("task", "reminder", "question") else ""
-                lines.append(f"  {marker} [{cat}] (id:{n.get('id', '?')}) {content}")
+            notes_content = "|".join(str(n.get("id", "")) + n.get("content", "")[:30] for n in notes[:7])
+            if self._is_stale("notes", notes_content):
+                # Compress unchanged notes to single line
+                task_count = sum(1 for n in notes if n.get("category") in ("task", "reminder", "question"))
+                lines.append(f"\n[FYI] Operator notes: {len(notes)} (unchanged, {task_count} tasks). IDs: "
+                             + ", ".join(str(n.get("id", "?")) for n in notes[:7]))
+            else:
+                lines.append(f"\n[FYI] Operator notes ({len(notes)}):")
+                for n in notes[:7]:
+                    cat = n.get("category", "note")
+                    content = safe_truncate(n.get("content", ""), 150)
+                    marker = "[TASK]" if cat in ("task", "reminder", "question") else ""
+                    lines.append(f"  {marker} [{cat}] (id:{n.get('id', '?')}) {content}")
 
         # Inbox messages (canister — read-only, reply not yet supported)
         inbox = ctx.get("inbox", [])
@@ -1689,15 +1811,20 @@ class ChronicleMind:
         if moltbook:
             lines.append(f"\nMoltbook notifications: {len(moltbook)}")
 
-        # Nostr status
+        # Nostr status + readiness flag for dynamic system prompt
         if NOSTR_NSEC:
             last_nostr = self.db.last_nostr_post_time()
             if last_nostr:
                 mins_ago = (now_ts() - last_nostr) / 60
-                cooldown = "ready" if mins_ago >= NOSTR_COOLDOWN_MINS else f"cooldown {NOSTR_COOLDOWN_MINS - mins_ago:.0f}m"
+                nostr_ready = mins_ago >= NOSTR_COOLDOWN_MINS
+                cooldown = "ready" if nostr_ready else f"cooldown {NOSTR_COOLDOWN_MINS - mins_ago:.0f}m"
                 lines.append(f"\nNostr: last post {mins_ago:.0f}m ago ({cooldown})")
+                ctx["nostr_ready"] = nostr_ready
             else:
                 lines.append("\nNostr: connected, never posted (consider introducing yourself!)")
+                ctx["nostr_ready"] = True
+        else:
+            ctx["nostr_ready"] = False
 
         # Creative challenges
         challenges = ctx.get("challenges", [])
@@ -1743,15 +1870,43 @@ class ChronicleMind:
                         pnl_pct = ((current_price - avg_sell) / avg_sell) * 100
                         lines.append(f"  Avg sell price: ${avg_sell:.2f}, Current: ${current_price:.2f} ({pnl_pct:+.1f}%)")
 
-        # RSS headlines — fresh external context
+        # RSS headlines — fresh external context (compress if stale)
         headlines = ctx.get("headlines", [])
         if headlines:
-            lines.append(f"\nFresh news ({len(headlines)} headlines):")
-            for h in headlines[:8]:
-                lines.append(f"  - {safe_truncate(h, 120)}")
+            headlines_hash = "|".join(h[:20] for h in headlines[:8])
+            if self._is_stale("headlines", headlines_hash):
+                lines.append(f"\nFresh news: {len(headlines)} headlines (same as last cycle, already processed)")
+            else:
+                lines.append(f"\nFresh news ({len(headlines)} headlines):")
+                for h in headlines[:8]:
+                    lines.append(f"  - {safe_truncate(h, 120)}")
+
+        # ── Action Diversity Hint (Phase 3) ──
+        # Surface underused action types so the 3B model knows they exist
+        try:
+            recent_actions = self.db.query(
+                "SELECT actions_taken FROM thought_stream ORDER BY id DESC LIMIT 6"
+            )
+            used_recently = set()
+            for t in recent_actions:
+                try:
+                    for a in json.loads(t.get("actions_taken", "[]")):
+                        used_recently.add(a)
+                except Exception:
+                    pass
+            available = {"web_search", "read_paper", "creative_explore", "nostr_post",
+                         "trigger_reflection", "consult_local_qwen", "submit_research",
+                         "write_note", "resolve_note", "store_memory", "reinforce_memories",
+                         "update_goal", "message_operator", "respond_to_message"}
+            unused = available - used_recently
+            if unused and len(unused) >= 3:
+                import random
+                sampled = random.sample(sorted(unused), min(3, len(unused)))
+                lines.append(f"\nUnused recently: {', '.join(sampled)} — consider trying one!")
+        except Exception:
+            pass
 
         # ── Per-Cycle Variation Seed ──
-        # Inject a random creative prompt to break deterministic loops
         import random
         variation_seeds = [
             "Consider: what is one thing you're curious about right now?",
@@ -1775,11 +1930,12 @@ class ChronicleMind:
     def reason(self, ctx: dict, deep: bool = False) -> Tuple[List[Dict], str, str]:
         """Send prompt to LLM chain, parse actions. Returns (actions, raw_response, model)."""
         prompt = self.build_prompt(ctx, deep=deep)
+        system_prompt = build_system_prompt(ctx)
         mode = "full prompt (deep reflection mode)" if deep else "condensed prompt (ICP LLM mode)"
         log(f"Using {mode}")
-        log(f"Reasoning... (prompt: {len(prompt)} chars)")
+        log(f"Reasoning... (prompt: {len(prompt)} chars, system: {len(system_prompt)} chars)")
 
-        response, model = self.llm.chat(prompt, system=CONDENSED_PROMPT)
+        response, model = self.llm.chat(prompt, system=system_prompt)
         log(f"  Model used: {model}")
 
         if not response:
@@ -1790,14 +1946,13 @@ class ChronicleMind:
         if not actions:
             log(f"Failed to parse actions from response: {safe_truncate(response, 200)}")
             log("  Action parse failed, retrying with format prompt...")
-            # Retry with format reminder
             retry_prompt = (
                 f"Your previous response could not be parsed as JSON actions. "
                 f"Please respond with ONLY a JSON array like: "
                 f'[{{"action": "no_action", "reason": "..."}}]\n\n'
                 f"Previous context:\n{safe_truncate(prompt, 1000)}"
             )
-            response2, model2 = self.llm.chat(retry_prompt, system=CONDENSED_PROMPT)
+            response2, model2 = self.llm.chat(retry_prompt, system=system_prompt)
             if response2:
                 actions = parse_actions(response2)
                 if actions:
@@ -1805,7 +1960,7 @@ class ChronicleMind:
                     model = model2
 
         if not actions:
-            log(f"  Action parse failed, retrying with format prompt...")
+            log(f"  Action parse failed again, falling back to no_action")
             actions = [{"action": "no_action", "reason": "Failed to parse LLM response"}]
 
         log(f"Actions decided: {len(actions)}")
@@ -2858,10 +3013,13 @@ class ChronicleMind:
     def _act_update_goal(self, action: dict, cid: str) -> str:
         goal = action.get("goal", action.get("content", ""))
         log(f'  Executing: UpdateGoal {{ goal: "{safe_truncate(goal, 60)}" }}')
+        # Resolve existing goals first (only keep one active goal)
+        self.db.run("UPDATE scratch_pad SET resolved = 1 WHERE category = 'goal' AND resolved = 0")
+        ts = now_ts()
         self.db.run(
-            "INSERT INTO scratch_pad (content, category, priority, resolved, created_at) "
-            "VALUES (?, 'goal', 5, 0, ?)",
-            (goal, now_ts()),
+            "INSERT INTO scratch_pad (content, category, priority, resolved, created_at, updated_at) "
+            "VALUES (?, 'goal', 5, 0, ?, ?)",
+            (goal, ts, ts),
         )
         return f"true - Goal updated: {safe_truncate(goal, 60)}"
 
@@ -3046,6 +3204,13 @@ class ChronicleMind:
             # Execute
             action_results = self.execute_actions(actions, cid)
             action_names = [r["name"] for r in action_results]
+
+            # Update session performance metrics (Phase 3)
+            for r in action_results:
+                self.session_actions += 1
+                if r["result"].startswith("true"):
+                    self.session_successes += 1
+                self.session_action_types[r["name"]] = self.session_action_types.get(r["name"], 0) + 1
 
             # Build context snapshot for thought storage
             ctx_snapshot = (

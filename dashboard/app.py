@@ -145,12 +145,48 @@ def index():
         "SELECT COUNT(*) as c FROM outbox WHERE acknowledged=0"
     )
 
+    # Cognitive metrics (Phase 3)
+    reflections = query(
+        "SELECT content, created_at FROM scratch_pad "
+        "WHERE category='reflection' AND resolved=0 "
+        "ORDER BY created_at DESC LIMIT 3"
+    )
+    goal = query_one(
+        "SELECT content, created_at FROM scratch_pad "
+        "WHERE category='goal' AND resolved=0 "
+        "ORDER BY priority DESC LIMIT 1"
+    )
+
+    # Action success rate from recent cycles
+    recent_results = query(
+        "SELECT action_results FROM thought_stream "
+        "WHERE action_results != '' ORDER BY id DESC LIMIT 10"
+    )
+    total_actions = 0
+    ok_actions = 0
+    for rr in recent_results:
+        parts = (rr.get("action_results") or "").split(";")
+        for p in parts:
+            p = p.strip()
+            if "=true" in p:
+                ok_actions += 1
+                total_actions += 1
+            elif "=false" in p or "=error" in p:
+                total_actions += 1
+    cognitive = {
+        "reflections": reflections,
+        "goal": goal,
+        "success_rate": round((ok_actions / total_actions * 100) if total_actions > 0 else 0),
+        "total_actions": total_actions,
+    }
+
     return render_template("index.html",
         sprout=sprout, ccs=ccs, thoughts=thoughts, activity=activity,
         latest_xrp=latest_xrp, swaps=swaps, pred_stats=pred_stats,
         timestamps=timestamps, creative_count=creative_count,
         notes_active=notes_active, notes_high=notes_high,
         outbox_unread=outbox_unread,
+        cognitive=cognitive,
     )
 
 
@@ -307,6 +343,113 @@ def api_health():
         "sprout_energy": sprout.get("energy_level", 0) if sprout else 0,
         "last_thought": ts_to_relative(latest_thought["created_at"]) if latest_thought else "never",
         "last_activity": ts_to_relative(latest_activity["created_at"]) if latest_activity else "never",
+    })
+
+
+@app.route("/api/cognitive")
+def api_cognitive():
+    """Phase 2+3 cognitive metrics: action diversity, reflections, meta-eval, performance."""
+    # Recent cycles with action results
+    recent = query(
+        "SELECT cycle_id, actions_taken, action_results, context_summary, created_at "
+        "FROM thought_stream ORDER BY id DESC LIMIT 20"
+    )
+
+    # Action frequency analysis (last 24h)
+    action_freq = {}
+    success_count = 0
+    fail_count = 0
+    for row in recent:
+        try:
+            names = json.loads(row.get("actions_taken", "[]"))
+            for name in names:
+                action_freq[name] = action_freq.get(name, 0) + 1
+        except Exception:
+            pass
+        results = row.get("action_results", "")
+        if results:
+            for part in results.split(";"):
+                part = part.strip()
+                if "=true" in part:
+                    success_count += 1
+                elif "=false" in part or "=error" in part:
+                    fail_count += 1
+
+    total = success_count + fail_count
+    success_rate = (success_count / total * 100) if total > 0 else 0
+
+    # Action diversity: unique types in last 10 vs last 20 cycles
+    recent_10 = set()
+    recent_20 = set()
+    for i, row in enumerate(recent):
+        try:
+            names = json.loads(row.get("actions_taken", "[]"))
+            for name in names:
+                if i < 10:
+                    recent_10.add(name)
+                recent_20.add(name)
+        except Exception:
+            pass
+
+    # Reflections
+    reflections = query(
+        "SELECT id, content, created_at FROM scratch_pad "
+        "WHERE category='reflection' AND resolved=0 "
+        "ORDER BY created_at DESC LIMIT 5"
+    )
+
+    # Current goal
+    goal = query_one(
+        "SELECT content, created_at FROM scratch_pad "
+        "WHERE category='goal' AND resolved=0 "
+        "ORDER BY priority DESC LIMIT 1"
+    )
+
+    # Action set fingerprints (detect repetition)
+    action_sets = []
+    for row in recent[:5]:
+        try:
+            names = sorted(json.loads(row.get("actions_taken", "[]")))
+            action_sets.append(names)
+        except Exception:
+            pass
+    unique_sets = len(set(tuple(s) for s in action_sets))
+
+    # Recent ideas
+    ideas = query(
+        "SELECT id, content, created_at FROM scratch_pad "
+        "WHERE category='idea' AND resolved=0 "
+        "ORDER BY created_at DESC LIMIT 5"
+    )
+
+    return jsonify({
+        "cycles_analyzed": len(recent),
+        "success_rate": round(success_rate, 1),
+        "total_actions": total,
+        "action_frequency": dict(sorted(action_freq.items(), key=lambda x: -x[1])),
+        "diversity_last_10": len(recent_10),
+        "diversity_last_20": len(recent_20),
+        "unique_action_sets_last_5": unique_sets,
+        "repetition_detected": unique_sets <= 2 and len(action_sets) >= 3,
+        "goal": goal.get("content", "") if goal else None,
+        "goal_set": ts_to_relative(goal.get("created_at")) if goal else None,
+        "reflections": [
+            {"content": r["content"][:200], "when": ts_to_relative(r["created_at"])}
+            for r in reflections
+        ],
+        "ideas": [
+            {"content": i["content"][:200], "when": ts_to_relative(i["created_at"])}
+            for i in ideas
+        ],
+        "recent_cycles": [
+            {
+                "id": r["cycle_id"],
+                "actions": r["actions_taken"],
+                "results": (r.get("action_results") or "")[:200],
+                "when": ts_to_relative(r["created_at"]),
+            }
+            for r in recent[:5]
+        ],
     })
 
 
