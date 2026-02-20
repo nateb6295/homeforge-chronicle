@@ -951,6 +951,28 @@ impl Database {
             [],
         ).context("Failed to initialize sprout_state")?;
 
+        // Discord request queue (bot → cognitive loop bridge)
+        self.conn.execute(
+            "CREATE TABLE IF NOT EXISTS discord_requests (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_name TEXT NOT NULL,
+                channel_id TEXT NOT NULL,
+                request TEXT NOT NULL,
+                request_type TEXT NOT NULL DEFAULT 'general',
+                status TEXT NOT NULL DEFAULT 'pending',
+                result TEXT,
+                created_at INTEGER NOT NULL,
+                completed_at INTEGER
+            )",
+            [],
+        ).context("Failed to create discord_requests table")?;
+
+        self.conn.execute(
+            "CREATE INDEX IF NOT EXISTS idx_discord_requests_status
+             ON discord_requests(status, created_at DESC)",
+            [],
+        ).context("Failed to create discord_requests index")?;
+
         Ok(())
     }
 
@@ -2990,6 +3012,36 @@ impl Database {
         Ok(entries)
     }
 
+    /// Get activity from a specific source and activity type
+    pub fn get_activity_by_source_and_type(&self, source: &str, activity_type: &str, limit: usize) -> Result<Vec<ActivityFeedEntry>> {
+        let mut stmt = self.conn.prepare(
+            "SELECT id, source, activity_type, title, content, metadata, created_at
+             FROM activity_feed
+             WHERE source = ? AND activity_type = ?
+             ORDER BY created_at DESC
+             LIMIT ?"
+        )?;
+
+        let rows = stmt.query_map(params![source, activity_type, limit as i64], |row| {
+            Ok(ActivityFeedEntry {
+                id: row.get(0)?,
+                source: row.get(1)?,
+                activity_type: row.get(2)?,
+                title: row.get(3)?,
+                content: row.get(4)?,
+                metadata: row.get(5)?,
+                created_at: row.get(6)?,
+            })
+        })?;
+
+        let mut entries = Vec::new();
+        for row in rows {
+            entries.push(row?);
+        }
+
+        Ok(entries)
+    }
+
     /// Get unsynced activities of meaningful types for canister sync
     pub fn get_unsynced_activities(&self, limit: Option<usize>) -> Result<Vec<ActivityFeedEntry>> {
         // Skip "thought" - those are status updates, not genuine thoughts
@@ -3054,6 +3106,78 @@ impl Database {
         )?;
 
         Ok(count)
+    }
+
+    // ============================================================
+    // Discord Requests - Bot → Cognitive Loop bridge
+    // ============================================================
+
+    /// Queue a Discord request for the cognitive loop to handle
+    pub fn queue_discord_request(
+        &self,
+        user_name: &str,
+        channel_id: &str,
+        request: &str,
+        request_type: &str,
+    ) -> Result<i64> {
+        let now = chrono::Utc::now().timestamp();
+        self.conn.execute(
+            "INSERT INTO discord_requests (user_name, channel_id, request, request_type, status, created_at)
+             VALUES (?, ?, ?, ?, 'pending', ?)",
+            params![user_name, channel_id, request, request_type, now],
+        )?;
+        Ok(self.conn.last_insert_rowid())
+    }
+
+    /// Get pending discord requests
+    pub fn get_pending_discord_requests(&self, limit: usize) -> Result<Vec<DiscordRequest>> {
+        let mut stmt = self.conn.prepare(
+            "SELECT id, user_name, channel_id, request, request_type, status, result, created_at, completed_at
+             FROM discord_requests
+             WHERE status = 'pending'
+             ORDER BY created_at ASC
+             LIMIT ?"
+        )?;
+
+        let rows = stmt.query_map(params![limit as i64], |row| {
+            Ok(DiscordRequest {
+                id: row.get(0)?,
+                user_name: row.get(1)?,
+                channel_id: row.get(2)?,
+                request: row.get(3)?,
+                request_type: row.get(4)?,
+                status: row.get(5)?,
+                result: row.get(6)?,
+                created_at: row.get(7)?,
+                completed_at: row.get(8)?,
+            })
+        })?;
+
+        let mut entries = Vec::new();
+        for row in rows {
+            entries.push(row?);
+        }
+        Ok(entries)
+    }
+
+    /// Mark a discord request as in_progress
+    pub fn claim_discord_request(&self, id: i64) -> Result<()> {
+        self.conn.execute(
+            "UPDATE discord_requests SET status = 'in_progress' WHERE id = ? AND status = 'pending'",
+            params![id],
+        )?;
+        Ok(())
+    }
+
+    /// Complete a discord request with a result
+    pub fn complete_discord_request(&self, id: i64, result: &str, success: bool) -> Result<()> {
+        let now = chrono::Utc::now().timestamp();
+        let status = if success { "completed" } else { "failed" };
+        self.conn.execute(
+            "UPDATE discord_requests SET status = ?, result = ?, completed_at = ? WHERE id = ?",
+            params![status, result, now, id],
+        )?;
+        Ok(())
     }
 
     // ============================================================
@@ -4093,6 +4217,18 @@ pub struct ActivityFeedEntry {
     pub content: String,
     pub metadata: Option<String>,
     pub created_at: i64,
+}
+
+pub struct DiscordRequest {
+    pub id: i64,
+    pub user_name: String,
+    pub channel_id: String,
+    pub request: String,
+    pub request_type: String,
+    pub status: String,
+    pub result: Option<String>,
+    pub created_at: i64,
+    pub completed_at: Option<i64>,
 }
 
 /// Source identifiers for activity feed

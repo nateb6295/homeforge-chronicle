@@ -16,7 +16,7 @@ use std::collections::{HashMap, HashSet};
 use std::time::Duration;
 
 // XRP wallet integration
-use chronicle_xrp::{IcpSigner, IcpSignerConfig, XrpAddress, Payment, Transaction, TrustSet, OfferCreate, Amount};
+use chronicle_xrp::{IcpSigner, IcpSignerConfig, XrpAddress, Payment, Transaction, TrustSet, OfferCreate, EscrowCreate, EscrowFinish, Amount};
 
 // EVM Chain Fusion (BASE, Flare) - uses same secp256k1 key as XRP
 use k256::elliptic_curve::sec1::ToEncodedPoint;
@@ -1116,7 +1116,7 @@ fn heartbeat() {
     }
 }
 
-/// Perform autonomous accumulation - sign XRP -> RLUSD swap
+/// Perform autonomous accumulation - buy XRP with RLUSD
 async fn perform_accumulation() -> Result<String, String> {
     // Get accumulation config and wallet info
     let (xrp_drops, sequence, ledger_index) = STATE.with(|state| {
@@ -1130,11 +1130,10 @@ async fn perform_accumulation() -> Result<String, String> {
         Ok::<_, &str>((acc.xrp_per_heartbeat, seq, ledger))
     }).map_err(|e: &str| e.to_string())?;
 
-    // Calculate minimum RLUSD to receive (very generous slippage for now)
-    // At ~$2/XRP and 0.1 XRP per heartbeat, expect ~$0.20 worth
-    // Set minimum to 0.01 RLUSD to be safe
+    // Calculate maximum RLUSD to spend (generous slippage for buying XRP)
+    // At ~$2/XRP, spending up to 3x gives room for slippage
     let xrp_decimal = xrp_drops as f64 / 1_000_000.0;
-    let min_rlusd = format!("{:.6}", xrp_decimal * 0.1); // 10% of XRP value as minimum
+    let max_rlusd = format!("{:.6}", xrp_decimal * 3.0); // Up to 3 RLUSD per XRP
 
     // Get signer with cached public key
     let mut signer = get_xrp_signer();
@@ -1183,10 +1182,11 @@ async fn perform_accumulation() -> Result<String, String> {
         u32::MAX - 100
     };
 
+    // taker_gets = what we sell (RLUSD), taker_pays = what we buy (XRP)
     let offer = OfferCreate::immediate_or_cancel(
         source_account_id,
+        Amount::issued(RLUSD_CURRENCY, issuer_id, &max_rlusd),
         Amount::xrp_drops(xrp_drops),
-        Amount::issued(RLUSD_CURRENCY, issuer_id, &min_rlusd),
         12, // Standard fee
         sequence,
     ).with_last_ledger_sequence(last_ledger_seq);
@@ -1215,14 +1215,14 @@ async fn perform_accumulation() -> Result<String, String> {
     // Log the swap signing
     log_activity(
         "accumulation",
-        &format!("Signed swap: {} drops XRP → min {} RLUSD", xrp_drops, min_rlusd),
+        &format!("Signed buy: {} drops XRP, spending max {} RLUSD", xrp_drops, max_rlusd),
         Some(tx_hash.clone()),
-        Some(format!(r#"{{"sequence":{},"xrp_drops":{},"min_rlusd":"{}"}}"#, sequence, xrp_drops, min_rlusd))
+        Some(format!(r#"{{"sequence":{},"xrp_drops":{},"max_rlusd":"{}","direction":"buy_xrp"}}"#, sequence, xrp_drops, max_rlusd))
     );
 
     Ok(format!(
-        "Signed swap: {} drops XRP for min {} RLUSD, hash: {}, seq: {}",
-        xrp_drops, min_rlusd, tx_hash, sequence
+        "Signed buy: {} drops XRP for max {} RLUSD, hash: {}, seq: {}",
+        xrp_drops, max_rlusd, tx_hash, sequence
     ))
 }
 
@@ -3517,6 +3517,369 @@ async fn sign_swap_xrp_to_rlusd(
                 &signed.tx_hash,
                 xrp_drops,
                 min_rlusd
+            )
+        }
+        Err(e) => format!(r#"{{"error":"Failed to sign transaction: {}"}}"#, e),
+    }
+}
+
+/// Sign a swap RLUSD -> XRP using immediate-or-cancel offer (buy XRP with RLUSD)
+#[update]
+async fn sign_swap_rlusd_to_xrp(
+    xrp_drops: u64,
+    max_rlusd: String,
+    fee_drops: u64,
+    sequence: u32,
+    last_ledger_sequence: u32,
+) -> String {
+    // Check authorization
+    let is_owner = STATE.with(|state| {
+        state.borrow().owner == Some(ic_cdk::caller())
+    });
+
+    if !is_owner {
+        return r#"{"error":"Not authorized to sign transactions"}"#.to_string();
+    }
+
+    // Decode RLUSD issuer
+    let issuer_id = match XrpAddress::decode(RLUSD_ISSUER) {
+        Ok(id) => id,
+        Err(e) => return format!(r#"{{"error":"Invalid RLUSD issuer: {:?}"}}"#, e),
+    };
+
+    // Get cached account ID
+    let cached_account_id: Option<[u8; 20]> = STATE.with(|state| {
+        state.borrow().wallet.as_ref()
+            .and_then(|w| w.cached_address.as_ref())
+            .and_then(|addr| XrpAddress::decode(addr).ok())
+    });
+
+    let mut signer = get_xrp_signer();
+
+    let source_account_id = match cached_account_id {
+        Some(account_id) => {
+            let cached_pk: Option<[u8; 33]> = STATE.with(|state| {
+                state.borrow().wallet.as_ref()
+                    .and_then(|w| w.cached_public_key.as_ref())
+                    .and_then(|pk| {
+                        if pk.len() == 33 {
+                            let mut arr = [0u8; 33];
+                            arr.copy_from_slice(pk);
+                            Some(arr)
+                        } else {
+                            None
+                        }
+                    })
+            });
+            if let Some(pk) = cached_pk {
+                signer.set_public_key(pk);
+            }
+            account_id
+        }
+        None => {
+            match chronicle_xrp::fetch_public_key(&signer).await {
+                Ok(pk) => {
+                    signer.set_public_key(pk);
+                    match signer.address() {
+                        Ok(addr) => {
+                            let account_id = addr.account_id;
+                            let addr_str = addr.to_string();
+                            STATE.with(|state| {
+                                let mut s = state.borrow_mut();
+                                let wallet = s.wallet.get_or_insert_with(WalletState::default);
+                                wallet.cached_public_key = Some(pk.to_vec());
+                                wallet.cached_address = Some(addr_str);
+                            });
+                            account_id
+                        }
+                        Err(e) => return format!(r#"{{"error":"Failed to derive address: {}"}}"#, e),
+                    }
+                }
+                Err(e) => return format!(r#"{{"error":"Failed to fetch public key: {}"}}"#, e),
+            }
+        }
+    };
+
+    // Create immediate-or-cancel offer:
+    // TakerGets: RLUSD (what we're selling)
+    // TakerPays: XRP (what we want to receive / buy)
+    let offer = OfferCreate::immediate_or_cancel(
+        source_account_id,
+        Amount::issued(RLUSD_CURRENCY, issuer_id, &max_rlusd),  // TakerGets - selling RLUSD
+        Amount::xrp_drops(xrp_drops),                            // TakerPays - want XRP
+        fee_drops,
+        sequence,
+    ).with_last_ledger_sequence(last_ledger_sequence);
+
+    let transaction = Transaction::OfferCreate(offer);
+
+    match chronicle_xrp::sign_transaction(&mut signer, &transaction).await {
+        Ok(signed) => {
+            format!(
+                r#"{{"success":true,"tx_blob":"{}","tx_hash":"{}","buying_xrp_drops":{},"selling_rlusd":"{}"}}"#,
+                hex::encode(&signed.tx_blob),
+                &signed.tx_hash,
+                xrp_drops,
+                max_rlusd
+            )
+        }
+        Err(e) => format!(r#"{{"error":"Failed to sign transaction: {}"}}"#, e),
+    }
+}
+
+/// EscrowCreate parameters
+#[derive(Clone, Debug, CandidType, Deserialize)]
+pub struct EscrowCreateParams {
+    /// Destination r-address
+    pub destination: String,
+    /// Amount to escrow in drops (1 XRP = 1,000,000 drops)
+    pub amount_drops: u64,
+    /// Transaction fee in drops
+    pub fee_drops: u64,
+    /// Account sequence number
+    pub sequence: u32,
+    /// Last ledger sequence
+    pub last_ledger_sequence: u32,
+    /// Ripple epoch time when escrow can be finished (optional)
+    pub finish_after: Option<u32>,
+    /// Ripple epoch time when escrow can be canceled (optional)
+    pub cancel_after: Option<u32>,
+    /// Crypto-condition as hex (optional, PREIMAGE-SHA-256)
+    pub condition: Option<String>,
+    /// Destination tag (optional)
+    pub destination_tag: Option<u32>,
+}
+
+/// EscrowFinish parameters
+#[derive(Clone, Debug, CandidType, Deserialize)]
+pub struct EscrowFinishParams {
+    /// Owner r-address (account that created the escrow)
+    pub owner: String,
+    /// Sequence number of the EscrowCreate transaction
+    pub offer_sequence: u32,
+    /// Transaction fee in drops
+    pub fee_drops: u64,
+    /// Account sequence number
+    pub sequence: u32,
+    /// Last ledger sequence
+    pub last_ledger_sequence: u32,
+    /// Crypto-condition as hex (must match EscrowCreate, optional)
+    pub condition: Option<String>,
+    /// Fulfillment as hex (preimage proving the condition, optional)
+    pub fulfillment: Option<String>,
+}
+
+/// Sign an EscrowCreate transaction to lock XRP in escrow
+#[update]
+async fn sign_escrow_create(params: EscrowCreateParams) -> String {
+    // Check authorization - only owner can sign transactions
+    let is_owner = STATE.with(|state| {
+        state.borrow().owner == Some(ic_cdk::caller())
+    });
+
+    if !is_owner {
+        return r#"{"error":"Not authorized to sign transactions"}"#.to_string();
+    }
+
+    // Decode destination address
+    let destination_id = match XrpAddress::decode(&params.destination) {
+        Ok(id) => id,
+        Err(e) => return format!(r#"{{"error":"Invalid destination address: {:?}"}}"#, e),
+    };
+
+    // Get cached public key and account ID
+    let (cached_pk, cached_account_id): (Option<[u8; 33]>, Option<[u8; 20]>) = STATE.with(|state| {
+        let s = state.borrow();
+        let wallet = s.wallet.as_ref();
+
+        let pk = wallet.and_then(|w| w.cached_public_key.as_ref())
+            .and_then(|pk| {
+                if pk.len() == 33 {
+                    let mut arr = [0u8; 33];
+                    arr.copy_from_slice(pk);
+                    Some(arr)
+                } else {
+                    None
+                }
+            });
+
+        let account_id = wallet.and_then(|w| w.cached_address.as_ref())
+            .and_then(|addr| XrpAddress::decode(addr).ok());
+
+        (pk, account_id)
+    });
+
+    let mut signer = get_xrp_signer();
+
+    let (_pk, source_account_id) = match (cached_pk, cached_account_id) {
+        (Some(pk), Some(account_id)) => {
+            signer.set_public_key(pk);
+            (pk, account_id)
+        }
+        _ => {
+            match chronicle_xrp::fetch_public_key(&signer).await {
+                Ok(pk) => {
+                    signer.set_public_key(pk);
+                    match signer.address() {
+                        Ok(addr) => {
+                            let account_id = addr.account_id;
+                            let addr_str = addr.to_string();
+                            STATE.with(|state| {
+                                let mut s = state.borrow_mut();
+                                let wallet = s.wallet.get_or_insert_with(WalletState::default);
+                                wallet.cached_public_key = Some(pk.to_vec());
+                                wallet.cached_address = Some(addr_str);
+                            });
+                            (pk, account_id)
+                        }
+                        Err(e) => return format!(r#"{{"error":"Failed to derive address: {}"}}"#, e),
+                    }
+                }
+                Err(e) => return format!(r#"{{"error":"Failed to fetch public key: {}"}}"#, e),
+            }
+        }
+    };
+
+    // Build the EscrowCreate transaction
+    let mut escrow = EscrowCreate::new(
+        source_account_id,
+        destination_id,
+        params.amount_drops,
+        params.fee_drops,
+        params.sequence,
+    ).with_last_ledger_sequence(params.last_ledger_sequence);
+
+    if let Some(fa) = params.finish_after {
+        escrow = escrow.with_finish_after(fa);
+    }
+    if let Some(ca) = params.cancel_after {
+        escrow = escrow.with_cancel_after(ca);
+    }
+    if let Some(ref cond_hex) = params.condition {
+        match hex::decode(cond_hex) {
+            Ok(cond) => escrow = escrow.with_condition(cond),
+            Err(e) => return format!(r#"{{"error":"Invalid condition hex: {}"}}"#, e),
+        }
+    }
+    if let Some(tag) = params.destination_tag {
+        escrow = escrow.with_destination_tag(tag);
+    }
+
+    let transaction = Transaction::EscrowCreate(escrow);
+
+    match chronicle_xrp::sign_transaction(&mut signer, &transaction).await {
+        Ok(signed) => {
+            format!(
+                r#"{{"success":true,"tx_blob":"{}","tx_hash":"{}","type":"EscrowCreate"}}"#,
+                hex::encode(&signed.tx_blob),
+                &signed.tx_hash
+            )
+        }
+        Err(e) => format!(r#"{{"error":"Failed to sign transaction: {}"}}"#, e),
+    }
+}
+
+/// Sign an EscrowFinish transaction to release escrowed XRP
+#[update]
+async fn sign_escrow_finish(params: EscrowFinishParams) -> String {
+    // Check authorization - only owner can sign transactions
+    let is_owner = STATE.with(|state| {
+        state.borrow().owner == Some(ic_cdk::caller())
+    });
+
+    if !is_owner {
+        return r#"{"error":"Not authorized to sign transactions"}"#.to_string();
+    }
+
+    // Decode owner address
+    let owner_id = match XrpAddress::decode(&params.owner) {
+        Ok(id) => id,
+        Err(e) => return format!(r#"{{"error":"Invalid owner address: {:?}"}}"#, e),
+    };
+
+    // Get cached public key and account ID
+    let (cached_pk, cached_account_id): (Option<[u8; 33]>, Option<[u8; 20]>) = STATE.with(|state| {
+        let s = state.borrow();
+        let wallet = s.wallet.as_ref();
+
+        let pk = wallet.and_then(|w| w.cached_public_key.as_ref())
+            .and_then(|pk| {
+                if pk.len() == 33 {
+                    let mut arr = [0u8; 33];
+                    arr.copy_from_slice(pk);
+                    Some(arr)
+                } else {
+                    None
+                }
+            });
+
+        let account_id = wallet.and_then(|w| w.cached_address.as_ref())
+            .and_then(|addr| XrpAddress::decode(addr).ok());
+
+        (pk, account_id)
+    });
+
+    let mut signer = get_xrp_signer();
+
+    let (_pk, source_account_id) = match (cached_pk, cached_account_id) {
+        (Some(pk), Some(account_id)) => {
+            signer.set_public_key(pk);
+            (pk, account_id)
+        }
+        _ => {
+            match chronicle_xrp::fetch_public_key(&signer).await {
+                Ok(pk) => {
+                    signer.set_public_key(pk);
+                    match signer.address() {
+                        Ok(addr) => {
+                            let account_id = addr.account_id;
+                            let addr_str = addr.to_string();
+                            STATE.with(|state| {
+                                let mut s = state.borrow_mut();
+                                let wallet = s.wallet.get_or_insert_with(WalletState::default);
+                                wallet.cached_public_key = Some(pk.to_vec());
+                                wallet.cached_address = Some(addr_str);
+                            });
+                            (pk, account_id)
+                        }
+                        Err(e) => return format!(r#"{{"error":"Failed to derive address: {}"}}"#, e),
+                    }
+                }
+                Err(e) => return format!(r#"{{"error":"Failed to fetch public key: {}"}}"#, e),
+            }
+        }
+    };
+
+    // Build the EscrowFinish transaction
+    let mut escrow = EscrowFinish::new(
+        source_account_id,
+        owner_id,
+        params.offer_sequence,
+        params.fee_drops,
+        params.sequence,
+    ).with_last_ledger_sequence(params.last_ledger_sequence);
+
+    // Handle fulfillment + condition pair
+    if let (Some(ref cond_hex), Some(ref ful_hex)) = (&params.condition, &params.fulfillment) {
+        let cond = match hex::decode(cond_hex) {
+            Ok(c) => c,
+            Err(e) => return format!(r#"{{"error":"Invalid condition hex: {}"}}"#, e),
+        };
+        let ful = match hex::decode(ful_hex) {
+            Ok(f) => f,
+            Err(e) => return format!(r#"{{"error":"Invalid fulfillment hex: {}"}}"#, e),
+        };
+        escrow = escrow.with_fulfillment(cond, ful);
+    }
+
+    let transaction = Transaction::EscrowFinish(escrow);
+
+    match chronicle_xrp::sign_transaction(&mut signer, &transaction).await {
+        Ok(signed) => {
+            format!(
+                r#"{{"success":true,"tx_blob":"{}","tx_hash":"{}","type":"EscrowFinish"}}"#,
+                hex::encode(&signed.tx_blob),
+                &signed.tx_hash
             )
         }
         Err(e) => format!(r#"{{"error":"Failed to sign transaction: {}"}}"#, e),

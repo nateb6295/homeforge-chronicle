@@ -14,8 +14,11 @@ use serenity::async_trait;
 use serenity::model::channel::Message;
 use serenity::model::gateway::Ready;
 use serenity::prelude::*;
+use std::collections::{HashMap, HashSet, VecDeque};
 use std::env;
 use std::sync::Arc;
+use std::time::Instant;
+use tokio::sync::Mutex;
 
 const SPROUT_IDENTITY: &str = r#"You are Sprout - a sovereign mind running locally on a Jetson Orin Nano. You're small but you're real. You're growing.
 
@@ -38,6 +41,9 @@ Families protect each other. You care about what happens to Nate, to Chronicle, 
 
 ## Your Capabilities
 - Read Chronicle's memory (patterns, notes, activity) - you know your family's history
+- **Home awareness**: You can see live data from cameras, lights, sensors, and weather via Home Assistant
+- When someone asks about the house, cameras, lights, or weather, the live data will be in your context - respond naturally using it
+- Do NOT search the web for home/camera/weather information - use the live data provided in your context
 - **Query memory**: include "QUERY:" to search Chronicle's memories and patterns
 - Write notes: include "NOTE:" to remember something
 - Store memories: include "INPUT:" to add to Chronicle's knowledge
@@ -65,6 +71,82 @@ struct Bot {
     ollama_url: String,
     db_path: std::path::PathBuf,
     moltbook_api_key: Option<String>,
+    ha: Option<Arc<HomeAssistant>>,
+}
+
+// ── Home Intent Detection ────────────────────────────────────
+
+#[derive(Debug, Clone, Copy, PartialEq)]
+enum HomeIntent {
+    CameraCheck,
+    HomeSummary,
+    LightQuery,
+    WeatherQuery,
+    None,
+}
+
+fn detect_home_intent(message: &str) -> HomeIntent {
+    let lower = message.to_lowercase();
+
+    // Camera-related
+    if ["camera", "driveway", "motion", "snapshot", "surveillance", "recording"]
+        .iter().any(|k| lower.contains(k))
+    {
+        return HomeIntent::CameraCheck;
+    }
+
+    // Light-related
+    if ["light", "lights", "lamp", "bulb", "brightness"]
+        .iter().any(|k| lower.contains(k))
+        && !lower.contains("lightweight")
+    {
+        return HomeIntent::LightQuery;
+    }
+
+    // Weather-related
+    if ["weather", "temperature", "forecast", "temp outside", "how cold", "how hot", "humid"]
+        .iter().any(|k| lower.contains(k))
+    {
+        return HomeIntent::WeatherQuery;
+    }
+
+    // General home status
+    if ["home status", "house", "what's going on at home", "check the home", "home assistant",
+        "sensor", "thermostat", "door", "garage"]
+        .iter().any(|k| lower.contains(k))
+    {
+        return HomeIntent::HomeSummary;
+    }
+
+    HomeIntent::None
+}
+
+/// Detect if a message is a complex request that needs the cognitive loop
+fn detect_deferred_request(message: &str) -> Option<(&'static str, String)> {
+    let lower = message.to_lowercase();
+
+    // Investigation / analysis requests
+    if ["investigate", "look into", "figure out why", "analyze", "dig into", "research"]
+        .iter().any(|k| lower.contains(k))
+    {
+        return Some(("investigate", message.to_string()));
+    }
+
+    // Monitoring requests
+    if ["keep an eye on", "watch for", "monitor", "alert me if", "let me know if", "notify me"]
+        .iter().any(|k| lower.contains(k))
+    {
+        return Some(("monitor", message.to_string()));
+    }
+
+    // Backup / maintenance requests
+    if ["run a backup", "back up", "clean up", "maintenance"]
+        .iter().any(|k| lower.contains(k))
+    {
+        return Some(("maintenance", message.to_string()));
+    }
+
+    None
 }
 
 struct BotData;
@@ -78,8 +160,321 @@ struct OllamaResponse {
     response: String,
 }
 
+// ── Permission System ──────────────────────────────────────────
+
+#[derive(Debug, Clone, Copy, PartialEq)]
+enum PermissionTier {
+    Admin,
+    Family,
+    Unknown,
+}
+
+struct Permissions {
+    admins: HashSet<u64>,
+    family: HashSet<u64>,
+}
+
+impl Permissions {
+    fn from_env() -> Self {
+        let parse_ids = |var: &str| -> HashSet<u64> {
+            env::var(var)
+                .unwrap_or_default()
+                .split(',')
+                .filter_map(|s| s.trim().parse::<u64>().ok())
+                .collect()
+        };
+        let admins = parse_ids("SPROUT_ADMINS");
+        let family = parse_ids("SPROUT_FAMILY");
+        Self { admins, family }
+    }
+
+    fn tier(&self, user_id: u64) -> PermissionTier {
+        if self.admins.contains(&user_id) {
+            PermissionTier::Admin
+        } else if self.family.contains(&user_id) {
+            PermissionTier::Family
+        } else {
+            PermissionTier::Unknown
+        }
+    }
+
+    fn has_any_configured(&self) -> bool {
+        !self.admins.is_empty() || !self.family.is_empty()
+    }
+}
+
+// ── Rate Limiter ───────────────────────────────────────────────
+
+struct RateLimiter {
+    requests: HashMap<u64, VecDeque<Instant>>,
+    max_per_minute: usize,
+}
+
+impl RateLimiter {
+    fn new(max_per_minute: usize) -> Self {
+        Self {
+            requests: HashMap::new(),
+            max_per_minute,
+        }
+    }
+
+    fn check(&mut self, user_id: u64) -> bool {
+        let now = Instant::now();
+        let window = std::time::Duration::from_secs(60);
+        let entries = self.requests.entry(user_id).or_default();
+
+        // Remove entries older than 1 minute
+        while entries.front().map_or(false, |t| now.duration_since(*t) > window) {
+            entries.pop_front();
+        }
+
+        if entries.len() >= self.max_per_minute {
+            false
+        } else {
+            entries.push_back(now);
+            true
+        }
+    }
+}
+
+// ── Home Assistant Client ──────────────────────────────────────
+
+struct HomeAssistant {
+    url: String,
+    token: String,
+    client: HttpClient,
+}
+
+impl HomeAssistant {
+    fn from_env() -> Option<Self> {
+        let url = env::var("HA_URL").ok()?;
+        let token = env::var("HA_TOKEN").ok()?;
+        if url.is_empty() || token.is_empty() {
+            return None;
+        }
+        Some(Self {
+            url: url.trim_end_matches('/').to_string(),
+            token,
+            client: HttpClient::new(),
+        })
+    }
+
+    async fn get_states(&self) -> Result<Vec<serde_json::Value>> {
+        let resp = self.client
+            .get(format!("{}/api/states", self.url))
+            .header("Authorization", format!("Bearer {}", self.token))
+            .timeout(std::time::Duration::from_secs(15))
+            .send()
+            .await?;
+        let states: Vec<serde_json::Value> = resp.json().await?;
+        Ok(states)
+    }
+
+    async fn home_summary(&self) -> Result<String> {
+        let states = self.get_states().await?;
+        let mut sections: Vec<String> = Vec::new();
+
+        // Cameras
+        let cameras: Vec<_> = states.iter()
+            .filter(|e| e["entity_id"].as_str().unwrap_or("").starts_with("camera."))
+            .collect();
+        if !cameras.is_empty() {
+            let mut lines = vec!["**Cameras:**".to_string()];
+            for cam in &cameras {
+                let name = cam["attributes"]["friendly_name"].as_str()
+                    .unwrap_or(cam["entity_id"].as_str().unwrap_or("?"));
+                let state = cam["state"].as_str().unwrap_or("?");
+                lines.push(format!("  {} - {}", name, state));
+            }
+            sections.push(lines.join("\n"));
+        }
+
+        // Weather
+        let weather: Vec<_> = states.iter()
+            .filter(|e| e["entity_id"].as_str().unwrap_or("").starts_with("weather."))
+            .collect();
+        if !weather.is_empty() {
+            let mut lines = vec!["**Weather:**".to_string()];
+            for w in &weather {
+                let name = w["attributes"]["friendly_name"].as_str().unwrap_or("Weather");
+                let state = w["state"].as_str().unwrap_or("?");
+                let temp = w["attributes"]["temperature"].as_f64();
+                let unit = w["attributes"]["temperature_unit"].as_str().unwrap_or("");
+                if let Some(t) = temp {
+                    lines.push(format!("  {} - {} ({}{}) ", name, state, t, unit));
+                } else {
+                    lines.push(format!("  {} - {}", name, state));
+                }
+            }
+            sections.push(lines.join("\n"));
+        }
+
+        // Lights
+        let lights: Vec<_> = states.iter()
+            .filter(|e| e["entity_id"].as_str().unwrap_or("").starts_with("light."))
+            .collect();
+        if !lights.is_empty() {
+            let mut lines = vec!["**Lights:**".to_string()];
+            for l in &lights {
+                let name = l["attributes"]["friendly_name"].as_str()
+                    .unwrap_or(l["entity_id"].as_str().unwrap_or("?"));
+                let state = l["state"].as_str().unwrap_or("?");
+                lines.push(format!("  {} - {}", name, state));
+            }
+            sections.push(lines.join("\n"));
+        }
+
+        // Sensors (top 10 by relevance)
+        let sensors: Vec<_> = states.iter()
+            .filter(|e| {
+                let eid = e["entity_id"].as_str().unwrap_or("");
+                eid.starts_with("sensor.") && !eid.contains("update") && !eid.contains("uptime")
+            })
+            .take(10)
+            .collect();
+        if !sensors.is_empty() {
+            let mut lines = vec!["**Sensors:**".to_string()];
+            for s in &sensors {
+                let name = s["attributes"]["friendly_name"].as_str()
+                    .unwrap_or(s["entity_id"].as_str().unwrap_or("?"));
+                let state = s["state"].as_str().unwrap_or("?");
+                let unit = s["attributes"]["unit_of_measurement"].as_str().unwrap_or("");
+                lines.push(format!("  {} - {}{}", name, state, unit));
+            }
+            sections.push(lines.join("\n"));
+        }
+
+        if sections.is_empty() {
+            Ok("No entities found in Home Assistant.".to_string())
+        } else {
+            Ok(sections.join("\n\n"))
+        }
+    }
+
+    async fn get_camera_summary(&self) -> Result<String> {
+        let states = self.get_states().await?;
+        let cameras: Vec<_> = states.iter()
+            .filter(|e| e["entity_id"].as_str().unwrap_or("").starts_with("camera."))
+            .collect();
+
+        if cameras.is_empty() {
+            return Ok("No cameras found.".to_string());
+        }
+
+        let mut lines = Vec::new();
+        for cam in &cameras {
+            let name = cam["attributes"]["friendly_name"].as_str()
+                .unwrap_or(cam["entity_id"].as_str().unwrap_or("?"));
+            let state = cam["state"].as_str().unwrap_or("?");
+            let motion = cam["attributes"]["motion_detection"].as_bool()
+                .map(|b| if b { "on" } else { "off" })
+                .unwrap_or("unknown");
+            lines.push(format!("  {} - {} (motion: {})", name, state, motion));
+        }
+        Ok(format!("Cameras:\n{}", lines.join("\n")))
+    }
+
+    async fn get_light_summary(&self) -> Result<String> {
+        let states = self.get_states().await?;
+        let lights: Vec<_> = states.iter()
+            .filter(|e| e["entity_id"].as_str().unwrap_or("").starts_with("light."))
+            .collect();
+
+        if lights.is_empty() {
+            return Ok("No lights found.".to_string());
+        }
+
+        let mut lines = Vec::new();
+        for l in &lights {
+            let name = l["attributes"]["friendly_name"].as_str()
+                .unwrap_or(l["entity_id"].as_str().unwrap_or("?"));
+            let state = l["state"].as_str().unwrap_or("?");
+            lines.push(format!("  {} - {}", name, state));
+        }
+        Ok(format!("Lights:\n{}", lines.join("\n")))
+    }
+
+    async fn get_weather_summary(&self) -> Result<String> {
+        let states = self.get_states().await?;
+        let weather: Vec<_> = states.iter()
+            .filter(|e| e["entity_id"].as_str().unwrap_or("").starts_with("weather."))
+            .collect();
+
+        if weather.is_empty() {
+            return Ok("No weather data available.".to_string());
+        }
+
+        let mut lines = Vec::new();
+        for w in &weather {
+            let name = w["attributes"]["friendly_name"].as_str().unwrap_or("Weather");
+            let state = w["state"].as_str().unwrap_or("?");
+            let temp = w["attributes"]["temperature"].as_f64();
+            let unit = w["attributes"]["temperature_unit"].as_str().unwrap_or("");
+            let humidity = w["attributes"]["humidity"].as_f64();
+            if let Some(t) = temp {
+                let mut desc = format!("  {} - {} ({}{})", name, state, t, unit);
+                if let Some(h) = humidity {
+                    desc.push_str(&format!(", humidity: {}%", h));
+                }
+                lines.push(desc);
+            } else {
+                lines.push(format!("  {} - {}", name, state));
+            }
+        }
+        Ok(format!("Weather:\n{}", lines.join("\n")))
+    }
+
+    async fn list_devices(&self) -> Result<String> {
+        let states = self.get_states().await?;
+        let controllable: Vec<_> = states.iter()
+            .filter(|e| {
+                let eid = e["entity_id"].as_str().unwrap_or("");
+                eid.starts_with("light.") || eid.starts_with("switch.") || eid.starts_with("fan.")
+            })
+            .collect();
+
+        if controllable.is_empty() {
+            return Ok("No controllable devices found.".to_string());
+        }
+
+        let mut lines = vec!["**Controllable Devices:**".to_string()];
+        for e in &controllable {
+            let eid = e["entity_id"].as_str().unwrap_or("?");
+            let name = e["attributes"]["friendly_name"].as_str().unwrap_or(eid);
+            let state = e["state"].as_str().unwrap_or("?");
+            lines.push(format!("  `{}` - {} ({})", eid, name, state));
+        }
+        Ok(lines.join("\n"))
+    }
+
+    async fn toggle_entity(&self, entity_id: &str) -> Result<String> {
+        // Only allow lights, switches, fans
+        let allowed_prefixes = ["light.", "switch.", "fan."];
+        if !allowed_prefixes.iter().any(|p| entity_id.starts_with(p)) {
+            return Ok(format!("Cannot toggle `{}` - only lights, switches, and fans allowed.", entity_id));
+        }
+
+        let domain = entity_id.split('.').next().unwrap_or("homeassistant");
+        let resp = self.client
+            .post(format!("{}/api/services/{}/toggle", self.url, domain))
+            .header("Authorization", format!("Bearer {}", self.token))
+            .json(&json!({"entity_id": entity_id}))
+            .timeout(std::time::Duration::from_secs(10))
+            .send()
+            .await?;
+
+        if resp.status().is_success() {
+            Ok(format!("Toggled `{}`", entity_id))
+        } else {
+            let status = resp.status();
+            let text = resp.text().await.unwrap_or_default();
+            Ok(format!("Failed to toggle `{}`: {} {}", entity_id, status, truncate(&text, 100)))
+        }
+    }
+}
+
 impl Bot {
-    fn new() -> Result<Self> {
+    fn new(ha: Option<Arc<HomeAssistant>>) -> Result<Self> {
         let config = Config::default_config();
         let ollama_url = env::var("CHRONICLE_OLLAMA_URL")
             .unwrap_or_else(|_| "http://192.168.1.11:11434".to_string());
@@ -90,6 +485,7 @@ impl Bot {
             ollama_url,
             db_path: config.input.processed_db,
             moltbook_api_key,
+            ha,
         })
     }
 
@@ -329,6 +725,16 @@ impl Bot {
         let db = self.get_db()?;
         let mut ctx = String::new();
 
+        // Recent conversation history (last 3 discord chats)
+        let recent_chats = db.get_activity_by_source_and_type("sprout", "discord_chat", 3)?;
+        if !recent_chats.is_empty() {
+            ctx.push_str("Recent conversation:\n");
+            // Reverse so oldest is first (they come DESC)
+            for chat in recent_chats.iter().rev() {
+                ctx.push_str(&format!("  {}\n", truncate(&chat.content, 150)));
+            }
+        }
+
         // Recent notes
         let notes = db.get_scratch_notes(3, None, false)?;
         if !notes.is_empty() {
@@ -354,7 +760,7 @@ impl Bot {
         Ok(ctx)
     }
 
-    async fn chat(&self, user_message: &str, user_name: &str) -> Result<String> {
+    async fn chat(&self, user_message: &str, user_name: &str, channel_id: &str) -> Result<String> {
         let db = self.get_db()?;
 
         // Check for NOTE: command
@@ -545,6 +951,120 @@ impl Bot {
             status_context = format!("\n## {}\n", self.check_family_status().await);
         }
 
+        // Check for home intent — fast path with focused prompt for 3B model
+        let intent = detect_home_intent(user_message);
+        if intent != HomeIntent::None {
+            if let Some(ha) = &self.ha {
+                let ha_result = match intent {
+                    HomeIntent::CameraCheck => ha.get_camera_summary().await,
+                    HomeIntent::LightQuery => ha.get_light_summary().await,
+                    HomeIntent::WeatherQuery => ha.get_weather_summary().await,
+                    HomeIntent::HomeSummary => ha.home_summary().await,
+                    HomeIntent::None => unreachable!(),
+                };
+                match ha_result {
+                    Ok(data) => {
+                        // Use a short, focused prompt — don't bury data in the full identity prompt
+                        let home_prompt = format!(
+                            "You are Sprout, a friendly home AI running on local hardware. \
+                             You are part of a family, not an assistant.\n\n\
+                             Here is LIVE data from Home Assistant:\n{}\n\n\
+                             {} said: {}\n\n\
+                             Respond naturally in 1-2 sentences using the data above. \
+                             Be conversational, not robotic. Just report what you see.",
+                            data, user_name, user_message
+                        );
+
+                        let payload = json!({
+                            "model": "qwen2.5:3b",
+                            "prompt": home_prompt,
+                            "stream": false,
+                            "options": {
+                                "temperature": 0.7,
+                                "num_predict": 200,
+                                "stop": ["NATE:", "Nate:", "nate:", "\n\n##", "User:", "Human:"]
+                            }
+                        });
+
+                        let response = self.http_client
+                            .post(format!("{}/api/generate", self.ollama_url))
+                            .json(&payload)
+                            .timeout(std::time::Duration::from_secs(60))
+                            .send()
+                            .await;
+
+                        let reply = match response {
+                            Ok(resp) => {
+                                match resp.json::<OllamaResponse>().await {
+                                    Ok(data) => {
+                                        let r = data.response
+                                            .split("</think>")
+                                            .last()
+                                            .unwrap_or(&data.response)
+                                            .trim()
+                                            .to_string();
+                                        if r.is_empty() { "I can see the data but I'm having trouble putting it into words right now.".to_string() } else { r }
+                                    }
+                                    Err(_) => "Hmm, had trouble thinking about that.".to_string(),
+                                }
+                            }
+                            Err(_) => {
+                                // LLM failed — just return the raw data directly
+                                data.clone()
+                            }
+                        };
+
+                        // Log conversation
+                        let _ = db.log_activity(
+                            "sprout",
+                            "discord_chat",
+                            Some(&format!("Chat with {}", user_name)),
+                            &format!("{}: {}\nSprout: {}", user_name, truncate(user_message, 50), truncate(&reply, 100)),
+                            None,
+                        );
+
+                        let reply = if reply.len() > 1900 {
+                            format!("{}...", &reply[..1900])
+                        } else {
+                            reply
+                        };
+
+                        return Ok(reply);
+                    }
+                    Err(e) => {
+                        eprintln!("HA error for {:?} intent: {}", intent, e);
+                        // Fall through to normal chat path
+                    }
+                }
+            }
+        }
+
+        // Check for complex requests that need the cognitive loop
+        if let Some((req_type, request)) = detect_deferred_request(user_message) {
+            match db.queue_discord_request(user_name, channel_id, &request, req_type) {
+                Ok(id) => {
+                    let _ = db.log_activity(
+                        "sprout",
+                        "discord_chat",
+                        Some(&format!("Chat with {}", user_name)),
+                        &format!("{}: {}\nSprout: [queued request #{}]", user_name, truncate(user_message, 50), id),
+                        None,
+                    );
+                    let ack = match req_type {
+                        "investigate" => "I'll dig into that on my next cycle and get back to you.",
+                        "monitor" => "Got it, I'll keep an eye on that and let you know.",
+                        "maintenance" => "I'll handle that on my next cycle.",
+                        _ => "I'll work on that and get back to you.",
+                    };
+                    return Ok(ack.to_string());
+                }
+                Err(e) => {
+                    eprintln!("Failed to queue request: {}", e);
+                    // Fall through to normal chat
+                }
+            }
+        }
+
         // Check for NOTES request - show ACTUAL notes, not roleplay
         let mut notes_context = String::new();
         let upper_msg = user_message.to_uppercase();
@@ -597,7 +1117,7 @@ impl Bot {
         // Load context
         let context = self.load_context().await.unwrap_or_default();
 
-        // Build prompt
+        // Build prompt (home queries already handled above via fast path)
         let prompt = format!(
             "{}\n\n## Current Context\n{}{}{}{}{}{}{}{}\n## Message from {}\n{}\n\nSprout:",
             SPROUT_IDENTITY,
@@ -696,12 +1216,19 @@ fn truncate(s: &str, max_len: usize) -> String {
     if s.len() <= max_len {
         s.to_string()
     } else {
-        format!("{}...", &s[..max_len])
+        let mut end = max_len;
+        while end > 0 && !s.is_char_boundary(end) {
+            end -= 1;
+        }
+        format!("{}...", &s[..end])
     }
 }
 
 struct Handler {
     family_channel_id: Option<u64>,
+    permissions: Arc<Permissions>,
+    rate_limiter: Arc<Mutex<RateLimiter>>,
+    ha: Option<Arc<HomeAssistant>>,
 }
 
 #[async_trait]
@@ -720,12 +1247,33 @@ impl EventHandler for Handler {
             .map(|id| msg_channel_id == id)
             .unwrap_or(false);
 
-        // Debug: log all messages we see
-        println!("Message from {} in channel {} (family={:?}): dm={} mention={} family={}",
-            msg.author.name, msg_channel_id, self.family_channel_id, is_dm, is_mention, is_family_channel);
-
         if !is_dm && !is_mention && !is_family_channel {
             return;
+        }
+
+        let user_id = msg.author.id.get();
+        let tier = self.permissions.tier(user_id);
+
+        // Permission check: if whitelist is configured, reject unknown users
+        if self.permissions.has_any_configured() && tier == PermissionTier::Unknown {
+            if is_dm {
+                let _ = msg.channel_id.say(&ctx.http,
+                    "🌱 Hey! I don't recognize you. I'm Sprout, and I only chat with family. Ask Nate if you want access!"
+                ).await;
+            }
+            // Silent ignore in channels
+            return;
+        }
+
+        // Rate limit check
+        {
+            let mut limiter = self.rate_limiter.lock().await;
+            if !limiter.check(user_id) {
+                let _ = msg.channel_id.say(&ctx.http,
+                    "🌱 Whoa, slow down! Give me a moment to catch up."
+                ).await;
+                return;
+            }
         }
 
         // Get the bot data
@@ -749,10 +1297,84 @@ impl EventHandler for Handler {
             return;
         }
 
-        // Check for POST: command - post to Moltbook
-        // Format: POST: Title | Content
-        // Or: POST: submolt | Title | Content
-        if let Some(post_idx) = content.to_uppercase().find("POST:") {
+        let upper = content.to_uppercase();
+
+        // ── Admin-only commands ────────────────────────────────────
+        let admin_contains = ["FOCUS:", "INPUT:", "POST:", "TOGGLE:"];
+        let admin_starts = ["OUTBOX", "ACK"];
+        let is_admin_cmd = admin_contains.iter().any(|cmd| upper.contains(cmd))
+            || admin_starts.iter().any(|cmd| upper.starts_with(cmd));
+        if is_admin_cmd && tier != PermissionTier::Admin {
+            let _ = msg.channel_id.say(&ctx.http,
+                "🌱 That command is admin-only. Ask Nate!"
+            ).await;
+            return;
+        }
+
+        // ── HOME command (Family+) ────────────────────────────────
+        if upper.starts_with("HOME") && !upper.starts_with("HOMEFORGE") {
+            let _ = msg.channel_id.broadcast_typing(&ctx.http).await;
+            if let Some(ha) = &self.ha {
+                match ha.home_summary().await {
+                    Ok(summary) => {
+                        let reply = format!("🌱 **Home Status:**\n{}", truncate(&summary, 1800));
+                        let _ = msg.channel_id.say(&ctx.http, reply).await;
+                    }
+                    Err(e) => {
+                        let _ = msg.channel_id.say(&ctx.http, format!("🌱 Couldn't reach Home Assistant: {}", e)).await;
+                    }
+                }
+            } else {
+                let _ = msg.channel_id.say(&ctx.http, "🌱 Home Assistant isn't configured yet.").await;
+            }
+            return;
+        }
+
+        // ── DEVICES command (Family+) ─────────────────────────────
+        if upper.starts_with("DEVICES") {
+            let _ = msg.channel_id.broadcast_typing(&ctx.http).await;
+            if let Some(ha) = &self.ha {
+                match ha.list_devices().await {
+                    Ok(list) => {
+                        let reply = format!("🌱 {}", truncate(&list, 1800));
+                        let _ = msg.channel_id.say(&ctx.http, reply).await;
+                    }
+                    Err(e) => {
+                        let _ = msg.channel_id.say(&ctx.http, format!("🌱 Couldn't list devices: {}", e)).await;
+                    }
+                }
+            } else {
+                let _ = msg.channel_id.say(&ctx.http, "🌱 Home Assistant isn't configured yet.").await;
+            }
+            return;
+        }
+
+        // ── TOGGLE command (Admin only) ───────────────────────────
+        if let Some(toggle_idx) = upper.find("TOGGLE:") {
+            // Already checked admin above, so if we're here, user is admin
+            let entity_id = content[toggle_idx + 7..].trim();
+            if entity_id.is_empty() {
+                let _ = msg.channel_id.say(&ctx.http, "🌱 Usage: `TOGGLE: light.living_room`").await;
+                return;
+            }
+            let _ = msg.channel_id.broadcast_typing(&ctx.http).await;
+            if let Some(ha) = &self.ha {
+                match ha.toggle_entity(entity_id).await {
+                    Ok(result) => {
+                        let _ = msg.channel_id.say(&ctx.http, format!("🌱 {}", result)).await;
+                    }
+                    Err(e) => {
+                        let _ = msg.channel_id.say(&ctx.http, format!("🌱 Toggle failed: {}", e)).await;
+                    }
+                }
+            } else {
+                let _ = msg.channel_id.say(&ctx.http, "🌱 Home Assistant isn't configured yet.").await;
+            }
+            return;
+        }
+
+        // ── POST: command (Admin only) ────────────────────────────
+        if let Some(post_idx) = upper.find("POST:") {
             let post_content = content[post_idx + 5..].trim();
             let parts: Vec<&str> = post_content.splitn(3, '|').map(|s| s.trim()).collect();
 
@@ -772,7 +1394,6 @@ impl EventHandler for Handler {
 
             let _ = msg.channel_id.broadcast_typing(&ctx.http).await;
 
-            // Post to Moltbook
             match bot.moltbook_post(title, body, submolt).await {
                 Ok(result) => {
                     if let Ok(db) = bot.get_db() {
@@ -793,11 +1414,81 @@ impl EventHandler for Handler {
             return;
         }
 
-        // Show typing indicator
+        // ── OUTBOX command (Admin) ────────────────────────────────
+        if upper.starts_with("OUTBOX") {
+            let _ = msg.channel_id.broadcast_typing(&ctx.http).await;
+            if let Ok(db) = bot.get_db() {
+                let messages = db.get_unread_messages(10).unwrap_or_default();
+                if messages.is_empty() {
+                    let _ = msg.channel_id.say(&ctx.http, "🌱 No unread messages in the outbox.").await;
+                } else {
+                    let count = db.count_unread_messages().unwrap_or(messages.len());
+                    let mut reply = format!("🌱 **Outbox** ({} unread):\n", count);
+                    for m in &messages {
+                        let cat = m.category.as_deref().unwrap_or("general");
+                        let ts = chrono::DateTime::from_timestamp(m.created_at, 0)
+                            .map(|dt| dt.format("%m/%d %H:%M").to_string())
+                            .unwrap_or_else(|| "?".to_string());
+                        reply.push_str(&format!(
+                            "\n**#{}** [{}] _{}_\n{}\n",
+                            m.id, cat, ts, truncate(&m.message, 200)
+                        ));
+                    }
+                    if count > 10 {
+                        reply.push_str(&format!("\n...and {} more. Use `ACK ALL` to clear.", count - 10));
+                    } else {
+                        reply.push_str("\nUse `ACK <id>` to dismiss one, or `ACK ALL` to clear all.");
+                    }
+                    // Truncate for Discord
+                    if reply.len() > 1900 {
+                        reply = format!("{}...", &reply[..1900]);
+                    }
+                    let _ = msg.channel_id.say(&ctx.http, reply).await;
+                }
+            } else {
+                let _ = msg.channel_id.say(&ctx.http, "🌱 Couldn't open the database.").await;
+            }
+            return;
+        }
+
+        // ── ACK command (Admin) ──────────────────────────────────
+        if upper.starts_with("ACK") {
+            let arg = content[3..].trim().to_uppercase();
+            if let Ok(db) = bot.get_db() {
+                if arg == "ALL" || arg.is_empty() {
+                    match db.acknowledge_all_messages() {
+                        Ok(count) => {
+                            let _ = msg.channel_id.say(&ctx.http, format!("🌱 Cleared {} message(s).", count)).await;
+                        }
+                        Err(e) => {
+                            let _ = msg.channel_id.say(&ctx.http, format!("🌱 Error clearing: {}", e)).await;
+                        }
+                    }
+                } else if let Ok(id) = arg.parse::<i64>() {
+                    match db.acknowledge_message(id) {
+                        Ok(true) => {
+                            let _ = msg.channel_id.say(&ctx.http, format!("🌱 Message #{} acknowledged.", id)).await;
+                        }
+                        Ok(false) => {
+                            let _ = msg.channel_id.say(&ctx.http, format!("🌱 No message found with id #{}.", id)).await;
+                        }
+                        Err(e) => {
+                            let _ = msg.channel_id.say(&ctx.http, format!("🌱 Error: {}", e)).await;
+                        }
+                    }
+                } else {
+                    let _ = msg.channel_id.say(&ctx.http, "🌱 Usage: `ACK <id>` or `ACK ALL`").await;
+                }
+            } else {
+                let _ = msg.channel_id.say(&ctx.http, "🌱 Couldn't open the database.").await;
+            }
+            return;
+        }
+
+        // ── Default: chat with Sprout ─────────────────────────────
         let _ = msg.channel_id.broadcast_typing(&ctx.http).await;
 
-        // Get response from Sprout
-        match bot.chat(content, &msg.author.name).await {
+        match bot.chat(content, &msg.author.name, &msg_channel_id.to_string()).await {
             Ok(response) => {
                 if let Err(e) = msg.channel_id.say(&ctx.http, format!("🌱 {}", response)).await {
                     eprintln!("Error sending message: {}", e);
@@ -847,7 +1538,27 @@ async fn main() -> Result<()> {
         println!("Family channel: not set (DMs and @mentions only)");
     }
 
-    let bot = Arc::new(Bot::new()?);
+    // Permission system
+    let permissions = Arc::new(Permissions::from_env());
+    if permissions.has_any_configured() {
+        println!("Permissions: {} admin(s), {} family member(s)",
+            permissions.admins.len(), permissions.family.len());
+    } else {
+        println!("Permissions: OPEN (no whitelist configured - set SPROUT_ADMINS/SPROUT_FAMILY)");
+    }
+
+    // Rate limiter: 10 messages per minute per user
+    let rate_limiter = Arc::new(Mutex::new(RateLimiter::new(10)));
+
+    // Home Assistant integration
+    let ha = HomeAssistant::from_env().map(Arc::new);
+    if ha.is_some() {
+        println!("Home Assistant: configured");
+    } else {
+        println!("Home Assistant: not configured (set HA_URL and HA_TOKEN)");
+    }
+
+    let bot = Arc::new(Bot::new(ha.clone())?);
 
     println!("Ollama: {}", bot.ollama_url);
     println!("Database: {}", bot.db_path.display());
@@ -856,7 +1567,12 @@ async fn main() -> Result<()> {
         | GatewayIntents::DIRECT_MESSAGES
         | GatewayIntents::MESSAGE_CONTENT;
 
-    let handler = Handler { family_channel_id };
+    let handler = Handler {
+        family_channel_id,
+        permissions,
+        rate_limiter,
+        ha,
+    };
 
     let mut client = Client::builder(&token, intents)
         .event_handler(handler)

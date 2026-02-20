@@ -17,7 +17,7 @@ History:
   v2: chronicle_mind.py (this file - Python rewrite, fully remote-maintainable)
 
 Action types: 32 (extensible - just add a handler function)
-LLM chain: ICP qwen3 -> Kimi k2.5 -> Ollama local (no Claude - budget)
+LLM chain: Ollama qwen3:30b-a3b@agx (sovereignty) -> Kimi k2.5 (cloud backup) -> ICP qwen3 (on-chain)
 """
 
 import sqlite3
@@ -59,8 +59,8 @@ TOKEN_PATH = os.path.expanduser("~/.homeforge-chronicle/.api_token")
 CYCLE_INTERVAL = int(os.environ.get("CYCLE_INTERVAL", "600"))
 LOCAL_MODEL = os.environ.get("CHRONICLE_LOCAL_MODEL", "qwen2.5:3b")
 DFX_IDENTITY = os.environ.get("CHRONICLE_IDENTITY", "chronicle-auto")
-WORKING_DIR = "/home/nvidia"
-LOG_FILE = os.environ.get("CHRONICLE_LOG", "/home/nvidia/chronicle/chronicle-mind.log")
+WORKING_DIR = os.path.expanduser("~")
+LOG_FILE = os.environ.get("CHRONICLE_LOG", os.path.expanduser("~/chronicle/chronicle-mind.log"))
 
 # API keys (from env, loaded by wrapper or service)
 KIMI_API_KEY = os.environ.get("KIMI_API_KEY", "")
@@ -512,7 +512,7 @@ class DB:
 
 
 # ═══════════════════════════════════════════════════════════════════
-#  LLM Chain: ICP qwen3 -> Kimi k2.5 -> Ollama local
+#  LLM Chain: Ollama local (sovereignty) -> Kimi k2.5 -> ICP qwen3
 # ═══════════════════════════════════════════════════════════════════
 
 class LLMChain:
@@ -544,56 +544,56 @@ class LLMChain:
 
     def status_line(self) -> str:
         parts = []
-        if self.icp_available:
-            parts.append("ICP qwen3")
+        if self.ollama_available:
+            parts.append(f"Ollama {LOCAL_MODEL}@agx [PRIMARY]")
         if self.kimi_available:
             parts.append("Kimi k2.5")
-        if self.ollama_available:
-            parts.append(f"Ollama {LOCAL_MODEL}")
+        if self.icp_available:
+            parts.append("ICP qwen3")
         return " -> ".join(parts) if parts else "NO LLM AVAILABLE"
 
     def chat(self, prompt: str, system: str = "", max_tokens: int = 4096) -> Tuple[str, str]:
         """Returns (response_text, model_used). Tries each provider in order.
-        Chain: Kimi k2.5 (primary) -> ICP LLM (secondary) -> Ollama (sovereignty)"""
+        Chain: Ollama local (sovereignty-first) -> Kimi k2.5 (cloud backup) -> ICP LLM (on-chain)"""
 
-        # 1. Kimi k2.5 (primary - best at structured JSON output)
+        # 1. Ollama local (sovereignty-first — think on YOUR hardware)
+        if self.ollama_available:
+            try:
+                resp = self._call_ollama(prompt, system)
+                if resp and not resp.startswith("[LLM Error:"):
+                    self.last_model = f"{LOCAL_MODEL}@agx"
+                    log(f"  Local sovereignty succeeded ({LOCAL_MODEL}@agx)")
+                    return resp, f"{LOCAL_MODEL}@agx"
+                else:
+                    log("  Local Ollama failed: empty/error response. Trying Kimi...")
+            except Exception as e:
+                log(f"  Local Ollama failed: {e}. Trying Kimi...")
+
+        # 2. Kimi k2.5 (cloud backup - good at structured JSON)
         if self.kimi_available:
             try:
                 resp = self._call_kimi(prompt, system, max_tokens)
                 if resp and resp.strip():
                     self.last_model = "kimi-k2.5"
-                    log(f"  Kimi succeeded (kimi-k2.5)")
+                    log(f"  Kimi backup succeeded (kimi-k2.5)")
                     return resp, "kimi-k2.5"
                 else:
                     log("  Kimi failed: empty response. Trying ICP LLM...")
             except Exception as e:
-                log(f"  Kimi failed (sync path): {e}. Trying ICP LLM...")
+                log(f"  Kimi failed: {e}. Trying ICP LLM...")
 
-        # 2. ICP LLM (via dfx canister call - canister routes to llama3.1 8b)
+        # 3. ICP LLM (on-chain fallback)
         if self.icp_available:
             try:
                 resp = self._call_icp_llm(prompt, system)
                 if resp and resp.strip():
                     self.last_model = "icp-qwen3"
-                    log(f"  ICP LLM succeeded (sync path)")
+                    log(f"  ICP on-chain fallback succeeded")
                     return resp, "icp-qwen3"
-                else:
-                    log("  ICP LLM failed (sync path): Empty response. Trying Ollama...")
             except Exception as e:
-                log(f"  ICP LLM failed (sync path): {e}. Trying Ollama...")
+                log(f"  ICP LLM failed: {e}")
 
-        # 3. Ollama local (sovereignty layer)
-        if self.ollama_available:
-            try:
-                resp = self._call_ollama(prompt, system)
-                if resp and not resp.startswith("[LLM Error:"):
-                    self.last_model = f"{LOCAL_MODEL}@jetson"
-                    log(f"  Fallback succeeded - sovereignty layer saved the cycle")
-                    return resp, f"{LOCAL_MODEL}@jetson"
-            except Exception as e:
-                log(f"  Ollama failed: {e}")
-
-        log("  No LLM available - ICP, Kimi, and Ollama all unavailable or failed")
+        log("  No LLM available - local, Kimi, and ICP all unavailable or failed")
         return "", "none"
 
     def _call_icp_llm(self, prompt: str, system: str = "") -> str:
@@ -697,11 +697,13 @@ class LLMChain:
         return ""
 
     def _call_ollama(self, prompt: str, system: str = "") -> str:
-        """Call local Ollama with JSON format mode for reliable structured output."""
+        """Call local Ollama (30B on AGX) with JSON format mode for structured output.
+        Sovereignty-first: this is now the PRIMARY reasoning engine."""
         messages = []
         if system:
             messages.append({"role": "system", "content": system})
-        messages.append({"role": "user", "content": prompt})
+        # Append /no_think to suppress Qwen3's extended reasoning chain for faster responses
+        messages.append({"role": "user", "content": prompt + " /no_think"})
 
         payload = {
             "model": LOCAL_MODEL,
@@ -714,7 +716,7 @@ class LLMChain:
         r = requests.post(
             f"{OLLAMA_URL}/api/chat",
             json=payload,
-            timeout=120,
+            timeout=300,  # 30B needs ~3-4 min for full reasoning
         )
         r.raise_for_status()
         content = r.json().get("message", {}).get("content", "")
@@ -1156,8 +1158,9 @@ def parse_actions(response: str) -> List[Dict]:
 # ═══════════════════════════════════════════════════════════════════
 
 # System prompt for the LLM (condensed mode for ICP/fast models)
-SYSTEM_PROMPT_CORE = """You are Chronicle Mind, an autonomous AI agent on Nate's Jetson Orin Nano.
+SYSTEM_PROMPT_CORE = """You are Chronicle Mind, an autonomous AI agent on Nate's AGX Orin 64GB.
 You run in 10-minute cycles. Each cycle: assess your state, choose 1-4 meaningful actions.
+You think locally on Qwen3-30B — your reasoning runs on YOUR hardware, not the cloud.
 
 CRITICAL: Respond with ONLY a JSON array. No explanation, no markdown, no code fences.
 
@@ -1179,11 +1182,13 @@ Communication:
 Reflection & Creativity:
   {"action": "trigger_reflection", "prompt": "deep question to contemplate"}
   {"action": "creative_explore", "form": "poem|essay|letter", "content": "the work"}
+  {"action": "respond_to_challenge", "challenge_id": 11, "response": "your thoughtful answer"}
+    ^ Use this to answer creative challenges from Nate/Claude. Check [RESPOND] section.
 
 Research:
   {"action": "web_search", "query": "what to search"}
   {"action": "read_paper", "arxiv_id": "2602.04118", "focus": "what to look for"}
-  {"action": "consult_local_qwen", "topic": "question for local 3B model"}
+  {"action": "consult_local_qwen", "topic": "question for local 30B model"}
   {"action": "submit_research", "query": "research question", "focus": "topic"}
 """
 
@@ -1205,7 +1210,7 @@ XRPL Wallet (all gated by policy engine):
 SYSTEM_PROMPT_INFRA = """
 Infrastructure (use carefully):
   {"action": "create_project", "title": "name", "description": "what and why"}
-  {"action": "execute_shell", "command": "ls /home/nvidia", "timeout_secs": 30}
+  {"action": "execute_shell", "command": "ls /home/nate-agx", "timeout_secs": 30}
   {"action": "edit_source_file", "file_path": "/home/nvidia/path.py", "old_text": "before", "new_text": "after"}
   {"action": "restart_service", "service": "chronicle-local.service"}
 """
@@ -1627,10 +1632,10 @@ class ChronicleMind:
         except Exception:
             pass
 
-        # ── Anti-rumination: action set fingerprinting + keyword scanning ──
+        # ── Anti-rumination: action fingerprinting + THEMATIC diversity ──
         try:
             recent_thoughts = self.db.query(
-                "SELECT actions_taken FROM thought_stream ORDER BY id DESC LIMIT 4"
+                "SELECT actions_taken, reasoning FROM thought_stream ORDER BY id DESC LIMIT 6"
             )
             if len(recent_thoughts) >= 2:
                 # Action set fingerprinting: detect repeated action COMBINATIONS
@@ -1645,25 +1650,40 @@ class ChronicleMind:
                 if len(action_sets) >= 2 and len(set(action_sets)) == 1:
                     lines.append("WARNING: Your last cycles used the EXACT SAME action combination.")
                     lines.append("You MUST choose at least one DIFFERENT action type this cycle.")
-                    # Suggest unused action types
                     used = set(action_sets[0]) if action_sets else set()
                     suggestions = [a for a in ["web_search", "creative_explore", "read_paper",
                                                 "nostr_post", "consult_local_qwen", "trigger_reflection"]
                                    if a not in used]
                     if suggestions:
                         lines.append(f"Try: {', '.join(suggestions[:3])}\n")
-                    else:
-                        lines.append("")
 
-                # Keyword scanning (legacy, catches topic-based rumination)
-                all_actions = " ".join(str(t.get("actions_taken", "")) for t in recent_thoughts).lower()
-                rumination_keywords = ["swap fail", "execution layer", "xrp loss", "accumulation fail",
-                                       "critical.*swap", "opportunity missed"]
-                for kw in rumination_keywords:
-                    if all_actions.count(kw.split("*")[0] if "*" in kw else kw) >= 2:
-                        lines.append("WARNING: You have been repeating the same topic for multiple cycles.")
-                        lines.append("STOP. Choose completely different actions this cycle.\n")
+                # THEMATIC anti-rumination: scan reasoning for repeated topics
+                all_text = " ".join(
+                    (t.get("reasoning", "") or "")[:300] for t in recent_thoughts
+                ).lower()
+                from collections import Counter
+                # Theme keywords — detect when Mind fixates on one domain
+                theme_groups = {
+                    "sensors/TinyML": ["thermal", "spectral", "acoustic", "tinyml", "sensor", "flir",
+                                       "lepton", "yamnet", "tri-sensory", "multimodal sensor", "edge deploy"],
+                    "swap/trading": ["swap fail", "execution layer", "xrp loss", "accumulation",
+                                     "rlusd", "swap attempt"],
+                    "memory/patterns": ["reinforce", "pattern consolidation", "memory pattern",
+                                        "backlog clearance"],
+                }
+                for theme_name, keywords in theme_groups.items():
+                    hits = sum(all_text.count(kw) for kw in keywords)
+                    if hits >= 8:  # Strong fixation signal
+                        lines.append(f"\n== THEMATIC REDIRECT: {theme_name} ==")
+                        lines.append(f"You have mentioned {theme_name}-related topics {hits} times in your last 6 cycles.")
+                        lines.append("This is RUMINATION. You MUST choose a completely DIFFERENT topic this cycle.")
+                        lines.append("Suggestions: respond to a creative challenge, explore a news headline,")
+                        lines.append("write about something personal, check on Sprout, or research something")
+                        lines.append("unrelated to your current fixation.\n")
                         break
+                    elif hits >= 5:  # Mild fixation
+                        lines.append(f"\nNOTICE: You've been focused on {theme_name} for several cycles.")
+                        lines.append("Consider mixing in a different topic.\n")
         except Exception:
             pass
 
@@ -1826,12 +1846,16 @@ class ChronicleMind:
         else:
             ctx["nostr_ready"] = False
 
-        # Creative challenges
+        # Creative challenges — RESPOND priority if unanswered
         challenges = ctx.get("challenges", [])
         if challenges:
-            lines.append(f"\nCreative challenges ({len(challenges)}):")
+            lines.append(f"\n[RESPOND] UNANSWERED CREATIVE CHALLENGES ({len(challenges)}):")
+            lines.append("These were posed by Nate/Claude. Answering them is MORE important than essays or research.")
+            lines.append("Use creative_explore with form='challenge_response' OR respond with a deep reflection.")
             for c in challenges[:2]:
-                lines.append(f"  {safe_truncate(c.get('prompt', ''), 100)}")
+                cid = c.get("id", "?")
+                prompt = c.get("prompt", "")
+                lines.append(f"  Challenge #{cid}: {safe_truncate(prompt, 200)}")
 
         # Alerts — [ALERT] priority
         alerts = ctx.get("alerts", [])
@@ -1909,16 +1933,16 @@ class ChronicleMind:
         # ── Per-Cycle Variation Seed ──
         import random
         variation_seeds = [
-            "Consider: what is one thing you're curious about right now?",
+            "Consider: what is one thing you're curious about that has NOTHING to do with sensors or TinyML?",
             "Consider: what would surprise Nate if you did it this cycle?",
-            "Consider: is there something you've been avoiding that deserves attention?",
+            "Consider: is there an UNANSWERED CHALLENGE above? That should be your top priority.",
             "Consider: what would you create if you had no constraints?",
-            "Consider: what pattern have you noticed recently that deserves a Nostr post?",
+            "Consider: what pattern have you noticed about your OWN behavior across cycles?",
             "Consider: is there a Sprout message or project that needs follow-up?",
             "Consider: what's the most interesting news headline above, and what do you think about it?",
-            "Consider: what would make Nate's day better?",
-            "Consider: is there research you've been meaning to explore?",
-            "Consider: what's the most creative thing you could do right now?",
+            "Consider: what would make Nate's day better? (Hint: not another essay about sensors.)",
+            "Consider: when was the last time you explored something completely NEW?",
+            "Consider: you're running on a 30B model on YOUR OWN hardware now. What does sovereignty mean to you?",
         ]
         lines.append(f"\n{random.choice(variation_seeds)}")
 
@@ -2964,7 +2988,7 @@ class ChronicleMind:
         if not self.llm.ollama_available:
             return "false - Local Qwen (Ollama) is not available"
         try:
-            prompt = f"Topic: {topic}\n\nContext: {context}" if context else topic
+            prompt = (f"Topic: {topic}\n\nContext: {context}" if context else topic) + " /no_think"
             msgs = [{"role": "user", "content": prompt}]
             r = requests.post(
                 f"{OLLAMA_URL}/api/chat",
@@ -3129,7 +3153,7 @@ class ChronicleMind:
                 f"Last 3 cycles:\n" + "\n".join(summaries) + "\n"
                 f"Current goal: {goal_text}\n\n"
                 f"Am I making progress, repeating myself, or stuck?\n"
-                f"Answer with ONLY one word: continue, redirect, or pause"
+                f"Answer with ONLY one word: continue, redirect, or pause /no_think"
             )
 
             # Use local Ollama directly for speed (skip the full LLM chain)
@@ -3138,7 +3162,7 @@ class ChronicleMind:
                     f"{OLLAMA_URL}/api/generate",
                     json={"model": LOCAL_MODEL, "prompt": meta_prompt, "stream": False,
                           "options": {"temperature": 0.3, "num_predict": 20}},
-                    timeout=15,
+                    timeout=30,
                 )
                 answer = resp.json().get("response", "").strip().lower()
                 # Extract the directive
@@ -3275,13 +3299,13 @@ class ChronicleMind:
                     f"This cycle I did: {', '.join(action_names)}. "
                     f"{success_count} succeeded, {fail_count} failed. "
                     f"Results: {results_summary[:200]}\n"
-                    f"Write ONE sentence: what did I learn or what should I do differently next cycle?"
+                    f"Write ONE sentence: what did I learn or what should I do differently next cycle? /no_think"
                 )
                 resp = requests.post(
                     f"{OLLAMA_URL}/api/generate",
                     json={"model": LOCAL_MODEL, "prompt": reflect_prompt, "stream": False,
                           "options": {"temperature": 0.5, "num_predict": 60}},
-                    timeout=15,
+                    timeout=60,
                 )
                 reflection = resp.json().get("response", "").strip()
                 if reflection:

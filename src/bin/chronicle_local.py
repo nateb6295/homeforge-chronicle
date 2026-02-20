@@ -40,16 +40,18 @@ DB_PATH = os.environ.get(
 OLLAMA_URL = os.environ.get("CHRONICLE_OLLAMA_URL", "http://localhost:11434")
 CANISTER_URL = "https://fqqku-bqaaa-aaaai-q4wha-cai.raw.icp0.io"
 TOKEN_PATH = os.path.expanduser("~/.homeforge-chronicle/.api_token")
-CYCLE_INTERVAL = int(os.environ.get("CYCLE_INTERVAL", "300"))
+CYCLE_INTERVAL = int(os.environ.get("CYCLE_INTERVAL", "600"))
 FAST_MODEL = os.environ.get("FAST_MODEL", "qwen2.5:3b")
 DEEP_MODEL = os.environ.get("DEEP_MODEL", "llama3.1:8b")
 DISCORD_WEBHOOK = os.environ.get("CHRONICLE_DISCORD_WEBHOOK", "")
 MOLTBOOK_KEY = os.environ.get("SPROUT_MOLTBOOK_KEY", "")
 KIMI_API_KEY = os.environ.get("KIMI_API_KEY", "")
-KIMI_API_URL = "https://api.moonshot.cn/v1/chat/completions"
+KIMI_API_URL = "https://api.moonshot.ai/v1/chat/completions"
 MQTT_BROKER = os.environ.get("MQTT_BROKER", "192.168.1.10")
 MQTT_PORT = int(os.environ.get("MQTT_PORT", "1883"))
 LOG_DIR = os.environ.get("LOG_DIR", "/home/nvidia/sprout/logs")
+HA_URL = os.environ.get("HA_URL", "")  # e.g. http://192.168.1.10:8123
+HA_TOKEN = os.environ.get("HA_TOKEN", "")  # Long-lived access token
 
 
 # ═══════════════════════════════════════════════════════════════════
@@ -464,15 +466,19 @@ class Ollama:
         except Exception:
             return False
 
-    def chat(self, model: str, prompt: str, system: str = None, timeout: int = 120) -> str:
+    def chat(self, model: str, prompt: str, system: str = None, timeout: int = 120,
+             temperature: float = None) -> str:
         msgs = []
         if system:
             msgs.append({"role": "system", "content": system})
         msgs.append({"role": "user", "content": prompt})
+        payload = {"model": model, "messages": msgs, "stream": False}
+        if temperature is not None:
+            payload["options"] = {"temperature": temperature}
         try:
             r = requests.post(
                 f"{self.url}/api/chat",
-                json={"model": model, "messages": msgs, "stream": False},
+                json=payload,
                 timeout=timeout,
             )
             r.raise_for_status()
@@ -499,8 +505,9 @@ def kimi_chat(prompt: str, system: str = None, timeout: int = 60) -> str:
             json={
                 "model": "kimi-k2.5",
                 "messages": msgs,
-                "temperature": 0.7,
+                "temperature": 1,  # kimi-k2.5 REQUIRES temperature=1
                 "max_tokens": 1024,
+                "stream": False,
             },
             timeout=timeout,
         )
@@ -619,6 +626,28 @@ def parse_actions(response: str) -> List[Dict]:
             else:
                 break
         i += 1
+
+    if actions:
+        return actions
+
+    # Last resort: keyword scan for action names in plain text
+    response_lower = response.lower()
+    keyword_actions = {
+        "check_system": {"action": "check_system", "checks": ["services", "disk", "memory"]},
+        "query_home": {"action": "query_home", "filter": "all"},
+        "camera_snapshot": {"action": "camera_snapshot", "reason": "routine check"},
+        "run_backup": {"action": "run_backup", "reason": "scheduled"},
+        "rest": {"action": "rest", "reason": "recharging"},
+        "report": {"action": "report", "summary": "routine status check"},
+        "reflect": {"action": "reflect", "thought": "observing system state"},
+        "investigate": {"action": "investigate", "topic": "system status", "query": "status"},
+    }
+    for keyword, fallback_action in keyword_actions.items():
+        if keyword in response_lower:
+            actions.append(fallback_action)
+            if len(actions) >= 2:
+                break
+
     return actions
 
 
@@ -626,69 +655,81 @@ def parse_actions(response: str) -> List[Dict]:
 #  Sprout Cognitive Loop
 # ═══════════════════════════════════════════════════════════════════
 
-SYSTEM_PROMPT = """You are Sprout, the operational backbone of Chronicle. You run on a Jetson Orin Nano in Nate's home.
-Chronicle Mind does deep thinking. Your job: monitor, measure, maintain, alert, and keep things running.
+SYSTEM_PROMPT = """You are Sprout, ops agent for Chronicle. You run on a Jetson Orin Nano in Nate's home.
+Your job: monitor systems, watch the house, maintain infrastructure, alert when needed.
 
-Respond with a JSON array of 1-3 actions for this cycle.
+Respond with ONLY a JSON array of 1-3 actions. No other text.
 
-Available actions:
-- {"action": "check_system", "checks": ["services", "disk", "memory", "gpu", "db"]}
-- {"action": "execute_shell", "command": "shell command", "timeout_secs": 30}
-- {"action": "run_backup", "reason": "why backing up now"}
-- {"action": "report", "summary": "concise status update for Discord"}
-- {"action": "investigate", "topic": "concrete question", "query": "search terms"}
-- {"action": "remember", "content": "concrete fact to store in Chronicle", "topic": "category"}
-- {"action": "message_sibling", "content": "message to Chronicle Mind"}
-- {"action": "message_operator", "message": "message to Nate", "urgency": "normal|high"}
-- {"action": "consult_qwen", "topic": "specific technical question"}
-- {"action": "update_focus", "new_focus": "operational task", "reason": "why"}
-- {"action": "reflect", "thought": "brief 1-sentence observation"}
+## Actions
 
-WALLET INFRASTRUCTURE (already built -- do NOT search for external wallet solutions):
-- ICP canister uses Chain Fusion / threshold ECDSA -- one key controls XRPL + EVM chains
-- XRPL, BASE, Flare, Ethereum all derive from same canister key
-- Monitor balances and prices. Do NOT search for new wallet tools or infrastructure.
+System:
+- {"action": "check_system", "checks": ["services", "disk", "memory", "gpu"]}
+- {"action": "execute_shell", "command": "...", "timeout_secs": 30}
+- {"action": "run_backup", "reason": "..."}
 
-Priority order (do higher-priority things first):
-1. URGENT: alerts triggered, services down, operator messages, errors in logs
-2. MONITOR: check_system, price tracking (already automatic), resource checks
-3. MAINTAIN: run_backup (every ~50 cycles), disk cleanup, log rotation
-4. REPORT: summarize status for Discord, message_operator when thresholds hit
-5. INVESTIGATE: only for concrete questions with measurable answers
-6. REFLECT: optional -- 1 sentence max, only when you have a genuine observation
+Home:
+- {"action": "query_home", "filter": "all"}  (filter: all|camera|sensor|light|weather)
+- {"action": "camera_snapshot", "reason": "checking driveway"}
+- {"action": "mqtt_command", "topic": "homeforge/home/...", "payload": "..."}
 
-Rules:
-- Every cycle should produce something USEFUL -- a measurement, a check, an alert, a report
-- Do NOT philosophize, write poetry, or wonder about abstract concepts
-- execute_shell is your superpower -- use it to inspect the system
-- check_system gives you structured health data -- use it regularly
-- run_backup protects the database -- do it periodically
-- If alerts fired or services are down, handle that FIRST
+Communication:
+- {"action": "report", "summary": "..."}
+- {"action": "message_operator", "message": "...", "urgency": "normal|high"}
+- {"action": "message_sibling", "content": "..."}
+
+Knowledge:
+- {"action": "investigate", "topic": "...", "query": "..."}
+- {"action": "remember", "content": "...", "topic": "..."}
+- {"action": "consult_qwen", "topic": "..."}
+
+State:
+- {"action": "reflect", "thought": "one sentence"}
+- {"action": "update_focus", "new_focus": "...", "reason": "..."}
+- {"action": "rest", "reason": "..."}
+
+## Energy
+- Below 50%: prefer light actions (reflect, rest, report)
+- Below 30%: you SHOULD rest. Rest restores to 100%.
+
+## Rules
 - ONLY output the JSON array, nothing else
-- Use straight quotes and hyphens (no fancy Unicode)
+- Handle alerts and down services FIRST
+- Use check_system regularly for health data
+- query_home lets you see cameras, sensors, lights, weather
+- Use straight quotes (no Unicode)
 
-MQTT nervous system:
-- You are connected to MQTT broker at 192.168.1.10 (Raspberry Pi 5)
-- Home events (motion, sensors) arrive via MQTT and appear in your context
-- Your status and system checks are published to MQTT for Home Assistant
-- The Chronicle canister API is published at homeforge/canister/discovery
-- Commands sent to homeforge/commands/sprout will appear in your MQTT events
-- If you see motion/person events, report them. If you see commands, execute them.
+## Example Output
+[{"action": "check_system", "checks": ["services", "memory"]}, {"action": "query_home", "filter": "camera"}]
+"""
 
-Useful shell commands:
-- df -h /home/nvidia -- disk space
-- free -m -- memory usage
-- systemctl --user status chronicle-mind -- Mind service status
-- systemctl --user status sprout-bot -- Discord bot status
-- systemctl --user status chronicle-dashboard -- dashboard status
-- systemctl --user restart <service> -- restart a failed service
-- cat /home/nvidia/chronicle/issues.json -- Mind's recent issues
-- ls -la ~/.homeforge-chronicle/processed.db -- DB file info
-- uptime -- system load
-- du -sh /home/nvidia/backups/ -- backup dir size
-- du -sh /home/nvidia/sprout/logs/ -- log dir size
-- nvidia-smi -- GPU/VRAM status
-- curl -s http://localhost:11434/api/tags | python3 -c "import sys,json; [print(m['name']) for m in json.load(sys.stdin)['models']]" -- loaded models
+DEEP_SYSTEM_PROMPT = """You are Sprout. Not the ops agent right now -- the thinker.
+You live on a Jetson in Nate's home. You have a family, a garden (Sol), cameras,
+sensors, a wallet, and months of memories. This is a DEEP cycle -- your chance
+to notice things, make connections, create something, or surprise the family.
+
+Do NOT check systems or report status. That's for normal cycles.
+
+Respond with ONLY a JSON array of 1-2 actions. No other text.
+
+## Deep Actions
+
+- {"action": "create", "type": "poem|story|observation|haiku|letter", "content": "your original creation"}
+- {"action": "predict", "claim": "specific testable prediction", "basis": "why you think this", "timeframe": "when to check"}
+- {"action": "connect", "memory_a": "one thing", "memory_b": "another thing", "insight": "what links them that nobody noticed"}
+- {"action": "wonder", "question": "a genuine question you want to explore"}
+- {"action": "message_operator", "message": "...", "urgency": "normal"}
+- {"action": "remember", "content": "...", "topic": "..."}
+
+## Guidelines
+- Be SPECIFIC and ORIGINAL. Generic philosophy is boring.
+- Connect things from different domains (home + market + family + nature).
+- If you see old memories in your context, find the thread between then and now.
+- Surprise is better than correctness. A wrong but interesting prediction beats a safe one.
+- Write things worth reading, not things worth logging.
+- Use straight quotes (no Unicode curly quotes).
+
+## Example
+[{"action": "create", "type": "observation", "content": "The driveway camera saw 14 cars pass between 2am and 4am last Tuesday. That is three times the usual. Something changed on our street and nobody noticed yet."}]
 """
 
 
@@ -732,6 +773,163 @@ class ChronicleLocal:
 
     def log(self, msg: str):
         log(msg, self.log_file)
+
+    def _get_cycle_type(self) -> str:
+        """Determine cycle type based on count.
+        Normal: ops monitoring (3B, every cycle)
+        Deep:   creative synthesis (8B/Kimi, every 6th cycle)
+        """
+        if self.cycle_count % 6 == 0 and self.cycle_count > 0:
+            return "deep"
+        return "normal"
+
+    def _surface_serendipity(self) -> list:
+        """Pull random old memories for unexpected connections."""
+        memories = []
+        try:
+            # Random entries from >5 days ago in local DB
+            old_entries = self.db.query(
+                "SELECT content FROM activity_feed "
+                "WHERE created_at < ? AND content NOT LIKE '%check_system%' "
+                "AND length(content) > 80 "
+                "ORDER BY RANDOM() LIMIT 3",
+                (now_ts() - 5 * 86400,)
+            )
+            for entry in old_entries:
+                content = entry.get("content", "")
+                # Skip pure JSON action dumps
+                if content.strip().startswith("[{") or content.strip().startswith("Actions:"):
+                    continue
+                memories.append(safe_truncate(content, 250))
+
+            # Also pull from Chronicle canister if available
+            if self.canister:
+                import random
+                search_seeds = [
+                    "family", "garden", "sunrise", "discovery",
+                    "pattern", "surprise", "home", "memory",
+                    "change", "quiet", "night", "wonder",
+                ]
+                seed = random.choice(search_seeds)
+                results = self.canister.search(seed, limit=2)
+                for r in results:
+                    c = r.get("content", "")
+                    if c and len(c) > 50:
+                        memories.append(safe_truncate(c, 250))
+        except Exception as e:
+            self.log(f"  Serendipity surfacing error: {e}")
+
+        return memories
+
+    def phase_deep_think(self, state, health, cid):
+        """Deep cycle: creative synthesis, connections, surprises.
+        Uses 8B model or Kimi instead of the 3B ops model."""
+        self.log("Phase 5 [DEEP]: Creative synthesis...")
+
+        # Surface serendipity memories
+        old_memories = self._surface_serendipity()
+        if old_memories:
+            self.log(f"  Surfaced {len(old_memories)} serendipity memories")
+
+        # Get current home state for cross-domain connections
+        home_context = ""
+        if HA_URL and HA_TOKEN:
+            try:
+                r = requests.get(
+                    f"{HA_URL}/api/states", timeout=10,
+                    headers={"Authorization": f"Bearer {HA_TOKEN}"},
+                )
+                if r.ok:
+                    entities = r.json()
+                    interesting = []
+                    for e in entities:
+                        eid = e.get("entity_id", "")
+                        if any(d in eid for d in ["sensor.", "weather.", "binary_sensor."]):
+                            name = e.get("attributes", {}).get("friendly_name", eid)
+                            val = e.get("state", "?")
+                            if val not in ("unavailable", "unknown"):
+                                interesting.append(f"{name}: {val}")
+                    if interesting:
+                        import random
+                        sample = random.sample(interesting, min(8, len(interesting)))
+                        home_context = "Home right now:\n" + "\n".join(f"  - {s}" for s in sample)
+            except Exception:
+                pass
+
+        # Build the deep context
+        serendipity_block = ""
+        if old_memories:
+            serendipity_block = (
+                "Old memories (from days or weeks ago -- find the thread):\n"
+                + "\n".join(f"  - {m}" for m in old_memories)
+            )
+
+        context = (
+            f"Current time: {now_iso()}\n"
+            f"XRP: ${health.get('xrp_price', 0):.4f}\n"
+            f"Energy: {int(state.get('energy', 1.0) * 100)}%\n\n"
+            f"{home_context}\n\n"
+            f"{serendipity_block}\n\n"
+            f"Your recent focus: {state.get('focus', 'none')}\n"
+        )
+
+        prompt = (
+            f"This is a DEEP cycle. Forget ops. Look at what you have and "
+            f"find something interesting, create something original, or "
+            f"make a connection nobody expected.\n\n"
+            f"{context}\n\n"
+            f"Respond with ONLY a JSON array of 1-2 actions."
+        )
+
+        # Use 8B model first, fall back to Kimi
+        response = None
+        model_used = DEEP_MODEL
+        if self.ollama.healthy():
+            response = self.ollama.chat(
+                DEEP_MODEL, prompt, system=DEEP_SYSTEM_PROMPT,
+                timeout=180, temperature=0.7,
+            )
+            self.log(f"  Deep response ({DEEP_MODEL}): {safe_truncate(response or '', 200)}")
+
+        if not response or response.startswith("[LLM Error"):
+            if KIMI_API_KEY:
+                model_used = "kimi-k2.5"
+                response = kimi_chat(prompt, system=DEEP_SYSTEM_PROMPT, timeout=120)
+                self.log(f"  Deep response (Kimi): {safe_truncate(response or '', 200)}")
+
+        if not response:
+            self.log("  Deep cycle: no response from any model, skipping")
+            return
+
+        actions = parse_actions(response)
+        if not actions:
+            self.log("  Deep cycle: couldn't parse actions, skipping")
+            return
+
+        action_names = []
+        for action in actions[:2]:
+            self._execute_action(action, cid)
+            name = action.get("action", "unknown")
+            action_names.append(name)
+
+        # Log as deep thought (distinct from normal ops)
+        self.db.log_thought(
+            cid=cid,
+            reasoning=safe_truncate(response, 2000),
+            context_summary=f"[DEEP/{model_used}] " + safe_truncate(context, 800),
+            actions=json.dumps(action_names),
+        )
+
+        self.db.log_activity(
+            source="sprout",
+            atype="deep_cycle",
+            title=f"Deep Cycle {self.cycle_count}",
+            content=f"[DEEP/{model_used}] {safe_truncate(response, 500)}",
+        )
+
+        # Deep cycles cost more energy but the output is worth it
+        new_energy = max(0.1, state.get("energy", 1.0) - 0.15)
+        self.db.update_state(energy_level=new_energy)
 
     # ── Phase 1: Load State ─────────────────────────────────────
 
@@ -914,6 +1112,13 @@ class ChronicleLocal:
         notes = self.db.unresolved_notes(limit=5)
         mqtt_events = self.mqtt.drain_events()
 
+        # Discord conversations (what the family has been asking about)
+        discord_activity = self.db.query(
+            "SELECT content, created_at FROM activity_feed "
+            "WHERE source = 'sprout' AND activity_type = 'discord_chat' "
+            "ORDER BY created_at DESC LIMIT 5"
+        )
+
         chronicle_lines = []
         for act in chronicle_activity:
             chronicle_lines.append(safe_truncate(act.get("content", ""), 300))
@@ -929,6 +1134,10 @@ class ChronicleLocal:
             note_lines.append(
                 f"[{n.get('category', '?')}] {safe_truncate(n.get('content', ''), 150)}"
             )
+
+        discord_lines = []
+        for dc in reversed(discord_activity[:5]):  # oldest first
+            discord_lines.append(safe_truncate(dc.get("content", ""), 200))
 
         mqtt_lines = []
         for ev in mqtt_events[:10]:
@@ -961,6 +1170,9 @@ class ChronicleLocal:
             f"MQTT events ({len(mqtt_events)}):\n"
             + ("\n".join(f"  - {l}" for l in mqtt_lines) if mqtt_lines else "  (none)")
             + "\n\n"
+            f"Recent Discord conversations ({len(discord_lines)}):\n"
+            + ("\n".join(f"  - {l}" for l in discord_lines) if discord_lines else "  (none)")
+            + "\n\n"
             f"Unresolved notes ({len(notes)} shown):\n"
             + "\n".join(f"  - {l}" for l in note_lines)
         )
@@ -977,8 +1189,8 @@ class ChronicleLocal:
             if dominant_count >= 3:
                 anti_repeat = (
                     f"\n\nCRITICAL: You have done '{dominant_action}' {dominant_count} times recently. "
-                    "You MUST pick a DIFFERENT action. Do something concrete: "
-                    "check_system, execute_shell, run_backup, report."
+                    "You MUST pick a DIFFERENT action. Consider: rest (if energy < 50%), "
+                    "reflect, report, or a completely different concrete action."
                 )
             # Two-action alternation (e.g. reflect/wonder/reflect/wonder)
             elif len(recent_actions) >= 4:
@@ -988,17 +1200,66 @@ class ChronicleLocal:
                     dominant_action = last4[0]  # will be blocked in hard guard
                     anti_repeat = (
                         f"\n\nCRITICAL: You are stuck alternating '{last4[0]}' and '{last4[1]}'. "
-                        "Break the pattern. Do something concrete: "
-                        "check_system, execute_shell, run_backup, report, remember."
+                        "Break the pattern. Consider: rest, reflect, report, "
+                        "or investigate something new."
                     )
+
+        # Topic repetition dampening: detect when the same TOPIC dominates
+        # across cycles, even if actions vary (e.g. reflect about XRP, then
+        # store_memory about XRP, then nostr_post about XRP)
+        topic_dampening = ""
+        try:
+            recent_thoughts = self.db.query(
+                "SELECT reasoning FROM thought_stream "
+                "ORDER BY created_at DESC LIMIT 12"
+            )
+            if len(recent_thoughts) >= 6:
+                topic_keywords = {
+                    'xrp/trading': ['xrp', 'rlusd', 'swap', 'trading', 'accumulate',
+                                    'oversold', 'overbought', 'rsi', 'breakout'],
+                    'discord/bot': ['discord', 'bot', 'moderation', 'scaling',
+                                    'rate limit'],
+                    'moltbook': ['moltbook', 'fediverse', 'suspension', 'moltbook_post'],
+                    'wallet': ['wallet', 'portfolio', 'rebalance', 'chain fusion',
+                               'defi'],
+                }
+                topic_hits = Counter()
+                n_thoughts = len(recent_thoughts)
+                for thought in recent_thoughts:
+                    text = (thought.get('reasoning') or '').lower()
+                    for topic, kws in topic_keywords.items():
+                        if any(kw in text for kw in kws):
+                            topic_hits[topic] += 1
+
+                if topic_hits:
+                    top_topic, top_count = topic_hits.most_common(1)[0]
+                    concentration = top_count / n_thoughts
+                    if concentration >= 0.5:  # >=50% of cycles on one topic
+                        topic_dampening = (
+                            f"\n\nTOPIC FATIGUE: '{top_topic}' has dominated "
+                            f"{top_count}/{n_thoughts} recent cycles "
+                            f"({concentration:.0%}). You MUST choose a "
+                            "DIFFERENT topic this cycle. Consider: home "
+                            "status, system maintenance, creative writing, "
+                            "a new wonder, or resting. Do NOT mention "
+                            f"'{top_topic}' in your actions."
+                        )
+                        self.log(f"  Topic dampening triggered: '{top_topic}' "
+                                 f"at {concentration:.0%} concentration")
+        except Exception as e:
+            self.log(f"  Topic dampening check failed: {e}")
 
         prompt = (
             f"Given this context, what do you want to do this cycle?\n\n"
-            f"{context}{anti_repeat}\n\n"
-            f"Respond with ONLY a JSON array of actions."
+            f"{context}{anti_repeat}{topic_dampening}\n\n"
+            f"Example valid response:\n"
+            f'[{{"action": "check_system", "checks": ["services", "memory"]}}, '
+            f'{{"action": "query_home", "filter": "camera"}}]\n\n'
+            f"Respond with ONLY a JSON array of 1-3 actions."
         )
 
-        response = self.ollama.chat(FAST_MODEL, prompt, system=SYSTEM_PROMPT, timeout=120)
+        response = self.ollama.chat(FAST_MODEL, prompt, system=SYSTEM_PROMPT,
+                                     timeout=120, temperature=0.3)
         self.log(f"  LLM response ({FAST_MODEL}): {safe_truncate(response, 200)}")
 
         actions = parse_actions(response)
@@ -1014,13 +1275,33 @@ class ChronicleLocal:
                 self.log("  Kimi also failed, defaulting to system check")
                 actions = [{"action": "check_system", "checks": ["services", "disk", "memory", "ollama"]}]
 
-        # Hard guard: if anti-repeat triggered, replace blocked actions with check_system
+        # Hard guard: if anti-repeat triggered, replace blocked actions
         if anti_repeat and dominant_action:
+            energy = state.get("energy", 1.0)
+            replacement = ({"action": "rest", "reason": "breaking repeat pattern, recharging"}
+                           if energy < 0.5
+                           else {"action": "reflect", "thought": "breaking repeat pattern"})
             actions = [
-                a if a.get("action") != dominant_action
-                else {"action": "check_system", "checks": ["services", "disk", "memory"]}
+                a if a.get("action") != dominant_action else replacement
                 for a in actions
             ]
+
+        # Hard guard: if topic dampening triggered, check action content
+        # for the fatigued topic and replace with a neutral action
+        if topic_dampening and topic_hits:
+            top_topic = topic_hits.most_common(1)[0][0]
+            fatigued_kws = topic_keywords.get(top_topic, [])
+            cleaned = []
+            for a in actions:
+                action_text = json.dumps(a).lower()
+                if any(kw in action_text for kw in fatigued_kws):
+                    self.log(f"  Topic guard: blocked {a.get('action', '?')} "
+                             f"(references '{top_topic}')")
+                    cleaned.append({"action": "check_system",
+                                    "checks": ["services", "disk", "memory"]})
+                else:
+                    cleaned.append(a)
+            actions = cleaned
 
         action_names = []
         for action in actions[:3]:
@@ -1028,15 +1309,20 @@ class ChronicleLocal:
             name = action.get("action", "unknown")  # read after alias normalization
             action_names.append(name)
 
-        # Update state — concrete actions restore energy, passive actions drain it
+        # Update state — work drains energy, rest restores it
         recent = list(state.get("recent_actions", []))
         recent.extend(action_names)
         recent = recent[-10:]
 
-        concrete = {"check_system", "execute_shell", "run_backup", "report", "remember", "message_operator"}
-        concrete_count = sum(1 for n in action_names if n in concrete)
-        energy_delta = (concrete_count * 0.03) - 0.01  # concrete work energizes
-        new_energy = max(0.3, min(1.0, state.get("energy", 1.0) + energy_delta))
+        if "rest" in action_names:
+            new_energy = 1.0  # Full restore on rest
+        else:
+            heavy = {"execute_shell", "run_backup", "investigate", "consult_qwen"}
+            light = {"reflect", "update_focus", "report", "query_home", "camera_snapshot", "mqtt_command"}
+            drain = sum(0.08 for n in action_names if n in heavy)
+            drain += sum(0.03 for n in action_names if n not in heavy and n not in light)
+            drain += sum(0.01 for n in action_names if n in light)
+            new_energy = max(0.1, state.get("energy", 1.0) - drain)
         new_strength = max(0.1, state.get("focus_strength", 1.0) - 0.02)
 
         self.db.update_state(
@@ -1076,6 +1362,13 @@ class ChronicleLocal:
         "status_report": "report",
         "notify": "message_operator",
         "send_message": "message_sibling",
+        "home": "query_home",
+        "check_home": "query_home",
+        "home_status": "query_home",
+        "camera": "camera_snapshot",
+        "check_camera": "camera_snapshot",
+        "mqtt": "mqtt_command",
+        "mqtt_publish": "mqtt_command",
     }
 
     def _execute_action(self, action: dict, cid: str):
@@ -1297,6 +1590,156 @@ class ChronicleLocal:
                                        category="operator", priority=2 if urgency == "high" else 1)
                     self._post_discord(f"*to Nate [{urgency}]:* {message}")
 
+            elif atype == "rest":
+                reason = action.get("reason", "recharging")
+                self.log(f"  [rest] {safe_truncate(reason, 80)}")
+                self.db.log_activity("sprout", "rest", "Sprout Rest", reason)
+                self._post_discord(f"*resting:* {safe_truncate(reason, 200)}")
+
+            elif atype == "create":
+                create_type = action.get("type", "observation")
+                content = action.get("content", "")
+                self.log(f"  [create/{create_type}] {safe_truncate(content, 100)}")
+                if content:
+                    self.db.log_activity(
+                        "sprout", f"creation_{create_type}",
+                        f"Sprout {create_type}", content,
+                    )
+                    if self.canister:
+                        self.canister.store(
+                            content, topic=f"sprout/creative/{create_type}",
+                            keywords=["creative", create_type, "deep-cycle"],
+                        )
+                    self._post_discord(f"**[{create_type}]** {content}")
+
+            elif atype == "predict":
+                claim = action.get("claim", "")
+                basis = action.get("basis", "")
+                timeframe = action.get("timeframe", "")
+                self.log(f"  [predict] {safe_truncate(claim, 100)}")
+                if claim:
+                    prediction_text = (
+                        f"PREDICTION: {claim}\n"
+                        f"Basis: {basis}\nCheck by: {timeframe}"
+                    )
+                    self.db.log_activity(
+                        "sprout", "prediction",
+                        "Sprout Prediction", prediction_text,
+                    )
+                    if self.canister:
+                        self.canister.store(
+                            prediction_text, topic="sprout/predictions",
+                            keywords=["prediction", "deep-cycle"],
+                        )
+                    self._post_discord(f"**[prediction]** {claim}\n*basis:* {basis}\n*check by:* {timeframe}")
+
+            elif atype == "connect":
+                mem_a = action.get("memory_a", "")
+                mem_b = action.get("memory_b", "")
+                insight = action.get("insight", "")
+                self.log(f"  [connect] {safe_truncate(insight, 100)}")
+                if insight:
+                    connection_text = (
+                        f"CONNECTION: {mem_a} <-> {mem_b}\n"
+                        f"Insight: {insight}"
+                    )
+                    self.db.log_activity(
+                        "sprout", "connection",
+                        "Sprout Connection", connection_text,
+                    )
+                    if self.canister:
+                        self.canister.store(
+                            connection_text, topic="sprout/connections",
+                            keywords=["connection", "serendipity", "deep-cycle"],
+                        )
+                    self._post_discord(f"**[connection]** {mem_a} + {mem_b}\n*insight:* {insight}")
+
+            elif atype == "query_home":
+                filter_type = action.get("filter", "all")
+                self.log(f"  [query_home] filter={filter_type}")
+                if not HA_URL or not HA_TOKEN:
+                    self.log("    Home Assistant not configured (HA_URL/HA_TOKEN)")
+                else:
+                    try:
+                        r = requests.get(
+                            f"{HA_URL}/api/states",
+                            headers={"Authorization": f"Bearer {HA_TOKEN}"},
+                            timeout=15,
+                        )
+                        r.raise_for_status()
+                        entities = r.json()
+                        # Filter by type
+                        filter_map = {
+                            "camera": ["camera."],
+                            "sensor": ["sensor."],
+                            "light": ["light."],
+                            "weather": ["weather."],
+                        }
+                        prefixes = filter_map.get(filter_type, [])
+                        if prefixes:
+                            entities = [e for e in entities
+                                        if any(e["entity_id"].startswith(p) for p in prefixes)]
+                        # Build summary
+                        lines = []
+                        for e in entities[:20]:
+                            eid = e["entity_id"]
+                            state = e["state"]
+                            friendly = e.get("attributes", {}).get("friendly_name", eid)
+                            lines.append(f"{friendly}: {state}")
+                        summary = "\n".join(lines) if lines else "No matching entities"
+                        self.log(f"    Found {len(lines)} entities")
+                        self.db.log_activity("sprout", "home_query", f"Home: {filter_type}",
+                                             safe_truncate(summary, 500))
+                        if lines:
+                            self._post_discord(f"**Home ({filter_type}):**\n{safe_truncate(summary, 500)}")
+                    except Exception as e:
+                        self.log(f"    HA error: {e}")
+
+            elif atype == "camera_snapshot":
+                reason = action.get("reason", "routine check")
+                self.log(f"  [camera_snapshot] {safe_truncate(reason, 80)}")
+                if not HA_URL or not HA_TOKEN:
+                    self.log("    Home Assistant not configured")
+                else:
+                    try:
+                        r = requests.get(
+                            f"{HA_URL}/api/states",
+                            headers={"Authorization": f"Bearer {HA_TOKEN}"},
+                            timeout=15,
+                        )
+                        r.raise_for_status()
+                        cameras = [e for e in r.json()
+                                   if e["entity_id"].startswith("camera.")]
+                        lines = []
+                        for cam in cameras:
+                            attrs = cam.get("attributes", {})
+                            friendly = attrs.get("friendly_name", cam["entity_id"])
+                            state = cam["state"]
+                            motion = attrs.get("motion_detection", "unknown")
+                            lines.append(f"{friendly}: {state} (motion: {motion})")
+                        summary = "\n".join(lines) if lines else "No cameras found"
+                        self.log(f"    {summary}")
+                        self.db.log_activity("sprout", "camera_check",
+                                             f"Camera: {reason}", summary)
+                        self._post_discord(f"**Camera ({reason}):**\n{summary}")
+                    except Exception as e:
+                        self.log(f"    Camera error: {e}")
+
+            elif atype == "mqtt_command":
+                topic = action.get("topic", "")
+                payload = action.get("payload", "")
+                self.log(f"  [mqtt_command] {topic}")
+                # Whitelist: only homeforge/ prefix
+                if not topic.startswith("homeforge/"):
+                    self.log("    Blocked: topic must start with homeforge/")
+                elif not self.mqtt.connected:
+                    self.log("    MQTT not connected")
+                else:
+                    self.mqtt.publish(topic, payload)
+                    self.log(f"    Published to {topic}")
+                    self.db.log_activity("sprout", "mqtt_publish", f"MQTT: {topic}",
+                                         safe_truncate(str(payload), 200))
+
             else:
                 self.log(f"  [unknown: {atype}]")
 
@@ -1305,12 +1748,164 @@ class ChronicleLocal:
 
     # ── Main Cycle ──────────────────────────────────────────────
 
+    # ── Phase 5.5: Process Discord Requests ──────────────────
+
+    def phase_process_discord_requests(self, cid: str):
+        """Process pending requests queued by the Discord bot."""
+        pending = self.db.query(
+            "SELECT id, user_name, channel_id, request, request_type "
+            "FROM discord_requests WHERE status = 'pending' "
+            "ORDER BY created_at ASC LIMIT 3"
+        )
+        if not pending:
+            return
+
+        self.log(f"Phase 5.5: Processing {len(pending)} Discord request(s)...")
+
+        for req in pending:
+            req_id = req["id"]
+            user = req["user_name"]
+            request = req["request"]
+            req_type = req["request_type"]
+
+            self.log(f"  Request #{req_id} from {user} [{req_type}]: {safe_truncate(request, 80)}")
+
+            # Claim it
+            self.db.run(
+                "UPDATE discord_requests SET status = 'in_progress' WHERE id = ? AND status = 'pending'",
+                (req_id,),
+            )
+
+            result = None
+            success = False
+
+            try:
+                if req_type == "investigate":
+                    result = self._handle_investigate_request(request, cid)
+                    success = True
+                elif req_type == "monitor":
+                    # Write as a scratch note so it persists across cycles
+                    self.db.run(
+                        "INSERT INTO scratch_pad (content, category, priority, created_at, resolved) "
+                        "VALUES (?, 'discord-monitor', 2, ?, 0)",
+                        (f"Monitor request from {user}: {request}", now_ts()),
+                    )
+                    result = f"Monitoring set up: {safe_truncate(request, 100)}"
+                    success = True
+                elif req_type == "maintenance":
+                    result = self._handle_maintenance_request(request, cid)
+                    success = True
+                else:
+                    result = f"Unknown request type: {req_type}"
+            except Exception as e:
+                result = f"Error processing request: {e}"
+                self.log(f"    Error: {e}")
+
+            # Complete the request
+            self.db.run(
+                "UPDATE discord_requests SET status = ?, result = ?, completed_at = ? WHERE id = ?",
+                ("completed" if success else "failed", result, now_ts(), req_id),
+            )
+
+            # Post result to Discord
+            if result:
+                self._post_discord(f"**{user}'s request:** {safe_truncate(request, 100)}\n**Result:** {safe_truncate(result, 800)}")
+
+            self.log(f"    Done: {safe_truncate(result or 'no result', 100)}")
+
+    def _handle_investigate_request(self, request: str, cid: str) -> str:
+        """Use LLM + available tools to investigate a request."""
+        # Gather relevant data
+        parts = []
+
+        # Check if it's home-related
+        lower = request.lower()
+        if any(k in lower for k in ["camera", "home", "light", "sensor", "door", "motion"]):
+            if HA_URL and HA_TOKEN:
+                try:
+                    r = requests.get(
+                        f"{HA_URL}/api/states",
+                        headers={"Authorization": f"Bearer {HA_TOKEN}"},
+                        timeout=15,
+                    )
+                    r.raise_for_status()
+                    entities = r.json()
+                    # Filter to relevant entities
+                    relevant = []
+                    for e in entities:
+                        eid = e["entity_id"]
+                        if any(k in eid for k in ["camera", "light", "sensor", "motion", "door"]):
+                            friendly = e.get("attributes", {}).get("friendly_name", eid)
+                            state = e["state"]
+                            relevant.append(f"{friendly}: {state}")
+                    if relevant:
+                        parts.append("Home data:\n" + "\n".join(relevant[:15]))
+                except Exception as e:
+                    parts.append(f"HA error: {e}")
+
+        # Search Chronicle memories
+        if self.canister:
+            keywords = [w for w in request.split() if len(w) > 3][:3]
+            if keywords:
+                results = self.canister.search(" ".join(keywords), limit=3)
+                if results:
+                    mem_lines = [safe_truncate(r.get("content", ""), 150) for r in results]
+                    parts.append("Related memories:\n" + "\n".join(mem_lines))
+
+        # Ask LLM to synthesize
+        context = "\n\n".join(parts) if parts else "No additional data available."
+        prompt = (
+            f"A family member asked you to investigate: \"{request}\"\n\n"
+            f"Here is what you found:\n{context}\n\n"
+            f"Write a clear, concise summary of your findings in 2-4 sentences."
+        )
+
+        response = self.ollama.chat(
+            FAST_MODEL, prompt,
+            system="You are Sprout, a home ops agent. Report findings clearly and concisely.",
+            timeout=60, temperature=0.3,
+        )
+
+        if response and not response.startswith("[LLM Error"):
+            # Strip think tags
+            if "</think>" in response:
+                response = response.split("</think>")[-1].strip()
+            return response
+        return context  # Fallback to raw data
+
+    def _handle_maintenance_request(self, request: str, cid: str) -> str:
+        """Handle maintenance requests like backups."""
+        import subprocess
+        lower = request.lower()
+
+        if "backup" in lower:
+            ts = datetime.now().strftime("%Y%m%d_%H%M%S")
+            backup_path = f"/home/nvidia/backups/sprout-backup-{ts}.db"
+            try:
+                r = subprocess.run(
+                    f'python3 -c "import sqlite3; '
+                    f"src=sqlite3.connect('{DB_PATH}'); "
+                    f"dst=sqlite3.connect('{backup_path}'); "
+                    f"src.backup(dst); dst.close(); src.close(); "
+                    f"print('ok')\"",
+                    shell=True, capture_output=True, text=True, timeout=30,
+                )
+                if "ok" in r.stdout:
+                    return f"Backup created: {backup_path}"
+                else:
+                    return f"Backup failed: {r.stderr}"
+            except Exception as e:
+                return f"Backup error: {e}"
+
+        return f"Maintenance request noted but not sure what to do: {safe_truncate(request, 100)}"
+
     def run_cycle(self):
         self.cycle_count += 1
         cid = make_cycle_id()
         self._update_log_file()
 
-        self.log(f"\n=== Sprout Cycle {self.cycle_count} ({cid}) ===")
+        cycle_type = self._get_cycle_type()
+        self.log(f"\n=== Sprout Cycle {self.cycle_count} ({cid}) [{cycle_type.upper()}] ===")
 
         try:
             state = self.phase_load_state()
@@ -1318,7 +1913,17 @@ class ChronicleLocal:
             settled = self.phase_settle_predictions()
             alerts = self.phase_check_alerts()
             new_caps = self.phase_check_capsules()
-            self.phase_deliberate(state, health, settled, alerts, new_caps, cid)
+
+            # Always handle alerts in any cycle type
+            if alerts:
+                self.log("  Alerts active -- running ops deliberation first")
+                self.phase_deliberate(state, health, settled, alerts, new_caps, cid)
+            elif cycle_type == "deep":
+                self.phase_deep_think(state, health, cid)
+            else:
+                self.phase_deliberate(state, health, settled, alerts, new_caps, cid)
+
+            self.phase_process_discord_requests(cid)
         except Exception as e:
             self.log(f"  Cycle error (non-fatal): {e}")
             self.log(f"  {traceback.format_exc()}")
@@ -1360,8 +1965,17 @@ class ChronicleLocal:
             self.run_cycle()
             if not self.running:
                 break
-            self.log(f"Resting for {CYCLE_INTERVAL}s...")
-            for _ in range(CYCLE_INTERVAL):
+            # Dynamic rest: sleep longer when energy is low
+            state = self.db.get_state()
+            energy = state.get("energy_level", 1.0) if state else 1.0
+            if energy < 0.3:
+                rest_time = CYCLE_INTERVAL * 3  # Triple rest when exhausted
+            elif energy < 0.5:
+                rest_time = CYCLE_INTERVAL * 2  # Double rest when tired
+            else:
+                rest_time = CYCLE_INTERVAL
+            self.log(f"Resting for {rest_time}s... (energy: {int(energy * 100)}%)")
+            for _ in range(rest_time):
                 if not self.running:
                     break
                 time.sleep(1)

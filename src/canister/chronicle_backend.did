@@ -156,6 +156,26 @@ type TrustSetParams = record {
   fee_drops : nat64;
   sequence : nat32;
 };
+type EscrowCreateParams = record {
+  destination : text;
+  amount_drops : nat64;
+  fee_drops : nat64;
+  sequence : nat32;
+  last_ledger_sequence : nat32;
+  finish_after : opt nat32;
+  cancel_after : opt nat32;
+  condition : opt text;
+  destination_tag : opt nat32;
+};
+type EscrowFinishParams = record {
+  owner : text;
+  offer_sequence : nat32;
+  fee_drops : nat64;
+  sequence : nat32;
+  last_ledger_sequence : nat32;
+  condition : opt text;
+  fulfillment : opt text;
+};
 type XrpPaymentParams = record {
   destination : text;
   last_ledger_sequence : nat32;
@@ -395,8 +415,14 @@ service : () -> {
       text,
       opt text,
     ) -> (text);
+  // Sign an EscrowCreate transaction to lock XRP in escrow
+  sign_escrow_create : (EscrowCreateParams) -> (text);
+  // Sign an EscrowFinish transaction to release escrowed XRP
+  sign_escrow_finish : (EscrowFinishParams) -> (text);
   // Sign a swap XRP -> RLUSD using immediate-or-cancel offer
   sign_swap_xrp_to_rlusd : (nat64, text, nat64, nat32, nat32) -> (text);
+  // Sign a swap RLUSD -> XRP using immediate-or-cancel offer (buy XRP with RLUSD)
+  sign_swap_rlusd_to_xrp : (nat64, text, nat64, nat32, nat32) -> (text);
   // Sign a TrustSet transaction to establish a trustline
   sign_trustset : (TrustSetParams) -> (text);
   // Sign an XRP payment transaction
