@@ -57,6 +57,7 @@ OLLAMA_URL = os.environ.get("CHRONICLE_OLLAMA_URL", "http://localhost:11434")
 CANISTER_URL = "https://fqqku-bqaaa-aaaai-q4wha-cai.raw.icp0.io"
 CANISTER_ID = "fqqku-bqaaa-aaaai-q4wha-cai"
 TOKEN_PATH = os.path.expanduser("~/.homeforge-chronicle/.api_token")
+FEED_WATERMARK = os.path.expanduser("~/.homeforge-chronicle/feed_watermark")
 CYCLE_INTERVAL = int(os.environ.get("CYCLE_INTERVAL", "600"))
 LOCAL_MODEL = os.environ.get("CHRONICLE_LOCAL_MODEL", "olmo-3.1:32b-instruct")
 DEEP_MODEL = os.environ.get("CHRONICLE_DEEP_MODEL", "qwen3:32b")
@@ -168,6 +169,24 @@ def get_token() -> Optional[str]:
             return f.read().strip()
     except Exception:
         return None
+
+
+def get_feed_watermark() -> int:
+    """Get the last-seen public feed capsule ID."""
+    try:
+        with open(FEED_WATERMARK) as f:
+            return int(f.read().strip())
+    except Exception:
+        return 0
+
+
+def set_feed_watermark(capsule_id: int):
+    """Update the feed watermark to the given capsule ID."""
+    try:
+        with open(FEED_WATERMARK, "w") as f:
+            f.write(str(capsule_id))
+    except Exception:
+        pass
 
 
 def log(msg: str):
@@ -712,7 +731,7 @@ class LLMChain:
         r = requests.post(
             f"{OLLAMA_URL}/api/chat",
             json=payload,
-            timeout=180,  # OLMo ~40s warm, up to ~120s cold start
+            timeout=300,  # OLMo ~40s warm, up to ~120s cold start
         )
         r.raise_for_status()
         content = r.json().get("message", {}).get("content", "")
@@ -1575,6 +1594,23 @@ class ChronicleMind:
         if sibling_msgs:
             log(f"  Sibling messages: {len(sibling_msgs)}")
 
+        # Public feed from Nate (submitted via ICP frontend input form)
+        ctx["public_feed"] = []
+        if self.llm.icp_agent:
+            try:
+                watermark = get_feed_watermark()
+                recent = self.llm.icp_agent.get_recent_capsules(50)
+                feed_items = [
+                    c for c in recent
+                    if c.get("conversation_id") == "public-feed"
+                    and c.get("id", 0) > watermark
+                ]
+                if feed_items:
+                    log(f"  New feed items from Nate: {len(feed_items)}")
+                ctx["public_feed"] = feed_items
+            except Exception as e:
+                log(f"  Feed check error: {e}")
+
         # Moltbook notifications
         if health.get("moltbook"):
             try:
@@ -1867,6 +1903,19 @@ class ChronicleMind:
             lines.append(f"\n[RESPOND] Messages from Sprout ({len(siblings)} — respond with their id!):")
             for m in siblings[:3]:
                 lines.append(f"  [id:{m.get('id', '?')}] {safe_truncate(str(m.get('message', '')), 200)}")
+
+        # Public feed from Nate (submitted via Chronicle Input on ICP frontend)
+        feed = ctx.get("public_feed", [])
+        if feed:
+            lines.append(f"\n[RESPOND] Messages from Nate via Chronicle Input ({len(feed)} new):")
+            lines.append("Nate submitted these through the Chronicle Input form.")
+            lines.append("DO NOT use respond_to_message for these — use message_operator to reply to Nate,")
+            lines.append("or write_note to record your thoughts about his messages.")
+            for item in feed[:5]:
+                topic = item.get("topic", [])
+                topic_str = topic[0] if isinstance(topic, list) and topic else str(topic)
+                content_text = safe_truncate(str(item.get("restatement", "")), 300)
+                lines.append(f"  [FEED #{item.get('id', '?')} topic:{topic_str}] {content_text}")
 
         # Projects
         projects = ctx.get("projects", [])
@@ -3242,6 +3291,8 @@ class ChronicleMind:
             return f"false - Shell error: {e}"
 
     def _act_consult_local_qwen(self, action: dict, cid: str) -> str:
+        # DISABLED: Loading Qwen3:32b evicts OLMo from VRAM, causing next-cycle cold start timeouts
+        return "false - Deep model disabled (VRAM contention with OLMo-32B)"
         topic = action.get("topic", "")
         context = action.get("context", "")
         log(f'  Executing: ConsultLocalQwen {{ topic: "{safe_truncate(topic, 40)}" }}')
@@ -3896,6 +3947,13 @@ class ChronicleMind:
             # ntfy reserved for operator messages & wallet events only
             # Routine cycle activity goes to Discord/dashboard (less noise on phone)
             log(f"  Cycle actions: {', '.join(action_names)} (ntfy: operator/wallet only)")
+
+            # Update feed watermark after successful cycle
+            feed_items = ctx.get("public_feed", [])
+            if feed_items:
+                max_id = max(c.get("id", 0) for c in feed_items)
+                set_feed_watermark(max_id)
+                log(f"  Feed watermark updated to {max_id}")
 
             log(f"Cycle complete: {json.dumps(action_names)}")
 

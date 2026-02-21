@@ -204,6 +204,18 @@ class ICPAgent:
         return result[0] if result else 0
 
 
+    def get_recent_capsules(self, limit: int = 50) -> list:
+        """Get recent capsules from canister."""
+        result = self._canister.get_recent_capsules(limit)
+        return result[0] if result else []
+
+    def get_capsule(self, capsule_id: int) -> Optional[dict]:
+        """Get a specific capsule by ID."""
+        result = self._canister.get_capsule(capsule_id)
+        if result and result[0]:
+            return result[0][0] if isinstance(result[0], list) else result[0]
+        return None
+
 def create_icp_agent(identity_name: str = "chronicle-auto",
                      canister_id: str = "fqqku-bqaaa-aaaai-q4wha-cai") -> Optional[ICPAgent]:
     """Factory function to create an ICPAgent with standard paths."""
