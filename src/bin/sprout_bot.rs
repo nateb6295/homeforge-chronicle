@@ -1485,19 +1485,26 @@ impl EventHandler for Handler {
             return;
         }
 
-        // ── Default: chat with Sprout ─────────────────────────────
-        let _ = msg.channel_id.broadcast_typing(&ctx.http).await;
-
-        match bot.chat(content, &msg.author.name, &msg_channel_id.to_string()).await {
-            Ok(response) => {
-                if let Err(e) = msg.channel_id.say(&ctx.http, format!("🌱 {}", response)).await {
-                    eprintln!("Error sending message: {}", e);
-                }
-            }
-            Err(e) => {
-                eprintln!("Error getting response: {}", e);
-                let _ = msg.channel_id.say(&ctx.http, "🌱 *rustles quietly* (I had trouble thinking just now)").await;
-            }
+        // ── Default: relay to Sprout's cognitive loop ─────────────
+        // The bot is a relay, not a second brain. Store the message
+        // for Sprout's cognitive loop to process on its next cycle.
+        if let Ok(db) = bot.get_db() {
+            let tagged = format!("[{}] {}", msg.author.name, content);
+            let _ = db.write_scratch_note(&tagged, Some("for-sprout"), 5, None);
+            let _ = db.log_activity(
+                "sprout",
+                "discord_relay",
+                Some(&format!("Message from {}", msg.author.name)),
+                &format!("{}: {}", msg.author.name, truncate(content, 100)),
+                None,
+            );
+            let _ = msg.channel_id.say(&ctx.http,
+                "🌱 Got it — I'll think about that on my next cycle."
+            ).await;
+        } else {
+            let _ = msg.channel_id.say(&ctx.http,
+                "🌱 *rustles quietly* (couldn't save that right now)"
+            ).await;
         }
     }
 

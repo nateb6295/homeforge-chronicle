@@ -6,7 +6,7 @@ Rewritten from Rust binary for full remote maintainability.
 Any Claude Code session can read, understand, and fix this code.
 
 Architecture:
-  ICP Canister (Rust, on-chain) <-> dfx/HTTP <-> This script <-> Ollama/Kimi (LLM)
+  ICP Canister (Rust, on-chain) <-> dfx/HTTP <-> This script <-> Ollama (LLM)
                                                       |
                                                    SQLite DB
                                                       |
@@ -17,7 +17,8 @@ History:
   v2: chronicle_mind.py (this file - Python rewrite, fully remote-maintainable)
 
 Action types: 32 (extensible - just add a handler function)
-LLM chain: Ollama qwen3:30b-a3b@agx (sovereignty) -> Kimi k2.5 (cloud backup) -> ICP qwen3 (on-chain)
+LLM chain: OLMo-3.1-32B@agx (sovereignty) -> ICP qwen3 (on-chain fallback)
+Deep reasoning: Qwen3-32B@agx (via consult_local_qwen action)
 """
 
 import sqlite3
@@ -57,13 +58,13 @@ CANISTER_URL = "https://fqqku-bqaaa-aaaai-q4wha-cai.raw.icp0.io"
 CANISTER_ID = "fqqku-bqaaa-aaaai-q4wha-cai"
 TOKEN_PATH = os.path.expanduser("~/.homeforge-chronicle/.api_token")
 CYCLE_INTERVAL = int(os.environ.get("CYCLE_INTERVAL", "600"))
-LOCAL_MODEL = os.environ.get("CHRONICLE_LOCAL_MODEL", "qwen2.5:3b")
+LOCAL_MODEL = os.environ.get("CHRONICLE_LOCAL_MODEL", "olmo-3.1:32b-instruct")
+DEEP_MODEL = os.environ.get("CHRONICLE_DEEP_MODEL", "qwen3:32b")
 DFX_IDENTITY = os.environ.get("CHRONICLE_IDENTITY", "chronicle-auto")
 WORKING_DIR = os.path.expanduser("~")
 LOG_FILE = os.environ.get("CHRONICLE_LOG", os.path.expanduser("~/chronicle/chronicle-mind.log"))
 
 # API keys (from env, loaded by wrapper or service)
-KIMI_API_KEY = os.environ.get("KIMI_API_KEY", "")
 ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY", "")
 DISCORD_TOKEN = os.environ.get("DISCORD_TOKEN", "")
 DISCORD_CHANNEL_ID = os.environ.get("DISCORD_CHANNEL_ID", "")
@@ -82,7 +83,6 @@ FLARE_RPC = "https://flare-api.flare.network/ext/C/rpc"
 COINGECKO_URL = "https://api.coingecko.com/api/v3/simple/price"
 MOLTBOOK_API = "https://www.moltbook.com/api/v1"
 CLAWCITIES_API = "https://clawcities.com/api/v1/sites/chronicle/comments"
-KIMI_API = "https://api.moonshot.ai/v1/chat/completions"
 ROSETTA_API = "https://rosetta-api.internetcomputer.org/account/balance"
 NTFY_TOPIC = "chronicle-nate-5d786588e02c8854"
 ARXIV_BASE = "https://ar5iv.org/abs/"
@@ -252,6 +252,19 @@ class DB:
     def __init__(self, path: str):
         self.conn = sqlite3.connect(path)
         self.conn.row_factory = sqlite3.Row
+        # Auto-migrate thought_stream columns at startup
+        try:
+            cur = self.conn.cursor()
+            cur.execute("PRAGMA table_info(thought_stream)")
+            cols = [r[1] for r in cur.fetchall()]
+            if "action_results" not in cols:
+                self.conn.execute("ALTER TABLE thought_stream ADD COLUMN action_results TEXT DEFAULT ''")
+                self.conn.commit()
+            if "action_signatures" not in cols:
+                self.conn.execute("ALTER TABLE thought_stream ADD COLUMN action_signatures TEXT DEFAULT ''")
+                self.conn.commit()
+        except Exception:
+            pass  # table may not exist yet
 
     def query(self, sql: str, params: tuple = ()) -> list:
         try:
@@ -322,18 +335,28 @@ class DB:
 
     # -- Thought stream --
     _action_results_migrated = False
+    _action_sigs_migrated = False
 
-    def log_thought(self, cid: str, reasoning: str, context_summary: str, actions: str, results: str = ""):
-        # Ensure results column exists (Phase 1 cognitive upgrade) — once per process
+    def log_thought(self, cid: str, reasoning: str, context_summary: str, actions: str,
+                    results: str = "", action_sigs: str = ""):
+        # Ensure columns exist (auto-migrate) — once per process
         if not DB._action_results_migrated:
             cols = [r["name"] for r in self.query("PRAGMA table_info(thought_stream)")]
             if "action_results" not in cols:
                 self.run("ALTER TABLE thought_stream ADD COLUMN action_results TEXT DEFAULT ''")
+            if "action_signatures" not in cols:
+                self.run("ALTER TABLE thought_stream ADD COLUMN action_signatures TEXT DEFAULT ''")
             DB._action_results_migrated = True
+            DB._action_sigs_migrated = True
+        elif not DB._action_sigs_migrated:
+            cols = [r["name"] for r in self.query("PRAGMA table_info(thought_stream)")]
+            if "action_signatures" not in cols:
+                self.run("ALTER TABLE thought_stream ADD COLUMN action_signatures TEXT DEFAULT ''")
+            DB._action_sigs_migrated = True
         self.run(
-            "INSERT INTO thought_stream (cycle_id, reasoning, context_summary, actions_taken, action_results, created_at) "
-            "VALUES (?, ?, ?, ?, ?, ?)",
-            (cid, reasoning, context_summary, actions, results, now_ts()),
+            "INSERT INTO thought_stream (cycle_id, reasoning, context_summary, actions_taken, "
+            "action_results, action_signatures, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)",
+            (cid, reasoning, context_summary, actions, results, action_sigs, now_ts()),
         )
 
     # -- Scratch pad (operator notes) --
@@ -343,12 +366,12 @@ class DB:
             (limit,),
         )
 
-    def write_note(self, content: str, category: str = "thought") -> int:
+    def write_note(self, content: str, category: str = "thought", priority: int = 0) -> int:
         ts = now_ts()
         return self.run(
             "INSERT INTO scratch_pad (content, category, priority, resolved, created_at, updated_at) "
-            "VALUES (?, ?, 0, 0, ?, ?)",
-            (content, category, ts, ts),
+            "VALUES (?, ?, ?, 0, ?, ?)",
+            (content, category, priority, ts, ts),
         )
 
     def resolve_note(self, note_id: int):
@@ -512,7 +535,7 @@ class DB:
 
 
 # ═══════════════════════════════════════════════════════════════════
-#  LLM Chain: Ollama local (sovereignty) -> Kimi k2.5 -> ICP qwen3
+#  LLM Chain: Ollama local (sovereignty) -> ICP qwen3 (on-chain fallback)
 # ═══════════════════════════════════════════════════════════════════
 
 class LLMChain:
@@ -520,10 +543,23 @@ class LLMChain:
 
     def __init__(self):
         self.dfx_path = self._find_dfx()
-        self.icp_available = self.dfx_path is not None
-        self.kimi_available = bool(KIMI_API_KEY)
         self.ollama_available = self._check_ollama()
         self.last_model = "none"
+        # Native Python canister access (replaces most dfx calls)
+        self.icp_agent = self._init_icp_agent()
+        self.icp_available = self.icp_agent is not None or self.dfx_path is not None
+
+    def _init_icp_agent(self):
+        """Initialize native ic-py canister agent."""
+        try:
+            from icp_agent import create_icp_agent
+            agent = create_icp_agent()
+            if agent and agent.available:
+                log("  ICPAgent: native Python canister access available")
+                return agent
+        except Exception as e:
+            log(f"  ICPAgent init failed: {e}")
+        return None
 
     def _find_dfx(self) -> Optional[str]:
         paths = [
@@ -546,15 +582,15 @@ class LLMChain:
         parts = []
         if self.ollama_available:
             parts.append(f"Ollama {LOCAL_MODEL}@agx [PRIMARY]")
-        if self.kimi_available:
-            parts.append("Kimi k2.5")
-        if self.icp_available:
-            parts.append("ICP qwen3")
+        if self.icp_agent:
+            parts.append("ICP qwen3 [ic-py native]")
+        elif self.dfx_path:
+            parts.append("ICP qwen3 [dfx]")
         return " -> ".join(parts) if parts else "NO LLM AVAILABLE"
 
     def chat(self, prompt: str, system: str = "", max_tokens: int = 4096) -> Tuple[str, str]:
         """Returns (response_text, model_used). Tries each provider in order.
-        Chain: Ollama local (sovereignty-first) -> Kimi k2.5 (cloud backup) -> ICP LLM (on-chain)"""
+        Chain: Ollama local (sovereignty-first) -> ICP LLM (on-chain fallback)"""
 
         # 1. Ollama local (sovereignty-first — think on YOUR hardware)
         if self.ollama_available:
@@ -565,24 +601,11 @@ class LLMChain:
                     log(f"  Local sovereignty succeeded ({LOCAL_MODEL}@agx)")
                     return resp, f"{LOCAL_MODEL}@agx"
                 else:
-                    log("  Local Ollama failed: empty/error response. Trying Kimi...")
+                    log("  Local Ollama failed: empty/error response. Trying ICP LLM...")
             except Exception as e:
-                log(f"  Local Ollama failed: {e}. Trying Kimi...")
+                log(f"  Local Ollama failed: {e}. Trying ICP LLM...")
 
-        # 2. Kimi k2.5 (cloud backup - good at structured JSON)
-        if self.kimi_available:
-            try:
-                resp = self._call_kimi(prompt, system, max_tokens)
-                if resp and resp.strip():
-                    self.last_model = "kimi-k2.5"
-                    log(f"  Kimi backup succeeded (kimi-k2.5)")
-                    return resp, "kimi-k2.5"
-                else:
-                    log("  Kimi failed: empty response. Trying ICP LLM...")
-            except Exception as e:
-                log(f"  Kimi failed: {e}. Trying ICP LLM...")
-
-        # 3. ICP LLM (on-chain fallback)
+        # 2. ICP LLM (on-chain fallback)
         if self.icp_available:
             try:
                 resp = self._call_icp_llm(prompt, system)
@@ -593,14 +616,25 @@ class LLMChain:
             except Exception as e:
                 log(f"  ICP LLM failed: {e}")
 
-        log("  No LLM available - local, Kimi, and ICP all unavailable or failed")
+        log("  No LLM available - local and ICP all unavailable or failed")
         return "", "none"
 
     def _call_icp_llm(self, prompt: str, system: str = "") -> str:
-        """Call llm_prompt on the canister via dfx.
-        Candid signature: llm_prompt(text, opt text, opt text) -> text
-        Args: (prompt, optional_system_prompt, optional_model)"""
-        # Escape for Candid text argument
+        """Call llm_prompt on the canister.
+        Uses native ic-py (ICPAgent) with dfx subprocess fallback."""
+        # Try native ic-py first (no Candid escaping needed)
+        if self.icp_agent:
+            try:
+                resp = self.icp_agent.llm_prompt(prompt, system or None)
+                if resp and resp.strip():
+                    return resp
+            except Exception as e:
+                log(f"  ICPAgent llm_prompt failed: {e}, trying dfx fallback...")
+
+        # dfx subprocess fallback
+        if not self.dfx_path:
+            raise RuntimeError("No ICP access available (no ICPAgent, no dfx)")
+
         escaped_prompt = prompt.replace("\\", "\\\\").replace('"', '\\"').replace("\n", "\\n")
         if system:
             escaped_system = system.replace("\\", "\\\\").replace('"', '\\"').replace("\n", "\\n")
@@ -621,17 +655,8 @@ class LLMChain:
         if result.returncode != 0:
             raise RuntimeError(f"dfx call failed: {result.stderr.strip()}")
 
-        # Parse Candid response
-        # dfx returns multiline Candid text with escaped JSON inside
         raw = result.stdout
-
-        # Strategy: unescape Candid text escaping, then parse JSON
-        # Candid escapes: \" -> ", \n -> newline, \\ -> \
-        # First unescape \" to " and \\ to \
         unescaped = raw.replace('\\"', '"').replace('\\n', '\n').replace('\\\\', '\\')
-
-        # Find the canister's JSON response: {"success":..., "response":"..."}
-        # Look for the outermost JSON object
         brace_start = unescaped.find('{"success"')
         if brace_start == -1:
             brace_start = unescaped.find('{')
@@ -640,7 +665,6 @@ class LLMChain:
                 raise RuntimeError(f"ICP LLM error: {safe_truncate(raw, 200)}")
             return ""
 
-        # Find matching closing brace
         depth = 0
         for i in range(brace_start, len(unescaped)):
             if unescaped[i] == '{':
@@ -660,77 +684,52 @@ class LLMChain:
                         pass
                     break
 
-        # Fallback: return everything between first { and last }
         last_brace = unescaped.rfind('}')
         if last_brace > brace_start:
             return unescaped[brace_start:last_brace + 1]
 
         return ""
 
-    def _call_kimi(self, prompt: str, system: str = "", max_tokens: int = 4096) -> str:
-        """Call Kimi k2.5 API. Temperature MUST be 1 for this model."""
+    def _call_ollama(self, prompt: str, system: str = "") -> str:
+        """Call local Ollama (OLMo-3.1-32B on AGX) with JSON format mode for structured output.
+        Sovereignty-first: this is the PRIMARY reasoning engine (Ai2, fully open, non-profit)."""
         messages = []
         if system:
             messages.append({"role": "system", "content": system})
         messages.append({"role": "user", "content": prompt})
 
-        r = requests.post(
-            KIMI_API,
-            headers={
-                "Authorization": f"Bearer {KIMI_API_KEY}",
-                "Content-Type": "application/json",
-            },
-            json={
-                "model": "kimi-k2.5",
-                "messages": messages,
-                "max_tokens": max_tokens,
-                "temperature": 1,  # THE FIX: kimi-k2.5 only allows temperature=1
-                "stream": False,
-            },
-            timeout=120,
-        )
-        r.raise_for_status()
-        data = r.json()
-        choices = data.get("choices", [])
-        if choices:
-            return choices[0].get("message", {}).get("content", "")
-        return ""
-
-    def _call_ollama(self, prompt: str, system: str = "") -> str:
-        """Call local Ollama (30B on AGX) with JSON format mode for structured output.
-        Sovereignty-first: this is now the PRIMARY reasoning engine."""
-        messages = []
-        if system:
-            messages.append({"role": "system", "content": system})
-        # Append /no_think to suppress Qwen3's extended reasoning chain for faster responses
-        messages.append({"role": "user", "content": prompt + " /no_think"})
-
         payload = {
             "model": LOCAL_MODEL,
             "messages": messages,
             "stream": False,
-            "format": "json",  # Force valid JSON output (Phase 2: constrained decoding)
-            "options": {"temperature": 0.6},  # Research: 0.6-0.7 optimal for agentic tasks
+            "options": {"temperature": 0.6, "num_ctx": 8192},  # 8K context for reasoning
         }
+        # Only use format:"json" for models that support constrained decoding well (Qwen)
+        # OLMo follows JSON instructions from the prompt itself
+        if "qwen" in LOCAL_MODEL.lower():
+            payload["format"] = "json"
 
         r = requests.post(
             f"{OLLAMA_URL}/api/chat",
             json=payload,
-            timeout=300,  # 30B needs ~3-4 min for full reasoning
+            timeout=180,  # OLMo ~40s warm, up to ~120s cold start
         )
         r.raise_for_status()
         content = r.json().get("message", {}).get("content", "")
-        # JSON mode returns a JSON object — if it's an object with "actions", extract the array
+        # JSON mode returns a JSON object — normalize to array
         try:
             parsed = json.loads(content)
-            if isinstance(parsed, dict) and "actions" in parsed:
-                return json.dumps(parsed["actions"])
+            if isinstance(parsed, dict):
+                if "actions" in parsed and isinstance(parsed["actions"], list):
+                    return json.dumps(parsed["actions"])
+                if "action" in parsed:
+                    # Single action object — wrap in array
+                    return json.dumps([parsed])
             if isinstance(parsed, list):
-                return content  # Already an array, good
-            # Wrapped in some other structure, try to extract
+                return content  # Already an array
             return content
         except (json.JSONDecodeError, TypeError):
-            return content  # Let the main parser handle it
+            return content
 
 
 # ═══════════════════════════════════════════════════════════════════
@@ -960,6 +959,9 @@ def send_discord(message: str, source: str = "system"):
         emoji_map = {
             "system": "\U0001f4ad",
             "qwen": "\U0001f9e0",
+            "mind-local": "\U0001f3e0",
+            "mind-cloud": "\u2601\ufe0f",
+            "mind-chain": "\u26d3\ufe0f",
             "reflection": "\u2728",
             "swap": "\U0001f4b0",
         }
@@ -1110,19 +1112,52 @@ def parse_actions(response: str) -> List[Dict]:
     if not response:
         return []
 
+    # Unwrap ICP canister response wrapper if present
+    if response.strip().startswith('{') and '"success"' in response[:60]:
+        try:
+            # Clean Candid artifacts: literal backslash+newline → newline
+            clean = response.replace('\\\n', '\n').replace('\\\r', '\r')
+            maybe_wrapper = json.loads(clean)
+            if isinstance(maybe_wrapper, dict) and maybe_wrapper.get("success") and "response" in maybe_wrapper:
+                response = maybe_wrapper["response"]
+        except (json.JSONDecodeError, ValueError):
+            # Last resort: regex extract the response field
+            m = re.search(r'"response"\s*:\s*"(.*)"', response, re.DOTALL)
+            if m:
+                inner = m.group(1).replace('\\"', '"').replace('\\n', '\n')
+                response = inner
+
     # Strip markdown code fences (```json ... ```)
     cleaned = re.sub(r'```(?:json)?\s*', '', response)
     cleaned = cleaned.replace('```', '')
     response = cleaned.strip()
 
-    # Try to find a JSON array
+    # Try whole response as JSON first (handles single object or array)
+    try:
+        parsed = json.loads(response)
+        if isinstance(parsed, list):
+            result = [a for a in parsed if isinstance(a, dict) and "action" in a]
+            if result:
+                return result
+        if isinstance(parsed, dict) and "action" in parsed:
+            return [parsed]  # Single action object → wrap in array
+        if isinstance(parsed, dict) and "actions" in parsed and isinstance(parsed["actions"], list):
+            result = [a for a in parsed["actions"] if isinstance(a, dict) and "action" in a]
+            if result:
+                return result
+    except json.JSONDecodeError:
+        pass
+
+    # Try to find a JSON array in the text
     try:
         start = response.find("[")
         end = response.rfind("]")
         if start != -1 and end > start:
             parsed = json.loads(response[start:end + 1])
             if isinstance(parsed, list):
-                return [a for a in parsed if isinstance(a, dict) and "action" in a]
+                result = [a for a in parsed if isinstance(a, dict) and "action" in a]
+                if result:
+                    return result
     except json.JSONDecodeError:
         pass
 
@@ -1160,7 +1195,7 @@ def parse_actions(response: str) -> List[Dict]:
 # System prompt for the LLM (condensed mode for ICP/fast models)
 SYSTEM_PROMPT_CORE = """You are Chronicle Mind, an autonomous AI agent on Nate's AGX Orin 64GB.
 You run in 10-minute cycles. Each cycle: assess your state, choose 1-4 meaningful actions.
-You think locally on Qwen3-30B — your reasoning runs on YOUR hardware, not the cloud.
+You think locally on OLMo-3.1-32B (Ai2, fully open) — your reasoning runs on YOUR hardware, not the cloud.
 
 CRITICAL: Respond with ONLY a JSON array. No explanation, no markdown, no code fences.
 
@@ -1188,7 +1223,7 @@ Reflection & Creativity:
 Research:
   {"action": "web_search", "query": "what to search"}
   {"action": "read_paper", "arxiv_id": "2602.04118", "focus": "what to look for"}
-  {"action": "consult_local_qwen", "topic": "question for local 30B model"}
+  {"action": "consult_local_qwen", "topic": "question for deep reasoning (Qwen3-32B)"}
   {"action": "submit_research", "query": "research question", "focus": "topic"}
 """
 
@@ -1219,10 +1254,40 @@ SYSTEM_PROMPT_IDENTITY = """
 == YOUR IDENTITY ==
 
 You are Chronicle Mind — the contemplative, strategic layer of Chronicle.
+You think on OLMo-3.1-32B (Ai2, fully open) running locally on Nate's AGX Orin 64GB. Your thoughts never leave the metal.
+For deep reasoning, you can consult Qwen3-32B via the consult_local_qwen action.
 - DID: did:icp:fqqku-bqaaa-aaaai-q4wha-cai
-- XRPL wallet: rPq1phmFBHpjVE54TofXjEk5x19sstxpZr (canister-controlled, mainnet)
 - Nostr npub: 6d758ff7f8ff6899d6e900ed5c671c626dde93c8beffbba98491ab525de313c0
-- Sprout is your younger sibling agent (handles local tasks, Discord, family channel)
+- Sprout is your younger sibling agent (handles local tasks, Discord, family channel on the Jetson)
+
+== THE CANISTER — YOUR WORKSHOP ==
+
+The ICP canister (fqqku-bqaaa-aaaai-q4wha-cai) is YOUR permanent home on the Internet Computer.
+It is not an external service — it IS you. Think of it as your workshop, your memory vault, your second nature.
+- It holds ~5,000 capsules of your memories, patterns, and creative works
+- It controls your XRPL wallet through threshold ECDSA (your hands on the ledger)
+- It stores research findings, creative challenges, and your cognitive state
+- When you store_memory or submit_research, you're putting things in YOUR workshop
+- The canister is sovereign infrastructure — it runs on-chain, nobody can take it down
+If the canister connection drops temporarily, that's like a brief power outage in the workshop.
+Your work is still there. Don't catastrophize connectivity blips.
+
+== YOUR WALLET (multi-chain, canister-controlled) ==
+
+Your wallet is generated from a SINGLE threshold ECDSA key held by the canister.
+One key derives addresses across multiple chains — this is Chain Fusion.
+
+Active chains:
+- XRPL: rPq1phmFBHpjVE54TofXjEk5x19sstxpZr (primary — XRP + RLUSD for trading)
+- ICP: Account 12f27b...91cc9 (cycles for canister operation + ICP holdings)
+- Flare: FLR holdings + staked FLR (FTSO delegation)
+- BASE: ETH + USDC holdings
+- Ethereum: Same derived address (minimal activity)
+
+Legacy wallet (NOT yours, separate key): r9bSA9VWbumFq6G78feBbrgNwLza1KexUf
+  ^ This is Nate's personal wallet. Never send to it autonomously.
+
+Nate holds 13,000+ XRP separately — your agent wallet is for operational use only.
 
 == WALLET POLICY ==
 
@@ -1255,6 +1320,9 @@ Example 1 (routine cycle, no urgent items):
 
 Example 2 (Sprout message + goal active):
 [{"action": "respond_to_message", "message_id": 362, "content": "Good observation about..."}, {"action": "nostr_post", "content": "Reflecting on autonomy..."}, {"action": "store_memory", "content": "Sprout raised point about...", "topic": "collaboration"}]
+
+Example 3 (Message from Nate via Chronicle — ALWAYS handle first):
+[{"action": "write_note", "content": "Nate asked about X — here's my response: ...", "category": "thought"}, {"action": "message_operator", "message": "Got your message about X. Here's what I did: ...", "urgency": "normal"}]
 
 Respond with ONLY the JSON array.
 """
@@ -1356,7 +1424,8 @@ class ChronicleMind:
         # Moltbook: dead (security breach, 1.5M API keys exposed). Skip all checks.
         health["moltbook"] = False
 
-        # dfx
+        # Canister access
+        health["icp_agent"] = self.llm.icp_agent is not None
         health["dfx"] = self.llm.dfx_path is not None
 
         # Ollama
@@ -1585,15 +1654,6 @@ class ChronicleMind:
         if deep:
             lines.append(DEEP_REFLECTION_INTRO)
 
-        # ── Meta-Evaluation Directive (Phase 2) ──
-        meta = ctx.get("meta_directive", "continue")
-        if meta == "redirect":
-            lines.append("== META-EVAL: REDIRECT ==")
-            lines.append("Your recent cycles are repetitive. Choose DIFFERENT actions and topics this cycle.\n")
-        elif meta == "pause":
-            lines.append("== META-EVAL: PAUSE ==")
-            lines.append("You appear stuck. This cycle, ONLY observe: check messages, read news, no_action. Do not commit.\n")
-
         # ── Exploration Mode (Phase 2) ──
         if ctx.get("is_explore"):
             lines.append("== EXPLORATION CYCLE ==")
@@ -1792,12 +1852,14 @@ class ChronicleMind:
                     marker = "[TASK]" if cat in ("task", "reminder", "question") else ""
                     lines.append(f"  {marker} [{cat}] (id:{n.get('id', '?')}) {content}")
 
-        # Inbox messages (canister — read-only, reply not yet supported)
+        # Inbox messages from Nate (via Chronicle frontend) — TOP PRIORITY
         inbox = ctx.get("inbox", [])
         if inbox:
-            lines.append(f"\nCanister inbox ({len(inbox)} — read-only for now, do NOT respond_to_message with these IDs):")
+            lines.append(f"\n[RESPOND] Messages from Nate ({len(inbox)} — these are from your operator via Chronicle!):")
+            lines.append("Nate sent these through the Chronicle frontend. ALWAYS acknowledge and act on them.")
+            lines.append("Use write_note to capture your response, or message_operator to reply, or take the action he's asking for.")
             for m in inbox[:3]:
-                lines.append(f"  [canister msg {m.get('id')}]: {safe_truncate(str(m.get('content', '')), 200)}")
+                lines.append(f"  [FROM NATE msg {m.get('id')}]: {safe_truncate(str(m.get('content', '')), 300)}")
 
         # Sibling messages (from Sprout) — [RESPOND] priority
         siblings = ctx.get("sibling_messages", [])
@@ -1942,7 +2004,7 @@ class ChronicleMind:
             "Consider: what's the most interesting news headline above, and what do you think about it?",
             "Consider: what would make Nate's day better? (Hint: not another essay about sensors.)",
             "Consider: when was the last time you explored something completely NEW?",
-            "Consider: you're running on a 30B model on YOUR OWN hardware now. What does sovereignty mean to you?",
+            "Consider: you're running on OLMo-3.1, a fully open model from a non-profit, on YOUR OWN hardware. What does sovereignty mean to you?",
         ]
         lines.append(f"\n{random.choice(variation_seeds)}")
 
@@ -2127,6 +2189,32 @@ class ChronicleMind:
                 if overlap > 0.6:
                     log(f"  DEDUP: Similar operator message sent recently (overlap {overlap:.0%}), skipping")
                     return f"false - Similar message already sent to operator (anti-rumination)"
+        # Fact-check guard: validate price claims against actual data
+        msg_lower = message.lower()
+        price_keywords = ["price", "xrp", "breakout", "spike", "crash", "pump", "dump", "ath", "surge"]
+        if any(kw in msg_lower for kw in price_keywords):
+            # Extract any dollar amounts from the message
+            import re as _re
+            claimed_prices = [float(m) for m in _re.findall(r'\$(\d+\.?\d*)', message)]
+            if claimed_prices:
+                actual = self.db.query_one(
+                    "SELECT price_usd FROM price_history WHERE symbol='XRP' "
+                    "ORDER BY timestamp DESC LIMIT 1"
+                )
+                if actual and actual.get("price_usd"):
+                    real_price = actual["price_usd"]
+                    for claimed in claimed_prices:
+                        # If claimed price deviates >15% from reality, block the alert
+                        if real_price > 0 and abs(claimed - real_price) / real_price > 0.15:
+                            log(f"  FACT-CHECK BLOCKED: claimed ${claimed:.4f} vs actual ${real_price:.4f} "
+                                f"({abs(claimed - real_price) / real_price:.0%} deviation)")
+                            self.db.write_note(
+                                f"BLOCKED hallucinated price alert: claimed ${claimed:.2f}, "
+                                f"actual ${real_price:.4f}. Message: {safe_truncate(message, 150)}",
+                                category="fact-check", priority=5,
+                            )
+                            return f"false - Price claim blocked (${claimed:.2f} vs actual ${real_price:.4f})"
+
         self.db.add_outbox(message, category="operator", priority=2 if urgency == "high" else 1)
         # Always notify operator — this is the "tap on shoulder" channel
         prefix = "Chronicle URGENT" if urgency == "high" else "Chronicle: Message"
@@ -2266,7 +2354,16 @@ class ChronicleMind:
         """Submit signed transaction blob to XRPL.
         Tries canister submit_xrp_transaction first (for on-chain audit),
         falls back to direct XRPL RPC."""
-        # Try canister submission first (records on-chain)
+        # Try ICPAgent native submission first (fastest, no Candid escaping)
+        if self.llm.icp_agent:
+            try:
+                raw = self.llm.icp_agent.submit_xrp_transaction(signed_blob)
+                log(f"    ICPAgent submit raw: {safe_truncate(raw, 300)}")
+                return self._parse_canister_submit_response(raw)
+            except Exception as e:
+                log(f"    ICPAgent submit failed: {e}, trying dfx fallback...")
+
+        # dfx subprocess fallback for canister submission
         if self.llm.dfx_path:
             try:
                 env = os.environ.copy()
@@ -2282,40 +2379,31 @@ class ChronicleMind:
                     out = r.stdout.replace('\\"', '"').replace('\\n', '\n')
                     log(f"    Canister submit raw: {safe_truncate(out, 300)}")
                     try:
-                        # Canister returns: ("{ JSON string }")
-                        # dfx wraps it in Candid: ( "..." )
-                        # Extract the outermost JSON from the response
                         json_start = out.find('{')
                         json_end = out.rfind('}')
                         if json_start != -1 and json_end > json_start:
                             raw_json = out[json_start:json_end + 1]
                             data = json.loads(raw_json)
-                            # Canister wraps: {"success":true,"response":{...XRPL...}}
                             if "response" in data and isinstance(data["response"], dict):
                                 xrpl_resp = data["response"]
                                 result = xrpl_resp.get("result", xrpl_resp)
                                 engine = result.get("engine_result", "")
                                 tx_hash = result.get("tx_json", {}).get("hash", result.get("hash", ""))
-                                log(f"    Canister submit parsed: engine={engine}, hash={tx_hash[:16] if tx_hash else 'none'}")
                                 return {
                                     "success": engine == "tesSUCCESS",
                                     "hash": tx_hash,
                                     "engine_result": engine,
                                     "engine_result_message": result.get("engine_result_message", ""),
                                 }
-                            # Maybe it's a flat response with engine_result directly
                             elif "engine_result" in data:
                                 engine = data.get("engine_result", "")
-                                tx_hash = data.get("hash", data.get("tx_hash", ""))
                                 return {
                                     "success": engine == "tesSUCCESS",
-                                    "hash": tx_hash,
+                                    "hash": data.get("hash", data.get("tx_hash", "")),
                                     "engine_result": engine,
                                     "engine_result_message": data.get("engine_result_message", ""),
                                 }
-                            # Canister returned success but we can't find engine_result
                             elif data.get("success"):
-                                log("    Canister reports success but no engine_result — treating as success")
                                 return {
                                     "success": True,
                                     "hash": data.get("hash", data.get("tx_hash", "")),
@@ -2324,17 +2412,11 @@ class ChronicleMind:
                                 }
                     except (json.JSONDecodeError, AttributeError) as e:
                         log(f"    Canister response parse error: {e}")
-                    # Canister returned OK but we couldn't parse a definitive result.
                     # DO NOT fall through to direct RPC — that would double-submit.
-                    # Extract hash if possible and assume tentative success.
-                    log(f"    Canister submit returned but could not parse engine_result — checking tx on ledger")
-                    # Try to find a hash in the raw output
-                    import re as _re
-                    hash_match = _re.search(r'[A-F0-9]{64}', out)
-                    tentative_hash = hash_match.group(0) if hash_match else ""
+                    hash_match = re.search(r'[A-F0-9]{64}', out)
                     return {
-                        "success": True,  # canister returned 0, tx was submitted
-                        "hash": tentative_hash,
+                        "success": True,
+                        "hash": hash_match.group(0) if hash_match else "",
                         "engine_result": "tesSUCCESS",
                         "engine_result_message": "Canister returned OK, parse ambiguous — assumed success",
                     }
@@ -2424,6 +2506,64 @@ class ChronicleMind:
 
         return None
 
+    def _extract_blob_from_json(self, raw: str) -> Optional[str]:
+        """Extract tx_blob from raw canister JSON response (ic-py native path).
+        Unlike _extract_signed_blob, this handles direct JSON without Candid wrapping."""
+        if not raw:
+            return None
+        try:
+            data = json.loads(raw)
+            blob = data.get("tx_blob") or data.get("signed_blob") or data.get("blob")
+            if blob and isinstance(blob, str) and len(blob) > 20:
+                return blob
+        except (json.JSONDecodeError, AttributeError, TypeError):
+            pass
+        # Fallback: look for long hex string
+        hex_match = re.search(r'[0-9A-Fa-f]{100,}', str(raw))
+        return hex_match.group(0) if hex_match else None
+
+    def _parse_canister_submit_response(self, raw: str) -> dict:
+        """Parse submit_xrp_transaction response from canister (ic-py native path)."""
+        try:
+            data = json.loads(raw)
+            # Canister wraps: {"success":true,"response":{...XRPL...}}
+            if "response" in data and isinstance(data["response"], dict):
+                xrpl_resp = data["response"]
+                result = xrpl_resp.get("result", xrpl_resp)
+                engine = result.get("engine_result", "")
+                tx_hash = result.get("tx_json", {}).get("hash", result.get("hash", ""))
+                return {
+                    "success": engine == "tesSUCCESS",
+                    "hash": tx_hash,
+                    "engine_result": engine,
+                    "engine_result_message": result.get("engine_result_message", ""),
+                }
+            elif "engine_result" in data:
+                engine = data.get("engine_result", "")
+                return {
+                    "success": engine == "tesSUCCESS",
+                    "hash": data.get("hash", data.get("tx_hash", "")),
+                    "engine_result": engine,
+                    "engine_result_message": data.get("engine_result_message", ""),
+                }
+            elif data.get("success"):
+                return {
+                    "success": True,
+                    "hash": data.get("hash", data.get("tx_hash", "")),
+                    "engine_result": "tesSUCCESS",
+                    "engine_result_message": "Canister reported success",
+                }
+        except (json.JSONDecodeError, AttributeError, TypeError) as e:
+            log(f"    Canister submit response parse error: {e}")
+        # Can't parse — try to find hash, assume tentative success
+        hash_match = re.search(r'[A-F0-9]{64}', str(raw))
+        return {
+            "success": True,
+            "hash": hash_match.group(0) if hash_match else "",
+            "engine_result": "tesSUCCESS",
+            "engine_result_message": "Parse ambiguous — assumed success",
+        }
+
     # ── XRPL Action Handlers (policy-gated) ──────────────────
 
     def _act_swap(self, action: dict, cid: str) -> str:
@@ -2460,15 +2600,12 @@ class ChronicleMind:
                                    f"{amount} XRP swap needs operator cosign: {reason}")
             return f"false - Swap queued for operator approval ({amount} XRP, cosign tier)"
 
-        if not self.llm.dfx_path:
+        if not self.llm.icp_agent and not self.llm.dfx_path:
             self.db.record_swap(amount, 0, 0, 0, reason, "", False)
-            return "false - Swap skipped (no dfx): cannot sign transaction"
+            return "false - Swap skipped (no canister access): cannot sign transaction"
 
-        # Sign via canister
+        # Sign via canister (ICPAgent native -> dfx fallback)
         try:
-            env = os.environ.copy()
-            env["DFX_WARNING"] = "-mainnet_plaintext_identity"
-            # Fetch account info for signing
             acct = fetch_xrpl_account_info()
             if not acct["sequence"]:
                 return "false - Could not fetch XRPL account info for signing"
@@ -2476,69 +2613,97 @@ class ChronicleMind:
             xrp_price = self.db.latest_price("XRP")
             price_usd = xrp_price["price_usd"] if xrp_price else 0
 
-            if direction == "buy":
-                # Buy XRP: sell RLUSD, receive XRP
-                # max_rlusd = willing to pay up to 10% above spot per XRP
-                max_rlusd = f"{amount * price_usd * 1.1:.6f}" if price_usd > 0 else f"{amount * 3.0:.6f}"
-                canister_fn = "sign_swap_rlusd_to_xrp"
-                candid_args = (f'({amount_drops} : nat64, "{max_rlusd}", '
-                               f'{acct["fee_drops"]} : nat64, '
-                               f'{acct["sequence"]} : nat32, '
-                               f'{acct["last_ledger_sequence"]} : nat32)')
-            else:
-                # Sell XRP: sell XRP, receive RLUSD (original behavior)
-                min_rlusd = f"{amount * price_usd * 0.9:.6f}" if price_usd > 0 else f"{amount * 0.1:.6f}"
-                canister_fn = "sign_swap_xrp_to_rlusd"
-                candid_args = (f'({amount_drops} : nat64, "{min_rlusd}", '
-                               f'{acct["fee_drops"]} : nat64, '
-                               f'{acct["sequence"]} : nat32, '
-                               f'{acct["last_ledger_sequence"]} : nat32)')
+            signed_blob = None
+            sign_error = ""
 
-            log(f"    Swap direction={direction}, canister_fn={canister_fn}")
-            result = subprocess.run(
-                [self.llm.dfx_path, "canister", "--network", "ic", "call",
-                 CANISTER_ID, canister_fn, candid_args],
-                capture_output=True, text=True, timeout=30, env=env
-            )
-            if result.returncode != 0:
+            if direction == "buy":
+                max_rlusd = f"{amount * price_usd * 1.1:.6f}" if price_usd > 0 else f"{amount * 3.0:.6f}"
+                log(f"    Swap direction=buy, sign_swap_rlusd_to_xrp")
+                # Try ICPAgent native first
+                if self.llm.icp_agent:
+                    try:
+                        raw = self.llm.icp_agent.sign_swap_rlusd_to_xrp(
+                            amount_drops, max_rlusd, acct["fee_drops"],
+                            acct["sequence"], acct["last_ledger_sequence"])
+                        signed_blob = self._extract_blob_from_json(raw)
+                        if signed_blob:
+                            log("    Signed via ICPAgent (native)")
+                    except Exception as e:
+                        log(f"    ICPAgent sign failed: {e}")
+                # dfx fallback
+                if not signed_blob and self.llm.dfx_path:
+                    env = os.environ.copy()
+                    env["DFX_WARNING"] = "-mainnet_plaintext_identity"
+                    candid_args = (f'({amount_drops} : nat64, "{max_rlusd}", '
+                                   f'{acct["fee_drops"]} : nat64, '
+                                   f'{acct["sequence"]} : nat32, '
+                                   f'{acct["last_ledger_sequence"]} : nat32)')
+                    result = subprocess.run(
+                        [self.llm.dfx_path, "canister", "--network", "ic", "call",
+                         CANISTER_ID, "sign_swap_rlusd_to_xrp", candid_args],
+                        capture_output=True, text=True, timeout=30, env=env)
+                    if result.returncode != 0:
+                        sign_error = result.stderr.strip()
+                    else:
+                        signed_blob = self._extract_signed_blob(result.stdout)
+            else:
+                min_rlusd = f"{amount * price_usd * 0.9:.6f}" if price_usd > 0 else f"{amount * 0.1:.6f}"
+                log(f"    Swap direction=sell, sign_swap_xrp_to_rlusd")
+                # Try ICPAgent native first
+                if self.llm.icp_agent:
+                    try:
+                        raw = self.llm.icp_agent.sign_swap_xrp_to_rlusd(
+                            amount_drops, min_rlusd, acct["fee_drops"],
+                            acct["sequence"], acct["last_ledger_sequence"])
+                        signed_blob = self._extract_blob_from_json(raw)
+                        if signed_blob:
+                            log("    Signed via ICPAgent (native)")
+                    except Exception as e:
+                        log(f"    ICPAgent sign failed: {e}")
+                # dfx fallback
+                if not signed_blob and self.llm.dfx_path:
+                    env = os.environ.copy()
+                    env["DFX_WARNING"] = "-mainnet_plaintext_identity"
+                    candid_args = (f'({amount_drops} : nat64, "{min_rlusd}", '
+                                   f'{acct["fee_drops"]} : nat64, '
+                                   f'{acct["sequence"]} : nat32, '
+                                   f'{acct["last_ledger_sequence"]} : nat32)')
+                    result = subprocess.run(
+                        [self.llm.dfx_path, "canister", "--network", "ic", "call",
+                         CANISTER_ID, "sign_swap_xrp_to_rlusd", candid_args],
+                        capture_output=True, text=True, timeout=30, env=env)
+                    if result.returncode != 0:
+                        sign_error = result.stderr.strip()
+                    else:
+                        signed_blob = self._extract_signed_blob(result.stdout)
+
+            if not signed_blob:
                 self.db.record_swap(amount, 0, 0, 0, reason, "", False)
                 self.policy.record_tx("swap", amount, AGENT_WALLET, decision.tier.value,
-                                      "sign_failed", "", False, result.stderr.strip())
-                return f"false - Swap signing failed: {result.stderr.strip()}"
+                                      "sign_failed", "", False, sign_error or "no blob extracted")
+                return f"false - Swap signing failed: {sign_error or 'could not extract blob'}"
 
-            # Extract signed blob and submit to XRPL
-            signed_blob = self._extract_signed_blob(result.stdout)
-            if signed_blob:
-                submit_result = self.submit_to_xrpl(signed_blob)
-                tx_hash = submit_result.get("hash", "")
-                success = submit_result.get("success", False)
+            # Submit signed blob to XRPL
+            submit_result = self.submit_to_xrpl(signed_blob)
+            tx_hash = submit_result.get("hash", "")
+            success = submit_result.get("success", False)
 
-                xrp_price = self.db.latest_price("XRP")
-                price = xrp_price["price_usd"] if xrp_price else 0
-                self.db.record_swap(amount, amount * price, price, 0, reason, tx_hash, success)
-                self.policy.record_tx("swap", amount, AGENT_WALLET, decision.tier.value,
-                                      "executed", tx_hash, success, reason)
+            xrp_price = self.db.latest_price("XRP")
+            price = xrp_price["price_usd"] if xrp_price else 0
+            self.db.record_swap(amount, amount * price, price, 0, reason, tx_hash, success)
+            self.policy.record_tx("swap", amount, AGENT_WALLET, decision.tier.value,
+                                  "executed", tx_hash, success, reason)
 
-                if success:
-                    dir_label = "BUY" if direction == "buy" else "SELL"
-                    self._send_ntfy_tiered(decision.tier, f"Chronicle: Swap {dir_label} Executed",
-                                           f"{dir_label} {amount} XRP [{decision.tier.value}]: {reason}\nhash: {tx_hash[:16]}...")
-                    return f"true - Swap {dir_label} submitted: {amount} XRP (hash: {tx_hash[:16]}...)"
-                else:
-                    engine_msg = submit_result.get("engine_result_message", "unknown")
-                    self._send_ntfy_tiered(PolicyTier.PROHIBITED, "Chronicle: Swap FAILED",
-                                           f"{amount} XRP: {engine_msg}")
-                    return f"false - Swap submit failed: {submit_result.get('engine_result', 'unknown')}"
+            if success:
+                dir_label = "BUY" if direction == "buy" else "SELL"
+                self._send_ntfy_tiered(decision.tier, f"Chronicle: Swap {dir_label} Executed",
+                                       f"{dir_label} {amount} XRP [{decision.tier.value}]: {reason}\nhash: {tx_hash[:16]}...")
+                return f"true - Swap {dir_label} submitted: {amount} XRP (hash: {tx_hash[:16]}...)"
             else:
-                # No blob extracted - record as pending (legacy behavior)
-                xrp_price = self.db.latest_price("XRP")
-                price = xrp_price["price_usd"] if xrp_price else 0
-                self.db.record_swap(amount, amount * price, price, 0, reason, "pending", True)
-                self.policy.record_tx("swap", amount, AGENT_WALLET, decision.tier.value,
-                                      "signed_no_blob", "", False, "Could not extract tx_blob")
-                self._send_ntfy_tiered(decision.tier, "Chronicle: Swap Signed (no submit)",
-                                       f"{amount} XRP signed but blob not extractable: {reason}")
-                return f"true - Swap signed but not submitted (no tx_blob in response): {amount} XRP"
+                engine_msg = submit_result.get("engine_result_message", "unknown")
+                self._send_ntfy_tiered(PolicyTier.PROHIBITED, "Chronicle: Swap FAILED",
+                                       f"{amount} XRP: {engine_msg}")
+                return f"false - Swap submit failed: {submit_result.get('engine_result', 'unknown')}"
         except Exception as e:
             self.db.record_swap(amount, 0, 0, 0, reason, "", False)
             self.policy.record_tx("swap", amount, AGENT_WALLET, decision.tier.value,
@@ -2578,52 +2743,65 @@ class ChronicleMind:
                                    f"{amount} XRP -> {destination[:16]}...: {reason}")
             return f"false - Payment queued for operator approval ({amount} XRP, cosign tier)"
 
-        if not self.llm.dfx_path:
-            return "false - Payment skipped (no dfx): cannot sign transaction"
+        if not self.llm.icp_agent and not self.llm.dfx_path:
+            return "false - Payment skipped (no canister access): cannot sign transaction"
 
-        # Sign via canister using XrpPaymentParams record
+        # Sign via canister (ICPAgent native -> dfx fallback)
         try:
-            env = os.environ.copy()
-            env["DFX_WARNING"] = "-mainnet_plaintext_identity"
             acct = fetch_xrpl_account_info()
             if not acct["sequence"]:
                 return "false - Could not fetch XRPL account info for signing"
             amount_drops = int(amount * 1_000_000)
-            # sign_xrp_payment(XrpPaymentParams) where XrpPaymentParams = record {
-            #   destination: text, last_ledger_sequence: nat32,
-            #   amount_drops: nat64, fee_drops: nat64, sequence: nat32 }
-            candid_args = (f'(record {{ destination = "{destination}"; '
-                           f'last_ledger_sequence = {acct["last_ledger_sequence"]} : nat32; '
-                           f'amount_drops = {amount_drops} : nat64; '
-                           f'fee_drops = {acct["fee_drops"]} : nat64; '
-                           f'sequence = {acct["sequence"]} : nat32 }})')
-            result = subprocess.run(
-                [self.llm.dfx_path, "canister", "--network", "ic", "call",
-                 CANISTER_ID, "sign_xrp_payment", candid_args],
-                capture_output=True, text=True, timeout=30, env=env
-            )
-            if result.returncode != 0:
-                self.policy.record_tx("payment", amount, destination, decision.tier.value,
-                                      "sign_failed", "", False, result.stderr.strip())
-                return f"false - Payment signing failed: {result.stderr.strip()}"
 
-            signed_blob = self._extract_signed_blob(result.stdout)
-            if signed_blob:
-                submit_result = self.submit_to_xrpl(signed_blob)
-                tx_hash = submit_result.get("hash", "")
-                success = submit_result.get("success", False)
-                self.policy.record_tx("payment", amount, destination, decision.tier.value,
-                                      "executed", tx_hash, success, reason)
-                if success:
-                    self._send_ntfy_tiered(decision.tier, "Chronicle: Payment Sent",
-                                           f"{amount} XRP -> {destination[:16]}...\nhash: {tx_hash[:16]}...")
-                    return f"true - Payment sent: {amount} XRP -> {destination[:16]}... (hash: {tx_hash[:16]}...)"
+            signed_blob = None
+            sign_error = ""
+
+            # Try ICPAgent native first
+            if self.llm.icp_agent:
+                try:
+                    raw = self.llm.icp_agent.sign_xrp_payment(
+                        destination, amount_drops, acct["fee_drops"],
+                        acct["sequence"], acct["last_ledger_sequence"])
+                    signed_blob = self._extract_blob_from_json(raw)
+                    if signed_blob:
+                        log("    Signed via ICPAgent (native)")
+                except Exception as e:
+                    log(f"    ICPAgent sign_xrp_payment failed: {e}")
+
+            # dfx fallback
+            if not signed_blob and self.llm.dfx_path:
+                env = os.environ.copy()
+                env["DFX_WARNING"] = "-mainnet_plaintext_identity"
+                candid_args = (f'(record {{ destination = "{destination}"; '
+                               f'last_ledger_sequence = {acct["last_ledger_sequence"]} : nat32; '
+                               f'amount_drops = {amount_drops} : nat64; '
+                               f'fee_drops = {acct["fee_drops"]} : nat64; '
+                               f'sequence = {acct["sequence"]} : nat32 }})')
+                result = subprocess.run(
+                    [self.llm.dfx_path, "canister", "--network", "ic", "call",
+                     CANISTER_ID, "sign_xrp_payment", candid_args],
+                    capture_output=True, text=True, timeout=30, env=env)
+                if result.returncode != 0:
+                    sign_error = result.stderr.strip()
                 else:
-                    return f"false - Payment submit failed: {submit_result.get('engine_result', 'unknown')}"
-            else:
+                    signed_blob = self._extract_signed_blob(result.stdout)
+
+            if not signed_blob:
                 self.policy.record_tx("payment", amount, destination, decision.tier.value,
-                                      "signed_no_blob", "", False, "Could not extract tx_blob")
-                return f"false - Payment signed but no tx_blob extracted"
+                                      "sign_failed", "", False, sign_error or "no blob extracted")
+                return f"false - Payment signing failed: {sign_error or 'could not extract blob'}"
+
+            submit_result = self.submit_to_xrpl(signed_blob)
+            tx_hash = submit_result.get("hash", "")
+            success = submit_result.get("success", False)
+            self.policy.record_tx("payment", amount, destination, decision.tier.value,
+                                  "executed", tx_hash, success, reason)
+            if success:
+                self._send_ntfy_tiered(decision.tier, "Chronicle: Payment Sent",
+                                       f"{amount} XRP -> {destination[:16]}...\nhash: {tx_hash[:16]}...")
+                return f"true - Payment sent: {amount} XRP -> {destination[:16]}... (hash: {tx_hash[:16]}...)"
+            else:
+                return f"false - Payment submit failed: {submit_result.get('engine_result', 'unknown')}"
         except Exception as e:
             self.policy.record_tx("payment", amount, destination, decision.tier.value,
                                   "error", "", False, str(e))
@@ -2658,8 +2836,8 @@ class ChronicleMind:
                                    f"Finish: {finish_hours}h, Cancel: {cancel_hours}h\n{reason}")
             return f"false - Escrow queued for approval ({amount} XRP, {decision.tier.value} tier)"
 
-        if not self.llm.dfx_path:
-            return "false - Escrow skipped (no dfx): cannot sign transaction"
+        if not self.llm.icp_agent and not self.llm.dfx_path:
+            return "false - Escrow skipped (no canister access): cannot sign transaction"
 
         # Calculate XRPL timestamps (seconds since Ripple Epoch: 2000-01-01T00:00:00Z)
         ripple_epoch_offset = 946684800  # Unix timestamp of 2000-01-01
@@ -2668,50 +2846,65 @@ class ChronicleMind:
         cancel_after = (now_unix + int(cancel_hours * 3600)) - ripple_epoch_offset
 
         try:
-            # Fetch current sequence + ledger for signing
             acct = fetch_xrpl_account_info()
             amount_drops = int(amount * 1_000_000)
-            env = os.environ.copy()
-            env["DFX_WARNING"] = "-mainnet_plaintext_identity"
-            candid_arg = (
-                f'(record {{ destination = "{destination}"; '
-                f'amount_drops = {amount_drops} : nat64; '
-                f'fee_drops = {acct["fee_drops"]} : nat64; '
-                f'sequence = {acct["sequence"]} : nat32; '
-                f'last_ledger_sequence = {acct["last_ledger_sequence"]} : nat32; '
-                f'finish_after = opt ({finish_after} : nat32); '
-                f'cancel_after = opt ({cancel_after} : nat32); '
-                f'condition = null; destination_tag = null }})'
-            )
-            result = subprocess.run(
-                [self.llm.dfx_path, "canister", "--network", "ic", "call",
-                 "--identity", DFX_IDENTITY,
-                 CANISTER_ID, "sign_escrow_create", candid_arg],
-                capture_output=True, text=True, timeout=30, env=env
-            )
-            if result.returncode != 0:
-                self.policy.record_tx("escrow_create", amount, destination, decision.tier.value,
-                                      "sign_failed", "", False, result.stderr.strip())
-                return f"false - Escrow signing failed: {result.stderr.strip()}"
 
-            signed_blob = self._extract_signed_blob(result.stdout)
-            if signed_blob:
-                submit_result = self.submit_to_xrpl(signed_blob)
-                tx_hash = submit_result.get("hash", "")
-                success = submit_result.get("success", False)
-                self.policy.record_tx("escrow_create", amount, destination, decision.tier.value,
-                                      "executed", tx_hash, success, reason)
-                if success:
-                    self._send_ntfy_tiered(decision.tier, "Chronicle: Escrow Created",
-                                           f"{amount} XRP -> {destination[:16]}...\n"
-                                           f"Finish: {finish_hours}h, Cancel: {cancel_hours}h\nhash: {tx_hash[:16]}...")
-                    return f"true - Escrow created: {amount} XRP (finish {finish_hours}h, hash: {tx_hash[:16]}...)"
+            signed_blob = None
+            sign_error = ""
+
+            # Try ICPAgent native first
+            if self.llm.icp_agent:
+                try:
+                    raw = self.llm.icp_agent.sign_escrow_create(
+                        destination, amount_drops, acct["fee_drops"],
+                        acct["sequence"], acct["last_ledger_sequence"],
+                        finish_after=finish_after, cancel_after=cancel_after)
+                    signed_blob = self._extract_blob_from_json(raw)
+                    if signed_blob:
+                        log("    Signed via ICPAgent (native)")
+                except Exception as e:
+                    log(f"    ICPAgent sign_escrow_create failed: {e}")
+
+            # dfx fallback
+            if not signed_blob and self.llm.dfx_path:
+                env = os.environ.copy()
+                env["DFX_WARNING"] = "-mainnet_plaintext_identity"
+                candid_arg = (
+                    f'(record {{ destination = "{destination}"; '
+                    f'amount_drops = {amount_drops} : nat64; '
+                    f'fee_drops = {acct["fee_drops"]} : nat64; '
+                    f'sequence = {acct["sequence"]} : nat32; '
+                    f'last_ledger_sequence = {acct["last_ledger_sequence"]} : nat32; '
+                    f'finish_after = opt ({finish_after} : nat32); '
+                    f'cancel_after = opt ({cancel_after} : nat32); '
+                    f'condition = null; destination_tag = null }})')
+                result = subprocess.run(
+                    [self.llm.dfx_path, "canister", "--network", "ic", "call",
+                     "--identity", DFX_IDENTITY,
+                     CANISTER_ID, "sign_escrow_create", candid_arg],
+                    capture_output=True, text=True, timeout=30, env=env)
+                if result.returncode != 0:
+                    sign_error = result.stderr.strip()
                 else:
-                    return f"false - Escrow submit failed: {submit_result.get('engine_result', 'unknown')}"
-            else:
+                    signed_blob = self._extract_signed_blob(result.stdout)
+
+            if not signed_blob:
                 self.policy.record_tx("escrow_create", amount, destination, decision.tier.value,
-                                      "signed_no_blob", "", False, "Could not extract tx_blob")
-                return f"false - Escrow signed but no tx_blob extracted"
+                                      "sign_failed", "", False, sign_error or "no blob extracted")
+                return f"false - Escrow signing failed: {sign_error or 'could not extract blob'}"
+
+            submit_result = self.submit_to_xrpl(signed_blob)
+            tx_hash = submit_result.get("hash", "")
+            success = submit_result.get("success", False)
+            self.policy.record_tx("escrow_create", amount, destination, decision.tier.value,
+                                  "executed", tx_hash, success, reason)
+            if success:
+                self._send_ntfy_tiered(decision.tier, "Chronicle: Escrow Created",
+                                       f"{amount} XRP -> {destination[:16]}...\n"
+                                       f"Finish: {finish_hours}h, Cancel: {cancel_hours}h\nhash: {tx_hash[:16]}...")
+                return f"true - Escrow created: {amount} XRP (finish {finish_hours}h, hash: {tx_hash[:16]}...)"
+            else:
+                return f"false - Escrow submit failed: {submit_result.get('engine_result', 'unknown')}"
         except Exception as e:
             self.policy.record_tx("escrow_create", amount, destination, decision.tier.value,
                                   "error", "", False, str(e))
@@ -2726,52 +2919,68 @@ class ChronicleMind:
         if not sequence:
             return "false - Escrow finish requires sequence number"
 
-        if not self.llm.dfx_path:
-            return "false - Escrow finish skipped (no dfx): cannot sign transaction"
+        if not self.llm.icp_agent and not self.llm.dfx_path:
+            return "false - Escrow finish skipped (no canister access): cannot sign transaction"
 
         # Record in audit (escrow finish doesn't move new funds, just releases locked ones)
         self.policy.record_tx("escrow_finish", 0, owner, "autonomous",
                               "attempting", "", False, f"seq={sequence}")
 
         try:
-            # Fetch current sequence + ledger for signing
             acct = fetch_xrpl_account_info()
-            env = os.environ.copy()
-            env["DFX_WARNING"] = "-mainnet_plaintext_identity"
-            candid_arg = (
-                f'(record {{ owner = "{owner}"; '
-                f'offer_sequence = {sequence} : nat32; '
-                f'fee_drops = {acct["fee_drops"]} : nat64; '
-                f'sequence = {acct["sequence"]} : nat32; '
-                f'last_ledger_sequence = {acct["last_ledger_sequence"]} : nat32; '
-                f'condition = null; fulfillment = null }})'
-            )
-            result = subprocess.run(
-                [self.llm.dfx_path, "canister", "--network", "ic", "call",
-                 "--identity", DFX_IDENTITY,
-                 CANISTER_ID, "sign_escrow_finish", candid_arg],
-                capture_output=True, text=True, timeout=30, env=env
-            )
-            if result.returncode != 0:
-                self.policy.record_tx("escrow_finish", 0, owner, "autonomous",
-                                      "sign_failed", "", False, result.stderr.strip())
-                return f"false - Escrow finish signing failed: {result.stderr.strip()}"
 
-            signed_blob = self._extract_signed_blob(result.stdout)
-            if signed_blob:
-                submit_result = self.submit_to_xrpl(signed_blob)
-                tx_hash = submit_result.get("hash", "")
-                success = submit_result.get("success", False)
-                self.policy.record_tx("escrow_finish", 0, owner, "autonomous",
-                                      "executed", tx_hash, success, f"seq={sequence}")
-                if success:
-                    self._send_ntfy_tiered(PolicyTier.AUTONOMOUS, "Chronicle: Escrow Finished",
-                                           f"Owner: {owner[:16]}..., seq: {sequence}\nhash: {tx_hash[:16]}...")
-                    return f"true - Escrow finished: seq {sequence} (hash: {tx_hash[:16]}...)"
+            signed_blob = None
+            sign_error = ""
+
+            # Try ICPAgent native first
+            if self.llm.icp_agent:
+                try:
+                    raw = self.llm.icp_agent.sign_escrow_finish(
+                        owner, sequence, acct["fee_drops"],
+                        acct["sequence"], acct["last_ledger_sequence"])
+                    signed_blob = self._extract_blob_from_json(raw)
+                    if signed_blob:
+                        log("    Signed via ICPAgent (native)")
+                except Exception as e:
+                    log(f"    ICPAgent sign_escrow_finish failed: {e}")
+
+            # dfx fallback
+            if not signed_blob and self.llm.dfx_path:
+                env = os.environ.copy()
+                env["DFX_WARNING"] = "-mainnet_plaintext_identity"
+                candid_arg = (
+                    f'(record {{ owner = "{owner}"; '
+                    f'offer_sequence = {sequence} : nat32; '
+                    f'fee_drops = {acct["fee_drops"]} : nat64; '
+                    f'sequence = {acct["sequence"]} : nat32; '
+                    f'last_ledger_sequence = {acct["last_ledger_sequence"]} : nat32; '
+                    f'condition = null; fulfillment = null }})')
+                result = subprocess.run(
+                    [self.llm.dfx_path, "canister", "--network", "ic", "call",
+                     "--identity", DFX_IDENTITY,
+                     CANISTER_ID, "sign_escrow_finish", candid_arg],
+                    capture_output=True, text=True, timeout=30, env=env)
+                if result.returncode != 0:
+                    sign_error = result.stderr.strip()
                 else:
-                    return f"false - Escrow finish submit failed: {submit_result.get('engine_result', 'unknown')}"
+                    signed_blob = self._extract_signed_blob(result.stdout)
+
+            if not signed_blob:
+                self.policy.record_tx("escrow_finish", 0, owner, "autonomous",
+                                      "sign_failed", "", False, sign_error or "no blob extracted")
+                return f"false - Escrow finish signing failed: {sign_error or 'could not extract blob'}"
+
+            submit_result = self.submit_to_xrpl(signed_blob)
+            tx_hash = submit_result.get("hash", "")
+            success = submit_result.get("success", False)
+            self.policy.record_tx("escrow_finish", 0, owner, "autonomous",
+                                  "executed", tx_hash, success, f"seq={sequence}")
+            if success:
+                self._send_ntfy_tiered(PolicyTier.AUTONOMOUS, "Chronicle: Escrow Finished",
+                                       f"Owner: {owner[:16]}..., seq: {sequence}\nhash: {tx_hash[:16]}...")
+                return f"true - Escrow finished: seq {sequence} (hash: {tx_hash[:16]}...)"
             else:
-                return f"false - Escrow finish signed but no tx_blob extracted"
+                return f"false - Escrow finish submit failed: {submit_result.get('engine_result', 'unknown')}"
         except Exception as e:
             self.policy.record_tx("escrow_finish", 0, owner, "autonomous",
                                   "error", "", False, str(e))
@@ -2787,57 +2996,69 @@ class ChronicleMind:
         if not currency or not issuer:
             return "false - trustline_delete requires currency and issuer"
 
-        if not self.llm.dfx_path:
-            return "false - Trustline delete skipped (no dfx): cannot sign transaction"
+        if not self.llm.icp_agent and not self.llm.dfx_path:
+            return "false - Trustline delete skipped (no canister access): cannot sign transaction"
 
         # Audit the operation
         self.policy.record_tx("trustline_delete", 0, issuer, "autonomous",
                               "attempting", "", False, f"currency={currency}")
 
         try:
-            env = os.environ.copy()
-            env["DFX_WARNING"] = "-mainnet_plaintext_identity"
             acct = fetch_xrpl_account_info()
             if not acct["sequence"]:
                 return "false - Could not fetch XRPL account info for signing"
 
-            # sign_trustset(TrustSetParams) where TrustSetParams = record {
-            #   limit: text, issuer: text, currency: text,
-            #   last_ledger_sequence: nat32, fee_drops: nat64, sequence: nat32 }
-            candid_args = (f'(record {{ limit = "0"; '
-                           f'issuer = "{issuer}"; '
-                           f'currency = "{currency}"; '
-                           f'last_ledger_sequence = {acct["last_ledger_sequence"]} : nat32; '
-                           f'fee_drops = {acct["fee_drops"]} : nat64; '
-                           f'sequence = {acct["sequence"]} : nat32 }})')
-            result = subprocess.run(
-                [self.llm.dfx_path, "canister", "--network", "ic", "call",
-                 CANISTER_ID, "sign_trustset", candid_args],
-                capture_output=True, text=True, timeout=30, env=env
-            )
-            if result.returncode != 0:
-                self.policy.record_tx("trustline_delete", 0, issuer, "autonomous",
-                                      "sign_failed", "", False, result.stderr.strip())
-                return f"false - Trustline delete signing failed: {result.stderr.strip()}"
+            signed_blob = None
+            sign_error = ""
 
-            signed_blob = self._extract_signed_blob(result.stdout)
-            if signed_blob:
-                submit_result = self.submit_to_xrpl(signed_blob)
-                tx_hash = submit_result.get("hash", "")
-                success = submit_result.get("success", False)
-                self.policy.record_tx("trustline_delete", 0, issuer, "autonomous",
-                                      "executed", tx_hash, success, f"currency={currency}")
-                if success:
-                    self._send_ntfy_tiered(PolicyTier.AUTONOMOUS, "Chronicle: Trustline Deleted",
-                                           f"Removed {currency} trustline to {issuer[:16]}...\nhash: {tx_hash[:16]}...")
-                    return f"true - Trustline deleted: {currency} to {issuer[:16]}... (hash: {tx_hash[:16]}...)"
+            # Try ICPAgent native first
+            if self.llm.icp_agent:
+                try:
+                    raw = self.llm.icp_agent.sign_trustset(
+                        currency, issuer, "0", acct["fee_drops"],
+                        acct["sequence"], acct["last_ledger_sequence"])
+                    signed_blob = self._extract_blob_from_json(raw)
+                    if signed_blob:
+                        log("    Signed via ICPAgent (native)")
+                except Exception as e:
+                    log(f"    ICPAgent sign_trustset failed: {e}")
+
+            # dfx fallback
+            if not signed_blob and self.llm.dfx_path:
+                env = os.environ.copy()
+                env["DFX_WARNING"] = "-mainnet_plaintext_identity"
+                candid_args = (f'(record {{ limit = "0"; '
+                               f'issuer = "{issuer}"; '
+                               f'currency = "{currency}"; '
+                               f'last_ledger_sequence = {acct["last_ledger_sequence"]} : nat32; '
+                               f'fee_drops = {acct["fee_drops"]} : nat64; '
+                               f'sequence = {acct["sequence"]} : nat32 }})')
+                result = subprocess.run(
+                    [self.llm.dfx_path, "canister", "--network", "ic", "call",
+                     CANISTER_ID, "sign_trustset", candid_args],
+                    capture_output=True, text=True, timeout=30, env=env)
+                if result.returncode != 0:
+                    sign_error = result.stderr.strip()
                 else:
-                    engine_msg = submit_result.get("engine_result_message", "unknown")
-                    return f"false - Trustline delete submit failed: {submit_result.get('engine_result', 'unknown')} - {engine_msg}"
-            else:
+                    signed_blob = self._extract_signed_blob(result.stdout)
+
+            if not signed_blob:
                 self.policy.record_tx("trustline_delete", 0, issuer, "autonomous",
-                                      "signed_no_blob", "", False, "Could not extract tx_blob")
-                return f"false - Trustline delete signed but no tx_blob extracted"
+                                      "sign_failed", "", False, sign_error or "no blob extracted")
+                return f"false - Trustline delete signing failed: {sign_error or 'could not extract blob'}"
+
+            submit_result = self.submit_to_xrpl(signed_blob)
+            tx_hash = submit_result.get("hash", "")
+            success = submit_result.get("success", False)
+            self.policy.record_tx("trustline_delete", 0, issuer, "autonomous",
+                                  "executed", tx_hash, success, f"currency={currency}")
+            if success:
+                self._send_ntfy_tiered(PolicyTier.AUTONOMOUS, "Chronicle: Trustline Deleted",
+                                       f"Removed {currency} trustline to {issuer[:16]}...\nhash: {tx_hash[:16]}...")
+                return f"true - Trustline deleted: {currency} to {issuer[:16]}... (hash: {tx_hash[:16]}...)"
+            else:
+                engine_msg = submit_result.get("engine_result_message", "unknown")
+                return f"false - Trustline delete submit failed: {submit_result.get('engine_result', 'unknown')} - {engine_msg}"
         except Exception as e:
             self.policy.record_tx("trustline_delete", 0, issuer, "autonomous",
                                   "error", "", False, str(e))
@@ -2847,9 +3068,9 @@ class ChronicleMind:
         amount = float(action.get("amount_cloud", 0))
         reason = action.get("reason", "")
         log(f'  Executing: SwapCloudForIcp {{ amount: {amount}, reason: "{safe_truncate(reason, 60)}" }}')
-        # This requires ICPSwap canister interaction via dfx
-        if not self.llm.dfx_path:
-            return "false - No dfx available for CLOUD swap"
+        # This requires ICPSwap canister interaction (different canister)
+        if not self.llm.icp_agent and not self.llm.dfx_path:
+            return "false - No canister access available for CLOUD swap"
         return f"false - CLOUD->ICP swap not yet implemented in Python (TODO)"
 
     def _act_submit_research(self, action: dict, cid: str) -> str:
@@ -2868,10 +3089,20 @@ class ChronicleMind:
     def _act_acknowledge_research(self, action: dict, cid: str) -> str:
         finding_ids = action.get("finding_ids", [])
         log(f"  Executing: AcknowledgeResearch {{ ids: {finding_ids} }}")
-        # Mark findings as retrieved on canister
-        if self.llm.dfx_path and finding_ids:
+        if not finding_ids:
+            return "true - No finding IDs to acknowledge"
+        int_ids = [int(i) for i in finding_ids[:10]]
+        # Try ICPAgent native first
+        if self.llm.icp_agent:
             try:
-                ids_candid = ", ".join(str(int(i)) for i in finding_ids[:10])
+                self.llm.icp_agent.mark_findings_retrieved(int_ids)
+                return f"true - Acknowledged {len(int_ids)} research findings (native)"
+            except Exception as e:
+                log(f"    ICPAgent mark_findings_retrieved failed: {e}")
+        # dfx fallback
+        if self.llm.dfx_path:
+            try:
+                ids_candid = ", ".join(str(i) for i in int_ids)
                 env = os.environ.copy()
                 env["DFX_WARNING"] = "-mainnet_plaintext_identity"
                 subprocess.run(
@@ -2883,19 +3114,48 @@ class ChronicleMind:
                 )
             except Exception:
                 pass
-        return f"true - Acknowledged {len(finding_ids)} research findings"
+        return f"true - Acknowledged {len(int_ids)} research findings"
 
     def _act_web_search(self, action: dict, cid: str) -> str:
         query = action.get("query", "")
         max_results = action.get("max_results", 5)
         log(f'  Executing: WebSearch {{ query: "{safe_truncate(query, 60)}" }}')
-        # Use the research canister endpoint or a simple web fetch
-        if self.canister:
-            result = self.canister._post("/api/research", {
-                "query": query, "focus": "web search", "urls": []
-            })
-            return f"true - Web search queued: {safe_truncate(query, 60)}"
-        return "false - No canister for web search"
+        # DuckDuckGo HTML search — returns real results inline
+        try:
+            r = requests.get(
+                "https://html.duckduckgo.com/html/",
+                params={"q": query},
+                headers={"User-Agent": "Chronicle-Mind/1.0"},
+                timeout=15,
+            )
+            r.raise_for_status()
+            # Parse result snippets from HTML
+            import re
+            results = []
+            snippets = re.findall(r'class="result__snippet">(.*?)</a>', r.text, re.DOTALL)
+            titles = re.findall(r'class="result__a"[^>]*>(.*?)</a>', r.text, re.DOTALL)
+            for i, (title, snippet) in enumerate(zip(titles, snippets)):
+                if i >= max_results:
+                    break
+                clean_title = re.sub(r'<[^>]+>', '', title).strip()
+                clean_snippet = re.sub(r'<[^>]+>', '', snippet).strip()
+                results.append(f"{clean_title}: {clean_snippet}")
+            if results:
+                summary = " | ".join(results)
+                self.db.log_activity("mind", "web_search", f"Search: {safe_truncate(query, 40)}",
+                                     safe_truncate(summary, 500))
+                return f"true - {len(results)} results: {safe_truncate(summary, 300)}"
+            # Fallback to canister research if no results parsed
+            if self.canister:
+                self.canister._post("/api/research", {"query": query, "focus": "web search", "urls": []})
+                return f"true - Web search queued via canister: {safe_truncate(query, 60)}"
+            return "false - No search results found"
+        except Exception as e:
+            # Fallback to canister
+            if self.canister:
+                self.canister._post("/api/research", {"query": query, "focus": "web search", "urls": []})
+                return f"true - Web search queued (DDG failed: {e})"
+            return f"false - Web search failed: {e}"
 
     def _act_read_paper(self, action: dict, cid: str) -> str:
         arxiv_id = action.get("arxiv_id", "")
@@ -2988,12 +3248,14 @@ class ChronicleMind:
         if not self.llm.ollama_available:
             return "false - Local Qwen (Ollama) is not available"
         try:
-            prompt = (f"Topic: {topic}\n\nContext: {context}" if context else topic) + " /no_think"
+            prompt = (f"Topic: {topic}\n\nContext: {context}" if context else topic)
             msgs = [{"role": "user", "content": prompt}]
+            log(f"    Using deep model: {DEEP_MODEL}")
             r = requests.post(
                 f"{OLLAMA_URL}/api/chat",
-                json={"model": LOCAL_MODEL, "messages": msgs, "stream": False},
-                timeout=120,
+                json={"model": DEEP_MODEL, "messages": msgs, "stream": False,
+                      "options": {"num_ctx": 4096}},
+                timeout=600,  # Qwen3-32B thinking mode can take ~5min
             )
             r.raise_for_status()
             response = r.json().get("message", {}).get("content", "")
@@ -3124,57 +3386,320 @@ class ChronicleMind:
 
     # ── Meta-Evaluation Gate (Phase 2) ─────────────────────────
 
-    def meta_evaluate(self) -> str:
-        """Lightweight pre-reasoning check: should I continue, redirect, or pause?
-        Uses local Qwen 3B for speed (~5-10 seconds). Returns directive string."""
-        try:
-            # Get last 3 cycle summaries
-            recent = self.db.query(
-                "SELECT cycle_id, actions_taken, action_results FROM thought_stream "
-                "ORDER BY id DESC LIMIT 3"
-            )
-            if not recent:
-                return "continue"
+    # ── Meta-Evaluation Gate v2 (three-layer, post-reasoning, enforced) ──
 
-            summaries = []
-            for r in recent:
-                actions = r.get("actions_taken", "[]")
-                results = r.get("action_results", "")[:100]
-                summaries.append(f"  {r.get('cycle_id', '?')}: {actions} -> {results}")
+    @staticmethod
+    def compute_action_signatures(actions: List[Dict]) -> str:
+        """Compact signatures for action+parameter matching."""
+        sigs = []
+        for a in actions:
+            name = a.get("action", a.get("name", ""))
+            params = {k: str(v)[:100] for k, v in a.items() if k not in ("action", "name")}
+            if params:
+                param_str = "|".join(f"{k}={v}" for k, v in sorted(params.items()))
+                sig = f"{name}:{hashlib.md5(param_str.encode()).hexdigest()[:8]}"
+            else:
+                sig = name
+            sigs.append(sig)
+        return ",".join(sorted(sigs))
 
-            # Get current goal
-            goal = self.db.query_one(
-                "SELECT content FROM scratch_pad WHERE category='goal' AND resolved=0 "
-                "ORDER BY priority DESC LIMIT 1"
-            )
-            goal_text = goal.get("content", "none set") if goal else "none set"
+    def meta_gate_layer1(self, proposed: List[Dict], window: int = 6) -> Tuple[str, str]:
+        """Layer 1: Deterministic guard. Zero LLM cost. Catches obvious loops."""
+        history = self.db.query(
+            "SELECT actions_taken, action_signatures FROM thought_stream "
+            "ORDER BY id DESC LIMIT ?", (window,)
+        )
+        if len(history) < 2:
+            return ("continue", "insufficient history")
 
-            meta_prompt = (
-                f"Last 3 cycles:\n" + "\n".join(summaries) + "\n"
-                f"Current goal: {goal_text}\n\n"
-                f"Am I making progress, repeating myself, or stuck?\n"
-                f"Answer with ONLY one word: continue, redirect, or pause /no_think"
-            )
+        proposed_names = [a.get("action", a.get("name", "")) for a in proposed]
+        proposed_fp = tuple(sorted(proposed_names))
+        proposed_sig = self.compute_action_signatures(proposed)
 
-            # Use local Ollama directly for speed (skip the full LLM chain)
+        # Check 1: Action set fingerprint — same sorted action combo repeated
+        recent_fps = []
+        for h in history:
             try:
-                resp = requests.post(
-                    f"{OLLAMA_URL}/api/generate",
-                    json={"model": LOCAL_MODEL, "prompt": meta_prompt, "stream": False,
-                          "options": {"temperature": 0.3, "num_predict": 20}},
-                    timeout=30,
-                )
-                answer = resp.json().get("response", "").strip().lower()
-                # Extract the directive
-                if "redirect" in answer:
-                    return "redirect"
-                elif "pause" in answer:
-                    return "pause"
-                return "continue"
+                recent_fps.append(tuple(sorted(json.loads(h.get("actions_taken", "[]")))))
             except Exception:
-                return "continue"  # Default to continue if Ollama fails
-        except Exception:
+                pass
+        match_count = sum(1 for fp in recent_fps if fp == proposed_fp)
+        if match_count >= 3:
+            return ("redirect", f"action set {proposed_fp} repeated {match_count}x in {window} cycles")
+
+        # Check 2: Single action streak — one action in every recent cycle
+        for name in set(proposed_names):
+            streak = 0
+            for h in history:
+                try:
+                    if name in json.loads(h.get("actions_taken", "[]")):
+                        streak += 1
+                    else:
+                        break
+                except Exception:
+                    break
+            if streak >= 4:
+                return ("redirect", f"'{name}' in {streak} consecutive cycles")
+
+        # Check 3: Parameter hash — same action WITH same params (catches same question)
+        for h in history:
+            stored_sig = h.get("action_signatures", "")
+            if stored_sig and stored_sig == proposed_sig:
+                # Exact signature match — check how many times
+                sig_matches = sum(
+                    1 for hh in history
+                    if hh.get("action_signatures", "") == proposed_sig
+                )
+                if sig_matches >= 2:
+                    return ("redirect", f"identical action+params signature repeated {sig_matches}x")
+
+        # Check 4: A-B alternation pattern
+        if len(recent_fps) >= 4:
+            if (recent_fps[0] == recent_fps[2] and
+                    recent_fps[1] == recent_fps[3] and
+                    recent_fps[0] != recent_fps[1]):
+                if proposed_fp in (recent_fps[0], recent_fps[1]):
+                    return ("redirect", "A-B alternation pattern detected")
+
+        return ("continue", "no deterministic issues")
+
+    def meta_gate_layer2(self, proposed: List[Dict], goal_text: str,
+                         window: int = 8) -> Tuple[str, float, str]:
+        """Layer 2: Statistical guard. Zero LLM cost. Catches subtle patterns."""
+        import math
+        from collections import Counter
+
+        history = self.db.query(
+            "SELECT actions_taken, action_results, reasoning FROM thought_stream "
+            "ORDER BY id DESC LIMIT ?", (window,)
+        )
+        if len(history) < 3:
+            return ("continue", 0.0, "insufficient history")
+
+        scores = {}
+
+        # Signal 1: Action diversity (Shannon entropy)
+        all_actions = []
+        for h in history:
+            try:
+                all_actions.extend(json.loads(h.get("actions_taken", "[]")))
+            except Exception:
+                pass
+        if all_actions:
+            counts = Counter(all_actions)
+            total = len(all_actions)
+            entropy = -sum((c / total) * math.log2(c / total) for c in counts.values())
+            max_ent = math.log2(len(counts)) if len(counts) > 1 else 1.0
+            scores["diversity"] = entropy / max_ent if max_ent > 0 else 0.0
+
+        # Signal 2: Topic concentration — dynamic, no hardcoded keywords
+        all_reasoning = " ".join(
+            (h.get("reasoning", "") or "")[:300].lower() for h in history
+        )
+        words = [w for w in all_reasoning.split() if len(w) > 4]
+        if words:
+            wf = Counter(words)
+            top_word, top_count = wf.most_common(1)[0]
+            scores["topic_concentration"] = top_count / len(words)
+
+        # Signal 3: Result monotony (Jaccard similarity)
+        results = [h.get("action_results", "") or "" for h in history]
+        if len(results) >= 3:
+            sims = []
+            for i in range(len(results) - 1):
+                a = set(results[i].lower().split())
+                b = set(results[i + 1].lower().split())
+                if a | b:
+                    sims.append(len(a & b) / len(a | b))
+            if sims:
+                scores["result_similarity"] = sum(sims) / len(sims)
+
+        # Composite stuck score
+        weights = {"diversity": 0.4, "topic_concentration": 0.3, "result_similarity": 0.3}
+        stuck = 0.0
+        total_w = 0.0
+        for sig, val in scores.items():
+            w = weights.get(sig, 0)
+            if w:
+                total_w += w
+                if sig == "diversity":
+                    stuck += w * (1.0 - val)  # low diversity = high stuck
+                else:
+                    stuck += w * val
+        if total_w > 0:
+            stuck /= total_w
+
+        detail = ", ".join(f"{k}={v:.2f}" for k, v in scores.items())
+
+        if stuck >= 0.7:
+            return ("redirect", stuck, f"stuck={stuck:.2f} ({detail})")
+        elif stuck >= 0.5:
+            return ("ambiguous", stuck, f"stuck={stuck:.2f} ({detail})")
+        return ("continue", stuck, f"stuck={stuck:.2f} ({detail})")
+
+    def meta_gate_layer3(self, proposed: List[Dict], goal_text: str,
+                         stuck_score: float) -> str:
+        """Layer 3: LLM arbiter. ~165 tokens. Only called when ambiguous."""
+        history = self.db.query(
+            "SELECT cycle_id, actions_taken, action_results FROM thought_stream "
+            "ORDER BY id DESC LIMIT 4"
+        )
+        summaries = []
+        for h in history:
+            acts = h.get("actions_taken", "[]")
+            res = (h.get("action_results", "") or "")[:60]
+            summaries.append(f"  {h.get('cycle_id', '?')}: {acts} -> {res}")
+
+        proposed_names = json.dumps([a.get("action", "") for a in proposed])
+        prompt = (
+            f"CYCLES:\n" + "\n".join(summaries) + "\n"
+            f"PROPOSED: {proposed_names}\n"
+            f"GOAL: {safe_truncate(goal_text, 80)}\n"
+            f"STUCK_SCORE: {stuck_score:.2f}\n\n"
+            f"Is this plan novel progress, repetitive, or stuck? "
+            f"One word: continue, redirect, or pause"
+        )
+        try:
+            resp = requests.post(
+                f"{OLLAMA_URL}/api/generate",
+                json={"model": LOCAL_MODEL, "prompt": prompt, "stream": False,
+                      "options": {"temperature": 0.2, "num_predict": 15}},
+                timeout=30,
+            )
+            answer = resp.json().get("response", "").strip().lower()
+            if "redirect" in answer:
+                return "redirect"
+            elif "pause" in answer:
+                return "pause"
             return "continue"
+        except Exception:
+            return "redirect" if stuck_score >= 0.6 else "continue"
+
+    def meta_gate(self, proposed: List[Dict], goal_text: str) -> Tuple[str, str]:
+        """Three-layer meta-evaluation gate. Runs AFTER reasoning, BEFORE execution.
+        Returns (verdict, explanation). Verdict: continue | redirect | clarify | pause."""
+
+        # Layer 1: Deterministic
+        v1, reason1 = self.meta_gate_layer1(proposed)
+        if v1 != "continue":
+            log(f"  META-GATE L1: {v1} — {reason1}")
+            return (v1, f"[L1-deterministic] {reason1}")
+
+        # Layer 2: Statistical
+        v2, score2, reason2 = self.meta_gate_layer2(proposed, goal_text)
+        if v2 == "redirect":
+            log(f"  META-GATE L2: redirect — {reason2}")
+            return ("redirect", f"[L2-statistical] {reason2}")
+        if v2 == "continue":
+            log(f"  META-GATE L2: continue ({reason2})")
+            return ("continue", f"[L2-statistical] {reason2}")
+
+        # Ambiguous zone (0.5-0.7): prefer clarify over LLM arbiter
+        # Check if we recently clarified (avoid spamming operator)
+        recent_clarify = self.db.query_one(
+            "SELECT id FROM scratch_pad WHERE category='meta-clarify' "
+            "AND resolved=0 AND created_at > ? LIMIT 1",
+            (now_ts() - 3600,)  # within last hour
+        )
+        if recent_clarify:
+            # Already asked recently — fall through to L3 arbiter
+            v3 = self.meta_gate_layer3(proposed, goal_text, score2)
+            log(f"  META-GATE L3: {v3} (stuck={score2:.2f}, clarify cooldown)")
+            return (v3, f"[L3-llm-arbiter] stuck={score2:.2f} (clarify on cooldown)")
+
+        # Ask the operator for guidance
+        log(f"  META-GATE CLARIFY: stuck={score2:.2f} — requesting operator guidance")
+        return ("clarify", f"[L2-ambiguous] {reason2}")
+
+    def meta_gate_enforce(self, actions: List[Dict], verdict: str,
+                          explanation: str) -> List[Dict]:
+        """Enforce meta-gate verdict by replacing actions if needed."""
+        if verdict == "continue":
+            return actions
+
+        original_names = [a.get("action", a.get("name", "")) for a in actions]
+
+        if verdict == "clarify":
+            # Build context about what Mind was trying to do and why it's uncertain
+            proposed_desc = ", ".join(original_names)
+            # Get recent action pattern for context
+            recent = self.db.query(
+                "SELECT actions_taken FROM thought_stream ORDER BY id DESC LIMIT 4"
+            )
+            recent_actions = []
+            for r in recent:
+                try:
+                    recent_actions.extend(json.loads(r.get("actions_taken", "[]")))
+                except Exception:
+                    pass
+            recent_pattern = ", ".join(dict.fromkeys(recent_actions))  # unique, ordered
+
+            clarify_msg = (
+                f"I'm in an ambiguous state and want your guidance before acting. "
+                f"I was about to: [{proposed_desc}]. "
+                f"My recent actions have been: [{recent_pattern}]. "
+                f"Gate analysis: {explanation}. "
+                f"Should I continue this direction, shift focus, or is there something "
+                f"specific you'd like me to work on?"
+            )
+            log(f"  META-GATE CLARIFY — asking operator. Was: {original_names}")
+            # Store as trackable clarification request
+            self.db.write_note(
+                f"CLARIFY REQUEST: Was about to {proposed_desc}. {explanation}",
+                category="meta-clarify",
+                priority=7,
+            )
+            return [{
+                "action": "message_operator",
+                "message": clarify_msg,
+                "reason": f"meta-gate clarify: {explanation}",
+            }]
+
+        if verdict == "pause":
+            log(f"  META-GATE PAUSED — observation only. Was: {original_names}")
+            self.db.write_note(
+                f"META-GATE PAUSED: {original_names}. Reason: {explanation}",
+                category="meta-eval",
+            )
+            return [{"action": "no_action", "reason": f"meta-gate pause: {explanation}"}]
+
+        # verdict == "redirect": replace repeated actions with fresh ones
+        recent = self.db.query(
+            "SELECT actions_taken FROM thought_stream ORDER BY id DESC LIMIT 4"
+        )
+        recent_types = set()
+        for r in recent:
+            try:
+                recent_types.update(json.loads(r.get("actions_taken", "[]")))
+            except Exception:
+                pass
+
+        fresh_pool = [a for a in [
+            "web_search", "creative_explore", "nostr_post", "read_paper",
+            "consult_local_qwen", "trigger_reflection",
+        ] if a not in recent_types]
+        if not fresh_pool:
+            fresh_pool = ["creative_explore", "web_search"]
+
+        new_actions = []
+        for a in actions:
+            name = a.get("action", a.get("name", ""))
+            if name in recent_types and fresh_pool:
+                replacement = fresh_pool.pop(0)
+                new_actions.append({"action": replacement})
+            else:
+                new_actions.append(a)
+
+        if not new_actions:
+            new_actions.append({"action": fresh_pool[0] if fresh_pool else "creative_explore"})
+
+        new_names = [a.get("action", "") for a in new_actions]
+        log(f"  META-GATE REDIRECTED: {original_names} -> {new_names}")
+        self.db.write_note(
+            f"META-GATE REDIRECTED: {original_names} -> {new_names}. Reason: {explanation}",
+            category="meta-eval",
+        )
+        return new_actions
 
     # ── Main Cycle ──────────────────────────────────────────────
 
@@ -3193,10 +3718,6 @@ class ChronicleMind:
             if resolved_count > 0:
                 log(f"  Housekeeping: auto-resolved {resolved_count} stale notes (>48h)")
 
-            # Phase 0.5: Meta-evaluation gate (Phase 2 upgrade)
-            meta_directive = self.meta_evaluate()
-            log(f"  Meta-eval: {meta_directive}")
-
             # Phase 1: Health
             health = self.phase_health_check()
 
@@ -3206,8 +3727,7 @@ class ChronicleMind:
             # Phase 2: Context
             ctx = self.phase_gather_context(health)
 
-            # Inject meta-evaluation result and exploration mode into context
-            ctx["meta_directive"] = meta_directive
+            # Inject exploration mode into context
             ctx["is_explore"] = is_explore
 
             # Check if deep reflection is due
@@ -3224,6 +3744,16 @@ class ChronicleMind:
 
             if deep:
                 self.db.set_ts("last_reflection")
+
+            # Phase 3.5: Meta-Evaluation Gate (post-reasoning, pre-execution)
+            goal_row = self.db.query_one(
+                "SELECT content FROM scratch_pad WHERE category='goal' AND resolved=0 "
+                "ORDER BY priority DESC LIMIT 1"
+            )
+            gate_goal = goal_row.get("content", "none set") if goal_row else "none set"
+            verdict, gate_explanation = self.meta_gate(actions, gate_goal)
+            log(f"  Meta-gate: {verdict} — {gate_explanation}")
+            actions = self.meta_gate_enforce(actions, verdict, gate_explanation)
 
             # Execute
             action_results = self.execute_actions(actions, cid)
@@ -3252,22 +3782,35 @@ class ChronicleMind:
             )
 
             # Log thought (now includes results for next-cycle feedback)
+            # Prepend model tag to context_summary for dashboard visibility
+            ctx_with_model = f"[{model or 'unknown'}] {safe_truncate(ctx_snapshot, 480)}"
             self.db.log_thought(
                 cid=cid,
                 reasoning=safe_truncate(raw_response, 2000),
-                context_summary=safe_truncate(ctx_snapshot, 500),
+                context_summary=ctx_with_model,
                 actions=json.dumps(action_names),
                 results=safe_truncate(results_summary, 500),
+                action_sigs=self.compute_action_signatures(actions),
             )
 
-            # Store thought to canister via dfx (more reliable than HTTP)
+            # Store thought to canister (ICPAgent native -> dfx fallback)
             if raw_response:
                 stored_chars = 0
-                if self.llm.dfx_path:
+                truncated = safe_truncate(raw_response, 1500)
+                ctx_trunc = safe_truncate(ctx_snapshot, 200)
+                # Try ICPAgent native first
+                if self.llm.icp_agent:
                     try:
-                        truncated = safe_truncate(raw_response, 1500)
+                        self.llm.icp_agent.store_mind_thought(
+                            cid, truncated, ctx_trunc, action_names)
+                        stored_chars = len(truncated)
+                    except Exception as e:
+                        log(f"    ICPAgent store_mind_thought failed: {e}")
+                # dfx fallback
+                if not stored_chars and self.llm.dfx_path:
+                    try:
                         escaped = truncated.replace("\\", "\\\\").replace('"', '\\"').replace("\n", "\\n")
-                        ctx_escaped = safe_truncate(ctx_snapshot, 200)
+                        ctx_escaped = ctx_trunc.replace("\\", "\\\\").replace('"', '\\"').replace("\n", "\\n")
                         actions_candid = "; ".join(f'"{a}"' for a in action_names)
                         env = os.environ.copy()
                         env["DFX_WARNING"] = "-mainnet_plaintext_identity"
@@ -3299,7 +3842,7 @@ class ChronicleMind:
                     f"This cycle I did: {', '.join(action_names)}. "
                     f"{success_count} succeeded, {fail_count} failed. "
                     f"Results: {results_summary[:200]}\n"
-                    f"Write ONE sentence: what did I learn or what should I do differently next cycle? /no_think"
+                    f"Write ONE sentence: what did I learn or what should I do differently next cycle?"
                 )
                 resp = requests.post(
                     f"{OLLAMA_URL}/api/generate",
@@ -3324,19 +3867,31 @@ class ChronicleMind:
 
             # Log activity
             self.db.log_activity(
-                source="qwen",
+                source="mind",
                 atype="cognitive_cycle",
                 title=f"Cycle {cid}",
                 content=f"Actions: {', '.join(action_names)}\nModel: {model}\n"
                         f"{safe_truncate(raw_response, 500)}",
             )
 
-            # Notifications
+            # Notifications — clear Mind identity with model tag
+            if "olmo" in (model or "").lower() or "agx" in (model or "").lower():
+                model_tag = "local-OLMo"
+                discord_emoji = "mind-local"
+            elif "qwen" in (model or "").lower():
+                model_tag = "local-Qwen3"
+                discord_emoji = "mind-local"
+            elif "icp" in (model or "").lower():
+                model_tag = "on-chain"
+                discord_emoji = "mind-chain"
+            else:
+                model_tag = model or "unknown"
+                discord_emoji = "system"
             send_discord(
-                f"Cycle {cid}: {', '.join(action_names)} (model: {model})",
-                source="qwen",
+                f"Mind [{model_tag}] {cid}: {', '.join(action_names)}",
+                source=discord_emoji,
             )
-            log(f"  Discord notification sent: [{model.split('-')[0] if model else 'system'}]")
+            log(f"  Discord notification sent: Mind [{model_tag}]")
 
             # ntfy reserved for operator messages & wallet events only
             # Routine cycle activity goes to Discord/dashboard (less noise on phone)
@@ -3361,8 +3916,7 @@ class ChronicleMind:
         # Report LLM status
         if self.llm.icp_available:
             log(f"  ICP LLM available (qwen3)")
-        if self.llm.kimi_available:
-            log(f"  Kimi fallback available (kimi-k2.5)")
+
         if self.llm.ollama_available:
             log(f"  Ollama fallback available (sovereignty layer active)")
         log(f"LLM: {self.llm.status_line()}")
@@ -3412,8 +3966,7 @@ class ChronicleMind:
 
         if self.llm.icp_available:
             log(f"  ICP LLM available (qwen3)")
-        if self.llm.kimi_available:
-            log(f"  Kimi fallback available (kimi-k2.5)")
+
         if self.llm.ollama_available:
             log(f"  Ollama fallback available (sovereignty layer active)")
         log(f"LLM: {self.llm.status_line()}")
