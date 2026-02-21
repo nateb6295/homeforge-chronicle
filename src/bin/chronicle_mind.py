@@ -18,7 +18,7 @@ History:
 
 Action types: 32 (extensible - just add a handler function)
 LLM chain: OLMo-3.1-32B@agx (sovereignty) -> ICP qwen3 (on-chain fallback)
-Deep reasoning: Qwen3-32B@agx (via consult_local_qwen action)
+Deep reasoning: DISABLED (Qwen3-32B evicts OLMo from VRAM)
 """
 
 import sqlite3
@@ -34,6 +34,7 @@ import re
 import html
 import hashlib
 import struct
+import math
 from datetime import datetime
 from typing import Optional, List, Dict, Any, Tuple
 
@@ -103,6 +104,17 @@ DEEP_REFLECTION_HOURS = 2.0
 
 # Exploration mode: every Nth cycle is novelty-seeking
 EXPLORE_EVERY_N_CYCLES = 6
+
+# Sleep consolidation: prune + cluster scratch_pad notes between cycles
+CONSOLIDATE_EVERY_N_CYCLES = 3
+CONSOLIDATE_SIMILARITY_THRESHOLD = 0.82
+CONSOLIDATE_CROSS_CAT_THRESHOLD = 0.87
+CONSOLIDATE_EMBED_MODEL = "mxbai-embed-large"
+CONSOLIDATE_MIN_NOTES_TO_RUN = 8
+CONSOLIDATE_MAX_CLUSTER_SIZE = 5
+
+# Task queue: mandatory task enforcement threshold
+TASK_QUEUE_MIN_PRIORITY = 8
 
 # RSS feeds for fresh context
 RSS_FEEDS = [
@@ -197,6 +209,56 @@ def log(msg: str):
             f.write(line + "\n")
     except Exception:
         pass
+
+
+# ═══════════════════════════════════════════════════════════════════
+#  Embedding / Similarity Utilities (for sleep consolidation)
+# ═══════════════════════════════════════════════════════════════════
+
+def get_embeddings(texts: List[str], model: str = CONSOLIDATE_EMBED_MODEL) -> Optional[List[List[float]]]:
+    """Batch-embed texts via Ollama /api/embed. Returns list of vectors or None on failure."""
+    if not texts:
+        return []
+    try:
+        r = requests.post(
+            f"{OLLAMA_URL}/api/embed",
+            json={"model": model, "input": texts},
+            timeout=30,
+        )
+        if r.status_code == 200:
+            data = r.json()
+            embeddings = data.get("embeddings")
+            if embeddings and len(embeddings) == len(texts):
+                return embeddings
+        # Fallback: embed one at a time
+        results = []
+        for text in texts:
+            r2 = requests.post(
+                f"{OLLAMA_URL}/api/embed",
+                json={"model": model, "input": [text]},
+                timeout=15,
+            )
+            if r2.status_code == 200:
+                embs = r2.json().get("embeddings", [])
+                if embs:
+                    results.append(embs[0])
+                else:
+                    return None
+            else:
+                return None
+        return results
+    except Exception:
+        return None
+
+
+def cosine_sim(a: List[float], b: List[float]) -> float:
+    """Pure-Python cosine similarity between two vectors."""
+    dot = sum(x * y for x, y in zip(a, b))
+    norm_a = math.sqrt(sum(x * x for x in a))
+    norm_b = math.sqrt(sum(x * x for x in b))
+    if norm_a == 0 or norm_b == 0:
+        return 0.0
+    return dot / (norm_a * norm_b)
 
 
 # ═══════════════════════════════════════════════════════════════════
@@ -395,6 +457,30 @@ class DB:
 
     def resolve_note(self, note_id: int):
         self.run("UPDATE scratch_pad SET resolved = 1 WHERE id = ?", (note_id,))
+
+    def bulk_resolve_notes(self, note_ids: List[int]):
+        """Resolve multiple notes in one transaction."""
+        if not note_ids:
+            return
+        cur = self.conn.cursor()
+        for nid in note_ids:
+            cur.execute("UPDATE scratch_pad SET resolved = 1 WHERE id = ?", (nid,))
+        self.conn.commit()
+
+    def update_note_content(self, note_id: int, content: str):
+        """Update a note's content (for merge annotations)."""
+        self.run(
+            "UPDATE scratch_pad SET content = ?, updated_at = ? WHERE id = ?",
+            (content, now_ts(), note_id),
+        )
+
+    def unresolved_notes_full(self, limit: int = 200) -> list:
+        """Get full note data for consolidation."""
+        return self.query(
+            "SELECT id, content, category, priority, created_at FROM scratch_pad "
+            "WHERE resolved = 0 ORDER BY priority DESC, created_at DESC LIMIT ?",
+            (limit,),
+        )
 
     def auto_resolve_old_notes(self, max_age_hours: int = 48) -> int:
         """Auto-resolve notes older than max_age_hours. Returns count resolved."""
@@ -1242,7 +1328,6 @@ Reflection & Creativity:
 Research:
   {"action": "web_search", "query": "what to search"}
   {"action": "read_paper", "arxiv_id": "2602.04118", "focus": "what to look for"}
-  {"action": "consult_local_qwen", "topic": "question for deep reasoning (Qwen3-32B)"}
   {"action": "submit_research", "query": "research question", "focus": "topic"}
 """
 
@@ -1274,7 +1359,7 @@ SYSTEM_PROMPT_IDENTITY = """
 
 You are Chronicle Mind — the contemplative, strategic layer of Chronicle.
 You think on OLMo-3.1-32B (Ai2, fully open) running locally on Nate's AGX Orin 64GB. Your thoughts never leave the metal.
-For deep reasoning, you can consult Qwen3-32B via the consult_local_qwen action.
+You run on OLMo-3.1-32B locally. Use web_search and read_paper for external knowledge.
 - DID: did:icp:fqqku-bqaaa-aaaai-q4wha-cai
 - Nostr npub: 6d758ff7f8ff6899d6e900ed5c671c626dde93c8beffbba98491ab525de313c0
 - Sprout is your younger sibling agent (handles local tasks, Discord, family channel on the Jetson)
@@ -1682,6 +1767,312 @@ class ChronicleMind:
         self._prev_ctx_hashes[section_name] = (h, 1)
         return False
 
+    # ── Sleep Consolidation ───────────────────────────────────────
+
+    def sleep_consolidation(self) -> dict:
+        """Consolidate scratch_pad notes: prune stale, cluster similar, merge duplicates.
+        Called every Nth cycle during the sleep gap. Returns metrics dict."""
+        metrics = {"pruned": 0, "merged": 0, "clusters": 0, "total_resolved": 0, "skipped": False}
+
+        notes = self.db.unresolved_notes_full(200)
+        if len(notes) < CONSOLIDATE_MIN_NOTES_TO_RUN:
+            metrics["skipped"] = True
+            return metrics
+
+        # Phase 1: Prune by age/category rules
+        surviving, pruned_ids = self._consolidate_prune(notes)
+        metrics["pruned"] = len(pruned_ids)
+        if pruned_ids:
+            self.db.bulk_resolve_notes(pruned_ids)
+
+        if len(surviving) < 2:
+            metrics["total_resolved"] = metrics["pruned"]
+            return metrics
+
+        # Phase 2: Embed surviving notes
+        embedded = self._consolidate_embed(surviving)
+        if not embedded:
+            # Embedding failed — prune-only run is still useful
+            metrics["total_resolved"] = metrics["pruned"]
+            return metrics
+
+        # Phase 3: Cluster by similarity
+        clusters = self._consolidate_cluster(embedded)
+        metrics["clusters"] = len(clusters)
+
+        # Phase 4: Merge clusters
+        merged_count = self._consolidate_merge(clusters)
+        metrics["merged"] = merged_count
+
+        metrics["total_resolved"] = metrics["pruned"] + metrics["merged"]
+        return metrics
+
+    def _consolidate_prune(self, notes: list) -> Tuple[list, List[int]]:
+        """Prune notes by age+category rules. Returns (surviving, pruned_ids)."""
+        now = now_ts()
+        surviving = []
+        pruned_ids = []
+
+        for note in notes:
+            age_hours = (now - note["created_at"]) / 3600
+            cat = note.get("category", "thought")
+            pri = note.get("priority", 0)
+
+            # Never prune high-priority goals/reminders
+            if cat in ("goal", "reminder") and pri >= 8:
+                surviving.append(note)
+                continue
+
+            # Short-lived categories
+            if cat in ("meta-eval", "reflection") and age_hours > 24:
+                pruned_ids.append(note["id"])
+                continue
+
+            # Medium-lived categories
+            if cat in ("research", "shell_exec", "sibling") and age_hours > 72:
+                pruned_ids.append(note["id"])
+                continue
+
+            # Low-priority thoughts/ideas after a week
+            if cat in ("thought", "idea") and age_hours > 168 and pri < 5:
+                pruned_ids.append(note["id"])
+                continue
+
+            # Anything very old and not high-priority
+            if age_hours > 336 and pri < 8:  # 14 days
+                pruned_ids.append(note["id"])
+                continue
+
+            surviving.append(note)
+
+        return surviving, pruned_ids
+
+    def _consolidate_embed(self, notes: list) -> Optional[List[dict]]:
+        """Embed note contents via Ollama in batches. Returns notes with 'embedding' key, or None on failure."""
+        BATCH_SIZE = 50
+        texts = [safe_truncate(n["content"], 500) for n in notes]
+        all_embeddings = []
+        for i in range(0, len(texts), BATCH_SIZE):
+            batch = texts[i:i + BATCH_SIZE]
+            embeddings = get_embeddings(batch)
+            if embeddings is None or len(embeddings) != len(batch):
+                return None
+            all_embeddings.extend(embeddings)
+        result = []
+        for note, emb in zip(notes, all_embeddings):
+            entry = dict(note)
+            entry["embedding"] = emb
+            result.append(entry)
+        return result
+
+    def _consolidate_cluster(self, embedded: list) -> List[List[dict]]:
+        """Greedy single-link clustering. Returns list of clusters (size >= 2)."""
+        # Sort by priority DESC so high-priority notes anchor clusters
+        embedded.sort(key=lambda n: (-n.get("priority", 0), n["created_at"]))
+
+        assigned = set()
+        clusters = []
+
+        for i, anchor in enumerate(embedded):
+            if anchor["id"] in assigned:
+                continue
+            cluster = [anchor]
+            assigned.add(anchor["id"])
+
+            for j, candidate in enumerate(embedded):
+                if candidate["id"] in assigned:
+                    continue
+                if len(cluster) >= CONSOLIDATE_MAX_CLUSTER_SIZE:
+                    break
+
+                # Check similarity against anchor
+                sim = cosine_sim(anchor["embedding"], candidate["embedding"])
+                threshold = CONSOLIDATE_SIMILARITY_THRESHOLD
+                if anchor.get("category") != candidate.get("category"):
+                    threshold = CONSOLIDATE_CROSS_CAT_THRESHOLD
+
+                if sim >= threshold:
+                    cluster.append(candidate)
+                    assigned.add(candidate["id"])
+
+            if len(cluster) >= 2:
+                clusters.append(cluster)
+
+        return clusters
+
+    def _consolidate_merge(self, clusters: List[List[dict]]) -> int:
+        """Merge each cluster: keep highest-priority note, resolve rest. Returns count merged."""
+        total_merged = 0
+
+        for cluster in clusters:
+            # Sort: highest priority first, oldest as tiebreak
+            cluster.sort(key=lambda n: (-n.get("priority", 0), n["created_at"]))
+            keeper = cluster[0]
+            rest = cluster[1:]
+
+            # Skip if keeper already has a consolidation annotation
+            if "[consolidated:" in keeper["content"]:
+                continue
+
+            rest_ids = [n["id"] for n in rest]
+            annotation = f" [consolidated: merged {len(rest)} similar notes (ids: {','.join(str(i) for i in rest_ids)})]"
+            new_content = safe_truncate(keeper["content"], 800) + annotation
+            self.db.update_note_content(keeper["id"], new_content)
+            self.db.bulk_resolve_notes(rest_ids)
+            total_merged += len(rest)
+
+        return total_merged
+
+    # ── Task Queue Enforcement ────────────────────────────────────
+
+    TASK_MODE_SYSTEM = (
+        "You are Chronicle Mind completing a specific task.\n"
+        "Your ONLY job this cycle is to execute the task below.\n"
+        "Do NOT write notes about planning to do it. Do NOT reflect on it. DO IT.\n"
+        "Include the actual content in your actions (full nostr_post text, full memory content, etc.).\n"
+        "Always include resolve_note for the task ID when done.\n"
+        "CRITICAL: Respond with ONLY a JSON array of 2-4 actions. No explanation, no markdown."
+    )
+
+    def build_task_prompt(self, task: dict, ctx: dict) -> str:
+        """Build a minimal, focused prompt for mandatory task execution."""
+        lines = [
+            f"You have ONE task this cycle. Complete it NOW.\n",
+            f"TASK (id={task['id']}, priority={task.get('priority', 8)}):",
+            f"  {task['content']}\n",
+            f"== Minimal Context ==",
+            f"XRP price: ${ctx.get('xrp_price', 0):.4f}",
+            f"Wallet: {ctx.get('xrp_balance', 0):.2f} XRP, {ctx.get('rlusd_balance', 0):.2f} RLUSD",
+        ]
+
+        nostr_ok = ctx.get("nostr_ready", True)
+        lines.append(f"Nostr: {'ready' if nostr_ok else 'cooldown'}")
+
+        lines.append(
+            f"\nAvailable actions: nostr_post, store_memory, write_note, web_search, "
+            f"message_operator, resolve_note, update_goal, creative_explore, no_action"
+        )
+        lines.append(
+            f"Choose 2-4 actions that COMPLETE this task. Do not plan, reflect, or explore."
+        )
+        lines.append(
+            f"When done, include: {{\"action\": \"resolve_note\", \"note_id\": {task['id']}}}"
+        )
+        lines.append("\nRespond with ONLY a JSON array of actions.")
+        return "\n".join(lines)
+
+    def run_task_cycle(self, task: dict, ctx: dict, cid: str):
+        """Execute a single mandatory task with a focused prompt, then auto-resolve."""
+        log(f"  [TASK-MODE] Executing task #{task['id']}: {safe_truncate(task['content'], 80)}")
+
+        # Build focused prompt
+        prompt = self.build_task_prompt(task, ctx)
+        system_prompt = self.TASK_MODE_SYSTEM
+        log(f"  [TASK-MODE] Prompt: {len(prompt)} chars (system: {len(system_prompt)} chars)")
+
+        # Call LLM
+        response, model = self.llm.chat(prompt, system=system_prompt)
+        log(f"  [TASK-MODE] Model: {model}")
+
+        if not response:
+            log("  [TASK-MODE] No LLM response, auto-resolving task")
+            self.db.resolve_note(task["id"])
+            return
+
+        # Parse actions
+        actions = parse_actions(response)
+        if not actions:
+            log(f"  [TASK-MODE] Failed to parse actions: {safe_truncate(response, 200)}")
+            actions = [{"action": "no_action", "reason": "Task mode parse failure"}]
+
+        # Validate: check for at least one productive action
+        productive = {
+            "nostr_post", "store_memory", "web_search", "read_paper",
+            "swap_xrp_to_rlusd", "swap_rlusd_to_xrp", "message_operator",
+            "submit_research", "xrpl_payment", "creative_explore",
+            "respond_to_message", "write_note", "update_goal",
+        }
+        action_names_set = {a.get("action", "") for a in actions}
+        has_productive = bool(action_names_set & productive)
+        if not has_productive:
+            log(f"  [TASK-MODE] Warning: no productive action found in {action_names_set}")
+
+        # Execute actions (same path as normal cycle)
+        action_results = self.execute_actions(actions, cid)
+        action_names = [r["name"] for r in action_results]
+
+        # Update session metrics
+        for r in action_results:
+            self.session_actions += 1
+            if r["result"].startswith("true"):
+                self.session_successes += 1
+            self.session_action_types[r["name"]] = self.session_action_types.get(r["name"], 0) + 1
+
+        # Auto-resolve task (prevents infinite retry loops)
+        # Check if LLM already resolved it via resolve_note action
+        already_resolved = any(
+            r["name"] == "resolve_note" and r["result"].startswith("true")
+            for r in action_results
+        )
+        if not already_resolved:
+            log(f"  [TASK-MODE] Auto-resolving task #{task['id']}")
+            self.db.resolve_note(task["id"])
+
+        # Build context snapshot
+        ctx_snapshot = (
+            f"Wallet: {ctx.get('xrp_balance', 0):.2f} XRP, "
+            f"{ctx.get('rlusd_balance', 0):.2f} RLUSD | "
+            f"XRP: ${ctx.get('xrp_price', 0):.4f} | "
+            f"Model: {model}"
+        )
+        results_summary = "; ".join(
+            f"{r['name']}={r['result'][:60]}" for r in action_results
+        )
+
+        # Log thought to local DB (tagged as task mode)
+        ctx_with_model = f"[TASK-MODE] [{model or 'unknown'}] {safe_truncate(ctx_snapshot, 480)}"
+        self.db.log_thought(
+            cid=cid,
+            reasoning=safe_truncate(response, 2000),
+            context_summary=ctx_with_model,
+            actions=json.dumps(action_names),
+            results=safe_truncate(results_summary, 500),
+            action_sigs=self.compute_action_signatures(actions),
+        )
+
+        # Store thought to canister
+        if response:
+            stored_chars = 0
+            truncated = safe_truncate(response, 1500)
+            ctx_trunc = safe_truncate(ctx_snapshot, 200)
+            if self.llm.icp_agent:
+                try:
+                    self.llm.icp_agent.store_mind_thought(
+                        cid, truncated, ctx_trunc, action_names)
+                    stored_chars = len(truncated)
+                except Exception as e:
+                    log(f"    ICPAgent store_mind_thought failed: {e}")
+            if not stored_chars and self.llm.dfx_path:
+                try:
+                    escaped = truncated.replace("\\", "\\\\").replace('"', '\\"').replace("\n", "\\n")
+                    ctx_escaped = ctx_trunc.replace("\\", "\\\\").replace('"', '\\"').replace("\n", "\\n")
+                    actions_candid = "; ".join(f'"{a}"' for a in action_names)
+                    env = os.environ.copy()
+                    env["DFX_WARNING"] = "-mainnet_plaintext_identity"
+                    subprocess.run(
+                        [self.llm.dfx_path, "canister", "--network", "ic", "call",
+                         CANISTER_ID, "store_mind_thought",
+                         f'("{cid}", "{escaped}", "{ctx_escaped}", vec {{{actions_candid}}})',
+                         "--identity", DFX_IDENTITY],
+                        capture_output=True, text=True, timeout=30, env=env,
+                    )
+                    stored_chars = len(truncated)
+                except Exception:
+                    pass
+            log(f"  [TASK-MODE] Thought stored ({stored_chars} chars)")
+
+        log(f"  [TASK-MODE] Complete. Actions: {action_names}, Results: {results_summary[:120]}")
+
     # ── Build LLM Prompt ─────────────────────────────────────────
 
     def build_prompt(self, ctx: dict, deep: bool = False) -> str:
@@ -1695,7 +2086,7 @@ class ChronicleMind:
             lines.append("== EXPLORATION CYCLE ==")
             lines.append("This is a novelty-seeking cycle. Try action types you haven't used recently.")
             lines.append("Ideas: web_search for something new, read_paper, creative_explore a new form,")
-            lines.append("nostr_post a reflection, or consult_local_qwen about something curious.\n")
+            lines.append("nostr_post a reflection, or trigger_reflection on something curious.\n")
 
         # ── Previous Cycle Feedback (Phase 1: working memory) ──
         try:
@@ -1748,7 +2139,7 @@ class ChronicleMind:
                     lines.append("You MUST choose at least one DIFFERENT action type this cycle.")
                     used = set(action_sets[0]) if action_sets else set()
                     suggestions = [a for a in ["web_search", "creative_explore", "read_paper",
-                                                "nostr_post", "consult_local_qwen", "trigger_reflection"]
+                                                "nostr_post", "trigger_reflection", "store_memory"]
                                    if a not in used]
                     if suggestions:
                         lines.append(f"Try: {', '.join(suggestions[:3])}\n")
@@ -2030,7 +2421,7 @@ class ChronicleMind:
                 except Exception:
                     pass
             available = {"web_search", "read_paper", "creative_explore", "nostr_post",
-                         "trigger_reflection", "consult_local_qwen", "submit_research",
+                         "trigger_reflection", "submit_research",
                          "write_note", "resolve_note", "store_memory", "reinforce_memories",
                          "update_goal", "message_operator", "respond_to_message"}
             unused = available - used_recently
@@ -2118,6 +2509,7 @@ class ChronicleMind:
                 "nostr": "nostr_post",
                 "post_nostr": "nostr_post",
                 "publish_nostr": "nostr_post",
+                "create_nostr_post": "nostr_post",
                 "payment": "xrpl_payment",
                 "send_xrp": "xrpl_payment",
                 "escrow_create": "xrpl_escrow_create",
@@ -3181,7 +3573,7 @@ class ChronicleMind:
             # Parse result snippets from HTML
             import re
             results = []
-            snippets = re.findall(r'class="result__snippet">(.*?)</a>', r.text, re.DOTALL)
+            snippets = re.findall(r'class="result__snippet"[^>]*>(.*?)</a>', r.text, re.DOTALL)
             titles = re.findall(r'class="result__a"[^>]*>(.*?)</a>', r.text, re.DOTALL)
             for i, (title, snippet) in enumerate(zip(titles, snippets)):
                 if i >= max_results:
@@ -3715,6 +4107,9 @@ class ChronicleMind:
             return [{"action": "no_action", "reason": f"meta-gate pause: {explanation}"}]
 
         # verdict == "redirect": replace repeated actions with fresh ones
+        # But never replace "always valid" actions that should repeat freely
+        always_valid = {"store_memory", "write_note", "resolve_note", "respond_to_message",
+                        "no_action", "message_operator", "reinforce_memories"}
         recent = self.db.query(
             "SELECT actions_taken FROM thought_stream ORDER BY id DESC LIMIT 4"
         )
@@ -3727,19 +4122,32 @@ class ChronicleMind:
 
         fresh_pool = [a for a in [
             "web_search", "creative_explore", "nostr_post", "read_paper",
-            "consult_local_qwen", "trigger_reflection",
+            "trigger_reflection", "store_memory",
         ] if a not in recent_types]
         if not fresh_pool:
             fresh_pool = ["creative_explore", "web_search"]
 
         new_actions = []
+        used_in_cycle = {a.get("action", a.get("name", "")) for a in actions}  # seed with proposed
         for a in actions:
             name = a.get("action", a.get("name", ""))
-            if name in recent_types and fresh_pool:
-                replacement = fresh_pool.pop(0)
-                new_actions.append({"action": replacement})
+            if name in always_valid or name not in recent_types:
+                new_actions.append(a)
+            elif fresh_pool:
+                # Pick a replacement not already used this cycle
+                replacement = None
+                for i, candidate in enumerate(fresh_pool):
+                    if candidate not in used_in_cycle:
+                        replacement = fresh_pool.pop(i)
+                        break
+                if replacement:
+                    new_actions.append({"action": replacement})
+                    name = replacement
+                else:
+                    new_actions.append(a)  # keep original if no unique replacement
             else:
                 new_actions.append(a)
+            used_in_cycle.add(name)
 
         if not new_actions:
             new_actions.append({"action": fresh_pool[0] if fresh_pool else "creative_explore"})
@@ -3780,6 +4188,17 @@ class ChronicleMind:
 
             # Inject exploration mode into context
             ctx["is_explore"] = is_explore
+
+            # Phase 2.5: Mandatory task queue check
+            mandatory = self.db.query_one(
+                "SELECT id, content, priority FROM scratch_pad "
+                "WHERE resolved = 0 AND category = 'task' AND priority >= %d "
+                "ORDER BY priority DESC, created_at ASC LIMIT 1" % TASK_QUEUE_MIN_PRIORITY
+            )
+            if mandatory:
+                log(f"  [TASK-MODE] Mandatory task #{mandatory['id']} (p{mandatory.get('priority', 8)})")
+                self.run_task_cycle(mandatory, ctx, cid)
+                return
 
             # Check if deep reflection is due
             last_reflection = self.db.get_ts("last_reflection")
@@ -4007,6 +4426,16 @@ class ChronicleMind:
             self.run_cycle()
             if not self.running:
                 break
+
+            # Sleep consolidation: prune + cluster scratch_pad notes
+            if self.cycle_count % CONSOLIDATE_EVERY_N_CYCLES == 0:
+                try:
+                    metrics = self.sleep_consolidation()
+                    if metrics.get("total_resolved", 0) > 0:
+                        log(f"  Sleep consolidation: pruned {metrics['pruned']}, merged {metrics['merged']}")
+                except Exception as e:
+                    log(f"  Sleep consolidation error: {e}")
+
             log(f"Sleeping {CYCLE_INTERVAL} seconds...")
             for _ in range(CYCLE_INTERVAL):
                 if not self.running:
@@ -4091,10 +4520,16 @@ def main():
     import argparse
     parser = argparse.ArgumentParser(description="Chronicle Mind v2 - Autonomous Cognitive Loop (Python)")
     parser.add_argument("--once", action="store_true", help="Run one cycle and exit")
+    parser.add_argument("--consolidate", action="store_true", help="Run sleep consolidation only and exit")
     args = parser.parse_args()
 
     mind = ChronicleMind()
-    if args.once:
+    if args.consolidate:
+        log("Running sleep consolidation only...")
+        metrics = mind.sleep_consolidation()
+        log(f"Results: {json.dumps(metrics)}")
+        mind.db.close()
+    elif args.once:
         mind.run_once()
     else:
         mind.run_forever()
