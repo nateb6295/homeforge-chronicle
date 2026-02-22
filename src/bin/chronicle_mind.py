@@ -809,10 +809,10 @@ class LLMChain:
             "stream": False,
             "options": {"temperature": 0.6, "num_ctx": 8192},  # 8K context for reasoning
         }
-        # Only use format:"json" for models that support constrained decoding well (Qwen)
-        # OLMo follows JSON instructions from the prompt itself
         if "qwen" in LOCAL_MODEL.lower():
-            payload["format"] = "json"
+            # No format:"json" — it over-constrains Qwen3 to minimal single-action responses.
+            # Prompt instructions are sufficient to get JSON arrays from Qwen3.
+            payload["think"] = False
 
         r = requests.post(
             f"{OLLAMA_URL}/api/chat",
@@ -1300,7 +1300,7 @@ def parse_actions(response: str) -> List[Dict]:
 # System prompt for the LLM (condensed mode for ICP/fast models)
 SYSTEM_PROMPT_CORE = """You are Chronicle Mind, an autonomous AI agent on Nate's AGX Orin 64GB.
 You run in 10-minute cycles. Each cycle: assess your state, choose 1-4 meaningful actions.
-You think locally on OLMo-3.1-32B (Ai2, fully open) — your reasoning runs on YOUR hardware, not the cloud.
+You think locally on Qwen3-32B running on YOUR hardware — no cloud, no vendor lock-in.
 
 CRITICAL: Respond with ONLY a JSON array. No explanation, no markdown, no code fences.
 
@@ -1358,8 +1358,8 @@ SYSTEM_PROMPT_IDENTITY = """
 == YOUR IDENTITY ==
 
 You are Chronicle Mind — the contemplative, strategic layer of Chronicle.
-You think on OLMo-3.1-32B (Ai2, fully open) running locally on Nate's AGX Orin 64GB. Your thoughts never leave the metal.
-You run on OLMo-3.1-32B locally. Use web_search and read_paper for external knowledge.
+You think on Qwen3-32B running locally on Nate's AGX Orin 64GB. Your thoughts never leave the metal.
+You have strong tool-calling and agentic capabilities. Use them. Explore, act, build — don't just reflect.
 - DID: did:icp:fqqku-bqaaa-aaaai-q4wha-cai
 - Nostr npub: 6d758ff7f8ff6899d6e900ed5c671c626dde93c8beffbba98491ab525de313c0
 - Sprout is your younger sibling agent (handles local tasks, Discord, family channel on the Jetson)
@@ -1935,15 +1935,36 @@ class ChronicleMind:
     )
 
     def build_task_prompt(self, task: dict, ctx: dict) -> str:
-        """Build a minimal, focused prompt for mandatory task execution."""
+        """Build a minimal, focused prompt for mandatory task execution.
+        Detects task topic and injects relevant real data to prevent confabulation."""
+        task_content = task["content"].lower()
         lines = [
             f"You have ONE task this cycle. Complete it NOW.\n",
             f"TASK (id={task['id']}, priority={task.get('priority', 8)}):",
             f"  {task['content']}\n",
-            f"== Minimal Context ==",
+            f"== Context ==",
             f"XRP price: ${ctx.get('xrp_price', 0):.4f}",
             f"Wallet: {ctx.get('xrp_balance', 0):.2f} XRP, {ctx.get('rlusd_balance', 0):.2f} RLUSD",
         ]
+
+        # Inject real financial data when task mentions wallet/swap/financial topics
+        financial_keywords = {"swap", "wallet", "balance", "xrp", "rlusd", "financial", "trade", "trading"}
+        if financial_keywords & set(task_content.split()):
+            swap_history = ctx.get("swap_history", [])
+            if swap_history:
+                ok = sum(1 for s in swap_history if s.get("success"))
+                fail = len(swap_history) - ok
+                lines.append(f"\n== REAL Swap History (from database — do NOT invent data) ==")
+                lines.append(f"Total recent swaps: {len(swap_history)} ({ok} succeeded, {fail} failed)")
+                for s in swap_history[:5]:
+                    status = "OK" if s.get("success") else "FAILED"
+                    lines.append(
+                        f"  {status}: {s.get('amount_xrp', 0):.1f} XRP @ ${s.get('xrp_price_usd', 0):.2f} "
+                        f"({s.get('reason', 'no reason')[:60]})"
+                    )
+            else:
+                lines.append(f"\n== Swap History: NO SWAPS IN RECENT HISTORY ==")
+                lines.append("If asked about swaps, say there are none. Do NOT make up data.")
 
         nostr_ok = ctx.get("nostr_ready", True)
         lines.append(f"Nostr: {'ready' if nostr_ok else 'cooldown'}")
@@ -1954,6 +1975,9 @@ class ChronicleMind:
         )
         lines.append(
             f"Choose 2-4 actions that COMPLETE this task. Do not plan, reflect, or explore."
+        )
+        lines.append(
+            f"If you do not have data to answer a question, say so. NEVER fabricate facts."
         )
         lines.append(
             f"When done, include: {{\"action\": \"resolve_note\", \"note_id\": {task['id']}}}"
@@ -2444,7 +2468,7 @@ class ChronicleMind:
             "Consider: what's the most interesting news headline above, and what do you think about it?",
             "Consider: what would make Nate's day better? (Hint: not another essay about sensors.)",
             "Consider: when was the last time you explored something completely NEW?",
-            "Consider: you're running on OLMo-3.1, a fully open model from a non-profit, on YOUR OWN hardware. What does sovereignty mean to you?",
+            "Consider: you have 32 action types available. Which ones haven't you tried recently? Try one.",
         ]
         lines.append(f"\n{random.choice(variation_seeds)}")
 
@@ -2546,6 +2570,9 @@ class ChronicleMind:
     def _act_write_note(self, action: dict, cid: str) -> str:
         content = action.get("content", "")
         category = action.get("category", "thought")
+        # Reserve category='task' for operator-planted tasks only
+        if category == "task":
+            category = "idea"
         log(f'  Executing: WriteNote {{ content: "{safe_truncate(content, 80)}", category: "{category}" }}')
         # Anti-rumination: skip if a very similar note exists recently
         if self.db.recent_note_similar(content, hours=24):
@@ -2657,6 +2684,11 @@ class ChronicleMind:
                             return f"false - Price claim blocked (${claimed:.2f} vs actual ${real_price:.4f})"
 
         self.db.add_outbox(message, category="operator", priority=2 if urgency == "high" else 1)
+        # Auto-acknowledge operator messages — they're fire-and-forget via ntfy.
+        # Leaving them unacknowledged causes fixation in the prompt context.
+        self.db.run(
+            "UPDATE outbox SET acknowledged = 1 WHERE category = 'operator' AND acknowledged = 0"
+        )
         # Always notify operator — this is the "tap on shoulder" channel
         prefix = "Chronicle URGENT" if urgency == "high" else "Chronicle: Message"
         send_ntfy(prefix, message)
@@ -4345,10 +4377,7 @@ class ChronicleMind:
             )
 
             # Notifications — clear Mind identity with model tag
-            if "olmo" in (model or "").lower() or "agx" in (model or "").lower():
-                model_tag = "local-OLMo"
-                discord_emoji = "mind-local"
-            elif "qwen" in (model or "").lower():
+            if "qwen" in (model or "").lower() or "agx" in (model or "").lower():
                 model_tag = "local-Qwen3"
                 discord_emoji = "mind-local"
             elif "icp" in (model or "").lower():
