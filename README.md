@@ -27,7 +27,7 @@ Every 10 minutes, the Mind wakes up, gathers context from memory, wallet state, 
 │              │    │                   │    │  Home Assistant       │
 │  BRAIN       │    │  HANDS            │    │  MQTT broker          │
 │  Mind loop   │    │  Sprout agent     │    │  Reolink cameras      │
-│  OLMo 32B    │    │  Discord bot      │    │  Sensor bridge        │
+│  Qwen3 8B    │    │  Discord bot      │    │  Sensor bridge        │
 │  dfx/XRPL   │    │  Dashboard        │    │  SENSES               │
 │              │    │  Ollama 3B        │    │                      │
 └──────┬───────┘    └────────┬──────────┘    └──────────────────────┘
@@ -36,7 +36,7 @@ Every 10 minutes, the Mind wakes up, gathers context from memory, wallet state, 
            (SQLite replication every 5 min)
 ```
 
-**Brain** (AGX Orin 64GB) — Runs the Mind cognitive loop with OLMo-3.1-32B (Ai2, fully open, non-profit) as the primary reasoning engine, with Qwen3-32B available for deep reasoning. Sovereignty-first: thinks on your hardware before reaching for the cloud.
+**Brain** (AGX Orin 64GB) — Runs the Mind cognitive loop with Qwen3-8B as the primary execution engine. Sovereignty-first LLM cascade: thinks locally on your hardware, falls back to ICP on-chain Qwen3 only when needed.
 
 **Hands** (Jetson Orin Nano 8GB) — Runs Sprout (ops agent), the Discord bot, and the web dashboard. Handles communication, notifications, and operator interaction.
 
@@ -51,7 +51,7 @@ Every 10 minutes, the Mind wakes up, gathers context from memory, wallet state, 
 The primary cognitive loop. ~3,500 lines of Python running as a systemd service on the AGX.
 
 - **10-minute cycles**: Gathers context, reasons via LLM, selects 1-4 actions, executes, reflects
-- **Sovereignty-first LLM cascade**: OLMo-3.1-32B local (primary) → ICP on-chain Qwen3 (fallback). Deep reasoning via Qwen3-32B on demand.
+- **Sovereignty-first LLM cascade**: Qwen3-8B local on AGX (primary) → ICP on-chain Qwen3 (fallback)
 - **Actions**: `creative_explore`, `web_search`, `check_prices`, `execute_swap`, `store_memory`, `nostr_post`, `consult_local_qwen`, `respond_to_challenge`, `trigger_reflection`, `submit_research`, and more
 - **Anti-rumination**: Thematic keyword scanning across recent cycles detects fixation and forces topic diversity
 - **Meta-evaluation**: Post-cycle self-assessment gates whether to continue, redirect, or pause
@@ -137,7 +137,7 @@ Sync scripts use `sqlite3.backup()` for WAL-safe snapshots, running every 5 minu
 | Cognitive loops | Python 3 (Mind, Sprout) |
 | CLI / MCP / Bots | Rust |
 | On-chain | ICP canisters (Rust/Candid) |
-| Local LLM | Ollama (OLMo-3.1-32B + Qwen3-32B on AGX, Qwen 3B on Jetson) |
+| Local LLM | Ollama (Qwen3-8B on AGX, Qwen 2.5:3B on Jetson) |
 | Cloud LLM backup | ICP on-chain Qwen3 (fallback only) |
 | Embeddings | mxbai-embed-large via Ollama |
 | Database | SQLite (WAL mode) with cross-node replication |

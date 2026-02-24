@@ -42,11 +42,11 @@ CANISTER_URL = "https://fqqku-bqaaa-aaaai-q4wha-cai.raw.icp0.io"
 TOKEN_PATH = os.path.expanduser("~/.homeforge-chronicle/.api_token")
 CYCLE_INTERVAL = int(os.environ.get("CYCLE_INTERVAL", "600"))
 FAST_MODEL = os.environ.get("FAST_MODEL", "qwen2.5:3b")
-DEEP_MODEL = os.environ.get("DEEP_MODEL", "llama3.1:8b")
+DEEP_MODEL = os.environ.get("DEEP_MODEL", "qwen2.5:3b")
 DISCORD_WEBHOOK = os.environ.get("CHRONICLE_DISCORD_WEBHOOK", "")
 MOLTBOOK_KEY = os.environ.get("SPROUT_MOLTBOOK_KEY", "")
-KIMI_API_KEY = os.environ.get("KIMI_API_KEY", "")
-KIMI_API_URL = "https://api.moonshot.ai/v1/chat/completions"
+KIMI_API_KEY = ""  # Kimi removed — sovereignty-first
+KIMI_API_URL = ""
 MQTT_BROKER = os.environ.get("MQTT_BROKER", "192.168.1.10")
 MQTT_PORT = int(os.environ.get("MQTT_PORT", "1883"))
 LOG_DIR = os.environ.get("LOG_DIR", "/home/nvidia/sprout/logs")
@@ -777,10 +777,9 @@ class ChronicleLocal:
     def _get_cycle_type(self) -> str:
         """Determine cycle type based on count.
         Normal: ops monitoring (3B, every cycle)
-        Deep:   creative synthesis (8B/Kimi, every 6th cycle)
+        Deep:   DISABLED — 3B model produces hallucinated correlations
+                that pollute shared state and cascade into Mind via sibling messages.
         """
-        if self.cycle_count % 6 == 0 and self.cycle_count > 0:
-            return "deep"
         return "normal"
 
     def _surface_serendipity(self) -> list:
@@ -823,7 +822,7 @@ class ChronicleLocal:
 
     def phase_deep_think(self, state, health, cid):
         """Deep cycle: creative synthesis, connections, surprises.
-        Uses 8B model or Kimi instead of the 3B ops model."""
+        Uses same model as ops for consistency."""
         self.log("Phase 5 [DEEP]: Creative synthesis...")
 
         # Surface serendipity memories
@@ -881,7 +880,7 @@ class ChronicleLocal:
             f"Respond with ONLY a JSON array of 1-2 actions."
         )
 
-        # Use 8B model first, fall back to Kimi
+        # Use local model only — no cloud fallback
         response = None
         model_used = DEEP_MODEL
         if self.ollama.healthy():
@@ -892,10 +891,7 @@ class ChronicleLocal:
             self.log(f"  Deep response ({DEEP_MODEL}): {safe_truncate(response or '', 200)}")
 
         if not response or response.startswith("[LLM Error"):
-            if KIMI_API_KEY:
-                model_used = "kimi-k2.5"
-                response = kimi_chat(prompt, system=DEEP_SYSTEM_PROMPT, timeout=120)
-                self.log(f"  Deep response (Kimi): {safe_truncate(response or '', 200)}")
+            pass  # No cloud fallback — sovereignty-first
 
         if not response:
             self.log("  Deep cycle: no response from any model, skipping")
@@ -1264,16 +1260,8 @@ class ChronicleLocal:
 
         actions = parse_actions(response)
         if not actions:
-            # Local model failed — escalate to Kimi
-            self.log("  Local model failed to produce actions, escalating to Kimi k2.5...")
-            response = kimi_chat(prompt, system=SYSTEM_PROMPT, timeout=90)
-            self.log(f"  Kimi response: {safe_truncate(response, 200)}")
-            actions = parse_actions(response)
-            if actions:
-                self.log(f"  Kimi succeeded with {len(actions)} actions")
-            else:
-                self.log("  Kimi also failed, defaulting to system check")
-                actions = [{"action": "check_system", "checks": ["services", "disk", "memory", "ollama"]}]
+            self.log("  Local model failed to produce actions, defaulting to system check")
+            actions = [{"action": "check_system", "checks": ["services", "disk", "memory", "ollama"]}]
 
         # Hard guard: if anti-repeat triggered, replace blocked actions
         if anti_repeat and dominant_action:
@@ -1384,13 +1372,29 @@ class ChronicleLocal:
                 for check in checks:
                     try:
                         if check == "services":
-                            for svc in ["chronicle-mind", "sprout-bot", "chronicle-dashboard"]:
+                            # Local Jetson services
+                            for svc in ["sprout-bot", "chronicle-dashboard"]:
                                 r = subprocess.run(
                                     f"systemctl --user is-active {svc}.service",
                                     shell=True, capture_output=True, text=True, timeout=5
                                 )
                                 status = r.stdout.strip()
                                 results.append(f"{svc}: {status}")
+                            # Mind runs on AGX — check via thought_stream freshness
+                            try:
+                                latest = self.db.query_one(
+                                    "SELECT created_at FROM thought_stream ORDER BY created_at DESC LIMIT 1"
+                                )
+                                if latest:
+                                    age = int(time.time()) - latest["created_at"]
+                                    if age < 900:  # 15 min (cycle is 10min + reasoning time)
+                                        results.append(f"chronicle-mind@agx: active ({age}s ago)")
+                                    else:
+                                        results.append(f"chronicle-mind@agx: stale ({age//60}m ago)")
+                                else:
+                                    results.append("chronicle-mind@agx: no data")
+                            except Exception:
+                                results.append("chronicle-mind@agx: check failed")
                         elif check == "disk":
                             r = subprocess.run(
                                 "df -h /home/nvidia --output=pcent,avail | tail -1",
@@ -1938,8 +1942,7 @@ class ChronicleLocal:
         self.log(f"Cycle interval: {CYCLE_INTERVAL} seconds")
         self.log(f"Database: {DB_PATH}")
         self.log(f"Ollama: {OLLAMA_URL}")
-        kimi_status = "available" if KIMI_API_KEY else "unavailable"
-        self.log(f"Models: fast={FAST_MODEL}, deep={DEEP_MODEL}, kimi={kimi_status}")
+        self.log(f"Models: fast={FAST_MODEL}, deep={DEEP_MODEL}")
 
         # Connect MQTT nervous system
         if self.mqtt.connect():
@@ -1979,6 +1982,13 @@ class ChronicleLocal:
                 if not self.running:
                     break
                 time.sleep(1)
+
+            # Passive energy regen: sleeping restores energy
+            regen = rest_time / CYCLE_INTERVAL * 0.10  # 10% per normal interval
+            new_energy = min(1.0, energy + regen)
+            if new_energy > energy:
+                self.db.update_state(energy_level=new_energy)
+                self.log(f"  Energy restored: {int(energy*100)}% -> {int(new_energy*100)}%")
 
         self.log("Sprout shutting down gracefully.")
         self.mqtt.disconnect()

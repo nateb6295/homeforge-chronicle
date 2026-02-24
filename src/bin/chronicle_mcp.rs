@@ -1063,7 +1063,7 @@ async fn execute_tool(name: &str, args: &Value) -> Result<Value> {
         "compress_cognitive_state" => {
             use homeforge_chronicle::db::Database;
             use homeforge_chronicle::{CognitiveCompressor, CompressionInput, QualificationGate, RetrievedArtifact};
-            use homeforge_chronicle::llm::ClaudeClient;
+            use homeforge_chronicle::llm::OllamaClient;
             use homeforge_chronicle::find_top_k_similar;
 
             let current_context = args.get("current_context")
@@ -1077,8 +1077,12 @@ async fn execute_tool(name: &str, args: &Value) -> Result<Value> {
 
             let llm_model = args.get("model")
                 .and_then(|v| v.as_str())
-                .unwrap_or("claude-sonnet-4-20250514")
+                .unwrap_or("qwen3:8b")
                 .to_string();
+
+            // Compression can use a different Ollama endpoint (e.g. AGX for bigger models)
+            let compress_ollama_url = std::env::var("CHRONICLE_COMPRESS_OLLAMA_URL")
+                .unwrap_or_else(|_| ollama_url.clone());
 
             // Get database and current state
             let home = std::env::var("HOME")?;
@@ -1131,8 +1135,8 @@ async fn execute_tool(name: &str, args: &Value) -> Result<Value> {
                 artifact_summaries,
             };
 
-            // Create LLM client and compressor
-            let llm = ClaudeClient::from_env(llm_model.clone())?;
+            // Create LLM client and compressor (sovereignty-first: local Ollama)
+            let llm = OllamaClient::new(compress_ollama_url.clone(), llm_model.clone())?;
             let compressor = CognitiveCompressor::new(llm_model.clone());
 
             // Run compression
@@ -1143,7 +1147,7 @@ async fn execute_tool(name: &str, args: &Value) -> Result<Value> {
 
             Ok(json!({
                 "success": true,
-                "message": "Cognitive state compressed via LLM (ACC compression operator)",
+                "message": "Cognitive state compressed via local Ollama (sovereignty-first)",
                 "compression_model": llm_model,
                 "artifacts_qualified": qualified_artifacts.len(),
                 "previous_version": previous_state.version,
@@ -1642,7 +1646,7 @@ fn handle_request(request: &JsonRpcRequest) -> JsonRpcResponse {
                         result: Some(json!({
                             "content": [{
                                 "type": "text",
-                                "text": format!("Error: {}", e)
+                                "text": format!("Error: {:?}", e)
                             }],
                             "isError": true
                         })),

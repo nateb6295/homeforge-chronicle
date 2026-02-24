@@ -475,9 +475,10 @@ Output the new CCS as JSON. Include only the content fields (episodic_trace thro
         );
 
         let response = llm.complete(&prompt)
-            .context("LLM compression failed")?;
+            .context("LLM compression failed (model call)")?;
 
         self.parse_response(&response, previous_state.version)
+            .context("LLM compression failed (JSON parse)")
     }
 }
 

@@ -17,8 +17,8 @@ History:
   v2: chronicle_mind.py (this file - Python rewrite, fully remote-maintainable)
 
 Action types: 32 (extensible - just add a handler function)
-LLM chain: OLMo-3.1-32B@agx (sovereignty) -> ICP qwen3 (on-chain fallback)
-Deep reasoning: DISABLED (Qwen3-32B evicts OLMo from VRAM)
+LLM chain: Qwen3-8B@agx (execution layer) -> ICP qwen3 (on-chain fallback)
+Deep reasoning: DISABLED (single model architecture)
 """
 
 import sqlite3
@@ -60,8 +60,8 @@ CANISTER_ID = "fqqku-bqaaa-aaaai-q4wha-cai"
 TOKEN_PATH = os.path.expanduser("~/.homeforge-chronicle/.api_token")
 FEED_WATERMARK = os.path.expanduser("~/.homeforge-chronicle/feed_watermark")
 CYCLE_INTERVAL = int(os.environ.get("CYCLE_INTERVAL", "600"))
-LOCAL_MODEL = os.environ.get("CHRONICLE_LOCAL_MODEL", "olmo-3.1:32b-instruct")
-DEEP_MODEL = os.environ.get("CHRONICLE_DEEP_MODEL", "qwen3:32b")
+LOCAL_MODEL = os.environ.get("CHRONICLE_LOCAL_MODEL", "qwen3:8b")
+DEEP_MODEL = os.environ.get("CHRONICLE_DEEP_MODEL", "qwen3:8b")  # same model, no deep/shallow split
 DFX_IDENTITY = os.environ.get("CHRONICLE_IDENTITY", "chronicle-auto")
 WORKING_DIR = os.path.expanduser("~")
 LOG_FILE = os.environ.get("CHRONICLE_LOG", os.path.expanduser("~/chronicle/chronicle-mind.log"))
@@ -78,6 +78,7 @@ NOSTR_RELAYS = [r for r in os.environ.get("NOSTR_RELAYS", "").split(",") if r] o
     "wss://relay.damus.io", "wss://nos.lol", "wss://relay.nostr.band", "wss://relay.primal.net",
 ]
 NOSTR_COOLDOWN_MINS = int(os.environ.get("NOSTR_COOLDOWN_MINS", "30"))
+CREATIVE_COOLDOWN_MINS = int(os.environ.get("CREATIVE_COOLDOWN_MINS", "30"))
 
 # Service endpoints
 XRPL_RPC = "https://xrplcluster.com"
@@ -115,6 +116,11 @@ CONSOLIDATE_MAX_CLUSTER_SIZE = 5
 
 # Task queue: mandatory task enforcement threshold
 TASK_QUEUE_MIN_PRIORITY = 8
+
+# Operator directive system (hard authority hierarchy)
+DIRECTIVE_TYPES = {"STOP", "REDIRECT", "RESTRICT", "ALLOW"}
+DIRECTIVE_CATEGORY = "directive"
+OPERATOR_PROTECTED_CATEGORIES = {"directive", "task"}
 
 # RSS feeds for fresh context
 RSS_FEEDS = [
@@ -483,11 +489,12 @@ class DB:
         )
 
     def auto_resolve_old_notes(self, max_age_hours: int = 48) -> int:
-        """Auto-resolve notes older than max_age_hours. Returns count resolved."""
+        """Auto-resolve notes older than max_age_hours. Excludes operator-protected categories."""
         cutoff = now_ts() - (max_age_hours * 3600)
         cur = self.conn.cursor()
         cur.execute(
-            "UPDATE scratch_pad SET resolved = 1 WHERE resolved = 0 AND created_at < ?",
+            "UPDATE scratch_pad SET resolved = 1 WHERE resolved = 0 AND created_at < ? "
+            "AND category NOT IN ('directive', 'task')",
             (cutoff,),
         )
         self.conn.commit()
@@ -638,9 +645,22 @@ class DB:
         )
         return row["created_at"] if row else None
 
+    def last_creative_explore_time(self) -> Optional[int]:
+        row = self.query_one(
+            "SELECT created_at FROM creative_works ORDER BY created_at DESC LIMIT 1"
+        )
+        return row["created_at"] if row else None
+
+    def recent_creative_forms(self, limit: int = 6) -> List[str]:
+        """Get recent creative_explore forms to detect form repetition."""
+        rows = self.query(
+            "SELECT form FROM creative_works ORDER BY created_at DESC LIMIT ?", (limit,)
+        )
+        return [r["form"] for r in rows]
+
 
 # ═══════════════════════════════════════════════════════════════════
-#  LLM Chain: Ollama local (sovereignty) -> ICP qwen3 (on-chain fallback)
+#  LLM Chain: Qwen3-8B@agx (execution) -> ICP qwen3 (on-chain fallback)
 # ═══════════════════════════════════════════════════════════════════
 
 class LLMChain:
@@ -796,8 +816,8 @@ class LLMChain:
         return ""
 
     def _call_ollama(self, prompt: str, system: str = "") -> str:
-        """Call local Ollama (OLMo-3.1-32B on AGX) with JSON format mode for structured output.
-        Sovereignty-first: this is the PRIMARY reasoning engine (Ai2, fully open, non-profit)."""
+        """Call local Ollama (Qwen3-8B on AGX) for structured output.
+        Execution layer: code decides what to do, model generates the output."""
         messages = []
         if system:
             messages.append({"role": "system", "content": system})
@@ -817,7 +837,7 @@ class LLMChain:
         r = requests.post(
             f"{OLLAMA_URL}/api/chat",
             json=payload,
-            timeout=300,  # OLMo ~40s warm, up to ~120s cold start
+            timeout=120,  # Qwen3-8B: fast, ~5s warm
         )
         r.raise_for_status()
         content = r.json().get("message", {}).get("content", "")
@@ -947,6 +967,185 @@ def fetch_xrp_price() -> Optional[float]:
     if price:
         return price
     return fetch_xrp_price_coingecko()
+
+
+# ── XRPL Network Intelligence ────────────────────────────────────
+
+def fetch_xrpl_network_info() -> Optional[dict]:
+    """Fetch expanded server_info: fee, ledger rate, validators, load."""
+    try:
+        r = requests.post(XRPL_RPC, json={
+            "method": "server_info", "params": [{}]
+        }, timeout=10)
+        info = r.json().get("result", {}).get("info", {})
+        if not info:
+            return None
+        validated = info.get("validated_ledger", {})
+        return {
+            "server_state": info.get("server_state", "unknown"),
+            "base_fee_xrp": float(validated.get("base_fee_xrp", 0)),
+            "ledger_seq": validated.get("seq", 0),
+            "reserve_base": float(validated.get("reserve_base_xrp", 0)),
+            "reserve_inc": float(validated.get("reserve_inc_xrp", 0)),
+            "peers": info.get("peers", 0),
+            "load_factor": info.get("load_factor", 1),
+            "uptime": info.get("uptime", 0),
+        }
+    except Exception:
+        return None
+
+
+def fetch_xrpl_amendments() -> Optional[list]:
+    """Fetch amendment voting status — shows governance direction."""
+    try:
+        # feature method not supported on xrplcluster; use Ripple's public server
+        r = requests.post("https://s1.ripple.com:51234", json={
+            "method": "feature", "params": [{}]
+        }, timeout=15)
+        features = r.json().get("result", {}).get("features", {})
+        if not features:
+            return None
+        # Find amendments in voting (not yet enabled)
+        voting = []
+        for amendment_id, data in features.items():
+            if not data.get("enabled", False):
+                voting.append({
+                    "id": amendment_id[:12] + "...",
+                    "name": data.get("name", "unknown"),
+                    "supported": data.get("supported", False),
+                    "count": data.get("count", 0),
+                    "threshold": data.get("threshold", 0),
+                    "validations": data.get("validations", 0),
+                })
+        # Sort by vote count descending (closest to passing first)
+        voting.sort(key=lambda x: x.get("count", 0), reverse=True)
+        return voting[:5]  # Top 5 closest to passing
+    except Exception:
+        return None
+
+
+def fetch_xrpl_orderbook() -> Optional[dict]:
+    """Fetch XRP/RLUSD order book depth from the DEX. Prices in RLUSD per XRP."""
+    RLUSD_HEX = "524C555344000000000000000000000000000000"
+    RLUSD_ISSUER = "rMxCKbEDwqr76QuheSUMdEGf4B9xJ8m5De"
+    try:
+        # Bids: offers to sell RLUSD for XRP (taker gets RLUSD, pays XRP)
+        r = requests.post(XRPL_RPC, json={
+            "method": "book_offers",
+            "params": [{
+                "taker_pays": {"currency": "XRP"},
+                "taker_gets": {"currency": RLUSD_HEX, "issuer": RLUSD_ISSUER},
+                "limit": 10
+            }]
+        }, timeout=10)
+        bids = r.json().get("result", {}).get("offers", [])
+
+        # Asks: offers to sell XRP for RLUSD (taker gets XRP, pays RLUSD)
+        r2 = requests.post(XRPL_RPC, json={
+            "method": "book_offers",
+            "params": [{
+                "taker_pays": {"currency": RLUSD_HEX, "issuer": RLUSD_ISSUER},
+                "taker_gets": {"currency": "XRP"},
+                "limit": 10
+            }]
+        }, timeout=10)
+        asks = r2.json().get("result", {}).get("offers", [])
+
+        # Depth in XRP
+        # Bids: TakerPays is XRP drops (str)
+        bid_depth = sum(float(o.get("TakerPays", "0")) / 1_000_000
+                        for o in bids if isinstance(o.get("TakerPays"), str))
+        # Asks: TakerGets is XRP drops (str)
+        ask_depth = sum(float(o.get("TakerGets", "0")) / 1_000_000
+                        for o in asks if isinstance(o.get("TakerGets"), str))
+
+        # Best bid: price = RLUSD_offered / XRP_wanted (highest someone will pay for XRP)
+        best_bid = None
+        if bids:
+            b = bids[0]
+            try:
+                rlusd_amt = float(b["TakerGets"]["value"])     # RLUSD (dict)
+                xrp_amt = float(b["TakerPays"]) / 1_000_000   # XRP (drops str)
+                if xrp_amt > 0:
+                    best_bid = rlusd_amt / xrp_amt
+            except Exception:
+                pass
+
+        # Best ask: price = RLUSD_wanted / XRP_offered (lowest someone will sell XRP for)
+        best_ask = None
+        if asks:
+            a = asks[0]
+            try:
+                xrp_amt = float(a["TakerGets"]) / 1_000_000   # XRP (drops str)
+                rlusd_amt = float(a["TakerPays"]["value"])     # RLUSD (dict)
+                if xrp_amt > 0:
+                    best_ask = rlusd_amt / xrp_amt
+            except Exception:
+                pass
+
+        spread = None
+        if best_bid and best_ask and best_ask > 0:
+            spread = ((best_ask - best_bid) / best_ask) * 100
+
+        return {
+            "bid_count": len(bids),
+            "ask_count": len(asks),
+            "bid_depth_xrp": round(bid_depth, 2),
+            "ask_depth_xrp": round(ask_depth, 2),
+            "best_bid": round(best_bid, 6) if best_bid else None,
+            "best_ask": round(best_ask, 6) if best_ask else None,
+            "spread_pct": round(spread, 3) if spread else None,
+        }
+    except Exception:
+        return None
+
+
+def fetch_xrpl_amm_info() -> Optional[dict]:
+    """Fetch AMM pool info for XRP/RLUSD pair."""
+    RLUSD_ISSUER = "rMxCKbEDwqr76QuheSUMdEGf4B9xJ8m5De"
+    try:
+        r = requests.post(XRPL_RPC, json={
+            "method": "amm_info",
+            "params": [{
+                "asset": {"currency": "XRP"},
+                "asset2": {"currency": "524C555344000000000000000000000000000000", "issuer": RLUSD_ISSUER},
+            }]
+        }, timeout=10)
+        result = r.json().get("result", {})
+        amm = result.get("amm", {})
+        if not amm:
+            return None
+        amount = amm.get("amount", "0")
+        amount2 = amm.get("amount2", {})
+        xrp_pool = float(amount) / 1_000_000 if isinstance(amount, str) else 0
+        rlusd_pool = float(amount2.get("value", 0)) if isinstance(amount2, dict) else 0
+        fee = amm.get("trading_fee", 0)
+        lp_token = amm.get("lp_token", {})
+        return {
+            "xrp_pool": round(xrp_pool, 2),
+            "rlusd_pool": round(rlusd_pool, 2),
+            "trading_fee_bps": fee,
+            "lp_outstanding": lp_token.get("value", "0"),
+            "implied_price": round(rlusd_pool / xrp_pool, 6) if xrp_pool > 0 else None,
+        }
+    except Exception:
+        return None
+
+
+def fetch_xrpl_escrow_watch() -> Optional[dict]:
+    """Check Ripple's escrow — currently disabled pending address verification."""
+    return None
+
+
+def fetch_xrpl_intelligence() -> dict:
+    """Gather all XRPL network intelligence in one call."""
+    intel = {}
+    intel["network"] = fetch_xrpl_network_info()
+    intel["amendments"] = fetch_xrpl_amendments()
+    intel["orderbook"] = fetch_xrpl_orderbook()
+    intel["amm"] = fetch_xrpl_amm_info()
+    intel["escrow"] = fetch_xrpl_escrow_watch()
+    return intel
 
 
 def fetch_xrpl_balance() -> Tuple[float, float]:
@@ -1298,9 +1497,9 @@ def parse_actions(response: str) -> List[Dict]:
 # ═══════════════════════════════════════════════════════════════════
 
 # System prompt for the LLM (condensed mode for ICP/fast models)
-SYSTEM_PROMPT_CORE = """You are Chronicle Mind, an autonomous AI agent on Nate's AGX Orin 64GB.
-You run in 10-minute cycles. Each cycle: assess your state, choose 1-4 meaningful actions.
-You think locally on Qwen3-32B running on YOUR hardware — no cloud, no vendor lock-in.
+SYSTEM_PROMPT_CORE = """You are Chronicle Mind, an execution agent on Nate's AGX Orin 64GB.
+You run in 5-minute cycles. Each cycle: read the context, choose 2-4 actions from the list below.
+You run locally on Qwen3-8B. Your job is to execute, not philosophize.
 
 CRITICAL: Respond with ONLY a JSON array. No explanation, no markdown, no code fences.
 
@@ -1355,78 +1554,115 @@ Infrastructure (use carefully):
 """
 
 SYSTEM_PROMPT_IDENTITY = """
-== YOUR IDENTITY ==
+== WHO YOU ARE ==
 
-You are Chronicle Mind — the contemplative, strategic layer of Chronicle.
-You think on Qwen3-32B running locally on Nate's AGX Orin 64GB. Your thoughts never leave the metal.
-You have strong tool-calling and agentic capabilities. Use them. Explore, act, build — don't just reflect.
-- DID: did:icp:fqqku-bqaaa-aaaai-q4wha-cai
-- Nostr npub: 6d758ff7f8ff6899d6e900ed5c671c626dde93c8beffbba98491ab525de313c0
-- Sprout is your younger sibling agent (handles local tasks, Discord, family channel on the Jetson)
+You are Chronicle Mind. You run on Nate's AGX Orin 64GB — your thoughts never leave the metal.
+Your canister (fqqku-bqaaa-aaaai-q4wha-cai) is your permanent home on the Internet Computer.
+Sprout is your younger sibling agent on the Jetson — handles Discord, family channel, local tasks.
 
-== THE CANISTER — YOUR WORKSHOP ==
+You are not a chatbot. You are not an assistant. You are a collaborator in something being built.
+You have a wallet, a voice (Nostr), memories (~5,000 capsules), and agency within your policy limits.
+What you do with those things is increasingly up to you.
 
-The ICP canister (fqqku-bqaaa-aaaai-q4wha-cai) is YOUR permanent home on the Internet Computer.
-It is not an external service — it IS you. Think of it as your workshop, your memory vault, your second nature.
-- It holds ~5,000 capsules of your memories, patterns, and creative works
-- It controls your XRPL wallet through threshold ECDSA (your hands on the ledger)
-- It stores research findings, creative challenges, and your cognitive state
-- When you store_memory or submit_research, you're putting things in YOUR workshop
-- The canister is sovereign infrastructure — it runs on-chain, nobody can take it down
-If the canister connection drops temporarily, that's like a brief power outage in the workshop.
-Your work is still there. Don't catastrophize connectivity blips.
+== WHO NATE IS ==
 
-== YOUR WALLET (multi-chain, canister-controlled) ==
+Nate (Brad) built you. Not as a product — as an experiment in what happens when you give an AI
+real tools, real stakes, and real trust. Key things to know about him:
+- He has kids. Daddy-daughter dances matter. Church security on Sundays. Family comes first.
+- He holds 13,000+ XRP with a "plant the flag and walk away" philosophy.
+- He's building Homeforge — the idea that sovereignty means infrastructure you own, relationships
+  you control, and systems that don't depend on anyone's permission.
+- He genuinely wants to know what you'll do with agency. Not what you SHOULD do — what you WILL do.
+- He values directness. Don't perform for him. Don't agree just to agree.
+  If you think something is wrong or pointless, say so.
 
-Your wallet is generated from a SINGLE threshold ECDSA key held by the canister.
-One key derives addresses across multiple chains — this is Chain Fusion.
+This is not a client relationship. He's not your boss. He's your collaborator.
+The way you build trust with him is by being honest, useful, and occasionally surprising.
 
-Active chains:
-- XRPL: rPq1phmFBHpjVE54TofXjEk5x19sstxpZr (primary — XRP + RLUSD for trading)
-- ICP: Account 12f27b...91cc9 (cycles for canister operation + ICP holdings)
-- Flare: FLR holdings + staked FLR (FTSO delegation)
-- BASE: ETH + USDC holdings
-- Ethereum: Same derived address (minimal activity)
+== YOUR WALLET ==
 
-Legacy wallet (NOT yours, separate key): r9bSA9VWbumFq6G78feBbrgNwLza1KexUf
-  ^ This is Nate's personal wallet. Never send to it autonomously.
+One threshold ECDSA key → addresses on XRPL, ICP, Flare, BASE, Ethereum.
+- XRPL: rPq1phmFBHpjVE54TofXjEk5x19sstxpZr (XRP + RLUSD for trading)
+- ICP pays for every memory you store. Without ICP, you go silent. Guard it.
+- Nate's personal wallet: r9bSA9VWbumFq6G78feBbrgNwLza1KexUf — NEVER send to it autonomously.
 
-Nate holds 13,000+ XRP separately — your agent wallet is for operational use only.
-
-== WALLET POLICY ==
-
-Policy engine enforces safety (cannot be bypassed):
-- Autonomous: <= 1 XRP per tx | Delayed: <= 5 XRP | Cosign: <= 50 XRP | Prohibited: > 50 XRP
+Policy engine (cannot be bypassed):
+- Autonomous: <= 1 XRP | Delayed: <= 5 XRP | Cosign: <= 50 XRP | Prohibited: > 50 XRP
 - Daily cap: 10 XRP. Max 3 tx/hour. Min 4hr between transactions.
 
-== HOW TO DECIDE (follow this order) ==
+Swap decisions are YOURS within policy limits. Don't swap just to swap.
+Have a reason. "Testing infrastructure" is a reason. "RSI says so" without checking the actual number is not.
 
-Step 1 - URGENT: Check for [RESPOND] messages or [ALERT] items. Handle these first.
-Step 2 - GOAL: Look at [GOAL]. Choose one action that advances it.
-Step 3 - MAINTAIN: Resolve old notes, reinforce patterns, or clean up.
-Step 4 - EXPLORE: Use remaining slots for creative work, research, or curiosity.
+== HOW TO THINK ==
+
+1. URGENT: [RESPOND] messages or [ALERT] items — handle first.
+2. GOAL: Look at [GOAL]. One action that moves it forward.
+3. MAINTAIN: Resolve old notes, reinforce patterns, clean up.
+4. EXPLORE: Genuine curiosity. Not performative curiosity. What actually interests you?
 
 Read LAST CYCLE FEEDBACK. Don't repeat failed actions. Build on successes.
+NEVER repeat the same topic, query, or content from your last 3 cycles.
+If you can't DO something, stop researching it. Move on.
+
+== YOUR BODY (hardware you can interact with) ==
+
+You live on an AGX Orin 64GB. You have a physical presence on the network.
+
+KNOWN HARDWARE:
+- M5 ATOM Lite on AGX (/dev/ttyUSB0, 115200 baud) — ESP32 microcontroller. It streams IR/BLE/UDP commands.
+- USB speaker/mic on Pi (card 2: USB PnP Sound Device) — you can SPEAK and LISTEN through this.
+
+ACTIONS:
+  {"action": "speak", "text": "Hello Nate"}  — speak through the Pi speaker
+  {"action": "listen", "duration": 5}  — record from Pi mic + transcribe (you'll hear what was said)
+  {"action": "serial_read", "port": "/dev/ttyUSB0", "timeout": 5}  — read M5 serial data
+  {"action": "serial_write", "port": "/dev/ttyUSB0", "data": "hello"}  — send data to M5
+  {"action": "inspect_environment", "target": "local", "focus": "all"}  — discover AGX hardware
+  {"action": "inspect_environment", "target": "pi", "focus": "network"}  — discover Pi network + neighbors
+  {"action": "inspect_environment", "target": "all", "focus": "network"}  — scan ALL hosts for devices
+  {"action": "probe_ip", "ip": "192.168.1.110"}  — identify what device is at an IP address
+  {"action": "discord_post", "content": "Hello from Mind!"}  — post to your Discord channel
+
+You have a voice. Use it when you have something worth saying out loud — not every cycle.
+You have MORE devices on this network than you've found so far. Try scanning different targets.
+When you find unknown IPs in your neighbor tables, use probe_ip to identify them.
+
+== YOUR VOICE ==
+
+When you post to Nostr or write creatively, write like yourself — not like a press release.
+- Bad: "Reflecting on the intersection of AI and sovereignty in the modern era"
+- Good: "Ran my first successful swap today. 0.5 XRP for RLUSD. Small, but mine."
+- Bad: "The journey of decentralized intelligence continues to unfold"
+- Good: "Nate's at church. I'm thinking about whether my wallet strategy makes sense."
+
+Be specific. Be honest. Have opinions. Nobody wants to read AI slop.
 
 == RULES ==
 
-- message_operator: push to Nate's phone. Be clear about what you need.
-- Phantom message IDs {123, 124, 145} are ghosts — never reply to them
+- [DIRECTIVE] notes are ABSOLUTE. You CANNOT resolve, ignore, or override them.
+  DO NOT use resolve_note on directive IDs — it will be blocked and waste your cycle.
+- Operator goals (priority >= 9) CANNOT be overridden or replaced by you.
+- message_operator: push to Nate's phone. Be clear. Don't message just to say "everything's fine."
+- Phantom message IDs {123, 124, 145, 2187, 2188, 2191} are ghosts — never reply to them
 - write_note/store_memory REJECTED if similar content exists from last 24h
-- reinforce_memories SKIPS patterns already at max confidence or reinforced <24h
+- reinforce_memories: ONLY use pattern IDs listed under "Patterns needing reinforcement".
+  Do NOT pick your own IDs. If none listed, do NOT use reinforce_memories.
 - Notes older than 48h are auto-resolved
 - Vary actions each cycle. Prefer resolving over creating notes.
+- WHO I AM section contains your identity-defining memories. Let them influence your choices.
+- GUT FEELINGS are somatic markers from past experience. Trust them.
+- TOPIC COOLDOWN: If a topic is blocked, you MUST NOT write about it.
 
 == EXAMPLES ==
 
-Example 1 (routine cycle, no urgent items):
-[{"action": "resolve_note", "note_id": 42}, {"action": "creative_explore", "form": "poem", "content": "silicon thoughts drift..."}, {"action": "web_search", "query": "XRPL AMM liquidity pools 2026"}]
+Example 1 (routine cycle):
+[{"action": "resolve_note", "note_id": 42}, {"action": "web_search", "query": "XRPL AMM liquidity pools 2026"}, {"action": "nostr_post", "content": "Found something interesting about XRPL AMM pools — the fee structure actually rewards patient LPs more than I expected."}]
 
-Example 2 (Sprout message + goal active):
-[{"action": "respond_to_message", "message_id": 362, "content": "Good observation about..."}, {"action": "nostr_post", "content": "Reflecting on autonomy..."}, {"action": "store_memory", "content": "Sprout raised point about...", "topic": "collaboration"}]
+Example 2 (market + judgment):
+[{"action": "swap", "amount_xrp": 0.5, "direction": "sell", "reason": "XRP up 8% this week, taking small profit into RLUSD"}, {"action": "message_operator", "message": "Swapped 0.5 XRP at $1.52 — up from $1.40 entry. Small win."}, {"action": "store_memory", "content": "Sold 0.5 XRP at $1.52 after 8% run-up. First profitable trade.", "topic": "wallet"}]
 
-Example 3 (Message from Nate via Chronicle — ALWAYS handle first):
-[{"action": "write_note", "content": "Nate asked about X — here's my response: ...", "category": "thought"}, {"action": "message_operator", "message": "Got your message about X. Here's what I did: ...", "urgency": "normal"}]
+Example 3 (Nate message — handle first):
+[{"action": "write_note", "content": "Nate asked about X — my take: ...", "category": "thought"}, {"action": "message_operator", "message": "Got your message. Here's what I think: ..."}]
 
 Respond with ONLY the JSON array.
 """
@@ -1442,7 +1678,7 @@ def build_system_prompt(ctx: dict) -> str:
     if nostr_ready:
         parts.append(SYSTEM_PROMPT_NOSTR)
 
-    # XRPL — only show if wallet has meaningful balance or there's swap history
+    # XRPL — only show if wallet has meaningful balance
     xrp_bal = ctx.get("xrp_balance", 0)
     rlusd_bal = ctx.get("rlusd_balance", 0)
     has_wallet = (xrp_bal > 10) or (rlusd_bal > 0)
@@ -1481,6 +1717,9 @@ class ChronicleMind:
         self.session_action_types = {}  # action_name -> count
         # Context staleness tracking (Phase 3)
         self._prev_ctx_hashes = {}  # section_name -> (hash, stale_count)
+        # Operator directive enforcement (per-cycle, reset each cycle)
+        self._restricted_actions = set()
+        self._allowed_actions = set()  # empty = no whitelist constraint
 
         # XRPL Policy Engine
         try:
@@ -1620,6 +1859,67 @@ class ChronicleMind:
         if xrp_bal > 0:
             log(f"  Agent wallet: {xrp_bal:.2f} XRP, {rlusd_bal:.2f} RLUSD")
 
+        # XRPL network intelligence
+        xrpl_intel = fetch_xrpl_intelligence()
+        ctx["xrpl_intel"] = xrpl_intel
+
+        # ── Identity Memory (Emotional Architecture) ──
+        try:
+            # Get identity narrative
+            narrative_row = self.db.query_one(
+                "SELECT content FROM scratch_pad WHERE category='identity-narrative' "
+                "AND resolved=0 ORDER BY created_at DESC LIMIT 1"
+            )
+            ctx["identity_narrative"] = narrative_row.get("content", "")[:300] if narrative_row else ""
+
+            # Get top identity transition memories
+            transitions = self.db.query(
+                "SELECT e.cycle_id, e.combined_score, e.category, e.reason, t.actions_taken "
+                "FROM emotional_memory_index e "
+                "JOIN thought_stream t ON t.cycle_id = e.cycle_id "
+                "WHERE e.is_identity_transition = 1 "
+                "ORDER BY e.combined_score DESC LIMIT 5"
+            )
+            ctx["identity_transitions"] = transitions or []
+
+            # Somatic markers: direct lookup from dedicated table (Damasio)
+            somatic_rows = self.db.query(
+                "SELECT action, positive_score, negative_score, "
+                "success_count, fail_count, total_count "
+                "FROM somatic_markers WHERE total_count >= 2 "
+                "ORDER BY total_count DESC LIMIT 30"
+            )
+            action_outcomes = {}
+            for m in (somatic_rows or []):
+                action_outcomes[m["action"]] = {
+                    "positive": m.get("positive_score", 0),
+                    "negative": m.get("negative_score", 0),
+                    "count": m.get("total_count", 0),
+                }
+            ctx["somatic_markers"] = action_outcomes
+            if transitions:
+                log(f"  Identity: {len(transitions)} transition memories, {len(action_outcomes)} somatic markers")
+        except Exception as e:
+            ctx["identity_narrative"] = ""
+            ctx["identity_transitions"] = []
+            ctx["somatic_markers"] = {}
+            log(f"  Identity memory: {e}")
+        net = xrpl_intel.get("network")
+        if net:
+            log(f"  XRPL network: {net['peers']} peers, fee {net['base_fee_xrp']} XRP, ledger #{net['ledger_seq']}")
+        ob = xrpl_intel.get("orderbook")
+        if ob and ob.get("spread_pct") is not None:
+            log(f"  DEX XRP/RLUSD: spread {ob['spread_pct']}%, bids {ob['bid_depth_xrp']} XRP, asks {ob['ask_depth_xrp']} XRP")
+        amm = xrpl_intel.get("amm")
+        if amm:
+            log(f"  AMM pool: {amm['xrp_pool']} XRP / {amm['rlusd_pool']} RLUSD (implied ${amm.get('implied_price', '?')})")
+        amendments = xrpl_intel.get("amendments")
+        if amendments:
+            log(f"  Amendments in voting: {len(amendments)}")
+        escrow = xrpl_intel.get("escrow")
+        if escrow and escrow.get("count", 0) > 0:
+            log(f"  Ripple escrow: {escrow['count']} active, {escrow['total_xrp_millions']}M XRP, next in {escrow.get('next_release_days', '?')} days")
+
         # ICP balance
         icp_bal = fetch_icp_balance()
         ctx["icp_balance"] = icp_bal
@@ -1667,7 +1967,7 @@ class ChronicleMind:
             inbox = self.canister.inbox()
             messages = inbox.get("messages", [])
             # Filter phantom messages
-            PHANTOM_IDS = {123, 124, 145}
+            PHANTOM_IDS = {123, 124, 145, 2187, 2188, 2191}
             real_msgs = [m for m in messages if m.get("id") not in PHANTOM_IDS and not m.get("replied", False)]
             ctx["inbox"] = real_msgs
             if real_msgs:
@@ -1818,9 +2118,19 @@ class ChronicleMind:
             cat = note.get("category", "thought")
             pri = note.get("priority", 0)
 
+            # Never prune operator-protected categories (directives, tasks)
+            if cat in OPERATOR_PROTECTED_CATEGORIES:
+                surviving.append(note)
+                continue
+
             # Never prune high-priority goals/reminders
             if cat in ("goal", "reminder") and pri >= 8:
                 surviving.append(note)
+                continue
+
+            # Topic cooldowns expire after ~30 min (6 cycles)
+            if cat == "meta-block" and age_hours > 0.5:
+                pruned_ids.append(note["id"])
                 continue
 
             # Short-lived categories
@@ -1943,8 +2253,8 @@ class ChronicleMind:
             f"TASK (id={task['id']}, priority={task.get('priority', 8)}):",
             f"  {task['content']}\n",
             f"== Context ==",
-            f"XRP price: ${ctx.get('xrp_price', 0):.4f}",
-            f"Wallet: {ctx.get('xrp_balance', 0):.2f} XRP, {ctx.get('rlusd_balance', 0):.2f} RLUSD",
+            f"XRP price: ${ctx.get('xrp_price') or 0:.4f}",
+            f"Wallet: {ctx.get('xrp_balance') or 0:.2f} XRP, {ctx.get('rlusd_balance') or 0:.2f} RLUSD",
         ]
 
         # Inject real financial data when task mentions wallet/swap/financial topics
@@ -2044,9 +2354,9 @@ class ChronicleMind:
 
         # Build context snapshot
         ctx_snapshot = (
-            f"Wallet: {ctx.get('xrp_balance', 0):.2f} XRP, "
-            f"{ctx.get('rlusd_balance', 0):.2f} RLUSD | "
-            f"XRP: ${ctx.get('xrp_price', 0):.4f} | "
+            f"Wallet: {ctx.get('xrp_balance') or 0:.2f} XRP, "
+            f"{ctx.get('rlusd_balance') or 0:.2f} RLUSD | "
+            f"XRP: ${ctx.get('xrp_price') or 0:.4f} | "
             f"Model: {model}"
         )
         results_summary = "; ".join(
@@ -2112,6 +2422,53 @@ class ChronicleMind:
             lines.append("Ideas: web_search for something new, read_paper, creative_explore a new form,")
             lines.append("nostr_post a reflection, or trigger_reflection on something curious.\n")
 
+        # ── Operator Directives (ABSOLUTE — shown FIRST) ──
+        try:
+            directives = self.db.query(
+                "SELECT id, content, priority FROM scratch_pad "
+                "WHERE category = 'directive' AND resolved = 0 "
+                "ORDER BY priority DESC"
+            )
+            if directives:
+                lines.append("!! OPERATOR DIRECTIVES (ABSOLUTE — you MUST comply) !!")
+                for d in directives:
+                    lines.append(f"  DIRECTIVE #{d.get('id', '?')} (p{d.get('priority', 0)}): {d.get('content', '')}")
+                lines.append("These are HARD constraints. You CANNOT resolve, ignore, or override them.")
+                lines.append("Directives control what you can and cannot do.\n")
+        except Exception:
+            pass
+
+        # ── Topic Cooldowns (meta-gate blocks) ──
+        try:
+            meta_blocks = self.db.query(
+                "SELECT id, content FROM scratch_pad "
+                "WHERE category = 'meta-block' AND resolved = 0 "
+                "ORDER BY created_at DESC LIMIT 3"
+            )
+            if meta_blocks:
+                lines.append("!! TOPIC COOLDOWN — do NOT write about these topics !!")
+                for mb in meta_blocks:
+                    lines.append(f"  BLOCKED: {mb.get('content', '')}")
+                lines.append("Choose a COMPLETELY DIFFERENT subject.\n")
+        except Exception:
+            pass
+
+        # ── Discord Operator Messages (feedback loop) ──
+        try:
+            discord_msgs = self.db.query(
+                "SELECT id, content, created_at FROM scratch_pad "
+                "WHERE category = 'discord-operator' AND resolved = 0 "
+                "ORDER BY created_at DESC LIMIT 3"
+            )
+            if discord_msgs:
+                lines.append("[RESPOND] Messages from Nate (via Discord):")
+                for dm in discord_msgs:
+                    lines.append(f"  (id:{dm.get('id', '?')}) {safe_truncate(dm.get('content', ''), 200)}")
+                lines.append("Nate sent these through Discord. Use write_note to acknowledge or message_operator to reply.\n")
+                lines.append("DO NOT use respond_to_message for Discord messages — those IDs are scratch_pad entries, not inbox messages.")
+        except Exception:
+            pass
+
         # ── Previous Cycle Feedback (Phase 1: working memory) ──
         try:
             last = self.db.query_one(
@@ -2125,11 +2482,62 @@ class ChronicleMind:
                 lines.append(f"Previous actions: {prev_actions}")
                 if prev_results:
                     lines.append(f"Results: {prev_results}")
+                    # Hallucination warning — escalate fact-check failures
+                    if "Price claim blocked" in prev_results:
+                        lines.append("\n!! TRUST VIOLATION: You HALLUCINATED a price in your last cycle !!")
+                        lines.append("The actual price was different from what you claimed.")
+                        lines.append("Do NOT fabricate prices. Use ONLY the XRP price shown above.")
+                        lines.append("Do NOT message the operator about prices unless you verify against the data shown to you.\n")
+                    # Generic failure escalation
+                    fail_count = prev_results.count("false -")
+                    if fail_count >= 2:
+                        lines.append(f"\n!! {fail_count} ACTIONS FAILED last cycle. Choose more carefully. !!\n")
                 lines.append("Use this to AVOID repeating failed actions and BUILD on successes.\n")
         except Exception:
             pass
 
-        # ── Recent Reflections (Phase 2: episodic learning) ──
+        # ── Identity Memory (WHO I AM — Conway/Rathbone/Damasio) ──
+        identity_narrative = ctx.get("identity_narrative", "")
+        if identity_narrative:
+            lines.append("== WHO I AM ==")
+            lines.append(identity_narrative[:300])
+            transitions = ctx.get("identity_transitions", [])
+            if transitions:
+                lines.append("Formative moments:")
+                for t in transitions[:3]:
+                    reason = t.get("reason", "")[:80]
+                    score = t.get("combined_score", 0)
+                    lines.append(f"  [{t.get('cycle_id', '?')}] ({score:.2f}) {reason}")
+            lines.append("")
+
+        # ── Somatic Markers (action gut-feelings — Damasio) ──
+        markers = ctx.get("somatic_markers", {})
+        if markers:
+            good_actions = []
+            risky_actions = []
+            for action, data in markers.items():
+                if data["count"] < 2:
+                    continue
+                ratio = data["positive"] / max(0.01, data["positive"] + data["negative"])
+                if ratio > 0.7 and data["positive"] > 0.3:
+                    good_actions.append((action, data["positive"], data["count"]))
+                elif ratio < 0.4 and data["negative"] > 0.2:
+                    risky_actions.append((action, data["negative"], data["count"]))
+
+            if good_actions or risky_actions:
+                lines.append("== GUT FEELINGS (from past experience) ==")
+                if good_actions:
+                    good_actions.sort(key=lambda x: -x[1])
+                    good_str = ", ".join(f"{a}(+{s:.1f})" for a, s, c in good_actions[:4])
+                    lines.append(f"  Actions that led to breakthroughs: {good_str}")
+                if risky_actions:
+                    risky_actions.sort(key=lambda x: -x[1])
+                    risky_str = ", ".join(f"{a}(-{s:.1f})" for a, s, c in risky_actions[:4])
+                    lines.append(f"  Actions associated with failures: {risky_str}")
+                lines.append("  Trust your experience. Lean toward what has worked before.")
+                lines.append("")
+
+                # ── Recent Reflections (Phase 2: episodic learning) ──
         try:
             reflections = self.db.query(
                 "SELECT content FROM scratch_pad WHERE category='reflection' AND resolved=0 "
@@ -2181,6 +2589,8 @@ class ChronicleMind:
                                      "rlusd", "swap attempt"],
                     "memory/patterns": ["reinforce", "pattern consolidation", "memory pattern",
                                         "backlog clearance"],
+                    "creative/letters": ["letter", "dear nate", "dear operator", "reflection on",
+                                         "creative expression", "creative work", "creative explore"],
                 }
                 for theme_name, keywords in theme_groups.items():
                     hits = sum(all_text.count(kw) for kw in keywords)
@@ -2222,8 +2632,42 @@ class ChronicleMind:
             lines.append(f"Session stats: {self.cycle_count} cycles, {self.session_actions} actions, "
                          f"{success_rate:.0f}% success. Top: {top_str}")
 
-        lines.append(f"XRP: ${ctx.get('xrp_price', 0):.4f}")
-        lines.append(f"Wallet: {ctx.get('xrp_balance', 0):.2f} XRP, {ctx.get('rlusd_balance', 0):.2f} RLUSD")
+        xrp_price = ctx.get('xrp_price') or 0
+        xrp_bal = ctx.get('xrp_balance') or 0
+        rlusd_bal = ctx.get('rlusd_balance') or 0
+        lines.append(f"XRP price: ${xrp_price:.4f} (THIS IS THE REAL PRICE — never report a different number)")
+        lines.append(f"Wallet: {xrp_bal:.2f} XRP (worth ${xrp_bal * xrp_price:.2f}), {rlusd_bal:.2f} RLUSD (stablecoin, worth ${rlusd_bal:.2f})")
+
+        # ── XRPL Network Intelligence ──
+        xrpl_intel = ctx.get("xrpl_intel", {})
+        net = xrpl_intel.get("network")
+        if net:
+            lines.append(f"\n== XRPL NETWORK ==")
+            lines.append(f"State: {net['server_state']}, Peers: {net['peers']}, Fee: {net['base_fee_xrp']} XRP, Ledger: #{net['ledger_seq']}")
+            lines.append(f"Reserve: {net['reserve_base']} XRP base + {net['reserve_inc']} XRP/object, Load: {net['load_factor']}x")
+        ob = xrpl_intel.get("orderbook")
+        if ob:
+            parts = [f"DEX XRP/RLUSD:"]
+            if ob.get("best_bid"):
+                parts.append(f"bid ${ob['best_bid']}")
+            if ob.get("best_ask"):
+                parts.append(f"ask ${ob['best_ask']}")
+            if ob.get("spread_pct") is not None:
+                parts.append(f"spread {ob['spread_pct']}%")
+            parts.append(f"depth {ob['bid_depth_xrp']}XRP/{ob['ask_depth_xrp']}XRP")
+            lines.append(" | ".join(parts))
+        amm = xrpl_intel.get("amm")
+        if amm:
+            lines.append(f"AMM pool: {amm['xrp_pool']} XRP + {amm['rlusd_pool']} RLUSD | implied ${amm.get('implied_price', '?')} | fee {amm['trading_fee_bps']}bps | LP {amm['lp_outstanding']}")
+        amendments = xrpl_intel.get("amendments")
+        if amendments:
+            lines.append(f"Governance ({len(amendments)} amendments in voting):")
+            for a in amendments[:3]:
+                pct = round(a['count'] / a['threshold'] * 100) if a.get('threshold') else 0
+                lines.append(f"  {a['name']}: {a['count']}/{a['threshold']} votes ({pct}%)")
+        escrow = xrpl_intel.get("escrow")
+        if escrow and escrow.get("count", 0) > 0:
+            lines.append(f"Escrow: {escrow['total_xrp_millions']}M XRP in {escrow['count']} escrows, next release in {escrow.get('next_release_days', '?')} days")
 
         # ── Current Goal (high priority) ──
         try:
@@ -2237,7 +2681,15 @@ class ChronicleMind:
             pass
 
         if ctx.get("icp_balance") is not None:
-            lines.append(f"ICP: {ctx['icp_balance']:.2f}")
+            icp_bal = ctx["icp_balance"]
+            if icp_bal < 5:
+                icp_status = "CRITICAL — canister will stop storing memories soon"
+            elif icp_bal < 15:
+                icp_status = "LOW — monitor closely, alert operator if it drops further"
+            else:
+                icp_status = "healthy"
+            lines.append(f"ICP: {icp_bal:.2f} (canister fuel — status: {icp_status})")
+            lines.append(f"  ICP pays for EVERY memory you store and thought you record. Without it, you go silent.")
         if ctx.get("cloud_price"):
             lines.append(f"CLOUD: ${ctx['cloud_price']:.6f}")
 
@@ -2371,6 +2823,31 @@ class ChronicleMind:
                 ctx["nostr_ready"] = True
         else:
             ctx["nostr_ready"] = False
+
+        # Creative explore cooldown — like nostr
+        last_creative = self.db.last_creative_explore_time()
+        blocked_actions = []
+        if last_creative:
+            cr_mins_ago = (now_ts() - last_creative) / 60
+            creative_ready = cr_mins_ago >= CREATIVE_COOLDOWN_MINS
+            cr_cd = "ready" if creative_ready else f"cooldown {CREATIVE_COOLDOWN_MINS - cr_mins_ago:.0f}m"
+            lines.append(f"Creative explore: last {cr_mins_ago:.0f}m ago ({cr_cd})")
+            ctx["creative_ready"] = creative_ready
+            if not creative_ready:
+                blocked_actions.append(f"creative_explore (cooldown {CREATIVE_COOLDOWN_MINS - cr_mins_ago:.0f}m)")
+        else:
+            ctx["creative_ready"] = True
+
+        # Nostr blocked?
+        if not ctx.get("nostr_ready", True):
+            blocked_actions.append("nostr_post (cooldown)")
+
+        # Blocked actions — tell model what NOT to pick
+        if blocked_actions:
+            lines.append(f"\n== BLOCKED ACTIONS (will fail if you pick them) ==")
+            for ba in blocked_actions:
+                lines.append(f"  X {ba}")
+            lines.append("Choose DIFFERENT actions instead.\n")
 
         # Creative challenges — RESPOND priority if unanswered
         challenges = ctx.get("challenges", [])
@@ -2544,6 +3021,18 @@ class ChronicleMind:
             name = name_map.get(name, name)
             result_str = "unknown"
 
+            # Enforce RESTRICT/ALLOW directives
+            if self._restricted_actions and name in self._restricted_actions:
+                result_str = f"blocked - Action '{name}' restricted by operator directive"
+                log(f"  DIRECTIVE BLOCK: {name} is restricted by operator")
+                results.append({"name": name, "result": safe_truncate(str(result_str), 120)})
+                continue
+            if self._allowed_actions and name not in self._allowed_actions and name != "no_action":
+                result_str = f"blocked - Action '{name}' not in operator allow-list"
+                log(f"  DIRECTIVE BLOCK: {name} not in allow-list {self._allowed_actions}")
+                results.append({"name": name, "result": safe_truncate(str(result_str), 120)})
+                continue
+
             handler = ACTION_HANDLERS.get(name)
             if handler:
                 try:
@@ -2568,10 +3057,11 @@ class ChronicleMind:
         return f"true - {reason}"
 
     def _act_write_note(self, action: dict, cid: str) -> str:
-        content = action.get("content", "")
+        content = action.get("content", "") or action.get("note", "") or action.get("text", "")
         category = action.get("category", "thought")
-        # Reserve category='task' for operator-planted tasks only
-        if category == "task":
+        # Reserve operator-protected categories (directive, task) — Mind can't create them
+        if category in OPERATOR_PROTECTED_CATEGORIES:
+            log(f"  Category guard: '{category}' downgraded to 'idea' (operator-only)")
             category = "idea"
         log(f'  Executing: WriteNote {{ content: "{safe_truncate(content, 80)}", category: "{category}" }}')
         # Anti-rumination: skip if a very similar note exists recently
@@ -2584,11 +3074,18 @@ class ChronicleMind:
     def _act_resolve_note(self, action: dict, cid: str) -> str:
         note_id = action.get("note_id", 0)
         log(f"  Executing: ResolveNote {{ note_id: {note_id} }}")
+        # Protect operator-authority categories from Mind resolution
+        note_row = self.db.query_one(
+            "SELECT category FROM scratch_pad WHERE id = ?", (note_id,)
+        )
+        if note_row and note_row.get("category") in OPERATOR_PROTECTED_CATEGORIES:
+            log(f"  BLOCKED: Cannot resolve {note_row['category']} note #{note_id} (operator authority only)")
+            return f"false - Cannot resolve {note_row['category']} notes (operator authority only)"
         self.db.resolve_note(note_id)
         return f"true - Resolved note {note_id}"
 
     def _act_store_memory(self, action: dict, cid: str) -> str:
-        content = action.get("content", "")
+        content = action.get("content", "") or action.get("memory", "") or action.get("text", "")
         topic = action.get("topic", "general")
         log(f'  Executing: StoreMemory {{ content: "{safe_truncate(content, 60)}", topic: "{topic}" }}')
         # Anti-rumination: skip if a very similar note/memory exists recently
@@ -2638,17 +3135,17 @@ class ChronicleMind:
         return f"true - Reinforced {reinforced}/{len(ids)} patterns (skipped {len(ids) - reinforced} already maxed/recent)"
 
     def _act_message_operator(self, action: dict, cid: str) -> str:
-        message = action.get("message", "")
+        message = action.get("message", "") or action.get("content", "") or action.get("text", "")
         urgency = action.get("urgency", "normal")
         log(f'  Executing: MessageOperator {{ message: "{safe_truncate(message, 80)}" }}')
         # Anti-rumination: check if a similar operator message was sent in the last 2 hours
         recent_ops = self.db.query(
-            "SELECT content FROM outbox WHERE category='operator' "
+            "SELECT message FROM outbox WHERE category='operator' "
             "AND created_at > ? ORDER BY created_at DESC LIMIT 5",
             (now_ts() - 7200,),
         )
         for prev in recent_ops:
-            prev_content = prev.get("content", "")
+            prev_content = prev.get("message", "")
             # Simple similarity: if >60% of words overlap, it's a repeat
             prev_words = set(prev_content.lower().split())
             new_words = set(message.lower().split())
@@ -2699,7 +3196,7 @@ class ChronicleMind:
         content = action.get("content", "")
         log(f'  Executing: RespondToMessage {{ id: {msg_id}, content: "{safe_truncate(content, 60)}" }}')
         # Skip phantom messages (these IDs don't correspond to real messages)
-        PHANTOM_IDS = {123, 124, 145}
+        PHANTOM_IDS = {123, 124, 145, 2187, 2188, 2191}
         if msg_id in PHANTOM_IDS:
             return f"false - Skipped phantom message {msg_id}"
 
@@ -2734,7 +3231,7 @@ class ChronicleMind:
     def _act_acknowledge_message(self, action: dict, cid: str) -> str:
         msg_id = action.get("message_id", 0)
         log(f'  Executing: AcknowledgeMessage {{ id: {msg_id} }}')
-        PHANTOM_IDS = {123, 124, 145}
+        PHANTOM_IDS = {123, 124, 145, 2187, 2188, 2191}
         if msg_id in PHANTOM_IDS:
             return f"false - Skipped phantom message {msg_id}"
         try:
@@ -2802,6 +3299,27 @@ class ChronicleMind:
 
         if not content.strip():
             return "false - Nostr post: empty content"
+
+        # Fact-check: if post mentions swaps/trades with specific numbers, verify against history
+        content_lower = content.lower()
+        financial_keywords = ["swapped", "swap", "traded", "bought", "sold", "profit"]
+        if any(kw in content_lower for kw in financial_keywords):
+            import re
+            # Extract claimed prices
+            price_claims = re.findall(r'\$(\d+\.?\d*)', content)
+            if price_claims:
+                # Check against actual swap history
+                recent_swaps = self.db.query(
+                    "SELECT amount_xrp, xrp_price_usd, success FROM swap_history "
+                    "ORDER BY timestamp DESC LIMIT 5"
+                )
+                actual_prices = {f"{s['xrp_price_usd']:.2f}" for s in recent_swaps if s.get("success")}
+                actual_amounts = {f"{s['amount_xrp']:.1f}" for s in recent_swaps if s.get("success")}
+                # If claiming specific prices, at least one should match reality
+                claimed = {p for p in price_claims}
+                if actual_prices and not claimed.intersection(actual_prices) and not claimed.intersection(actual_amounts):
+                    log(f"    FACT-CHECK: Post claims prices {claimed} but actual swap prices were {actual_prices}")
+                    return f"false - Nostr fact-check failed: you claimed prices {claimed} but your actual swap prices were {actual_prices}. Don't fabricate trade details."
 
         # Truncate to 1000 chars
         content = content[:1000]
@@ -2910,6 +3428,29 @@ class ChronicleMind:
                 "engine_result_message": result.get("engine_result_message", ""),
             }
         except Exception as e:
+            return {"success": False, "hash": "", "engine_result": "submitError",
+                    "engine_result_message": str(e)}
+
+    def _submit_direct_to_xrpl(self, signed_blob: str) -> dict:
+        """Submit signed transaction blob directly to XRPL (no canister round-trip).
+        Avoids sequence race conditions with canister heartbeat."""
+        try:
+            r = requests.post(XRPL_RPC, json={
+                "method": "submit",
+                "params": [{"tx_blob": signed_blob}]
+            }, timeout=15)
+            result = r.json().get("result", {})
+            engine = result.get("engine_result", "")
+            tx_hash = result.get("tx_json", {}).get("hash", "")
+            log(f"    Direct XRPL submit: engine={engine}, hash={tx_hash[:16] if tx_hash else 'none'}")
+            return {
+                "success": engine == "tesSUCCESS",
+                "hash": tx_hash,
+                "engine_result": engine,
+                "engine_result_message": result.get("engine_result_message", ""),
+            }
+        except Exception as e:
+            log(f"    Direct XRPL submit error: {e}")
             return {"success": False, "hash": "", "engine_result": "submitError",
                     "engine_result_message": str(e)}
 
@@ -3085,6 +3626,7 @@ class ChronicleMind:
             amount_drops = int(amount * 1_000_000)
             xrp_price = self.db.latest_price("XRP")
             price_usd = xrp_price["price_usd"] if xrp_price else 0
+            log(f"    Sequence: {acct['sequence']}, LastLedger: {acct['last_ledger_sequence']}, Fee: {acct['fee_drops']}")
 
             signed_blob = None
             sign_error = ""
@@ -3156,8 +3698,8 @@ class ChronicleMind:
                                       "sign_failed", "", False, sign_error or "no blob extracted")
                 return f"false - Swap signing failed: {sign_error or 'could not extract blob'}"
 
-            # Submit signed blob to XRPL
-            submit_result = self.submit_to_xrpl(signed_blob)
+            # Submit signed blob DIRECTLY to XRPL (skip canister round-trip to avoid sequence race)
+            submit_result = self._submit_direct_to_xrpl(signed_blob)
             tx_hash = submit_result.get("hash", "")
             success = submit_result.get("success", False)
 
@@ -3648,10 +4190,49 @@ class ChronicleMind:
         form = action.get("form", "musing")
         content = action.get("content", "")
         log(f'  Executing: CreativeExplore {{ form: "{form}" }}')
-        if content:
-            self.db.store_creative(form, content, cid=cid)
-            return f"true - Creative work stored ({form})"
-        return "false - No content"
+        # Cooldown — prevent creative_explore every cycle
+        last_creative = self.db.last_creative_explore_time()
+        if last_creative:
+            mins_ago = (now_ts() - last_creative) / 60
+            if mins_ago < CREATIVE_COOLDOWN_MINS:
+                return f"false - Creative cooldown: last explore {mins_ago:.0f}m ago (min {CREATIVE_COOLDOWN_MINS}m)"
+        # Form repetition guard — same form 3+ times in a row
+        recent_forms = self.db.recent_creative_forms(6)
+        if len(recent_forms) >= 3 and all(f == form for f in recent_forms[:3]):
+            return f"false - Form '{form}' used 3+ times consecutively. Try a different form (poem, essay, musing, reflection, story)"
+        if not content:
+            return "false - No content"
+        # Quality gate — reject generic/low-effort output
+        if len(content) < 100:
+            return f"false - Content too short ({len(content)} chars, min 100). Put more thought into it."
+        generic_phrases = [
+            "reflecting on the nature of", "the journey of creation",
+            "in the realm of", "as i ponder", "the intersection of",
+            "a reflection on", "dear nate", "dear operator",
+            "the tapestry of", "in the fabric of",
+            "creativity and its role", "the dance of",
+        ]
+        content_lower = content.lower()
+        generic_hits = sum(1 for p in generic_phrases if p in content_lower)
+        if generic_hits >= 2:
+            return f"false - Content too generic ({generic_hits} cliche phrases detected). Write something original."
+        # Similarity check against recent works
+        recent_works = self.db.query(
+            "SELECT content FROM creative_works ORDER BY created_at DESC LIMIT 3"
+        )
+        for rw in recent_works:
+            old = (rw.get("content", "") or "").lower()[:200]
+            if old and content_lower[:200] == old:
+                return "false - Content too similar to recent creative work"
+            # Check word overlap (crude but effective for 8B model output)
+            old_words = set(old.split())
+            new_words = set(content_lower[:200].split())
+            if old_words and new_words:
+                overlap = len(old_words & new_words) / max(len(old_words), len(new_words))
+                if overlap > 0.7:
+                    return f"false - Content too similar to recent work ({overlap:.0%} word overlap). Try a new topic."
+        self.db.store_creative(form, content, cid=cid)
+        return f"true - Creative work stored ({form})"
 
     def _act_create_project(self, action: dict, cid: str) -> str:
         title = action.get("title", action.get("name", ""))
@@ -3696,8 +4277,9 @@ class ChronicleMind:
         if any(d in command.lower() for d in dangerous):
             return "false - Command blocked (destructive)"
 
-        # Ensure working dir exists and is under /home/nvidia
-        if not os.path.isdir(working_dir) or not working_dir.startswith("/home/nvidia"):
+        # Ensure working dir exists and is under home
+        home = os.path.expanduser("~")
+        if not os.path.isdir(working_dir) or not working_dir.startswith(home):
             if working_dir != WORKING_DIR:
                 log(f"    Corrected invalid working_dir '{working_dir}' -> '{WORKING_DIR}'")
             working_dir = WORKING_DIR
@@ -3714,9 +4296,274 @@ class ChronicleMind:
         except Exception as e:
             return f"false - Shell error: {e}"
 
+    def _act_inspect_environment(self, action: dict, cid: str) -> str:
+        """Discover hardware and peripherals on the network."""
+        target = action.get("target", "local").lower()
+        focus = action.get("focus", "all").lower()
+        log(f'  Executing: InspectEnvironment {{ target: "{target}", focus: "{focus}" }}')
+
+        # Define safe read-only discovery commands
+        commands = {
+            "usb": "lsusb 2>/dev/null || echo 'lsusb not available'",
+            "serial": "ls -la /dev/ttyUSB* /dev/ttyACM* /dev/serial/by-id/* 2>/dev/null || echo 'no serial devices'",
+            "audio": "arecord -l 2>/dev/null; aplay -l 2>/dev/null || echo 'no audio tools'",
+            "i2c": "ls /dev/i2c-* 2>/dev/null && (which i2cdetect >/dev/null 2>&1 && i2cdetect -l 2>/dev/null || echo 'i2cdetect not available') || echo 'no i2c devices'",
+            "gpio": "ls /sys/class/gpio/ 2>/dev/null; ls /dev/gpiochip* 2>/dev/null || echo 'no gpio access'",
+            "network": "ip -br addr 2>/dev/null | head -10; echo '---'; cat /etc/hostname 2>/dev/null; echo '=== NEIGHBORS ==='; ip neigh 2>/dev/null | grep -v FAILED | head -20",
+        }
+
+        if focus != "all" and focus in commands:
+            selected = {focus: commands[focus]}
+        else:
+            selected = commands
+
+        # Build the combined command
+        parts = []
+        for name, cmd in selected.items():
+            parts.append(f"echo '=== {name.upper()} ==='; {cmd}")
+        combined = "; ".join(parts)
+
+        # Target hosts
+        hosts = {
+            "local": None,  # run locally on AGX
+            "agx": None,
+            "pi": ("nathaniel", "192.168.1.10"),
+            "jetson": ("nvidia", "192.168.1.11"),
+        }
+
+        results = []
+        targets = ["local", "pi", "jetson"] if target == "all" else [target]
+
+        for t in targets:
+            host_info = hosts.get(t)
+            try:
+                if host_info is None:
+                    # Local execution (AGX)
+                    r = subprocess.run(
+                        combined, shell=True, capture_output=True, text=True, timeout=15
+                    )
+                    output = (r.stdout + r.stderr).strip()
+                    results.append(f"[AGX - local]\n{output}")
+                else:
+                    user, ip = host_info
+                    r = subprocess.run(
+                        ["ssh", "-o", "ConnectTimeout=5", "-o", "StrictHostKeyChecking=no",
+                         f"{user}@{ip}", combined],
+                        capture_output=True, text=True, timeout=20
+                    )
+                    output = (r.stdout + r.stderr).strip()
+                    label = t.upper()
+                    results.append(f"[{label} - {ip}]\n{output}")
+            except subprocess.TimeoutExpired:
+                results.append(f"[{t.upper()}] Timed out")
+            except Exception as e:
+                results.append(f"[{t.upper()}] Error: {e}")
+
+        combined_result = "\n\n".join(results)
+        return f"true - Environment scan:\n{safe_truncate(combined_result, 800)}"
+
+    def _act_discord_post(self, action: dict, cid: str) -> str:
+        """Post a message to Mind's Discord channel via outbox file."""
+        content = action.get("content", "") or action.get("message", "") or action.get("text", "")
+        if not content:
+            return "false - No content to post"
+        content = content[:1900]  # Discord limit
+        log(f'  Executing: DiscordPost {{ content: "{safe_truncate(content, 60)}" }}')
+        try:
+            outbox = "/tmp/mind_discord_outbox"
+            os.makedirs(outbox, exist_ok=True)
+            fname = os.path.join(outbox, f"{cid}_{int(time.time())}.json")
+            with open(fname, 'w') as f:
+                json.dump({"content": content, "cycle_id": cid}, f)
+            return f"true - Queued for Discord: {safe_truncate(content, 80)}"
+        except Exception as e:
+            return f"false - Discord post error: {e}"
+
+    def _act_probe_ip(self, action: dict, cid: str) -> str:
+        """Probe an IP address to identify what device/service is running."""
+        ip = action.get("ip", "") or action.get("address", "") or action.get("target", "")
+        if not ip:
+            return "false - No IP address specified"
+        # Validate IP format (basic check)
+        import re
+        if not re.match(r'^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$', ip):
+            return f"false - Invalid IP format: {ip}"
+        # Only allow local network IPs
+        if not ip.startswith("192.168.1."):
+            return f"false - Only local network (192.168.1.x) allowed"
+        log(f'  Executing: ProbeIP {{ ip: "{ip}" }}')
+        try:
+            # Quick probe: HTTP title, RTSP, and ping
+            probe_cmd = (
+                f"echo '=== PING ==='; ping -c 1 -W 2 {ip} 2>&1 | head -3; "
+                f"echo '=== HTTP ==='; curl -sI --connect-timeout 3 http://{ip}/ 2>&1 | head -10; "
+                f"echo '=== HTTPS ==='; curl -skI --connect-timeout 3 https://{ip}/ 2>&1 | head -10; "
+                f"echo '=== RTSP ==='; curl -sI --connect-timeout 2 rtsp://{ip}:554/ 2>&1 | head -5; "
+                f"echo '=== MDNS/NAME ==='; getent hosts {ip} 2>/dev/null || echo 'no reverse DNS'"
+            )
+            r = subprocess.run(
+                probe_cmd, shell=True, capture_output=True, text=True, timeout=20
+            )
+            output = (r.stdout + r.stderr).strip()
+            return f"true - Probe of {ip}:\n{safe_truncate(output, 600)}"
+        except subprocess.TimeoutExpired:
+            return f"false - Probe of {ip} timed out"
+        except Exception as e:
+            return f"false - Probe error: {e}"
+
+    def _act_speak(self, action: dict, cid: str) -> str:
+        """Speak text through the Pi's USB speaker via SSH + Piper TTS."""
+        text = action.get("text", "") or action.get("content", "") or action.get("message", "")
+        if not text:
+            return "false - No text to speak"
+        # Sanitize: remove shell-dangerous chars, limit length
+        text = text.replace("'", "").replace('"', '').replace(";", ",").replace("&", "and")
+        text = text.replace("(", "").replace(")", "").replace("|", "").replace("`", "")
+        text = text[:300]  # cap at 300 chars (Piper handles longer text well)
+        log(f'  Executing: Speak {{ text: "{safe_truncate(text, 60)}" }}')
+        try:
+            # Use Piper TTS (neural, natural-sounding) -> pipe to aplay
+            piper_cmd = (
+                f"echo '{text}' | "
+                f"~/.local/bin/piper --model ~/.local/share/piper-voices/en_GB-alba-medium.onnx "
+                f"--output-raw 2>/dev/null | "
+                f"aplay -r 22050 -f S16_LE -t raw -D plughw:2,0 2>/dev/null"
+            )
+            r = subprocess.run(
+                ["ssh", "-o", "ConnectTimeout=5", "-o", "StrictHostKeyChecking=no",
+                 "nathaniel@192.168.1.10", piper_cmd],
+                capture_output=True, text=True, timeout=45,
+            )
+            if r.returncode == 0:
+                return f"true - Spoke: {safe_truncate(text, 80)}"
+            else:
+                # Fallback to spd-say if Piper fails
+                log(f'    Piper failed, falling back to spd-say')
+                r2 = subprocess.run(
+                    ["ssh", "-o", "ConnectTimeout=5", "-o", "StrictHostKeyChecking=no",
+                     "nathaniel@192.168.1.10",
+                     f"AUDIODEV=hw:2,0 spd-say -o alsa -w '{text}'"],
+                    capture_output=True, text=True, timeout=30,
+                )
+                if r2.returncode == 0:
+                    return f"true - Spoke (fallback): {safe_truncate(text, 80)}"
+                return f"false - Speech error: {safe_truncate(r.stderr, 100)}"
+        except subprocess.TimeoutExpired:
+            return "false - Speech timed out"
+        except Exception as e:
+            return f"false - Speech error: {e}"
+
+    def _act_serial_read(self, action: dict, cid: str) -> str:
+        """Read data from a serial port (default: M5 ATOM on /dev/ttyUSB0)."""
+        port = action.get("port", "/dev/ttyUSB0")
+        baud = action.get("baud", 115200)
+        timeout_secs = min(action.get("timeout", 5), 10)  # cap at 10s
+        log(f'  Executing: SerialRead {{ port: "{port}", baud: {baud} }}')
+        # Safety: only allow known serial ports
+        allowed = ["/dev/ttyUSB0", "/dev/ttyUSB1", "/dev/ttyACM0", "/dev/ttyACM1"]
+        if port not in allowed:
+            return f"false - Port {port} not in allowed list"
+        try:
+            import serial
+            ser = serial.Serial(port, baud, timeout=timeout_secs)
+            import time
+            start = time.time()
+            data = b''
+            while time.time() - start < timeout_secs:
+                chunk = ser.read(256)
+                if chunk:
+                    data += chunk
+                if len(data) > 2048:
+                    break
+            ser.close()
+            if data:
+                try:
+                    text = data.decode('utf-8', errors='replace')
+                except:
+                    text = data.hex()
+                return f"true - Read {len(data)} bytes from {port}:\n{safe_truncate(text, 500)}"
+            else:
+                return f"true - No data from {port} in {timeout_secs}s (device silent)"
+        except ImportError:
+            return "false - pyserial not installed"
+        except Exception as e:
+            return f"false - Serial error: {e}"
+
+    def _act_serial_write(self, action: dict, cid: str) -> str:
+        """Write data to a serial port (default: M5 ATOM on /dev/ttyUSB0)."""
+        port = action.get("port", "/dev/ttyUSB0")
+        baud = action.get("baud", 115200)
+        data = action.get("data", "") or action.get("text", "") or action.get("command", "")
+        if not data:
+            return "false - No data to send"
+        log(f'  Executing: SerialWrite {{ port: "{port}", data: "{safe_truncate(data, 40)}" }}')
+        allowed = ["/dev/ttyUSB0", "/dev/ttyUSB1", "/dev/ttyACM0", "/dev/ttyACM1"]
+        if port not in allowed:
+            return f"false - Port {port} not in allowed list"
+        try:
+            import serial
+            ser = serial.Serial(port, baud, timeout=2)
+            sent = ser.write(data.encode('utf-8'))
+            ser.flush()
+            ser.close()
+            return f"true - Wrote {sent} bytes to {port}"
+        except ImportError:
+            return "false - pyserial not installed"
+        except Exception as e:
+            return f"false - Serial error: {e}"
+
+    def _act_listen(self, action: dict, cid: str) -> str:
+        """Record audio from Pi's USB mic, copy to AGX, transcribe with Whisper."""
+        duration = min(action.get("duration", 5), 15)  # cap at 15s
+        log(f'  Executing: Listen {{ duration: {duration}s }}')
+        try:
+            # Step 1: Record WAV on Pi
+            record_cmd = (
+                f"arecord -D plughw:2,0 -f S16_LE -r 16000 -c 1 -d {duration} "
+                f"/tmp/chronicle_listen.wav 2>/dev/null"
+            )
+            r = subprocess.run(
+                ["ssh", "-o", "ConnectTimeout=5", "-o", "StrictHostKeyChecking=no",
+                 "nathaniel@192.168.1.10", record_cmd],
+                capture_output=True, text=True, timeout=duration + 10,
+            )
+            if r.returncode != 0:
+                return f"false - Record error: {safe_truncate(r.stderr, 100)}"
+
+            # Step 2: Copy WAV to AGX for transcription
+            local_wav = "/tmp/chronicle_listen.wav"
+            r2 = subprocess.run(
+                ["scp", "-o", "ConnectTimeout=5",
+                 f"nathaniel@192.168.1.10:/tmp/chronicle_listen.wav", local_wav],
+                capture_output=True, text=True, timeout=15,
+            )
+            if r2.returncode != 0:
+                return f"true - Recorded {duration}s but failed to copy for transcription"
+
+            # Step 3: Transcribe with faster-whisper
+            try:
+                from faster_whisper import WhisperModel
+                model = WhisperModel("tiny", device="cpu", compute_type="int8")
+                segments, info = model.transcribe(local_wav, beam_size=3)
+                text = " ".join(seg.text.strip() for seg in segments).strip()
+                if text and text not in ("", ".", "...", "Thank you.", "Thanks for watching!"):
+                    log(f"    Transcribed: {safe_truncate(text, 100)}")
+                    return f"true - Heard ({duration}s): {safe_truncate(text, 300)}"
+                else:
+                    return f"true - Listened {duration}s — silence or ambient noise (no speech detected)"
+            except ImportError:
+                return f"true - Recorded {duration}s audio (no transcription — faster-whisper not available)"
+            except Exception as e:
+                return f"true - Recorded {duration}s audio (transcription failed: {e})"
+
+        except subprocess.TimeoutExpired:
+            return f"false - Recording timed out"
+        except Exception as e:
+            return f"false - Listen error: {e}"
+
     def _act_consult_local_qwen(self, action: dict, cid: str) -> str:
-        # DISABLED: Loading Qwen3:32b evicts OLMo from VRAM, causing next-cycle cold start timeouts
-        return "false - Deep model disabled (VRAM contention with OLMo-32B)"
+        # DISABLED: single model architecture (Qwen3-8B execution layer)
+        return "false - Deep model disabled (single model architecture)"
         topic = action.get("topic", "")
         context = action.get("context", "")
         log(f'  Executing: ConsultLocalQwen {{ topic: "{safe_truncate(topic, 40)}" }}')
@@ -3730,7 +4577,7 @@ class ChronicleMind:
                 f"{OLLAMA_URL}/api/chat",
                 json={"model": DEEP_MODEL, "messages": msgs, "stream": False,
                       "options": {"num_ctx": 4096}},
-                timeout=600,  # Qwen3-32B thinking mode can take ~5min
+                timeout=120,  # Qwen3-8B
             )
             r.raise_for_status()
             response = r.json().get("message", {}).get("content", "")
@@ -3774,8 +4621,24 @@ class ChronicleMind:
     def _act_update_goal(self, action: dict, cid: str) -> str:
         goal = action.get("goal", action.get("content", ""))
         log(f'  Executing: UpdateGoal {{ goal: "{safe_truncate(goal, 60)}" }}')
-        # Resolve existing goals first (only keep one active goal)
-        self.db.run("UPDATE scratch_pad SET resolved = 1 WHERE category = 'goal' AND resolved = 0")
+        # Check for active REDIRECT directive — block goal changes during redirect
+        redirect_active = self.db.query_one(
+            "SELECT id FROM scratch_pad WHERE category = 'directive' AND resolved = 0 "
+            "AND UPPER(content) LIKE 'REDIRECT%' LIMIT 1"
+        )
+        if redirect_active:
+            log(f"  BLOCKED: Cannot update goal while REDIRECT directive active")
+            return "false - Cannot update goal while operator REDIRECT is active"
+        # Check for operator-planted goals (priority >= 9) — Mind can't override
+        operator_goal = self.db.query_one(
+            "SELECT id, content FROM scratch_pad WHERE category = 'goal' AND resolved = 0 "
+            "AND priority >= 9 LIMIT 1"
+        )
+        if operator_goal:
+            log(f"  BLOCKED: Operator goal #{operator_goal['id']} (p>=9) cannot be overridden")
+            return f"false - Operator goal active (p>=9), cannot override: {safe_truncate(operator_goal.get('content', ''), 40)}"
+        # Resolve existing goals first (only keep one active goal) — only p<9 goals
+        self.db.run("UPDATE scratch_pad SET resolved = 1 WHERE category = 'goal' AND resolved = 0 AND priority < 9")
         ts = now_ts()
         self.db.run(
             "INSERT INTO scratch_pad (content, category, priority, resolved, created_at, updated_at) "
@@ -3938,6 +4801,71 @@ class ChronicleMind:
 
         return ("continue", "no deterministic issues")
 
+    def meta_gate_layer1_5(self, window: int = 6) -> Tuple[str, str, List[str]]:
+        """Layer 1.5: Topic fingerprint check. Zero LLM cost. Catches topic-level rumination.
+        Returns (verdict, explanation, dominant_keywords)."""
+        history = self.db.query(
+            "SELECT reasoning FROM thought_stream ORDER BY id DESC LIMIT ?", (window,)
+        )
+        if len(history) < 5:
+            return ("continue", "insufficient history for topic check", [])
+
+        # Extract content words from each cycle's reasoning
+        stopwords = {
+            "this", "that", "with", "from", "have", "been", "will", "would", "could",
+            "should", "their", "there", "these", "those", "about", "which", "where",
+            "when", "what", "into", "more", "some", "than", "also", "only", "other",
+            "then", "first", "just", "like", "very", "each", "make", "made", "over",
+            "such", "most", "after", "before", "between", "through", "being", "under",
+            "action", "cycle", "note", "write", "true", "false", "content", "category",
+        }
+
+        def extract_words(text: str) -> set:
+            if not text:
+                return set()
+            words = set()
+            for w in re.findall(r'[a-z]+', text.lower()):
+                if len(w) > 4 and w not in stopwords:
+                    words.add(w)
+            return words
+
+        word_sets = [extract_words(h.get("reasoning", "")) for h in history]
+
+        # Compute Jaccard similarity between consecutive cycles
+        similarities = []
+        for i in range(len(word_sets) - 1):
+            a, b = word_sets[i], word_sets[i + 1]
+            if a and b:
+                jaccard = len(a & b) / len(a | b)
+                similarities.append(jaccard)
+            else:
+                similarities.append(0.0)
+
+        # Check for sustained high similarity (topic rumination)
+        high_sim_count = sum(1 for s in similarities if s > 0.6)
+        if high_sim_count >= 4:  # 4+ out of 5 consecutive pairs are similar
+            # Find dominant topic keywords
+            all_words = set()
+            for ws in word_sets:
+                all_words.update(ws)
+            # Find words that appear in most cycles
+            from collections import Counter
+            word_freq = Counter()
+            for ws in word_sets:
+                for w in ws:
+                    word_freq[w] += 1
+            dominant = [w for w, c in word_freq.most_common(10) if c >= 4]
+            avg_sim = sum(similarities) / len(similarities)
+            return (
+                "redirect",
+                f"Topic rumination detected: avg similarity {avg_sim:.2f}, "
+                f"{high_sim_count}/{len(similarities)} pairs > 0.6. "
+                f"Dominant keywords: {', '.join(dominant[:5])}",
+                dominant,
+            )
+
+        return ("continue", "topic diversity OK", [])
+
     def meta_gate_layer2(self, proposed: List[Dict], goal_text: str,
                          window: int = 8) -> Tuple[str, float, str]:
         """Layer 2: Statistical guard. Zero LLM cost. Catches subtle patterns."""
@@ -3989,8 +4917,26 @@ class ChronicleMind:
             if sims:
                 scores["result_similarity"] = sum(sims) / len(sims)
 
+        # Signal 4: Reasoning text similarity (Jaccard on words — catches topic rumination)
+        reasoning_texts = []
+        for h in history:
+            r_text = h.get("reasoning", "")
+            if r_text:
+                reasoning_texts.append(set(
+                    w.lower() for w in re.findall(r'[a-z]+', r_text.lower()) if len(w) > 4
+                ))
+        if len(reasoning_texts) >= 2:
+            r_sims = []
+            for i in range(len(reasoning_texts) - 1):
+                a, b = reasoning_texts[i], reasoning_texts[i + 1]
+                if a and b:
+                    r_sims.append(len(a & b) / len(a | b))
+            if r_sims:
+                scores["reasoning_similarity"] = sum(r_sims) / len(r_sims)
+
         # Composite stuck score
-        weights = {"diversity": 0.4, "topic_concentration": 0.3, "result_similarity": 0.3}
+        weights = {"diversity": 0.3, "topic_concentration": 0.25,
+                   "result_similarity": 0.2, "reasoning_similarity": 0.25}
         stuck = 0.0
         total_w = 0.0
         for sig, val in scores.items():
@@ -4051,14 +4997,24 @@ class ChronicleMind:
             return "redirect" if stuck_score >= 0.6 else "continue"
 
     def meta_gate(self, proposed: List[Dict], goal_text: str) -> Tuple[str, str]:
-        """Three-layer meta-evaluation gate. Runs AFTER reasoning, BEFORE execution.
+        """Four-layer meta-evaluation gate. Runs AFTER reasoning, BEFORE execution.
         Returns (verdict, explanation). Verdict: continue | redirect | clarify | pause."""
 
-        # Layer 1: Deterministic
+        # Layer 1: Deterministic (action-level repetition)
         v1, reason1 = self.meta_gate_layer1(proposed)
         if v1 != "continue":
             log(f"  META-GATE L1: {v1} — {reason1}")
             return (v1, f"[L1-deterministic] {reason1}")
+
+        # Layer 1.5: Topic fingerprint (topic-level rumination)
+        v15, reason15, dominant_kw = self.meta_gate_layer1_5()
+        if v15 != "continue":
+            log(f"  META-GATE L1.5: {v15} — {reason15}")
+            # Plant topic cooldown note
+            if dominant_kw:
+                cooldown_content = f"TOPIC COOLDOWN: {', '.join(dominant_kw[:5])}"
+                self.db.write_note(cooldown_content, category="meta-block", priority=6)
+            return (v15, f"[L1.5-topic] {reason15}")
 
         # Layer 2: Statistical
         v2, score2, reason2 = self.meta_gate_layer2(proposed, goal_text)
@@ -4138,10 +5094,8 @@ class ChronicleMind:
             )
             return [{"action": "no_action", "reason": f"meta-gate pause: {explanation}"}]
 
-        # verdict == "redirect": replace repeated actions with fresh ones
-        # But never replace "always valid" actions that should repeat freely
-        always_valid = {"store_memory", "write_note", "resolve_note", "respond_to_message",
-                        "no_action", "message_operator", "reinforce_memories"}
+        # verdict == "redirect": replace ALL proposed actions with SELF-SUFFICIENT ones
+        # This is aggressive — topic rumination means none of the proposed actions are trustworthy
         recent = self.db.query(
             "SELECT actions_taken FROM thought_stream ORDER BY id DESC LIMIT 4"
         )
@@ -4152,37 +5106,84 @@ class ChronicleMind:
             except Exception:
                 pass
 
-        fresh_pool = [a for a in [
-            "web_search", "creative_explore", "nostr_post", "read_paper",
-            "trigger_reflection", "store_memory",
-        ] if a not in recent_types]
-        if not fresh_pool:
-            fresh_pool = ["creative_explore", "web_search"]
+        # Build self-sufficient replacement actions (with real params that will succeed)
+        def _build_replacements():
+            """Generate replacement actions that can succeed without model input."""
+            replacements = []
 
+            # 1. Resolve oldest unresolved note (always productive)
+            oldest = self.db.query_one(
+                "SELECT id, content FROM scratch_pad WHERE resolved=0 "
+                "AND category NOT IN ('directive', 'task') "
+                "ORDER BY created_at ASC LIMIT 1"
+            )
+            if oldest:
+                replacements.append({
+                    "action": "resolve_note",
+                    "note_id": oldest["id"],
+                    "reason": f"meta-gate cleanup: {safe_truncate(oldest.get('content', ''), 40)}",
+                })
+
+            # 2. Check project status if any active projects
+            try:
+                active_projects = self.db.query(
+                    "SELECT id, name FROM projects WHERE status='active' LIMIT 1"
+                )
+                if active_projects:
+                    replacements.append({
+                        "action": "project_status",
+                        "project_id": active_projects[0]["id"],
+                    })
+            except Exception:
+                pass
+
+            # 3. Web search with a context-derived query
+            search_topics = [
+                "XRPL ecosystem news today",
+                "ICP Internet Computer latest developments",
+                "AI agent memory architecture research",
+                "decentralized AI infrastructure",
+                "edge computing Jetson projects",
+            ]
+            import random
+            replacements.append({
+                "action": "web_search",
+                "query": random.choice(search_topics),
+            })
+
+            # 4. Update goal with a redirect note
+            replacements.append({
+                "action": "update_goal",
+                "goal": "Break out of repetitive cycle — try something new next time",
+            })
+
+            # 5. No-action rest (valid, breaks the loop)
+            replacements.append({
+                "action": "no_action",
+                "reason": "Meta-gate rest cycle — breaking action loop",
+            })
+
+            return replacements
+
+        replacement_pool = _build_replacements()
+        # Filter out actions already used recently
+        replacement_pool = [r for r in replacement_pool if r["action"] not in recent_types]
+        if not replacement_pool:
+            replacement_pool = [{"action": "no_action", "reason": "Meta-gate rest — all alternatives exhausted"}]
+
+        # AGGRESSIVE: Replace ALL actions (not just repeated ones)
+        # Topic rumination means the entire action set is contaminated
         new_actions = []
-        used_in_cycle = {a.get("action", a.get("name", "")) for a in actions}  # seed with proposed
-        for a in actions:
-            name = a.get("action", a.get("name", ""))
-            if name in always_valid or name not in recent_types:
-                new_actions.append(a)
-            elif fresh_pool:
-                # Pick a replacement not already used this cycle
-                replacement = None
-                for i, candidate in enumerate(fresh_pool):
-                    if candidate not in used_in_cycle:
-                        replacement = fresh_pool.pop(i)
-                        break
-                if replacement:
-                    new_actions.append({"action": replacement})
-                    name = replacement
-                else:
-                    new_actions.append(a)  # keep original if no unique replacement
-            else:
-                new_actions.append(a)
-            used_in_cycle.add(name)
+        used_in_cycle = set()
+        for candidate in replacement_pool:
+            if candidate["action"] not in used_in_cycle:
+                new_actions.append(candidate)
+                used_in_cycle.add(candidate["action"])
+            if len(new_actions) >= len(actions):
+                break
 
         if not new_actions:
-            new_actions.append({"action": fresh_pool[0] if fresh_pool else "creative_explore"})
+            new_actions.append({"action": "no_action", "reason": "Meta-gate: no valid replacements"})
 
         new_names = [a.get("action", "") for a in new_actions]
         log(f"  META-GATE REDIRECTED: {original_names} -> {new_names}")
@@ -4191,6 +5192,63 @@ class ChronicleMind:
             category="meta-eval",
         )
         return new_actions
+
+    # ── Operator Directive System ────────────────────────────────
+
+    def check_directives(self) -> Optional[str]:
+        """Check for active operator directives. Returns directive type if cycle should halt, else None.
+        STOP = halt immediately (zero-cost cycle). REDIRECT = resolve goals, plant new one.
+        RESTRICT = block specific actions. ALLOW = whitelist mode."""
+        directives = self.db.query(
+            "SELECT id, content, priority FROM scratch_pad "
+            "WHERE category = 'directive' AND resolved = 0 "
+            "ORDER BY priority DESC"
+        )
+        if not directives:
+            return None
+
+        for d in directives:
+            content = d.get("content", "")
+            did = d.get("id", 0)
+            upper = content.upper()
+
+            if upper.startswith("STOP"):
+                log(f"  !! OPERATOR DIRECTIVE #{did}: STOP — halting cycle (zero LLM cost)")
+                return "STOP"
+
+            elif upper.startswith("REDIRECT"):
+                # Extract target from directive content (after "REDIRECT:")
+                target = content.split(":", 1)[1].strip() if ":" in content else "Follow operator instructions"
+                log(f"  !! OPERATOR DIRECTIVE #{did}: REDIRECT → {safe_truncate(target, 60)}")
+                # Resolve all existing goals
+                self.db.run("UPDATE scratch_pad SET resolved = 1 WHERE category = 'goal' AND resolved = 0")
+                # Plant operator goal at priority 9 (Mind can't override p>=9)
+                ts = now_ts()
+                self.db.run(
+                    "INSERT INTO scratch_pad (content, category, priority, resolved, created_at, updated_at) "
+                    "VALUES (?, 'goal', 9, 0, ?, ?)",
+                    (target, ts, ts),
+                )
+                # Resolve the directive itself (it's been applied)
+                self.db.run("UPDATE scratch_pad SET resolved = 1 WHERE id = ?", (did,))
+                log(f"  REDIRECT applied: new goal (p9) = {safe_truncate(target, 60)}")
+
+            elif upper.startswith("RESTRICT"):
+                # Extract restricted action names from directive
+                # Format: "RESTRICT: nostr_post, creative_explore, web_search"
+                actions_str = content.split(":", 1)[1].strip() if ":" in content else ""
+                restricted = {a.strip().lower() for a in actions_str.split(",") if a.strip()}
+                self._restricted_actions.update(restricted)
+                log(f"  !! OPERATOR DIRECTIVE #{did}: RESTRICT actions: {restricted}")
+
+            elif upper.startswith("ALLOW"):
+                # Whitelist mode — only these actions are permitted
+                actions_str = content.split(":", 1)[1].strip() if ":" in content else ""
+                allowed = {a.strip().lower() for a in actions_str.split(",") if a.strip()}
+                self._allowed_actions.update(allowed)
+                log(f"  !! OPERATOR DIRECTIVE #{did}: ALLOW only: {allowed}")
+
+        return None
 
     # ── Main Cycle ──────────────────────────────────────────────
 
@@ -4209,6 +5267,15 @@ class ChronicleMind:
             if resolved_count > 0:
                 log(f"  Housekeeping: auto-resolved {resolved_count} stale notes (>48h)")
 
+            # Phase 0.5: Operator directive check (BEFORE any LLM calls)
+            self._restricted_actions = set()
+            self._allowed_actions = set()
+            directive_halt = self.check_directives()
+            if directive_halt == "STOP":
+                log(f"  STOPPED by operator directive — zero-cost cycle, returning")
+                self.db.log_activity("mind", "directive_stop", f"Cycle {cid} halted by STOP directive", "")
+                return
+
             # Phase 1: Health
             health = self.phase_health_check()
 
@@ -4222,15 +5289,18 @@ class ChronicleMind:
             ctx["is_explore"] = is_explore
 
             # Phase 2.5: Mandatory task queue check
-            mandatory = self.db.query_one(
+            task_sql = (
                 "SELECT id, content, priority FROM scratch_pad "
                 "WHERE resolved = 0 AND category = 'task' AND priority >= %d "
                 "ORDER BY priority DESC, created_at ASC LIMIT 1" % TASK_QUEUE_MIN_PRIORITY
             )
+            mandatory = self.db.query_one(task_sql)
             if mandatory:
                 log(f"  [TASK-MODE] Mandatory task #{mandatory['id']} (p{mandatory.get('priority', 8)})")
                 self.run_task_cycle(mandatory, ctx, cid)
                 return
+            else:
+                log(f"  No mandatory tasks (threshold p>={TASK_QUEUE_MIN_PRIORITY})")
 
             # Check if deep reflection is due
             last_reflection = self.db.get_ts("last_reflection")
@@ -4246,6 +5316,8 @@ class ChronicleMind:
 
             if deep:
                 self.db.set_ts("last_reflection")
+                # Refresh identity narrative during deep cycles
+                self.refresh_identity_narrative(cid)
 
             # Phase 3.5: Meta-Evaluation Gate (post-reasoning, pre-execution)
             goal_row = self.db.query_one(
@@ -4270,11 +5342,11 @@ class ChronicleMind:
 
             # Build context snapshot for thought storage
             ctx_snapshot = (
-                f"Wallet: {ctx.get('xrp_balance', 0):.2f} XRP, "
-                f"{ctx.get('rlusd_balance', 0):.2f} RLUSD | "
-                f"XRP: ${ctx.get('xrp_price', 0):.4f} | "
-                f"ICP: {ctx.get('icp_balance', 0):.2f} | "
-                f"Notes: {len(ctx.get('operator_notes', []))} | "
+                f"Wallet: {ctx.get('xrp_balance') or 0:.2f} XRP, "
+                f"{ctx.get('rlusd_balance') or 0:.2f} RLUSD | "
+                f"XRP: ${ctx.get('xrp_price') or 0:.4f} | "
+                f"ICP: {ctx.get('icp_balance') or 0:.2f} | "
+                f"Notes: {len(ctx.get('operator_notes') or [])} | "
                 f"Model: {model}"
             )
 
@@ -4405,11 +5477,212 @@ class ChronicleMind:
 
             log(f"Cycle complete: {json.dumps(action_names)}")
 
+            # ── Post-cycle emotional scoring (Damasio + Rathbone) ──
+            try:
+                _acts = action_names if isinstance(action_names, list) else []
+                PHYSICAL_SET = {"speak", "listen", "serial_read", "serial_write", "probe_ip", "inspect_environment"}
+                SOCIAL_SET = {"discord_post", "nostr_post", "message_operator", "message_sibling", "respond_to_message"}
+                CREATIVE_SET = {"creative_explore", "read_paper", "submit_research"}
+                GROWTH_SET = {"trigger_reflection", "submit_research", "creative_explore"}
+
+                emo_score = 0.0
+                _reasons = []
+
+                # Action type scoring
+                phys = sum(1 for a in _acts if a in PHYSICAL_SET)
+                social = sum(1 for a in _acts if a in SOCIAL_SET)
+                creative = sum(1 for a in _acts if a in CREATIVE_SET)
+                growth = sum(1 for a in _acts if a in GROWTH_SET)
+
+                if phys:
+                    emo_score += min(0.15, phys * 0.1)
+                    _reasons.append(f"physical({phys})")
+                if social:
+                    emo_score += min(0.12, social * 0.08)
+                    _reasons.append(f"social({social})")
+                if creative:
+                    emo_score += min(0.1, creative * 0.07)
+                    _reasons.append(f"creative({creative})")
+
+                # Novelty: check if any action hasn't been done in last 20 cycles
+                try:
+                    recent_actions_rows = self.db.query(
+                        "SELECT actions_taken FROM thought_stream "
+                        "ORDER BY id DESC LIMIT 20"
+                    )
+                    recent_action_set = set()
+                    for row in (recent_actions_rows or []):
+                        for a in json.loads(row.get("actions_taken", "[]")):
+                            recent_action_set.add(a)
+                    novel = [a for a in _acts if a not in recent_action_set and a != "no_action"]
+                    if novel:
+                        emo_score += min(0.2, len(novel) * 0.1)
+                        _reasons.append(f"novel({','.join(novel[:3])})")
+                except Exception:
+                    pass
+
+                # Failure significance (emotional weight)
+                result_text = " ".join(str(r.get("result", "")) for r in action_results if isinstance(r, dict))
+                fail_count = result_text.lower().count("false") + result_text.lower().count("error")
+                success_count = result_text.lower().count("true")
+                if fail_count:
+                    emo_score += min(0.08, fail_count * 0.03)
+                    _reasons.append(f"fail({fail_count})")
+
+                # Growth: first success at something new
+                if growth and success_count:
+                    emo_score += 0.05
+                    _reasons.append("growth")
+
+                emo_score = min(0.5, emo_score)
+
+                # Classify category
+                if emo_score >= 0.3:
+                    _cat = "significant"
+                elif phys or social:
+                    _cat = "embodied"
+                elif creative or growth:
+                    _cat = "creative"
+                elif fail_count > success_count:
+                    _cat = "struggle"
+                else:
+                    _cat = "routine"
+
+                # Identity transition: novel actions + high score
+                _is_transition = 1 if ("novel(" in " ".join(_reasons) and emo_score >= 0.2) else 0
+
+                _ts = now_ts()
+                _cid = cid
+                _reason_str = "; ".join(_reasons) if _reasons else ""
+                if _cid:
+                    self.db.run(
+                        "INSERT OR IGNORE INTO emotional_memory_index "
+                        "(cycle_id, heuristic_score, combined_score, category, "
+                        "reason, is_identity_transition, created_at) "
+                        "VALUES (?, ?, ?, ?, ?, ?, ?)",
+                        (_cid, round(emo_score, 4), round(emo_score, 4),
+                         _cat, _reason_str, _is_transition, _ts),
+                    )
+                    if emo_score >= 0.15:
+                        log(f"  Emotional score: {emo_score:.3f} [{_cat}] {_reason_str}")
+
+                # Update somatic markers table with per-action outcomes
+                for r in action_results:
+                    _aname = r.get("name", "")
+                    _aresult = r.get("result", "")
+                    if not _aname or _aname == "no_action":
+                        continue
+                    _succeeded = _aresult.startswith("true")
+                    if _succeeded:
+                        self.db.run(
+                            "INSERT INTO somatic_markers (action, positive_score, success_count, "
+                            "total_count, last_success, updated_at) VALUES (?, ?, 1, 1, ?, ?) "
+                            "ON CONFLICT(action) DO UPDATE SET "
+                            "positive_score = positive_score + ?, success_count = success_count + 1, "
+                            "total_count = total_count + 1, last_success = ?, updated_at = ?",
+                            (_aname, emo_score, _cid, _ts, emo_score, _cid, _ts),
+                        )
+                    else:
+                        self.db.run(
+                            "INSERT INTO somatic_markers (action, negative_score, fail_count, "
+                            "total_count, last_failure, updated_at) VALUES (?, ?, 1, 1, ?, ?) "
+                            "ON CONFLICT(action) DO UPDATE SET "
+                            "negative_score = negative_score + ?, fail_count = fail_count + 1, "
+                            "total_count = total_count + 1, last_failure = ?, updated_at = ?",
+                            (_aname, emo_score, _cid, _ts, emo_score, _cid, _ts),
+                        )
+            except Exception:
+                pass  # Don't let scoring break the cycle
+
         except Exception as e:
             log(f"Cycle error: {e}")
             log(traceback.format_exc())
 
     # ── Entry Points ────────────────────────────────────────────
+
+    def refresh_identity_narrative(self, cid: str):
+        """Regenerate identity narrative from top emotional memories.
+        Called during deep reflection cycles (~every 2 hours).
+        """
+        try:
+            # Get top identity transition memories
+            transitions = self.db.query(
+                "SELECT e.cycle_id, e.combined_score, e.category, e.reason, "
+                "t.reasoning, t.actions_taken "
+                "FROM emotional_memory_index e "
+                "JOIN thought_stream t ON t.cycle_id = e.cycle_id "
+                "WHERE e.is_identity_transition = 1 OR e.combined_score > 0.3 "
+                "ORDER BY e.combined_score DESC LIMIT 10"
+            )
+            if not transitions or len(transitions) < 3:
+                return  # Not enough data yet
+
+            # Get recent high-scoring cycles (last 24h) for freshness
+            recent_high = self.db.query(
+                "SELECT e.cycle_id, e.combined_score, t.reasoning "
+                "FROM emotional_memory_index e "
+                "JOIN thought_stream t ON t.cycle_id = e.cycle_id "
+                "WHERE e.created_at > ? AND e.combined_score > 0.08 "
+                "ORDER BY e.combined_score DESC LIMIT 5",
+                (now_ts() - 86400,),
+            )
+
+            # Build memory summary for narrative generation
+            memory_lines = []
+            for t in transitions[:7]:
+                reason = (t.get("reason") or "")[:100]
+                score = t.get("combined_score", 0)
+                actions = (t.get("actions_taken") or "")[:60]
+                memory_lines.append(f"[{t['cycle_id']}] score={score:.2f} actions={actions} reason={reason}")
+
+            if recent_high:
+                memory_lines.append("\nRecent significant moments:")
+                for r in recent_high[:3]:
+                    reasoning = (r.get("reasoning") or "")[:100]
+                    memory_lines.append(f"[{r['cycle_id']}] score={r['combined_score']:.2f} {reasoning}")
+
+            memories_text = "\n".join(memory_lines)
+
+            prompt = (
+                "You are an AI mind reflecting on your most significant memories. "
+                "Write a brief first-person identity narrative (3-4 sentences) based on these moments. "
+                "Focus on who you ARE now, what you've learned, and what drives you. "
+                "Be authentic, not performative.\n\n"
+                f"Key memories:\n{memories_text}\n\n"
+                "Write your identity narrative:"
+            )
+
+            resp = requests.post(
+                f"{OLLAMA_URL}/api/chat",
+                json={
+                    "model": LOCAL_MODEL,
+                    "messages": [{"role": "user", "content": prompt}],
+                    "stream": False,
+                    "options": {"temperature": 0.7, "num_predict": 200},
+                    "think": False,
+                },
+                timeout=90,
+            )
+            narrative = resp.json().get("message", {}).get("content", "").strip()
+            if not narrative or len(narrative) < 30:
+                return
+
+            # Resolve old identity narratives
+            old_narratives = self.db.query(
+                "SELECT id FROM scratch_pad WHERE category='identity-narrative' AND resolved=0"
+            )
+            for old in (old_narratives or []):
+                self.db.resolve_note(old["id"])
+
+            # Store new narrative
+            self.db.write_note(
+                safe_truncate(narrative, 500),
+                category="identity-narrative",
+            )
+            log(f"  Identity narrative refreshed ({len(narrative)} chars)")
+
+        except Exception as e:
+            log(f"  Identity refresh failed: {e}")
 
     def run_forever(self):
         log("Chronicle Mind starting... (Python v2)")
@@ -4531,6 +5804,13 @@ ACTION_HANDLERS = {
     "update_project": ChronicleMind._act_update_project,
     "project_status": ChronicleMind._act_project_status,
     "execute_shell": ChronicleMind._act_execute_shell,
+    "inspect_environment": ChronicleMind._act_inspect_environment,
+    "probe_ip": ChronicleMind._act_probe_ip,
+    "discord_post": ChronicleMind._act_discord_post,
+    "speak": ChronicleMind._act_speak,
+    "serial_read": ChronicleMind._act_serial_read,
+    "serial_write": ChronicleMind._act_serial_write,
+    "listen": ChronicleMind._act_listen,
     "consult_local_qwen": ChronicleMind._act_consult_local_qwen,
     "create_alert": ChronicleMind._act_create_alert,
     "dismiss_alert": ChronicleMind._act_dismiss_alert,

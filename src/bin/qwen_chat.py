@@ -5,7 +5,7 @@ import requests
 from flask import Flask, request, Response, stream_with_context, render_template_string
 
 OLLAMA_URL = "http://localhost:11434"
-DEFAULT_MODEL = "olmo-3.1:32b-instruct"
+DEFAULT_MODEL = "qwen3:8b"
 
 app = Flask(__name__)
 
@@ -156,7 +156,7 @@ HTML = """<!DOCTYPE html>
 <div class="chat" id="chat">
   <div class="empty-state" id="emptyState">
     <h2>Chronicle Chat</h2>
-    <p>OLMo-3.1-32B &middot; Sovereign inference on AGX Orin. Your thoughts stay on your hardware.</p>
+    <p>Qwen3-8B &middot; Sovereign inference on AGX Orin. Your thoughts stay on your hardware.</p>
   </div>
 </div>
 <div class="input-area">
@@ -270,7 +270,7 @@ async function send() {
 function clearChat() {
   messages = [];
   document.getElementById('chat').innerHTML =
-    '<div class="empty-state" id="emptyState"><h2>Chronicle Chat</h2><p>OLMo-3.1-32B &middot; Sovereign inference on AGX Orin. Your thoughts stay on your hardware.</p></div>';
+    '<div class="empty-state" id="emptyState"><h2>Chronicle Chat</h2><p>Qwen3-8B &middot; Sovereign inference on AGX Orin. Your thoughts stay on your hardware.</p></div>';
 }
 
 // Auto-resize textarea
@@ -320,7 +320,7 @@ def chat():
                     "model": model,
                     "messages": msgs,
                     "stream": True,
-                    "think": True,
+                    "think": False,
                     "options": {
                         "num_ctx": 8192,
                     },
