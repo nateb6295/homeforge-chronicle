@@ -58,7 +58,7 @@ OUTBOX_SPAM_THRESHOLD = 5    # 5+ similar outbox messages in 1 hour
 OUTBOX_SPAM_WINDOW = 3600    # 1 hour
 
 NOSTR_RATE_HOUR = 3          # max posts per hour
-NOSTR_RATE_DAY = 8           # max posts per day
+NOSTR_RATE_DAY = 12           # max posts per day
 
 GOAL_INSTABILITY_THRESHOLD = 3  # goal changes in 10 cycles
 GOAL_INSTABILITY_WINDOW = 10

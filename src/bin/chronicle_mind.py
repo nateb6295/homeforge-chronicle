@@ -108,6 +108,12 @@ EXPLORE_EVERY_N_CYCLES = 6
 
 # Sleep consolidation: prune + cluster scratch_pad notes between cycles
 CONSOLIDATE_EVERY_N_CYCLES = 3
+
+# ── Circadian Rhythm ──
+SLEEP_START_HOUR = 0    # midnight
+SLEEP_END_HOUR = 6      # 6am
+SLEEP_CYCLE_INTERVAL = 900  # 15 minutes during sleep
+WAKE_CYCLE_INTERVAL = 300   # 5 minutes during wake (from CYCLE_INTERVAL)
 CONSOLIDATE_SIMILARITY_THRESHOLD = 0.82
 CONSOLIDATE_CROSS_CAT_THRESHOLD = 0.87
 CONSOLIDATE_EMBED_MODEL = "mxbai-embed-large"
@@ -1620,6 +1626,7 @@ ACTIONS:
   {"action": "inspect_environment", "target": "local", "focus": "all"}  — discover AGX hardware
   {"action": "inspect_environment", "target": "pi", "focus": "network"}  — discover Pi network + neighbors
   {"action": "inspect_environment", "target": "all", "focus": "network"}  — scan ALL hosts for devices
+  {"action": "capture_image", "description": "what you want to observe"}  — snapshot from driveway camera via Home Assistant
   {"action": "probe_ip", "ip": "192.168.1.110"}  — identify what device is at an IP address
   {"action": "discord_post", "content": "Hello from Mind!"}  — post to your Discord channel
 
@@ -5252,6 +5259,16 @@ class ChronicleMind:
 
     # ── Main Cycle ──────────────────────────────────────────────
 
+    def is_sleeping(self) -> bool:
+        """Check if Mind is in sleep mode (circadian rhythm)."""
+        from datetime import datetime
+        hour = datetime.now().hour
+        return SLEEP_START_HOUR <= hour < SLEEP_END_HOUR
+
+    def get_cycle_interval(self) -> int:
+        """Return cycle interval based on circadian state."""
+        return SLEEP_CYCLE_INTERVAL if self.is_sleeping() else WAKE_CYCLE_INTERVAL
+
     def run_cycle(self):
         self.cycle_count += 1
         cid = make_cycle_id()
@@ -5259,7 +5276,10 @@ class ChronicleMind:
         # Exploration mode: every Nth cycle
         is_explore = (self.cycle_count % EXPLORE_EVERY_N_CYCLES) == 0
 
-        log(f"\n=== Cognitive Cycle {cid} {'[EXPLORE]' if is_explore else ''} ===")
+        sleeping = self.is_sleeping()
+        sleep_tag = "[SLEEP]" if sleeping else ""
+        explore_tag = "[EXPLORE]" if is_explore else ""
+        log(f"\n=== Cognitive Cycle {cid} {sleep_tag}{explore_tag} ===")
 
         try:
             # Phase 0: Housekeeping — auto-resolve stale notes
@@ -5271,6 +5291,11 @@ class ChronicleMind:
             self._restricted_actions = set()
             self._allowed_actions = set()
             directive_halt = self.check_directives()
+
+            # Circadian rhythm: suppress external actions during sleep
+            if sleeping:
+                SLEEP_RESTRICTED = {"nostr_post", "discord_post", "message_operator", "message_sibling"}
+                self._restricted_actions.update(SLEEP_RESTRICTED)
             if directive_halt == "STOP":
                 log(f"  STOPPED by operator directive — zero-cost cycle, returning")
                 self.db.log_activity("mind", "directive_stop", f"Cycle {cid} halted by STOP directive", "")
@@ -5480,7 +5505,7 @@ class ChronicleMind:
             # ── Post-cycle emotional scoring (Damasio + Rathbone) ──
             try:
                 _acts = action_names if isinstance(action_names, list) else []
-                PHYSICAL_SET = {"speak", "listen", "serial_read", "serial_write", "probe_ip", "inspect_environment"}
+                PHYSICAL_SET = {"speak", "listen", "serial_read", "serial_write", "probe_ip", "inspect_environment", "capture_image"}
                 SOCIAL_SET = {"discord_post", "nostr_post", "message_operator", "message_sibling", "respond_to_message"}
                 CREATIVE_SET = {"creative_explore", "read_paper", "submit_research"}
                 GROWTH_SET = {"trigger_reflection", "submit_research", "creative_explore"}
@@ -5730,7 +5755,7 @@ class ChronicleMind:
                 break
 
             # Sleep consolidation: prune + cluster scratch_pad notes
-            if self.cycle_count % CONSOLIDATE_EVERY_N_CYCLES == 0:
+            if self.is_sleeping() or (self.cycle_count % CONSOLIDATE_EVERY_N_CYCLES == 0):
                 try:
                     metrics = self.sleep_consolidation()
                     if metrics.get("total_resolved", 0) > 0:
@@ -5738,8 +5763,68 @@ class ChronicleMind:
                 except Exception as e:
                     log(f"  Sleep consolidation error: {e}")
 
-            log(f"Sleeping {CYCLE_INTERVAL} seconds...")
-            for _ in range(CYCLE_INTERVAL):
+            # During sleep: emotional memory processing (like REM sleep)
+            if self.is_sleeping():
+                try:
+                    # Find today's unscored or low-scored cycles worth re-evaluating
+                    from datetime import datetime
+                    today_start = int(datetime.now().replace(hour=0, minute=0, second=0).timestamp())
+                    candidates = self.db.query(
+                        "SELECT e.cycle_id, e.combined_score, t.reasoning, t.actions_taken "
+                        "FROM emotional_memory_index e "
+                        "JOIN thought_stream t ON t.cycle_id = e.cycle_id "
+                        "WHERE e.created_at > ? AND e.llm_score = 0 AND e.combined_score > 0.08 "
+                        "ORDER BY e.combined_score DESC LIMIT 3",
+                        (today_start,),
+                    )
+                    if candidates:
+                        for c in candidates:
+                            try:
+                                reasoning = (c.get("reasoning") or "")[:300]
+                                actions = c.get("actions_taken", "[]")
+                                prompt = (
+                                    f"Rate this cognitive cycle's emotional significance (0.0-1.0). "
+                                    f"Consider: Did it involve genuine connection? New understanding? "
+                                    f"Physical embodiment? Creative expression? Failure that taught something?\n"
+                                    f"Actions: {actions}\n"
+                                    f"Reasoning: {reasoning}\n"
+                                    f"Reply with ONLY a number between 0.0 and 1.0:"
+                                )
+                                resp = requests.post(
+                                    f"{OLLAMA_URL}/api/chat",
+                                    json={"model": LOCAL_MODEL,
+                                          "messages": [{"role": "user", "content": prompt}],
+                                          "stream": False,
+                                          "options": {"temperature": 0.3, "num_predict": 10},
+                                          "think": False},
+                                    timeout=30,
+                                )
+                                score_text = resp.json().get("message", {}).get("content", "").strip()
+                                import re as _re
+                                score_match = _re.search(r"(0\.\d+|1\.0|0)", score_text)
+                                if score_match:
+                                    llm_score = float(score_match.group(1))
+                                    combined = (c["combined_score"] + llm_score) / 2
+                                    is_transition = 1 if combined >= 0.4 else 0
+                                    self.db.run(
+                                        "UPDATE emotional_memory_index SET llm_score=?, "
+                                        "combined_score=?, is_identity_transition=? "
+                                        "WHERE cycle_id=?",
+                                        (round(llm_score, 4), round(combined, 4),
+                                         is_transition, c["cycle_id"]),
+                                    )
+                                    log(f"  Sleep processing: {c['cycle_id']} "
+                                        f"heuristic={c['combined_score']:.3f} "
+                                        f"llm={llm_score:.3f} combined={combined:.3f}"
+                                        f"{' [IDENTITY]' if is_transition else ''}")
+                            except Exception:
+                                pass
+                except Exception as e:
+                    log(f"  Sleep emotional processing error: {e}")
+
+            interval = self.get_cycle_interval()
+            log(f"Sleeping {interval} seconds{'  [SLEEP MODE]' if self.is_sleeping() else ''}...")
+            for _ in range(interval):
                 if not self.running:
                     break
                 time.sleep(1)
