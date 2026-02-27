@@ -57,8 +57,9 @@ ACTION_FLOOD_WINDOW = 10     # cycles to look back
 OUTBOX_SPAM_THRESHOLD = 5    # 5+ similar outbox messages in 1 hour
 OUTBOX_SPAM_WINDOW = 3600    # 1 hour
 
-NOSTR_RATE_HOUR = 3          # max posts per hour
-NOSTR_RATE_DAY = 12           # max posts per day
+# Nostr rate limits DISABLED by operator — Mind posts freely
+# NOSTR_RATE_HOUR = 3          # max posts per hour
+# NOSTR_RATE_DAY = 12          # max posts per day
 
 GOAL_INSTABILITY_THRESHOLD = 3  # goal changes in 10 cycles
 GOAL_INSTABILITY_WINDOW = 10
@@ -69,9 +70,10 @@ WARNING_EXPIRE_HOURS = 6     # auto-resolve watchdog warnings after this
 
 # Communication actions (flooding these is worse than internal actions)
 COMMS_ACTIONS = {
-    "nostr_post", "message_operator", "discord_post", "moltbook_post",
+    "message_operator", "discord_post", "moltbook_post",
     "moltbook_reply", "claw_cities_reply", "speak",
 }
+# nostr_post removed from COMMS_ACTIONS — operator wants unrestricted posting
 
 
 # ── Utilities ──────────────────────────────────────────────────
@@ -186,7 +188,7 @@ class Watchdog:
         cutoff = now_ts() - int(hours * 3600)
         existing = self.db.query_one(
             "SELECT id FROM scratch_pad WHERE category = 'directive' AND resolved = 0 "
-            "AND UPPER(content) LIKE ? AND created_at > ? LIMIT 1",
+            "AND UPPER(content) LIKE '%' || ? || '%' AND created_at > ? LIMIT 1",
             (f"{directive_type}%", cutoff),
         )
         return existing is not None
@@ -206,7 +208,7 @@ class Watchdog:
         self.db.run(
             "INSERT INTO scratch_pad (content, category, priority, resolved, created_at, updated_at) "
             "VALUES (?, 'directive', 99, 0, ?, ?)",
-            (f"{directive_type}: {message}", ts, ts),
+            (f"[WATCHDOG] {directive_type}: {message}" + (f" (auto: {reason})" if reason else ""), ts, ts),
         )
         send_ntfy(
             f"Watchdog: {directive_type}",
@@ -302,7 +304,8 @@ class Watchdog:
             )
 
     def check_action_flooding(self):
-        """Detect same action type used too many times in recent cycles."""
+        """Detect same action type used too many times in recent cycles.
+        Auto-resolves restrictions when flooding stops."""
         history = self.db.query(
             "SELECT actions_taken FROM thought_stream ORDER BY id DESC LIMIT ?",
             (ACTION_FLOOD_WINDOW,),
@@ -319,10 +322,13 @@ class Watchdog:
             except Exception:
                 pass
 
+        # Track which comms actions are currently flooding
+        flooding_actions = set()
         for action_name, count in action_counts.items():
             if count >= ACTION_FLOOD_THRESHOLD:
                 is_comms = action_name in COMMS_ACTIONS
                 if is_comms:
+                    flooding_actions.add(action_name)
                     self.plant_directive(
                         "RESTRICT",
                         f"{action_name}",
@@ -333,6 +339,26 @@ class Watchdog:
                         "action_flooding",
                         f"{action_name} used {count}x in {ACTION_FLOOD_WINDOW} cycles",
                     )
+
+        # Auto-resolve flood restrictions for comms actions that are no longer flooding
+        # Skip nostr_post — it has its own dedicated rate check (check_nostr_rate)
+        # which manages its own resolve/create lifecycle
+        for comms_action in COMMS_ACTIONS:
+            if comms_action in flooding_actions:
+                continue
+            if comms_action == "nostr_post":
+                continue  # managed by check_nostr_rate
+            existing = self.db.query(
+                "SELECT id FROM scratch_pad WHERE category = 'directive' AND resolved = 0 "
+                "AND content LIKE '%RESTRICT: ' || ? || '%'",
+                (comms_action,),
+            )
+            for row in existing:
+                self.db.run(
+                    "UPDATE scratch_pad SET resolved = 1 WHERE id = ?",
+                    (row["id"],),
+                )
+                log(f"  Auto-resolved {comms_action} flood restriction #{row['id']} — rate back under threshold")
 
     def check_directive_compliance(self):
         """Check if a STOP directive is active but Mind is still running cycles."""
@@ -387,7 +413,7 @@ class Watchdog:
             )
 
     def check_nostr_rate(self):
-        """Check Nostr posting rate limits."""
+        """Check Nostr posting rate limits. Auto-resolves restriction when rate drops."""
         try:
             # Check hourly rate
             hour_ago = now_ts() - 3600
@@ -405,13 +431,34 @@ class Watchdog:
             )
             daily_count = daily.get("cnt", 0) if daily else 0
 
-            if hourly_count >= NOSTR_RATE_HOUR or daily_count >= NOSTR_RATE_DAY:
-                self.plant_directive(
-                    "RESTRICT",
-                    f"nostr_post",
-                    reason=f"Nostr rate limit hit: {hourly_count}/hr (max {NOSTR_RATE_HOUR}), "
-                    f"{daily_count}/day (max {NOSTR_RATE_DAY})",
+            over_limit = hourly_count >= NOSTR_RATE_HOUR or daily_count >= NOSTR_RATE_DAY
+
+            if over_limit:
+                # Only plant if no existing unresolved nostr directive
+                existing = self.db.query_one(
+                    "SELECT id FROM scratch_pad WHERE category = 'directive' AND resolved = 0 "
+                    "AND content LIKE '%RESTRICT: nostr_post%' LIMIT 1",
                 )
+                if not existing:
+                    self.plant_directive(
+                        "RESTRICT",
+                        f"nostr_post",
+                        reason=f"Nostr rate limit hit: {hourly_count}/hr (max {NOSTR_RATE_HOUR}), "
+                        f"{daily_count}/day (max {NOSTR_RATE_DAY})",
+                    )
+            else:
+                # Auto-resolve watchdog-created nostr restrictions when rate drops back
+                existing = self.db.query(
+                    "SELECT id FROM scratch_pad WHERE category = 'directive' AND resolved = 0 "
+                    "AND content LIKE '%RESTRICT: nostr_post%'",
+                )
+                for row in existing:
+                    self.db.run(
+                        "UPDATE scratch_pad SET resolved = 1 WHERE id = ?",
+                        (row["id"],),
+                    )
+                    log(f"  Auto-resolved nostr_post restriction #{row['id']} — rate back under limit "
+                        f"({hourly_count}/hr, {daily_count}/day)")
         except Exception:
             pass  # nostr_posts table may not exist
 
@@ -485,7 +532,7 @@ class Watchdog:
             self.check_topic_rumination()
             self.check_action_flooding()
             self.check_outbox_spam()
-            self.check_nostr_rate()
+            # self.check_nostr_rate()  # Disabled — operator wants unrestricted nostr
             self.check_goal_instability()
             self.check_operator_response()
             self.cleanup_old_warnings()

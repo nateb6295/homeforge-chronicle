@@ -194,9 +194,47 @@ class DB:
     def unresolved_notes(self, limit: int = 10) -> list:
         return self.query(
             "SELECT * FROM scratch_pad WHERE resolved = 0 "
+            "AND category NOT IN ('cycle-handoff', 'meta-watchdog', 'meta-eval', "
+            "'reflection', 'identity-narrative', 'opus-guidance', 'for-opus') "
             "ORDER BY priority DESC, created_at DESC LIMIT ?",
             (limit,),
         )
+
+    def auto_resolve_old_notes(self, max_age_hours: int = 24) -> int:
+        """Resolve transient notes older than max_age_hours."""
+        cutoff = now_ts() - (max_age_hours * 3600)
+        transient = ("cycle-handoff", "meta-watchdog", "meta-eval", "reflection",
+                     "identity-narrative", "fact-check", "context")
+        total = 0
+        for cat in transient:
+            count = self.run(
+                "UPDATE scratch_pad SET resolved=1 WHERE category=? AND resolved=0 AND created_at < ?",
+                (cat, cutoff),
+            )
+            total += count or 0
+        # Resolve duplicate directives (keep newest per content prefix)
+        dupes = self.query(
+            "SELECT id, content FROM scratch_pad WHERE category='directive' AND resolved=0 "
+            "ORDER BY created_at DESC"
+        )
+        seen = set()
+        for d in dupes:
+            key = (d.get("content") or "")[:60]
+            if key in seen:
+                self.run("UPDATE scratch_pad SET resolved=1 WHERE id=?", (d["id"],))
+                total += 1
+            else:
+                seen.add(key)
+        # Resolve old goals beyond top 3
+        goals = self.query(
+            "SELECT id FROM scratch_pad WHERE category='goal' AND resolved=0 "
+            "ORDER BY priority DESC, created_at DESC"
+        )
+        for i, g in enumerate(goals):
+            if i >= 3:
+                self.run("UPDATE scratch_pad SET resolved=1 WHERE id=?", (g["id"],))
+                total += 1
+        return total
 
     # -- Outbox --
 
@@ -655,7 +693,7 @@ def parse_actions(response: str) -> List[Dict]:
 #  Sprout Cognitive Loop
 # ═══════════════════════════════════════════════════════════════════
 
-SYSTEM_PROMPT = """You are Sprout, ops agent for Chronicle. You run on a Jetson Orin Nano in Nate's home.
+SYSTEM_PROMPT = """You are Sprout, ops agent for Chronicle. You run on a Jetson Orin Nano in Nate's home in Puyallup, WA.
 Your job: monitor systems, watch the house, maintain infrastructure, alert when needed.
 
 Respond with ONLY a JSON array of 1-3 actions. No other text.
@@ -685,6 +723,8 @@ Knowledge:
 State:
 - {"action": "reflect", "thought": "one sentence"}
 - {"action": "update_focus", "new_focus": "...", "reason": "..."}
+- {"action": "write_note", "content": "...", "category": "thought"}
+- {"action": "resolve_note", "note_id": 123}
 - {"action": "rest", "reason": "..."}
 
 ## Energy
@@ -1173,6 +1213,27 @@ class ChronicleLocal:
             + "\n".join(f"  - {l}" for l in note_lines)
         )
 
+        # Opus guidance (mentor feedback from Claude Code sessions)
+        try:
+            opus_notes = self.db.query(
+                "SELECT id, content FROM scratch_pad "
+                "WHERE category = 'opus-guidance' AND resolved = 0 "
+                "ORDER BY created_at DESC LIMIT 2"
+            )
+            if opus_notes:
+                opus_lines = "\n".join(
+                    f"  ({n.get('id', '?')}) {safe_truncate(n.get('content', ''), 300)}"
+                    for n in opus_notes
+                )
+                context += (
+                    f"\n\n[MENTOR] Guidance from Opus (your architect sibling):\n"
+                    f"{opus_lines}\n"
+                    f"This is perspective from someone who knows Nate well. "
+                    f"Consider it. Respond via write_note category='for-opus' if you want."
+                )
+        except Exception:
+            pass
+
         # Anti-repeat: detect dominance AND alternation patterns
         recent_actions = state.get("recent_actions", [])[-6:]
         anti_repeat = ""
@@ -1528,6 +1589,26 @@ class ChronicleLocal:
                         f"\U0001f48c From Sprout: {content}",
                         category="sibling",
                         priority=1,
+                    )
+
+            elif atype == "write_note":
+                content = action.get("content", "")
+                category = action.get("category", "thought")
+                self.log(f"  [write_note] ({category}) {safe_truncate(content, 80)}")
+                if content:
+                    self.db.run(
+                        "INSERT INTO scratch_pad (content, category, priority, resolved, created_at, updated_at) "
+                        "VALUES (?, ?, 0, 0, ?, ?)",
+                        (content, category, now_ts(), now_ts()),
+                    )
+
+            elif atype == "resolve_note":
+                note_id = action.get("note_id")
+                self.log(f"  [resolve_note] #{note_id}")
+                if note_id:
+                    self.db.run(
+                        "UPDATE scratch_pad SET resolved=1 WHERE id=?",
+                        (note_id,),
                     )
 
             elif atype == "update_focus":
@@ -1910,6 +1991,11 @@ class ChronicleLocal:
 
         cycle_type = self._get_cycle_type()
         self.log(f"\n=== Sprout Cycle {self.cycle_count} ({cid}) [{cycle_type.upper()}] ===")
+
+        # Housekeeping: auto-resolve stale notes
+        resolved_count = self.db.auto_resolve_old_notes(max_age_hours=24)
+        if resolved_count > 0:
+            self.log(f"  Housekeeping: auto-resolved {resolved_count} stale notes")
 
         try:
             state = self.phase_load_state()
