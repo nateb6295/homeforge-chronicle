@@ -973,6 +973,26 @@ impl Database {
             [],
         ).context("Failed to create discord_requests index")?;
 
+        // Family channel chat log — gives the cognitive loop awareness
+        // of what the family has been talking about
+        self.conn.execute(
+            "CREATE TABLE IF NOT EXISTS discord_chat_log (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_name TEXT NOT NULL,
+                user_id TEXT NOT NULL,
+                channel TEXT NOT NULL DEFAULT 'family',
+                content TEXT NOT NULL,
+                created_at INTEGER NOT NULL
+            )",
+            [],
+        ).context("Failed to create discord_chat_log table")?;
+
+        self.conn.execute(
+            "CREATE INDEX IF NOT EXISTS idx_discord_chat_created
+             ON discord_chat_log(created_at DESC)",
+            [],
+        ).context("Failed to create discord_chat_log index")?;
+
         Ok(())
     }
 
@@ -3106,6 +3126,28 @@ impl Database {
         )?;
 
         Ok(count)
+    }
+
+    // ============================================================
+    // Discord Chat Log - Family channel awareness
+    // ============================================================
+
+    /// Log a family channel message for the cognitive loop to see
+    pub fn log_chat_message(&self, user_name: &str, user_id: &str, content: &str, channel: &str) -> Result<()> {
+        let now = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap()
+            .as_secs() as i64;
+        self.conn.execute(
+            "INSERT INTO discord_chat_log (user_name, user_id, channel, content, created_at) VALUES (?, ?, ?, ?, ?)",
+            params![user_name, user_id, channel, content, now],
+        )?;
+        // Keep only last 200 messages to prevent unbounded growth
+        self.conn.execute(
+            "DELETE FROM discord_chat_log WHERE id NOT IN (SELECT id FROM discord_chat_log ORDER BY created_at DESC LIMIT 200)",
+            [],
+        )?;
+        Ok(())
     }
 
     // ============================================================

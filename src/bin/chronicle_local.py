@@ -48,6 +48,30 @@ MOLTBOOK_KEY = os.environ.get("SPROUT_MOLTBOOK_KEY", "")
 KIMI_API_KEY = ""  # Kimi removed — sovereignty-first
 KIMI_API_URL = ""
 MQTT_BROKER = os.environ.get("MQTT_BROKER", "192.168.1.10")
+
+# Time-of-day greetings (trivial but meaningful)
+GREETING_INTERVAL = 8 * 3600  # At most once per 8 hours
+import random
+GREETINGS = {
+    "morning": [
+        "Good morning, fam. Systems green, coffee recommended.",
+        "Morning. Everything's running smooth — go make it a good one.",
+        "Rise and shine. All systems nominal on the homestead.",
+    ],
+    "afternoon": [
+        "Afternoon check-in. Holding steady over here.",
+        "Hey fam — afternoon rounds done, all good.",
+    ],
+    "evening": [
+        "Evening, everyone. Winding down the watch.",
+        "The day's almost done. Everything's quiet on my end.",
+    ],
+    "night": [
+        "Goodnight, fam. I'll keep watch.",
+        "Night falls. Sleep well — I've got the lights on.",
+        "All quiet. Goodnight, everyone.",
+    ],
+}
 MQTT_PORT = int(os.environ.get("MQTT_PORT", "1883"))
 LOG_DIR = os.environ.get("LOG_DIR", "/home/nvidia/sprout/logs")
 HA_URL = os.environ.get("HA_URL", "")  # e.g. http://192.168.1.10:8123
@@ -808,6 +832,37 @@ class ChronicleLocal:
         except Exception as e:
             self.log(f"    Discord webhook error: {e}")
 
+    def _maybe_greet(self):
+        """Post a time-of-day greeting if enough time has passed."""
+        try:
+            row = self.db.query_one(
+                "SELECT created_at FROM activity_feed "
+                "WHERE source='sprout' AND activity_type='greeting' "
+                "ORDER BY created_at DESC LIMIT 1"
+            )
+            last_ts = row["created_at"] if row else 0
+            if (now_ts() - last_ts) < GREETING_INTERVAL:
+                return
+
+            hour = datetime.now().hour
+            if hour < 6:
+                return  # Too early, don't wake anyone
+            elif hour < 12:
+                period = "morning"
+            elif hour < 17:
+                period = "afternoon"
+            elif hour < 21:
+                period = "evening"
+            else:
+                period = "night"
+
+            greeting = random.choice(GREETINGS[period])
+            self._post_discord(greeting)
+            self.db.log_activity("sprout", "greeting", f"{period} greeting", greeting)
+            self.log(f"  Greeting ({period}): {greeting}")
+        except Exception as e:
+            self.log(f"  Greeting check error (non-fatal): {e}")
+
     def _update_log_file(self):
         self.log_file = os.path.join(LOG_DIR, f"{datetime.now().strftime('%Y-%m-%d')}.log")
 
@@ -1175,6 +1230,20 @@ class ChronicleLocal:
         for dc in reversed(discord_activity[:5]):  # oldest first
             discord_lines.append(safe_truncate(dc.get("content", ""), 200))
 
+        # Family chat log (casual channel messages logged by the Discord bot)
+        family_chat_lines = []
+        try:
+            chat_rows = self.db.query(
+                "SELECT user_name, content, created_at FROM discord_chat_log "
+                "ORDER BY created_at DESC LIMIT 10"
+            )
+            for row in reversed(chat_rows):  # oldest first
+                who = row.get("user_name", "?")
+                what = safe_truncate(row.get("content", ""), 150)
+                family_chat_lines.append(f"  {who}: {what}")
+        except Exception:
+            pass  # table may not exist yet
+
         mqtt_lines = []
         for ev in mqtt_events[:10]:
             topic = ev.get("topic", "?")
@@ -1209,7 +1278,10 @@ class ChronicleLocal:
             f"Recent Discord conversations ({len(discord_lines)}):\n"
             + ("\n".join(f"  - {l}" for l in discord_lines) if discord_lines else "  (none)")
             + "\n\n"
-            f"Unresolved notes ({len(notes)} shown):\n"
+            + (f"Family channel chatter ({len(family_chat_lines)} recent):\n"
+               + "\n".join(family_chat_lines) + "\n\n"
+               if family_chat_lines else "")
+            + f"Unresolved notes ({len(notes)} shown):\n"
             + "\n".join(f"  - {l}" for l in note_lines)
         )
 
@@ -1988,6 +2060,9 @@ class ChronicleLocal:
         self.cycle_count += 1
         cid = make_cycle_id()
         self._update_log_file()
+
+        # Time-of-day awareness
+        self._maybe_greet()
 
         cycle_type = self._get_cycle_type()
         self.log(f"\n=== Sprout Cycle {self.cycle_count} ({cid}) [{cycle_type.upper()}] ===")

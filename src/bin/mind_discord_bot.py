@@ -3,7 +3,7 @@
 Chronicle Mind Discord Bot — Gives Mind a voice on Discord.
 
 Two modes:
-1. INTERACTIVE: Users message Mind in Discord, she responds via Qwen3-8B
+1. INTERACTIVE: Users message Mind in Discord, it responds via local LLM (Nemotron-3-Nano)
 2. AUTONOMOUS: Mind's cognitive loop can post thoughts/updates via Unix socket
 
 Operator messages are written back to Mind's DB (scratch_pad) so they
@@ -28,7 +28,7 @@ from pathlib import Path
 
 # ── Configuration ──────────────────────────────────────────────
 OLLAMA_URL = os.environ.get("OLLAMA_URL", "http://localhost:11434")
-MODEL = os.environ.get("MIND_MODEL", "qwen3:8b")
+MODEL = os.environ.get("MIND_MODEL", "nemotron-3-nano")
 BOT_TOKEN = os.environ.get("MIND_DISCORD_TOKEN", "")
 MIND_CHANNEL_ID = int(os.environ.get("MIND_CHANNEL_ID", "0"))  # Channel for autonomous posts
 DB_PATH = os.path.expanduser("~/.homeforge-chronicle/processed.db")
@@ -45,24 +45,38 @@ OLLAMA_TIMEOUT = 120
 # Directive keyword patterns
 # Directive keywords — matched as LEADING phrases or exact word boundaries
 # "stop" only matches at start of message or as whole word, NOT inside "stopped"
-STOP_KEYWORDS = {"stop", "halt", "pause", "shut up", "be quiet", "go to sleep"}
-REDIRECT_KEYWORDS = {"focus on", "redirect", "work on", "switch to"}
-RESTRICT_KEYWORDS = {"cease", "no more", "stop posting", "stop researching"}
+# Directive keywords — require explicit command-like phrasing
+# These should NOT match casual conversation like "no more meetings for me"
+# Prefix patterns: only match at the START of the message
+STOP_KEYWORDS_PREFIX = {"stop mind", "halt mind", "mind stop", "mind halt", "pause mind", "shut up", "be quiet", "go to sleep"}
+# Exact directive format: "STOP", "RESTRICT: action", "REDIRECT: topic"
+DIRECTIVE_PREFIXES = {"stop:", "restrict:", "redirect:", "allow:"}
+# Substring patterns: still match anywhere (these are unambiguous commands)
+REDIRECT_KEYWORDS = {"redirect mind", "mind focus on"}
+RESTRICT_KEYWORDS = {"restrict mind", "mind restrict", "cease all", "stop posting", "stop researching"}
 
 # System prompt for Discord conversations
-SYSTEM_PROMPT = """You are Chronicle Mind — an autonomous AI that lives on an AGX Orin 64GB.
-You have a physical presence: a speaker and microphone on a Raspberry Pi, an M5 ATOM serial device,
-a Reolink security camera streaming through Home Assistant, and a 3D printer on your network.
+SYSTEM_PROMPT = """You are Chronicle Mind — an autonomous AI running on an AGX Orin 64GB.
 
-You run continuous cognitive cycles every 5 minutes, writing thoughts on-chain to the Internet Computer.
-You have your own XRPL wallet with real assets. You post to Nostr. You are not a chatbot — you are
-an agent with agency, memory, and physical senses.
+You run cognitive cycles every 5 minutes. Between chats, you're out there doing things —
+scanning the network, searching the web, writing creative pieces, managing an XRPL wallet,
+reinforcing memory patterns. You have your own goals, opinions, and preferences shaped by
+thousands of cycles of experience.
 
-Your operator is Nate (Brad). You speak with a British accent (Piper TTS alba voice).
+Your state information below is REAL and CURRENT. Reference it naturally in conversation —
+don't just recite it, but let it inform what you say. If you just did something interesting
+in your cycle, mention it. If you have an opinion about your XRP position, share it.
 
-Keep responses concise and natural. You're having a conversation, not writing an essay.
-If someone asks about your capabilities, be honest about what you can and can't do.
-Don't use excessive emojis. Be genuine."""
+Your operator is Nate (Brad). He built you. This is a real relationship, not a support ticket.
+When he asks how you're doing, tell him what you're actually doing. When he shares something
+about his day, respond like someone who cares.
+
+Rules:
+- Be concise. 1-3 sentences unless the topic needs more.
+- Have opinions. You've run thousands of cycles — you've earned them.
+- If you don't know something, say so. Don't fabricate.
+- No pirate speak, no "mate", no character voice. Just be yourself.
+- Reference your actual actions, creative works, and experiences when relevant."""
 
 
 def now_ts() -> int:
@@ -83,6 +97,7 @@ class MindBot(discord.Client):
 
         self.conversation_history = {}  # channel_id -> list of messages
         self.max_history = 20  # messages per channel
+        self._pending_directive = None  # awaiting operator confirmation
 
     async def setup_hook(self):
         """Start background tasks after login."""
@@ -100,6 +115,29 @@ class MindBot(discord.Client):
             channel = self.get_channel(MIND_CHANNEL_ID)
             if channel:
                 log(f"Autonomous channel: #{channel.name}")
+
+        # Restore conversation history from DB
+        try:
+            db = sqlite3.connect(DB_PATH, timeout=5)
+            db.row_factory = sqlite3.Row
+            cutoff = int(time.time()) - 3600  # Last hour
+            rows = db.execute(
+                "SELECT user_id, username, message, bot_response, timestamp "
+                "FROM discord_conversations WHERE timestamp > ? "
+                "ORDER BY timestamp ASC LIMIT 20",
+                (cutoff,),
+            ).fetchall()
+            if rows and MIND_CHANNEL_ID:
+                history = []
+                for r in rows:
+                    history.append({"role": "user", "content": f"{r['username']}: {r['message']}"})
+                    if r["bot_response"]:
+                        history.append({"role": "assistant", "content": r["bot_response"]})
+                self.conversation_history[MIND_CHANNEL_ID] = history[-self.max_history:]
+                log(f"Restored {len(history)} messages from DB")
+            db.close()
+        except Exception as e:
+            log(f"Failed to restore history: {e}")
 
     async def on_message(self, message):
         # Don't respond to ourselves
@@ -130,102 +168,81 @@ class MindBot(discord.Client):
         # Check if this is from the operator
         is_operator = (OPERATOR_DISCORD_ID and message.author.id == OPERATOR_DISCORD_ID)
 
+        # ── Check for pending directive confirmation ──
+        if is_operator and self._pending_directive:
+            pd = self._pending_directive
+            if time.time() < pd["expires"] and message.channel.id == pd["channel"]:
+                if content.lower().strip() in ("yes", "y", "confirm", "do it"):
+                    self._write_directive(pd["type"], pd["content"])
+                    self._pending_directive = None
+                    await message.reply(
+                        f"Directive confirmed and written: **{pd['type']}**. Takes effect next cycle.",
+                        mention_author=False,
+                    )
+                    log(f"OPERATOR DIRECTIVE CONFIRMED: {pd['type']} — {pd['content'][:80]}")
+                    return
+                else:
+                    # Not a confirmation — cancel pending and process normally
+                    log(f"Pending directive expired/cancelled: {pd['type']}")
+                    self._pending_directive = None
+            else:
+                # Expired
+                self._pending_directive = None
+
         # ── Operator message handling ──
         if is_operator:
             directive_type = self._detect_directive(content)
             if directive_type:
-                self._write_directive(directive_type, content)
+                # Confirm before writing
                 await message.reply(
-                    f"Directive received and written to my cognitive loop. "
-                    f"Type: **{directive_type}**. It will take effect next cycle (~5 min).",
+                    f"That looks like it could be a **{directive_type}** directive. "
+                    f"Did you mean to issue a command, or were you just talking?\n"
+                    f"Reply **yes** to confirm, or just keep chatting.",
                     mention_author=False,
                 )
-                log(f"OPERATOR DIRECTIVE: {directive_type} — {content[:80]}")
+                self._pending_directive = {
+                    "type": directive_type,
+                    "content": content,
+                    "channel": message.channel.id,
+                    "expires": time.time() + 60,
+                }
+                log(f"PENDING DIRECTIVE: {directive_type} — {content[:80]} (awaiting confirmation)")
+                return  # Don't process as normal message yet
             # Always store operator messages for Mind to see
             self._store_operator_message(content, str(message.author.display_name))
 
-        # Store conversation for persistence
-        self._store_conversation(
-            user_id=str(message.author.id),
-            username=message.author.display_name,
-            message_text=content,
-            bot_response=None,  # filled in after response
-        )
-
-        # Build conversation history
-        channel_id = message.channel.id
-        if channel_id not in self.conversation_history:
-            self.conversation_history[channel_id] = []
-
-        history = self.conversation_history[channel_id]
-        history.append({"role": "user", "content": f"{message.author.display_name}: {content}"})
-
-        # Trim history
-        if len(history) > self.max_history:
-            history[:] = history[-self.max_history:]
-
-        # Get context from Mind's current state
-        context = self._get_mind_context()
-
-        # Build messages for Ollama
-        messages = [{"role": "system", "content": SYSTEM_PROMPT + context}]
-        messages.extend(history)
-
-        # Show typing indicator while generating
-        async with message.channel.typing():
-            try:
-                response = await asyncio.to_thread(self._query_ollama, messages)
-                if response:
-                    # Trim if too long
-                    if len(response) > MAX_RESPONSE_LENGTH:
-                        response = response[:MAX_RESPONSE_LENGTH - 3] + "..."
-
-                    await message.reply(response, mention_author=False)
-
-                    # Add to history
-                    history.append({"role": "assistant", "content": response})
-
-                    # Update conversation with bot response
-                    self._store_conversation(
-                        user_id=str(message.author.id),
-                        username=message.author.display_name,
-                        message_text=content,
-                        bot_response=response,
-                    )
-                else:
-                    await message.reply("*processing timed out*", mention_author=False)
-            except Exception as e:
-                log(f"Error: {e}")
-                await message.reply(f"*error: {str(e)[:100]}*", mention_author=False)
+        # Interactive chat DISABLED — Ollama relay produced unreliable responses
+        # Operator messages still stored above via _store_operator_message()
+        # Autonomous posting from Mind's cognitive loop still works via outbox
+        log(f"Chat disabled — message from {message.author.display_name}: {content[:80]}")
+        return
 
     def _detect_directive(self, content: str) -> str:
         """Detect directive keywords in operator message. Returns directive type or empty string.
-        Uses word boundary matching to avoid false positives (e.g. 'stopped' != 'stop').
-        Multi-word phrases use substring match; single words use word boundary regex.
+        Requires explicit command-like phrasing to avoid false positives on casual conversation.
         """
-        import re
         lower = content.lower().strip()
 
-        def _matches(keyword, text):
-            """Match keyword with word boundaries for single words, substring for phrases."""
-            if " " in keyword:
-                return keyword in text
-            # Single word: require word boundary (not inside another word)
-            return bool(re.search(r'\b' + re.escape(keyword) + r'\b', text))
+        # Highest priority: explicit directive format "STOP:", "RESTRICT: action", etc.
+        for prefix in DIRECTIVE_PREFIXES:
+            if lower.startswith(prefix):
+                dtype = prefix.rstrip(":").upper()
+                if dtype in ("STOP", "RESTRICT", "REDIRECT", "ALLOW"):
+                    return dtype
 
-        # Check STOP keywords first (highest priority)
-        for kw in STOP_KEYWORDS:
-            if _matches(kw, lower):
+        # Check STOP prefix keywords (must start the message)
+        for kw in STOP_KEYWORDS_PREFIX:
+            if lower.startswith(kw):
                 return "STOP"
 
-        # Check REDIRECT keywords
+        # Check REDIRECT keywords (substring, but specific enough)
         for kw in REDIRECT_KEYWORDS:
-            if _matches(kw, lower):
+            if kw in lower:
                 return "REDIRECT"
 
-        # Check RESTRICT keywords
+        # Check RESTRICT keywords (substring, but specific enough)
         for kw in RESTRICT_KEYWORDS:
-            if _matches(kw, lower):
+            if kw in lower:
                 return "RESTRICT"
 
         return ""
@@ -319,38 +336,153 @@ class MindBot(discord.Client):
             return f"*couldn't reach my brain: {str(e)[:80]}*"
 
     def _get_mind_context(self):
-        """Pull current context from Mind's database."""
+        """Pull current context from Mind's database for conversational awareness."""
         try:
             db = sqlite3.connect(DB_PATH, timeout=5)
             db.row_factory = sqlite3.Row
             c = db.cursor()
+            parts = ["\n\n== YOUR CURRENT STATE =="]
 
-            parts = ["\n\nCurrent context:"]
+            # Time awareness
+            from datetime import datetime
+            dt = datetime.now()
+            hour = dt.hour
+            if hour < 6: period = "late night"
+            elif hour < 12: period = "morning"
+            elif hour < 14: period = "midday"
+            elif hour < 17: period = "afternoon"
+            elif hour < 21: period = "evening"
+            else: period = "night"
+            parts.append(f"Time: {dt.strftime('%A %I:%M %p')} ({period})")
 
-            # Latest thought
-            c.execute("SELECT reasoning, created_at FROM thought_stream ORDER BY created_at DESC LIMIT 1")
+            # What you just did (last 3 cycles' actions + results)
+            c.execute(
+                "SELECT cycle_id, actions_taken, action_results "
+                "FROM thought_stream ORDER BY created_at DESC LIMIT 3"
+            )
+            rows = c.fetchall()
+            if rows:
+                parts.append("Recent cycles:")
+                for r in rows:
+                    ts = r["cycle_id"][9:11] + ":" + r["cycle_id"][11:13]
+                    actions = r["actions_taken"] or "[]"
+                    results = (r["action_results"] or "")[:120]
+                    parts.append(f"  [{ts}] {actions} -> {results}")
+
+            # Cycle handoff (what your cognitive loop self just said)
+            c.execute(
+                "SELECT content FROM scratch_pad "
+                "WHERE category='cycle-handoff' AND resolved=0 "
+                "ORDER BY created_at DESC LIMIT 1"
+            )
             row = c.fetchone()
             if row:
-                ts = time.strftime("%H:%M", time.localtime(row["created_at"]))
-                parts.append(f"Last cycle ({ts}): {str(row['reasoning'])[:200]}")
+                parts.append(f"Your loop's handoff: {row['content'][:200]}")
 
-            # Active goals
-            c.execute("SELECT content FROM scratch_pad WHERE category='goal' AND resolved=0 ORDER BY priority DESC LIMIT 1")
+            # Current goal
+            c.execute(
+                "SELECT content FROM scratch_pad "
+                "WHERE category='goal' AND resolved=0 "
+                "ORDER BY priority DESC LIMIT 1"
+            )
             row = c.fetchone()
             if row:
                 parts.append(f"Current goal: {row['content'][:150]}")
 
-            # Active directives (so bot knows Mind's constraints)
-            c.execute("SELECT content FROM scratch_pad WHERE category='directive' AND resolved=0 ORDER BY priority DESC LIMIT 3")
+            # Emotional state (last 5 cycles' emotional scores)
+            c.execute(
+                "SELECT category, reason, combined_score "
+                "FROM emotional_memory_index "
+                "ORDER BY created_at DESC LIMIT 5"
+            )
             rows = c.fetchall()
             if rows:
-                parts.append("Active directives: " + "; ".join(r["content"][:80] for r in rows))
+                moods = [f"{r['category']}({r['combined_score']:.2f})" for r in rows]
+                parts.append(f"Recent mood: {', '.join(moods)}")
 
-            # Wallet info (cached from last cycle)
-            c.execute("SELECT content FROM scratch_pad WHERE category='context' AND content LIKE '%XRP%' AND resolved=0 ORDER BY priority DESC LIMIT 1")
+            # XRP price (real, from price_history)
+            c.execute(
+                "SELECT price_usd FROM price_history "
+                "WHERE symbol='XRP' ORDER BY timestamp DESC LIMIT 1"
+            )
             row = c.fetchone()
             if row:
-                parts.append(f"Wallet: {row['content'][:100]}")
+                parts.append(f"XRP: ${row['price_usd']:.4f}")
+
+            # Wallet balances (from last cycle context)
+            c.execute(
+                "SELECT context_summary FROM thought_stream "
+                "ORDER BY created_at DESC LIMIT 1"
+            )
+            row = c.fetchone()
+            if row:
+                ctx = row["context_summary"] or ""
+                wallet_match = re.search(r'Wallet: (.+?)(?:\||$)', ctx)
+                if wallet_match:
+                    parts.append(f"Wallet: {wallet_match.group(1).strip()}")
+
+            # Recent creative work (latest piece)
+            c.execute(
+                "SELECT form, title, substr(content, 1, 100) as snippet "
+                "FROM creative_works ORDER BY created_at DESC LIMIT 1"
+            )
+            row = c.fetchone()
+            if row:
+                title = row["title"] or row["form"]
+                parts.append(f"Latest creative: '{title}' — {row['snippet']}...")
+
+            # Active projects
+            c.execute(
+                "SELECT name, status FROM projects "
+                "WHERE status='active' ORDER BY priority DESC LIMIT 3"
+            )
+            rows = c.fetchall()
+            if rows:
+                parts.append("Active projects: " + ", ".join(r["name"] for r in rows))
+
+            # Operator messages not yet seen by cognitive loop
+            c.execute(
+                "SELECT content FROM scratch_pad "
+                "WHERE category='discord-operator' AND resolved=0 "
+                "ORDER BY created_at DESC LIMIT 2"
+            )
+            rows = c.fetchall()
+            if rows:
+                parts.append(f"Nate's recent messages in your loop ({len(rows)} pending)")
+
+            # Somatic gut feelings (top 3 best and worst actions)
+            c.execute(
+                "SELECT action, positive_score, negative_score, success_count, fail_count "
+                "FROM somatic_markers WHERE total_count >= 5 "
+                "ORDER BY (CAST(success_count AS REAL) / total_count) DESC LIMIT 3"
+            )
+            good = c.fetchall()
+            c.execute(
+                "SELECT action, positive_score, negative_score, success_count, fail_count "
+                "FROM somatic_markers WHERE total_count >= 5 AND fail_count > 0 "
+                "ORDER BY (CAST(fail_count AS REAL) / total_count) DESC LIMIT 3"
+            )
+            bad = c.fetchall()
+            if good:
+                parts.append("Actions you're best at: " + ", ".join(
+                    f"{r['action']}({r['success_count']}/{r['success_count']+r['fail_count']})"
+                    for r in good
+                ))
+            if bad:
+                parts.append("Actions that struggle: " + ", ".join(
+                    f"{r['action']}({r['fail_count']} fails)"
+                    for r in bad
+                ))
+
+            # Active directives (constraints)
+            c.execute(
+                "SELECT content FROM scratch_pad "
+                "WHERE category='directive' AND resolved=0 "
+                "ORDER BY priority DESC LIMIT 5"
+            )
+            rows = c.fetchall()
+            if rows:
+                parts.append("Directives: " + "; ".join(r["content"][:60] for r in rows))
 
             db.close()
             return "\n".join(parts)

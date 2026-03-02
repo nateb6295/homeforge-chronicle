@@ -14,6 +14,7 @@ use serenity::async_trait;
 use serenity::model::channel::Message;
 use serenity::model::gateway::Ready;
 use serenity::prelude::*;
+use serenity::model::channel::ReactionType;
 use std::collections::{HashMap, HashSet, VecDeque};
 use std::env;
 use std::sync::Arc;
@@ -595,6 +596,45 @@ impl Bot {
             }
             Err(_) => None,
         }
+    }
+
+    /// Download a Discord attachment to local staging directory
+    async fn download_attachment(
+        &self,
+        msg_id: u64,
+        filename: &str,
+        url: &str,
+        size: u64,
+    ) -> Result<String> {
+        const MAX_SIZE: u64 = 25 * 1024 * 1024; // 25MB
+        if size > MAX_SIZE {
+            return Err(anyhow::anyhow!(
+                "Attachment {} too large ({} bytes, max {})",
+                filename,
+                size,
+                MAX_SIZE
+            ));
+        }
+
+        let captures_dir = std::path::Path::new("/home/nvidia/sprout/captures");
+        if !captures_dir.exists() {
+            std::fs::create_dir_all(captures_dir)?;
+        }
+
+        let local_filename = format!("{}_{}", msg_id, filename);
+        let local_path = captures_dir.join(&local_filename);
+
+        let response = self
+            .http_client
+            .get(url)
+            .timeout(std::time::Duration::from_secs(60))
+            .send()
+            .await?;
+
+        let bytes = response.bytes().await?;
+        std::fs::write(&local_path, &bytes)?;
+
+        Ok(local_path.to_string_lossy().to_string())
     }
 
     /// Query Chronicle's memories and patterns
@@ -1226,6 +1266,7 @@ fn truncate(s: &str, max_len: usize) -> String {
 
 struct Handler {
     family_channel_id: Option<u64>,
+    capture_channel_id: Option<u64>,
     permissions: Arc<Permissions>,
     rate_limiter: Arc<Mutex<RateLimiter>>,
     ha: Option<Arc<HomeAssistant>>,
@@ -1239,10 +1280,135 @@ impl EventHandler for Handler {
             return;
         }
 
+        let msg_channel_id = msg.channel_id.get();
+        eprintln!("MSG: channel={} author={} ({})", msg_channel_id, msg.author.name, msg.author.id.get());
+
+        // ── Capture channel handler (early, before normal routing) ──
+        let is_capture_channel = self.capture_channel_id
+            .map(|id| msg_channel_id == id)
+            .unwrap_or(false);
+
+        if is_capture_channel {
+            let user_id = msg.author.id.get();
+            let tier = self.permissions.tier(user_id);
+            eprintln!("CAPTURE: tier={:?} user_id={}", tier, user_id);
+
+            // Admin-only: prevent random users from injecting capsules
+            if tier != PermissionTier::Admin {
+                return; // Silent ignore
+            }
+
+            let data = ctx.data.read().await;
+            let bot = match data.get::<BotData>() {
+                Some(b) => b.clone(),
+                None => return,
+            };
+
+            let content = msg.content.trim().to_string();
+
+            // Detect type and extract components
+            let mut links: Vec<String> = Vec::new();
+            let mut attachments_json: Vec<serde_json::Value> = Vec::new();
+            let mut capture_type = "text";
+
+            // Extract URLs from message content
+            for word in content.split_whitespace() {
+                if word.starts_with("http://") || word.starts_with("https://") {
+                    links.push(word.to_string());
+                }
+            }
+
+            // Download attachments
+            for attachment in &msg.attachments {
+                let ct = attachment.content_type.as_deref().unwrap_or("application/octet-stream");
+                match bot.download_attachment(
+                    msg.id.get(),
+                    &attachment.filename,
+                    &attachment.url,
+                    attachment.size as u64,
+                ).await {
+                    Ok(local_path) => {
+                        attachments_json.push(json!({
+                            "filename": attachment.filename,
+                            "local_path": local_path,
+                            "content_type": ct,
+                            "size_bytes": attachment.size
+                        }));
+                    }
+                    Err(e) => {
+                        eprintln!("Failed to download attachment {}: {}", attachment.filename, e);
+                    }
+                }
+            }
+
+            // Determine capture type
+            let has_text = !content.is_empty();
+            let has_links = !links.is_empty();
+            let has_attachments = !attachments_json.is_empty();
+            let has_voice = attachments_json.iter().any(|a| {
+                a["content_type"].as_str().unwrap_or("").starts_with("audio/")
+            });
+            let has_image = attachments_json.iter().any(|a| {
+                a["content_type"].as_str().unwrap_or("").starts_with("image/")
+            });
+
+            if has_voice {
+                capture_type = "voice";
+            } else if has_image && has_text {
+                capture_type = "mixed";
+            } else if has_image {
+                capture_type = "image";
+            } else if has_links && has_text {
+                capture_type = "mixed";
+            } else if has_links {
+                capture_type = "link";
+            } else if has_attachments && has_text {
+                capture_type = "mixed";
+            }
+
+            // Build JSON payload
+            let payload = json!({
+                "type": capture_type,
+                "text": content,
+                "links": links,
+                "attachments": attachments_json,
+                "author": msg.author.name,
+                "discord_msg_id": msg.id.get().to_string(),
+                "captured_at": Utc::now().format("%Y-%m-%dT%H:%M:%SZ").to_string()
+            });
+
+            // Write to scratch_pad
+            if let Ok(db) = bot.get_db() {
+                match db.write_scratch_note(
+                    &payload.to_string(),
+                    Some("capture"),
+                    3,
+                    None,
+                ) {
+                    Ok(_) => {
+                        // Checkmark reaction — clean UX, no text reply
+                        let _ = msg.react(&ctx.http, ReactionType::Unicode("✅".to_string())).await;
+                        let _ = db.log_activity(
+                            "sprout",
+                            "capture",
+                            Some("Phone capture queued"),
+                            &format!("Type: {}, from {}", capture_type, msg.author.name),
+                            None,
+                        );
+                    }
+                    Err(e) => {
+                        eprintln!("Failed to write capture: {}", e);
+                        let _ = msg.react(&ctx.http, ReactionType::Unicode("❌".to_string())).await;
+                    }
+                }
+            }
+
+            return; // Don't process through normal chat path
+        }
+
         // Check if this is a DM, a mention, or in the family channel
         let is_dm = msg.guild_id.is_none();
         let is_mention = msg.mentions_me(&ctx.http).await.unwrap_or(false);
-        let msg_channel_id = msg.channel_id.get();
         let is_family_channel = self.family_channel_id
             .map(|id| msg_channel_id == id)
             .unwrap_or(false);
@@ -1285,6 +1451,18 @@ impl EventHandler for Handler {
                 return;
             }
         };
+
+        // Log family channel messages so the cognitive loop has awareness
+        if is_family_channel {
+            if let Ok(db) = bot.get_db() {
+                let user_name = msg.author.name.as_str();
+                let user_id_str = user_id.to_string();
+                let content_preview = truncate(&msg.content, 500);
+                if let Err(e) = db.log_chat_message(user_name, &user_id_str, &content_preview, "family") {
+                    eprintln!("Failed to log chat message: {}", e);
+                }
+            }
+        }
 
         // Clean message (remove mention if present)
         let content = msg.content
@@ -1545,6 +1723,17 @@ async fn main() -> Result<()> {
         println!("Family channel: not set (DMs and @mentions only)");
     }
 
+    // Optional: capture channel for phone-to-canister pipeline
+    let capture_channel_id = env::var("SPROUT_CAPTURE_CHANNEL")
+        .ok()
+        .and_then(|s| s.parse::<u64>().ok());
+
+    if let Some(channel_id) = capture_channel_id {
+        println!("Capture channel: {}", channel_id);
+    } else {
+        println!("Capture channel: not set");
+    }
+
     // Permission system
     let permissions = Arc::new(Permissions::from_env());
     if permissions.has_any_configured() {
@@ -1576,6 +1765,7 @@ async fn main() -> Result<()> {
 
     let handler = Handler {
         family_channel_id,
+        capture_channel_id,
         permissions,
         rate_limiter,
         ha,

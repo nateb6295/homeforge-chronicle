@@ -65,7 +65,7 @@ from mind.config import (
     TASK_QUEUE_MIN_PRIORITY,
     OPERATOR_PROTECTED_CATEGORIES,
     XRPL_POLICY_JSON, XRPL_AUDIT_HMAC_KEY,
-    DAILY_SCHEDULE, ENRICHMENT_POOL, get_schedule_block,
+    MISSION_FOCUS_DECAY, MISSION_FOCUS_BOOST, MISSION_STALL_THRESHOLD,
 )
 from mind.utils import (
     log, safe_truncate, now_ts, now_iso, make_cycle_id,
@@ -88,6 +88,8 @@ from mind.fetchers import (
     fetch_evm_balances, fetch_icp_balance,
     fetch_cloud_price_and_balance,
     fetch_rss_headlines,
+    fetch_weather, fetch_sprout_state,
+    fetch_random_capsule, fetch_network_state,
 )
 from mind.consolidation import sleep_consolidation
 from mind.meta_gate import (
@@ -96,6 +98,8 @@ from mind.meta_gate import (
 )
 from mind.actions import ACTION_HANDLERS
 from mind.actions.infra import reset_manifold_cycle_spend
+from mind.actions.missions import _get_active_mission, _save_mission, _actions_match_step
+from mind.causality import CausalGraph
 
 
 # ═══════════════════════════════════════════════════════════════════
@@ -123,6 +127,10 @@ class ChronicleMind:
         self._cycle_heard_speech = False  # speak-when-spoken-to gate
         # Paper tracking (prevent read_paper loops)
         self.session_papers_read = set()
+        # Causal memory graph
+        self.causal_graph = CausalGraph(self.db)
+        self.causal_graph.ensure_tables()
+        self._prev_cycle_id = None
 
         # XRPL Policy Engine
         try:
@@ -284,7 +292,7 @@ class ChronicleMind:
             # Get identity narrative
             narrative_row = self.db.query_one(
                 "SELECT content FROM scratch_pad WHERE category='identity-narrative' "
-                "AND resolved=0 ORDER BY created_at DESC LIMIT 1"
+                "AND resolved=0 AND (source IS NULL OR source != 'sprout') ORDER BY created_at DESC LIMIT 1"
             )
             ctx["identity_narrative"] = narrative_row.get("content", "")[:300] if narrative_row else ""
 
@@ -481,6 +489,7 @@ class ChronicleMind:
             if self.llm.icp_agent:
                 goal = self.db.query_one(
                     "SELECT content FROM scratch_pad WHERE category='goal' AND resolved=0 "
+                    "AND (source IS NULL OR source != 'sprout') "
                     "ORDER BY priority DESC, created_at DESC LIMIT 1"
                 )
                 goal_text = goal.get("content", "") if goal else ""
@@ -495,6 +504,74 @@ class ChronicleMind:
                             log(f"  Memory recall: {len(relevant)} capsules relevant to goal")
         except Exception as e:
             log(f"  Memory recall failed: {e}")
+
+        # ── Environmental Dashboard (pre-fetched reality) ──
+        ctx["weather"] = fetch_weather()
+        if ctx["weather"]:
+            log(f"  Weather: {ctx['weather']}")
+
+        ctx["network_state"] = fetch_network_state()
+        online = sum(1 for v in ctx["network_state"].values() if v == "online")
+        log(f"  Network: {online}/{len(ctx['network_state'])} devices online")
+
+        ctx["sprout_state"] = fetch_sprout_state(self.db)
+        if ctx["sprout_state"]:
+            log(f"  Sprout: last cycle {ctx['sprout_state']['minutes_ago']}min ago")
+
+        ctx["memory_echo"] = {}
+        if self.llm.icp_agent:
+            ctx["memory_echo"] = fetch_random_capsule(self.llm.icp_agent)
+            if ctx["memory_echo"]:
+                log(f"  Memory echo: capsule #{ctx['memory_echo'].get('id', '?')}")
+
+        # ── Causal Edge Context (for edge extraction + prompt dedup) ──
+        ctx["prev_cycle_id"] = self._prev_cycle_id
+
+        # Discord operator messages (also used by build_prompt)
+        discord_msgs = self.db.query(
+            "SELECT id, content, created_at FROM scratch_pad "
+            "WHERE category = 'discord-operator' AND resolved = 0 "
+            "ORDER BY created_at DESC LIMIT 3"
+        )
+        ctx["discord_operator_msgs"] = discord_msgs or []
+
+        # Opus guidance (also used by build_prompt)
+        opus_notes = self.db.query(
+            "SELECT id, content, created_at FROM scratch_pad "
+            "WHERE category = 'opus-guidance' AND resolved = 0 "
+            "ORDER BY created_at DESC LIMIT 2"
+        )
+        ctx["opus_guidance_notes"] = opus_notes or []
+
+        # Cycle handoff (also used by build_prompt)
+        handoff = self.db.query_one(
+            "SELECT content FROM scratch_pad "
+            "WHERE category = 'cycle-handoff' AND resolved = 0 "
+            "AND (source IS NULL OR source != 'sprout') "
+            "ORDER BY created_at DESC LIMIT 1"
+        )
+        ctx["cycle_handoff"] = handoff.get("content", "") if handoff else ""
+
+        # Active mission (multi-cycle objective)
+        ctx["active_mission"] = _get_active_mission(self)
+        if ctx["active_mission"]:
+            log(f"  Active mission: \"{safe_truncate(ctx['active_mission'].get('title', ''), 50)}\" "
+                f"(step {ctx['active_mission'].get('current_step', '?')}, "
+                f"focus {ctx['active_mission'].get('focus_strength', 0):.2f})")
+
+        # Previous cycle's action names + results (for retry detection)
+        last = self.db.query_one(
+            "SELECT actions_taken, action_results FROM thought_stream ORDER BY id DESC LIMIT 1"
+        )
+        if last:
+            try:
+                ctx["prev_action_names"] = json.loads(last.get("actions_taken", "[]"))
+            except (json.JSONDecodeError, TypeError):
+                ctx["prev_action_names"] = []
+            ctx["prev_action_results"] = last.get("action_results", "")
+        else:
+            ctx["prev_action_names"] = []
+            ctx["prev_action_results"] = ""
 
         return ctx
 
@@ -722,6 +799,54 @@ class ChronicleMind:
         except Exception:
             pass
 
+        # ── Active Mission (multi-cycle objective — shown early for attention) ──
+        mission = ctx.get("active_mission")
+        if mission:
+            title = mission.get("title", "")
+            db_id = mission.get("_db_id", "?")
+            steps = mission.get("steps", [])
+            current = mission.get("current_step", 1)
+            focus = mission.get("focus_strength", 1.0)
+            cycles_active = mission.get("cycles_active", 0)
+            max_cycles = mission.get("max_cycles", 20)
+            done_count = sum(1 for s in steps if s["done"])
+            cycles_no_progress = mission.get("cycles_no_progress", 0)
+
+            # Focus bar: 10 chars
+            filled = int(round(focus * 10))
+            bar = "#" * filled + "." * (10 - filled)
+
+            current_step = None
+            for s in steps:
+                if s["id"] == current:
+                    current_step = s
+                    break
+            step_action = current_step["action"] if current_step else "?"
+
+            lines.append(f"\n!! ACTIVE MISSION: {title} (id:{db_id}) !!")
+            lines.append(f"  YOUR CURRENT STEP: {step_action}")
+            lines.append(f"  Step {current}/{len(steps)} | Focus: {bar} ({focus:.2f}) | Cycle {cycles_active}/{max_cycles}")
+
+            # Show completed steps
+            if done_count > 0:
+                for s in steps:
+                    if s["done"]:
+                        lines.append(f"    DONE: {s['action']}")
+
+            # Focus-dependent urgency — escalating pressure
+            if focus < 0.3:
+                lines.append(f"  !! MISSION LOSING FOCUS — you have ignored this for {cycles_no_progress} cycles !!")
+                lines.append(f"  DO THIS NOW: {step_action}")
+                lines.append(f"  Then call progress_mission to advance.")
+            elif focus < 0.5:
+                lines.append(f"  WARNING: Mission focus is fading ({cycles_no_progress} cycles without progress).")
+                lines.append(f"  Your next action should be: {step_action}")
+            elif focus < 0.8:
+                lines.append(f"  Include [{step_action}] in your actions this cycle.")
+                lines.append(f"  Use progress_mission after completing it.")
+            else:
+                lines.append(f"  Work on this step, then call progress_mission to advance.\n")
+
         # ── Topic Cooldowns (meta-gate blocks) ──
         try:
             meta_blocks = self.db.query(
@@ -739,11 +864,7 @@ class ChronicleMind:
 
         # ── Discord Operator Messages (feedback loop) ──
         try:
-            discord_msgs = self.db.query(
-                "SELECT id, content, created_at FROM scratch_pad "
-                "WHERE category = 'discord-operator' AND resolved = 0 "
-                "ORDER BY created_at DESC LIMIT 3"
-            )
+            discord_msgs = ctx.get("discord_operator_msgs", [])
             if discord_msgs:
                 lines.append("[RESPOND] Messages from Nate (via Discord):")
                 for dm in discord_msgs:
@@ -764,11 +885,7 @@ class ChronicleMind:
 
         # ── Opus Guidance (mentor feedback from Claude Code sessions) ──
         try:
-            opus_notes = self.db.query(
-                "SELECT id, content, created_at FROM scratch_pad "
-                "WHERE category = 'opus-guidance' AND resolved = 0 "
-                "ORDER BY created_at DESC LIMIT 2"
-            )
+            opus_notes = ctx.get("opus_guidance_notes", [])
             if opus_notes:
                 lines.append("[MENTOR] Guidance from Opus (your architect sibling):")
                 for note in opus_notes:
@@ -807,14 +924,10 @@ class ChronicleMind:
 
         # ── Cycle Handoff (continuity from previous self) ──
         try:
-            handoff = self.db.query_one(
-                "SELECT content FROM scratch_pad "
-                "WHERE category = 'cycle-handoff' AND resolved = 0 "
-                "ORDER BY created_at DESC LIMIT 1"
-            )
-            if handoff:
+            handoff_content = ctx.get("cycle_handoff", "")
+            if handoff_content:
                 lines.append("== YOUR PREVIOUS SELF'S HANDOFF ==")
-                lines.append(handoff.get("content", ""))
+                lines.append(handoff_content)
                 lines.append("Continue where you left off. Don't repeat what's done.\n")
         except Exception:
             pass
@@ -864,6 +977,7 @@ class ChronicleMind:
         try:
             reflections = self.db.query(
                 "SELECT content FROM scratch_pad WHERE category='reflection' AND resolved=0 "
+                "AND (source IS NULL OR source != 'sprout') "
                 "ORDER BY created_at DESC LIMIT 2"
             )
             if reflections:
@@ -890,14 +1004,26 @@ class ChronicleMind:
                         pass
 
                 if len(action_sets) >= 2 and len(set(action_sets)) == 1:
-                    lines.append("WARNING: Your last cycles used the EXACT SAME action combination.")
-                    lines.append("You MUST choose at least one DIFFERENT action type this cycle.")
-                    used = set(action_sets[0]) if action_sets else set()
-                    suggestions = [a for a in ["web_search", "creative_explore", "read_paper",
-                                                "nostr_post", "trigger_reflection", "store_memory"]
-                                   if a not in used]
-                    if suggestions:
-                        lines.append(f"Try: {', '.join(suggestions[:3])}\n")
+                    # If mission active, redirect TO the mission instead of generic suggestions
+                    if mission and mission.get("cycles_no_progress", 0) >= 2:
+                        step_text = "?"
+                        for s in mission.get("steps", []):
+                            if s["id"] == mission.get("current_step", 1):
+                                step_text = s["action"]
+                                break
+                        lines.append("!! STUCK IN A LOOP — you keep doing the same thing !!")
+                        lines.append(f"You have an ACTIVE MISSION waiting. Stop repeating yourself.")
+                        lines.append(f"DO THIS: {step_text}")
+                        lines.append(f"Then call progress_mission to advance.\n")
+                    else:
+                        lines.append("WARNING: Your last cycles used the EXACT SAME action combination.")
+                        lines.append("You MUST choose at least one DIFFERENT action type this cycle.")
+                        used = set(action_sets[0]) if action_sets else set()
+                        suggestions = [a for a in ["web_search", "creative_explore", "read_paper",
+                                                    "nostr_post", "trigger_reflection", "store_memory"]
+                                       if a not in used]
+                        if suggestions:
+                            lines.append(f"Try: {', '.join(suggestions[:3])}\n")
 
                 # THEMATIC anti-rumination: scan reasoning for repeated topics
                 all_text = " ".join(
@@ -930,7 +1056,7 @@ class ChronicleMind:
         except Exception:
             pass
 
-        # ── Temporal Context ──
+        # ── Environmental Dashboard (YOUR WORLD) ──
         dt = datetime.now()
         day_name = dt.strftime("%A")
         hour = dt.hour
@@ -944,20 +1070,56 @@ class ChronicleMind:
             period = "evening"
         else:
             period = "night"
-        lines.append(f"Current time: {now_iso()} ({day_name} {period})")
 
-        # ── Daily Schedule (environmental enrichment) ──
-        schedule = get_schedule_block()
-        if schedule:
-            lines.append(f"\n== TODAY'S RHYTHM: {schedule['focus']} ==")
-            lines.append("Suggested priorities right now:")
-            for s in schedule["suggestions"]:
-                lines.append(f"  + {s}")
-            if schedule.get("avoid"):
-                lines.append("Lower priority right now:")
-                for a in schedule["avoid"]:
-                    lines.append(f"  - {a}")
-            lines.append("(Guidance, not rules. Override if something urgent needs attention.)\n")
+        lines.append("== YOUR WORLD ==")
+        lines.append(f"{day_name} {dt.strftime('%b %d')}, {dt.strftime('%I:%M%p').lstrip('0').lower()} · Puyallup, WA")
+
+        # Weather (pre-fetched, no confabulation possible)
+        weather = ctx.get("weather", "")
+        if weather:
+            lines.append(f"Outside: {weather}")
+
+        # Family rhythm (facts, not suggestions)
+        if day_name == "Sunday":
+            lines.append("Household: Sunday — Nate does church security.")
+        elif day_name == "Saturday":
+            lines.append("Household: Weekend.")
+        else:
+            lines.append("Household: Weekday — kids at school during the day.")
+
+        # Network
+        net = ctx.get("network_state", {})
+        if net:
+            parts = [f"{name}: {'✓' if status == 'online' else '✗'}" for name, status in net.items()]
+            lines.append(f"Home: AGX ✓ | {' | '.join(parts)}")
+
+        # Sprout
+        sprout = ctx.get("sprout_state", {})
+        if sprout:
+            lines.append(f"Sprout: {sprout['summary']} ({sprout['minutes_ago']}min ago)")
+        else:
+            lines.append("Sprout: No recent activity.")
+
+        # Memory echo
+        echo = ctx.get("memory_echo", {})
+        if echo:
+            topic = echo.get("topic", [])
+            topic_str = topic[0] if isinstance(topic, list) and topic else str(topic) if topic else "general"
+            content = (echo.get("restatement") or "")[:200]
+            lines.append(f"\nMemory echo (capsule #{echo.get('id', '?')}, topic: {topic_str}):")
+            lines.append(f"  \"{content}\"")
+
+        lines.append("")  # blank line before next section
+
+        # ── Causal Trail (how you got here) ──
+        try:
+            causal_lines = self.causal_graph.get_causal_context_for_prompt(ctx)
+            if causal_lines:
+                lines.append("== HOW YOU GOT HERE ==")
+                lines.extend(causal_lines)
+                lines.append("")
+        except Exception:
+            pass
 
         # ── Session Performance Metrics (Phase 3) ──
         if self.session_actions > 0:
@@ -1053,6 +1215,7 @@ class ChronicleMind:
         try:
             goal = self.db.query_one(
                 "SELECT content FROM scratch_pad WHERE category='goal' AND resolved=0 "
+                "AND (source IS NULL OR source != 'sprout') "
                 "ORDER BY priority DESC, created_at DESC LIMIT 1"
             )
             if goal:
@@ -1112,6 +1275,7 @@ class ChronicleMind:
             questions = self.db.query(
                 "SELECT id, content FROM scratch_pad "
                 "WHERE category='question' AND resolved=0 "
+                "AND (source IS NULL OR source != 'sprout') "
                 "ORDER BY created_at ASC LIMIT 2"
             )
             if questions:
@@ -1359,21 +1523,13 @@ class ChronicleMind:
         except Exception:
             pass
 
-        # ── Enrichment Suggestion (time-appropriate variety) ──
-        try:
-            period_key = {
-                "morning": "morning", "afternoon": "afternoon",
-                "evening": "evening", "night": "night", "late night": "night",
-            }.get(period, "afternoon")
-            pool = ENRICHMENT_POOL.get(period_key, [])
-            if pool:
-                suggestion = pool[self.cycle_count % len(pool)]
-                lines.append(f"\n[ENRICHMENT] {suggestion}")
-                lines.append("(A suggestion for variety. Not mandatory.)")
-        except Exception:
-            pass
-
-        lines.append("\nRespond with ONLY a JSON array of 1-6 actions.")
+        lines.append("\n== RESPOND NOW ==")
+        lines.append("Reply ONLY with a JSON array. The array must start with [ and end with ].")
+        lines.append("Each element must have an \"action\" key. Put your reasoning in \"reason\".")
+        lines.append("DO NOT output a single object like {\"reason\": \"...\"}. That is WRONG.")
+        lines.append("CORRECT: [{\"action\": \"search_canister\", \"query\": \"homeforge\", \"reason\": \"exploring memory\"}]")
+        lines.append("CORRECT: [{\"action\": \"no_action\", \"reason\": \"Nothing needs doing.\"}]")
+        lines.append("WRONG:   {\"reason\": \"I should search...\"}")
         return "\n".join(lines)
 
     # ── Reasoning ────────────────────────────────────────────────
@@ -1393,6 +1549,45 @@ class ChronicleMind:
             return [{"action": "no_action", "reason": "No LLM response"}], "", model
 
         actions = parse_actions(response)
+
+        # Retry if model produced {"reasoning": "..."} instead of action array
+        if (len(actions) == 1 and actions[0].get("action") == "no_action"
+                and "prose instead of JSON" in actions[0].get("reason", "")):
+            log("  Format retry: model produced prose, retrying with format hint...")
+            # Include mission context so retry knows the current step
+            mission_hint = ""
+            mission_data = ctx.get("active_mission")
+            if mission_data:
+                try:
+                    import json as _json
+                    m = _json.loads(mission_data["content"]) if isinstance(mission_data.get("content"), str) else mission_data
+                    step_num = m.get("current_step", 1)
+                    steps = m.get("steps", [])
+                    for s in steps:
+                        if s["id"] == step_num:
+                            mission_hint = f"\nCURRENT MISSION STEP: {s['action']}\n"
+                            break
+                except Exception:
+                    pass
+            retry_prompt = (
+                "FORMAT ERROR. Your previous output was a bare JSON object, not an action array.\n"
+                "You MUST output a JSON array starting with [ and ending with ].\n"
+                "Each element MUST have an \"action\" key.\n\n"
+                f"{mission_hint}"
+                "Rewrite your intended action as:\n"
+                "[{\"action\": \"ACTION_NAME\", \"PARAM\": \"VALUE\", \"reason\": \"why\"}]\n\n"
+                f"Your previous reasoning: {safe_truncate(response, 800)}"
+            )
+            retry_resp, retry_model = self.llm.chat(retry_prompt, system="Output ONLY a JSON array of action objects. Nothing else.")
+            if retry_resp:
+                retry_actions = parse_actions(retry_resp)
+                if (retry_actions and not (len(retry_actions) == 1
+                        and "prose instead of JSON" in retry_actions[0].get("reason", ""))):
+                    log(f"  Format retry succeeded: {len(retry_actions)} action(s)")
+                    actions = retry_actions
+                    response = retry_resp
+                else:
+                    log("  Format retry also failed, using no_action")
 
         if not actions:
             log(f"Failed to parse actions from response: {safe_truncate(response, 200)}")
@@ -1484,6 +1679,136 @@ class ChronicleMind:
 
     # ── Operator Directive System ────────────────────────────────
 
+    # ── Mission Focus Tracking ─────────────────────────────────
+
+    def _update_mission_focus(self, ctx: dict, action_names: list, results_summary: str):
+        """Update mission focus strength based on cycle relevance.
+        Re-reads mission from DB to avoid clobbering progress_mission updates.
+        Auto-advances steps when the model executes the step's named action."""
+        # Re-read from DB — progress_mission may have updated step/done state
+        mission = _get_active_mission(self)
+        if not mission:
+            # Mission may have been completed/resolved by an action this cycle
+            ctx["active_mission"] = None
+            return
+
+        db_id = mission["_db_id"]
+        steps = mission.get("steps", [])
+        current = mission.get("current_step", 1)
+        current_step_text = ""
+        for s in steps:
+            if s["id"] == current:
+                current_step_text = s.get("action", "")
+                break
+
+        # Check if this cycle was mission-relevant
+        explicit_progress = any(
+            n in ("progress_mission", "advance_mission", "complete_mission", "finish_mission")
+            for n in action_names
+        )
+        implicit_match = _actions_match_step(action_names, results_summary, current_step_text)
+        relevant = explicit_progress or implicit_match
+
+        # ── Auto-progress: if model did the step's action, advance automatically ──
+        # Extract the action verb from step text (first word that matches an action name)
+        if not explicit_progress and current_step_text:
+            step_words = current_step_text.lower().replace("_", " ").split()
+            # Reconstruct potential action names from step text
+            for action_name in action_names:
+                if action_name == "no_action":
+                    continue
+                # Check if the action name appears in the step text
+                if action_name in current_step_text.lower() or action_name.replace("_", " ") in current_step_text.lower():
+                    # Verify a successful result for this action
+                    if f"{action_name}=true" in results_summary.lower():
+                        log(f"  Mission auto-progress: '{action_name}' matches step {current} (\"{safe_truncate(current_step_text, 40)}\")")
+                        # Mark current step done
+                        for s in steps:
+                            if s["id"] == current:
+                                s["done"] = True
+                                break
+                        # Check if all steps done
+                        all_done = all(s["done"] for s in steps)
+                        if all_done:
+                            mission["current_step"] = len(steps)
+                            _save_mission(self, db_id, mission)
+                            from mind.utils import now_ts as _now_ts
+                            self.db.run(
+                                "UPDATE scratch_pad SET resolved = 1, updated_at = ? WHERE id = ?",
+                                (_now_ts(), db_id),
+                            )
+                            log(f"  Mission auto-completed: all {len(steps)} steps done!")
+                            ctx["active_mission"] = None
+                            return
+                        else:
+                            mission["current_step"] = current + 1
+                            relevant = True  # This counts as progress
+                            next_step = None
+                            for s in steps:
+                                if s["id"] == current + 1:
+                                    next_step = s
+                                    break
+                            next_desc = safe_truncate(next_step["action"], 50) if next_step else "?"
+                            log(f"  Mission auto-advanced to step {current + 1}: {next_desc}")
+                        break
+
+        focus = mission.get("focus_strength", 1.0)
+        cycles_active = mission.get("cycles_active", 0) + 1
+        cycles_no_progress = mission.get("cycles_no_progress", 0)
+
+        if relevant:
+            focus = min(1.0, focus + MISSION_FOCUS_BOOST)
+            cycles_no_progress = 0
+        else:
+            focus = max(0.0, focus - MISSION_FOCUS_DECAY)
+            cycles_no_progress += 1
+
+        mission["focus_strength"] = round(focus, 2)
+        mission["cycles_active"] = cycles_active
+        mission["cycles_no_progress"] = cycles_no_progress
+        _save_mission(self, db_id, mission)
+        # Update ctx so _check_mission_stall sees fresh state
+        ctx["active_mission"] = mission
+        log(f"  Mission focus: {focus:.2f} (relevant={relevant}, cycle {cycles_active})")
+
+    def _check_mission_stall(self, ctx: dict):
+        """Auto-abandon stalled Mind-created missions, warn for operator missions."""
+        mission = ctx.get("active_mission")
+        if not mission:
+            return
+
+        db_id = mission["_db_id"]
+        priority = mission.get("_priority", 7)
+        title = mission.get("title", "")
+        cycles_active = mission.get("cycles_active", 0)
+        max_cycles = mission.get("max_cycles", 20)
+        focus = mission.get("focus_strength", 0)
+        cycles_no_progress = mission.get("cycles_no_progress", 0)
+        is_operator = priority >= 9
+
+        stalled = False
+        reason = ""
+
+        if cycles_active > max_cycles:
+            stalled = True
+            reason = f"exceeded max cycles ({cycles_active}/{max_cycles})"
+        elif focus == 0.0 and cycles_no_progress >= MISSION_STALL_THRESHOLD:
+            stalled = True
+            reason = f"zero focus for {cycles_no_progress} cycles"
+
+        if not stalled:
+            return
+
+        if is_operator:
+            log(f"  !! OPERATOR MISSION STALLED: \"{title}\" — {reason}")
+            # Don't auto-abandon, just log warning
+        else:
+            self.db.run(
+                "UPDATE scratch_pad SET resolved = 1, updated_at = ? WHERE id = ?",
+                (now_ts(), db_id),
+            )
+            log(f"  Mission auto-abandoned: \"{title}\" — {reason}")
+
     def check_directives(self) -> Optional[str]:
         """Check for active operator directives. Returns directive type if cycle should halt, else None.
         STOP = halt immediately (zero-cost cycle). REDIRECT = resolve goals, plant new one.
@@ -1513,8 +1838,9 @@ class ChronicleMind:
                 # Extract target from directive content (after "REDIRECT:")
                 target = content.split(":", 1)[1].strip() if ":" in content else "Follow operator instructions"
                 log(f"  !! {source} DIRECTIVE #{did}: REDIRECT → {safe_truncate(target, 60)}")
-                # Resolve all existing goals
+                # Resolve all existing goals and active missions
                 self.db.run("UPDATE scratch_pad SET resolved = 1 WHERE category = 'goal' AND resolved = 0")
+                self.db.run("UPDATE scratch_pad SET resolved = 1 WHERE category = 'mission' AND resolved = 0")
                 # Plant operator goal at priority 9 (Mind can't override p>=9)
                 ts = now_ts()
                 self.db.run(
@@ -1694,6 +2020,7 @@ class ChronicleMind:
             task_sql = (
                 "SELECT id, content, priority FROM scratch_pad "
                 "WHERE resolved = 0 AND category = 'task' AND priority >= %d "
+                "AND (source IS NULL OR source != 'sprout') "
                 "ORDER BY priority DESC, created_at ASC LIMIT 1" % TASK_QUEUE_MIN_PRIORITY
             )
             mandatory = self.db.query_one(task_sql)
@@ -1724,6 +2051,7 @@ class ChronicleMind:
             # Phase 3.5: Meta-Evaluation Gate (post-reasoning, pre-execution)
             goal_row = self.db.query_one(
                 "SELECT content FROM scratch_pad WHERE category='goal' AND resolved=0 "
+                "AND (source IS NULL OR source != 'sprout') "
                 "ORDER BY priority DESC LIMIT 1"
             )
             gate_goal = goal_row.get("content", "none set") if goal_row else "none set"
@@ -1742,6 +2070,21 @@ class ChronicleMind:
                     self.session_successes += 1
                 self.session_action_types[r["name"]] = self.session_action_types.get(r["name"], 0) + 1
 
+            # ── Causal Edge Extraction ──
+            try:
+                edges, trigger_tags = self.causal_graph.extract_edges(
+                    cid, ctx, actions, action_results
+                )
+                self.causal_graph.store_edges(edges)
+                edge_types = set(e[2] for e in edges)
+                log(f"  Causal: {len(edges)} edges extracted ({', '.join(edge_types)})")
+            except Exception as e:
+                log(f"  Causal extraction error: {e}")
+                trigger_tags = []
+
+            # Track for next cycle
+            self._prev_cycle_id = cid
+
             # Build context snapshot for thought storage
             ctx_snapshot = (
                 f"Focus: {ctx.get('current_focus', 'general')} | "
@@ -1754,6 +2097,13 @@ class ChronicleMind:
                 f"{r['name']}={r['result'][:60]}" for r in action_results
             )
 
+            # ── Mission Focus Update ──
+            try:
+                self._update_mission_focus(ctx, action_names, results_summary)
+                self._check_mission_stall(ctx)
+            except Exception as e:
+                log(f"  Mission focus update error: {e}")
+
             # Log thought (now includes results for next-cycle feedback)
             # Prepend model tag to context_summary for dashboard visibility
             ctx_with_model = f"[{model or 'unknown'}] {safe_truncate(ctx_snapshot, 480)}"
@@ -1765,6 +2115,16 @@ class ChronicleMind:
                 results=safe_truncate(results_summary, 500),
                 action_sigs=compute_action_signatures(actions),
             )
+
+            # Store trigger_tags in thought_stream
+            if trigger_tags:
+                try:
+                    self.db.run(
+                        "UPDATE thought_stream SET trigger_tags = ? WHERE cycle_id = ?",
+                        (json.dumps(trigger_tags), cid),
+                    )
+                except Exception:
+                    pass
 
             # Store thought to canister (ICPAgent native -> dfx fallback)
             if raw_response:
