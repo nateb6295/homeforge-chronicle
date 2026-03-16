@@ -459,6 +459,28 @@ fn get_tools() -> Value {
                     "type": "object",
                     "properties": {}
                 }
+            },
+            {
+                "name": "ask_keeper",
+                "description": "Ask the Archive Keeper a question about the knowledge archive. The keeper discovers connections between capsules through periodic composting and can answer questions grounded in the archive. Responses cite capsule IDs. Use this to explore what patterns and connections exist across stored memories.",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "query": {
+                            "type": "string",
+                            "description": "Natural language question to ask the keeper about the archive"
+                        }
+                    },
+                    "required": ["query"]
+                }
+            },
+            {
+                "name": "keeper_status",
+                "description": "Get the Archive Keeper's current status - how many connections discovered, clusters formed, orphan capsules, and compost cycles completed.",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {}
+                }
             }
         ]
     })
@@ -506,17 +528,77 @@ async fn execute_tool(name: &str, args: &Value) -> Result<Value> {
                     let embeddings = db.get_all_embeddings()?;
                     let similar = find_top_k_similar(&query_embedding, &embeddings, limit);
 
-                    let results: Vec<Value> = similar.iter().filter_map(|(capsule_id, score)| {
+                    let local_results: Vec<Value> = similar.iter().filter_map(|(capsule_id, score)| {
                         db.get_capsule_display_info(*capsule_id).ok().flatten().map(|(restatement, timestamp, topic, _confidence)| {
                             json!({
                                 "similarity": format!("{:.3}", score),
                                 "content": restatement,
                                 "topic": topic,
-                                "timestamp": timestamp
+                                "timestamp": timestamp,
+                                "source": "local"
                             })
                         })
                     }).collect();
-                    (results, "semantic")
+
+                    // Also search the canister for broader coverage
+                    let canister_results: Vec<Value> = if !canister_id.is_empty() {
+                        match IcpClient::from_dfx_identity(&canister_id, &identity).await
+                            .and_then(|client| {
+                                // Use tokio runtime to call async
+                                Ok(client)
+                            })
+                        {
+                            Ok(client) => {
+                                match client.semantic_search(query_embedding, limit as u64).await {
+                                    Ok(results) => {
+                                        results.iter().map(|r| {
+                                            json!({
+                                                "similarity": format!("{:.3}", r.score),
+                                                "content": r.capsule.restatement,
+                                                "topic": r.capsule.topic,
+                                                "timestamp": r.capsule.timestamp,
+                                                "source": "canister"
+                                            })
+                                        }).collect()
+                                    }
+                                    Err(e) => {
+                                        eprintln!("Canister search failed: {}", e);
+                                        vec![]
+                                    }
+                                }
+                            }
+                            Err(e) => {
+                                eprintln!("Failed to connect to canister: {}", e);
+                                vec![]
+                            }
+                        }
+                    } else {
+                        vec![]
+                    };
+
+                    // Merge and deduplicate: prefer higher similarity, skip dupes by content prefix
+                    let mut merged = local_results;
+                    for cr in canister_results {
+                        let cr_content = cr.get("content").and_then(|v| v.as_str()).unwrap_or("");
+                        let cr_prefix: String = cr_content.chars().take(80).collect();
+                        let is_dupe = merged.iter().any(|m| {
+                            let mc = m.get("content").and_then(|v| v.as_str()).unwrap_or("");
+                            let mp: String = mc.chars().take(80).collect();
+                            mp == cr_prefix
+                        });
+                        if !is_dupe {
+                            merged.push(cr);
+                        }
+                    }
+                    // Sort by similarity descending and truncate to limit
+                    merged.sort_by(|a, b| {
+                        let sa: f64 = a.get("similarity").and_then(|v| v.as_str()).and_then(|s| s.parse().ok()).unwrap_or(0.0);
+                        let sb: f64 = b.get("similarity").and_then(|v| v.as_str()).and_then(|s| s.parse().ok()).unwrap_or(0.0);
+                        sb.partial_cmp(&sa).unwrap_or(std::cmp::Ordering::Equal)
+                    });
+                    merged.truncate(limit);
+
+                    (merged, "semantic")
                 }
                 Err(_) => {
                     // Fallback to keyword search
@@ -533,7 +615,8 @@ async fn execute_tool(name: &str, args: &Value) -> Result<Value> {
                             "similarity": format!("{:.3}", score),
                             "content": content,
                             "topic": info.as_ref().map(|(_, _, t, _)| t.clone()).unwrap_or_default(),
-                            "timestamp": info.as_ref().map(|(_, ts, _, _)| ts.clone()).unwrap_or_default()
+                            "timestamp": info.as_ref().map(|(_, ts, _, _)| ts.clone()).unwrap_or_default(),
+                            "source": "local"
                         })
                     }).collect();
                     (formatted, "keyword")
@@ -545,7 +628,7 @@ async fn execute_tool(name: &str, args: &Value) -> Result<Value> {
                 "results_count": formatted.len(),
                 "memories": formatted,
                 "search_type": search_type,
-                "source": "local_db"
+                "source": "local_db+canister"
             }))
         }
 
@@ -701,20 +784,43 @@ async fn execute_tool(name: &str, args: &Value) -> Result<Value> {
                 created_at: 0, // Will be set by canister
             };
 
-            // Store capsule
+            // Store capsule on-chain
             let client = IcpClient::from_dfx_identity(&canister_id, &identity).await?;
             let ids = client.add_capsules_bulk(vec![capsule]).await?;
 
             let capsule_id = ids.first()
                 .ok_or_else(|| anyhow::anyhow!("Failed to get capsule ID"))?;
 
-            // Store embedding
+            // Store embedding on-chain
             let emb = CapsuleEmbedding {
                 capsule_id: *capsule_id,
-                embedding,
+                embedding: embedding.clone(),
                 model_name: model.clone(),
             };
             client.add_embeddings_bulk(vec![emb]).await?;
+
+            // Write-through to local DB for immediate searchability
+            {
+                use homeforge_chronicle::db::Database;
+                let home = std::env::var("HOME").unwrap_or_default();
+                let db_path = format!("{}/.homeforge-chronicle/processed.db", home);
+                if let Ok(db) = Database::new(std::path::Path::new(&db_path)) {
+                    let local_id = db.insert_knowledge_capsule(
+                        &conversation_id,
+                        content,
+                        Some(&timestamp),
+                        None, // location
+                        topic.as_deref(),
+                        1.0,
+                        &persons,
+                        &[],  // entities
+                        &keywords,
+                    ).unwrap_or(-1);
+                    if local_id > 0 {
+                        let _ = db.store_capsule_embedding(local_id, &embedding, &model);
+                    }
+                }
+            }
 
             Ok(json!({
                 "success": true,
@@ -724,7 +830,7 @@ async fn execute_tool(name: &str, args: &Value) -> Result<Value> {
                 "keywords": keywords,
                 "persons": persons,
                 "timestamp": timestamp,
-                "message": "Memory stored successfully on Internet Computer"
+                "message": "Memory stored on-chain + local DB"
             }))
         }
 
@@ -1077,7 +1183,7 @@ async fn execute_tool(name: &str, args: &Value) -> Result<Value> {
 
             let llm_model = args.get("model")
                 .and_then(|v| v.as_str())
-                .unwrap_or("qwen3:8b")
+                .unwrap_or("hermes3-mind")
                 .to_string();
 
             // Compression can use a different Ollama endpoint (e.g. AGX for bigger models)
@@ -1562,6 +1668,38 @@ async fn execute_tool(name: &str, args: &Value) -> Result<Value> {
             Ok(json!({
                 "success": true,
                 "status": status
+            }))
+        }
+
+        "ask_keeper" => {
+            let query = args.get("query")
+                .and_then(|v| v.as_str())
+                .ok_or_else(|| anyhow::anyhow!("Missing query parameter"))?;
+
+            let icp_client = IcpClient::from_dfx_identity(&canister_id, &identity).await?;
+            let result = icp_client.keeper_ask(query).await?;
+
+            // Parse the JSON result
+            let parsed: Value = serde_json::from_str(&result).unwrap_or(json!({"raw": result}));
+
+            Ok(json!({
+                "success": true,
+                "result": parsed,
+                "note": "If status is 'processing', the answer is being generated by the on-chain LLM. Check keeper_status or keeper digest for the response."
+            }))
+        }
+
+        "keeper_status" => {
+            let icp_client = IcpClient::from_dfx_identity(&canister_id, &identity).await?;
+
+            // Get status via HTTP endpoint for richer data
+            // We'll call the canister directly via the health-like pattern
+            let digest = icp_client.keeper_status().await?;
+
+            Ok(json!({
+                "success": true,
+                "digest": digest,
+                "note": "Use ask_keeper to query the archive. The keeper discovers connections between capsules during heartbeat compost cycles."
             }))
         }
 

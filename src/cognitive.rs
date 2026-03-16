@@ -361,23 +361,46 @@ Output the new CCS as JSON. Include only the content fields (episodic_trace thro
 
     /// Parse the LLM response into a CognitiveState
     fn parse_response(&self, response: &str, previous_version: i64) -> Result<CognitiveState> {
+        // Strip <think>...</think> blocks (qwen3 thinking mode preamble)
+        let cleaned = if response.contains("<think>") {
+            // Remove everything between <think> and </think> tags
+            let re_result = response
+                .find("</think>")
+                .map(|end| &response[end + 8..])
+                .unwrap_or(response);
+            re_result.trim()
+        } else {
+            response.trim()
+        };
+
         // Extract JSON from response (may be wrapped in markdown code blocks)
-        let json_str = if response.contains("```json") {
-            response
+        let json_str = if cleaned.contains("```json") {
+            cleaned
                 .split("```json")
                 .nth(1)
                 .and_then(|s| s.split("```").next())
-                .unwrap_or(response)
+                .unwrap_or(cleaned)
                 .trim()
-        } else if response.contains("```") {
-            response
+        } else if cleaned.contains("```") {
+            cleaned
                 .split("```")
                 .nth(1)
                 .and_then(|s| s.split("```").next())
-                .unwrap_or(response)
+                .unwrap_or(cleaned)
                 .trim()
         } else {
-            response.trim()
+            cleaned
+        };
+
+        // Final fallback: if the string doesn't start with '{', find the first '{' and last '}'
+        let json_str = if !json_str.starts_with('{') {
+            if let (Some(start), Some(end)) = (json_str.find('{'), json_str.rfind('}')) {
+                &json_str[start..=end]
+            } else {
+                json_str
+            }
+        } else {
+            json_str
         };
 
         // Parse the JSON
@@ -560,6 +583,60 @@ mod tests {
 
         // Test parsing raw JSON without code blocks
         let response = r#"{
+    "episodic_trace": ["Event 1"],
+    "semantic_gist": "Test gist",
+    "focal_entities": [],
+    "relational_map": {},
+    "goal_orientation": "Test goal",
+    "constraints": [],
+    "predictive_cue": "Next step",
+    "uncertainty_signals": []
+}"#;
+
+        let state = compressor.parse_response(response, 0).unwrap();
+        assert_eq!(state.version, 1);
+        assert_eq!(state.semantic_gist, "Test gist");
+    }
+
+    #[test]
+    fn test_compressor_parse_response_with_think_tags() {
+        let compressor = CognitiveCompressor::new("qwen3:8b".to_string());
+
+        // Test parsing response with <think> preamble (qwen3 thinking mode)
+        let response = r#"<think>
+Let me analyze the current interaction and compress it into a cognitive state.
+The user is working on memory systems and fixing JSON parsing issues.
+I need to output valid JSON matching the schema.
+</think>
+
+```json
+{
+    "episodic_trace": ["Fixed qwen3 JSON preamble issue"],
+    "semantic_gist": "Fixing CCS compression pipeline",
+    "focal_entities": [
+        {"name": "qwen3", "type": "technology", "salience": 0.8}
+    ],
+    "relational_map": {},
+    "goal_orientation": "Make CCS compression robust",
+    "constraints": [],
+    "predictive_cue": "Deploy updated MCP binary",
+    "uncertainty_signals": []
+}
+```"#;
+
+        let state = compressor.parse_response(response, 5).unwrap();
+        assert_eq!(state.version, 6);
+        assert_eq!(state.semantic_gist, "Fixing CCS compression pipeline");
+        assert_eq!(state.episodic_trace[0], "Fixed qwen3 JSON preamble issue");
+    }
+
+    #[test]
+    fn test_compressor_parse_response_with_preamble_text() {
+        let compressor = CognitiveCompressor::new("test-model".to_string());
+
+        // Test parsing response with arbitrary preamble text before JSON
+        let response = r#"Here is the compressed state:
+{
     "episodic_trace": ["Event 1"],
     "semantic_gist": "Test gist",
     "focal_entities": [],

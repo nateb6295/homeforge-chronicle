@@ -36,7 +36,7 @@ MANIFOLD_MAX_CYCLE_SPEND = int(os.environ.get("MANIFOLD_MAX_CYCLE_SPEND", "200")
 MANIFOLD_API = "https://api.manifold.markets/v0"
 NOSTR_NSEC = os.environ.get("NOSTR_NSEC", "")
 NOSTR_RELAYS = [r for r in os.environ.get("NOSTR_RELAYS", "").split(",") if r] or [
-    "wss://relay.damus.io", "wss://nos.lol", "wss://relay.nostr.band", "wss://relay.primal.net",
+    "wss://nos.lol", "wss://relay.damus.io", "wss://relay.primal.net", "wss://relay.nostr.band", "wss://offchain.pub",
 ]
 NOSTR_COOLDOWN_MINS = int(os.environ.get("NOSTR_COOLDOWN_MINS", "1"))  # 1 min — operator wants free posting
 CREATIVE_COOLDOWN_MINS = int(os.environ.get("CREATIVE_COOLDOWN_MINS", "30"))

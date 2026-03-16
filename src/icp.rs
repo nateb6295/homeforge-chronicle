@@ -485,6 +485,31 @@ impl IcpClient {
         Ok(result)
     }
 
+    /// Ask the Archive Keeper a question
+    pub async fn keeper_ask(&self, query: &str) -> Result<String> {
+        let response = self.agent
+            .update(&self.canister_id, "keeper_ask")
+            .with_arg(Encode!(&query.to_string())?)
+            .call_and_wait()
+            .await?;
+
+        let result = Decode!(&response, String)?;
+        Ok(result)
+    }
+
+    /// Get keeper status
+    pub async fn keeper_status(&self) -> Result<String> {
+        // Use the HTTP endpoint for JSON response
+        let response = self.agent
+            .query(&self.canister_id, "keeper_digest")
+            .with_arg(Encode!()?)
+            .call()
+            .await?;
+
+        let result = Decode!(&response, String)?;
+        Ok(result)
+    }
+
     /// Manually trigger research processing (don't wait for heartbeat)
     pub async fn trigger_research(&self) -> Result<String> {
         let response = self.agent

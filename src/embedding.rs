@@ -16,12 +16,12 @@ pub struct OllamaEmbedding {
 #[derive(Debug, Serialize)]
 struct EmbeddingRequest {
     model: String,
-    prompt: String,
+    input: String,
 }
 
 #[derive(Debug, Deserialize)]
 struct EmbeddingResponse {
-    embedding: Vec<f32>,
+    embeddings: Vec<Vec<f32>>,
 }
 
 impl OllamaEmbedding {
@@ -43,10 +43,10 @@ impl OllamaEmbedding {
     pub fn embed(&self, text: &str) -> Result<Vec<f32>> {
         let request = EmbeddingRequest {
             model: self.model.clone(),
-            prompt: text.to_string(),
+            input: text.to_string(),
         };
 
-        let url = format!("{}/api/embeddings", self.base_url);
+        let url = format!("{}/api/embed", self.base_url);
 
         let response = self
             .client
@@ -69,7 +69,11 @@ impl OllamaEmbedding {
             .json()
             .context("Failed to parse embedding response")?;
 
-        Ok(embedding_response.embedding)
+        embedding_response
+            .embeddings
+            .into_iter()
+            .next()
+            .context("Empty embeddings array in response")
     }
 
     /// Generate embeddings for multiple texts (batched)

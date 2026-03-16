@@ -134,10 +134,12 @@ def act_progress_mission(mind, action: dict, cid: str) -> str:
     current = mission.get("current_step", 1)
     steps = mission.get("steps", [])
 
-    # Mark current step done
+    # Mark current step done and store its result for next step context
     for step in steps:
         if step["id"] == current:
             step["done"] = True
+            if result_text:
+                step["result"] = result_text[:200]
             break
 
     # Check if all steps done

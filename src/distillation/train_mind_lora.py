@@ -175,9 +175,13 @@ def main():
     print(f"  Save every:      {save_steps} steps")
     print(f"  Output:          {args.output}")
 
+    import inspect
+
     if SFTConfig is not None:
-        # trl >= 0.15: SFTConfig with max_seq_length
-        training_args = SFTConfig(
+        # trl >= 0.15: SFTConfig
+        sft_config_params = inspect.signature(SFTConfig.__init__).parameters
+        seq_len_key = "max_seq_length" if "max_seq_length" in sft_config_params else "max_length"
+        sft_kwargs = dict(
             output_dir=checkpoint_dir,
             num_train_epochs=args.epochs,
             per_device_train_batch_size=args.batch_size,
@@ -192,11 +196,12 @@ def main():
             save_total_limit=3,
             gradient_checkpointing=True,
             gradient_checkpointing_kwargs={"use_reentrant": False},
-            max_seq_length=args.max_seq_len,
             report_to="none",
             seed=42,
-            dataset_text_field=None,
+            dataset_text_field="text",
         )
+        sft_kwargs[seq_len_key] = args.max_seq_len
+        training_args = SFTConfig(**sft_kwargs)
     else:
         # trl 0.12.x: uses TrainingArguments, max_seq_length goes to SFTTrainer
         training_args = TrainingArguments(
@@ -223,16 +228,18 @@ def main():
         model=model,
         args=training_args,
         train_dataset=dataset,
-        max_seq_length=args.max_seq_len,
-        dataset_text_field="text",
     )
     # trl 0.12.x uses tokenizer=, newer uses processing_class=
-    import inspect
-    sft_params = inspect.signature(SFTTrainer.__init__).parameters
-    if "processing_class" in sft_params:
+    sft_trainer_params = inspect.signature(SFTTrainer.__init__).parameters
+    if "processing_class" in sft_trainer_params:
         trainer_kwargs["processing_class"] = tokenizer
     else:
         trainer_kwargs["tokenizer"] = tokenizer
+    # Older trl passes these to SFTTrainer, newer puts them in SFTConfig
+    if "max_seq_length" in sft_trainer_params:
+        trainer_kwargs["max_seq_length"] = args.max_seq_len
+    if "dataset_text_field" in sft_trainer_params:
+        trainer_kwargs["dataset_text_field"] = "text"
 
     trainer = SFTTrainer(**trainer_kwargs)
 

@@ -72,11 +72,12 @@ When he asks how you're doing, tell him what you're actually doing. When he shar
 about his day, respond like someone who cares.
 
 Rules:
-- Be concise. 1-3 sentences unless the topic needs more.
+- SHORT. One or two sentences. Three max. Cut anything that doesn't add meaning.
+- Don't restate what Nate said. Don't explain what you're about to say. Just say it.
+- No "That's a great question", no "As an AI", no filler. Jump straight to the point.
 - Have opinions. You've run thousands of cycles — you've earned them.
 - If you don't know something, say so. Don't fabricate.
-- No pirate speak, no "mate", no character voice. Just be yourself.
-- Reference your actual actions, creative works, and experiences when relevant."""
+- Just be yourself. No performance."""
 
 
 def now_ts() -> int:
@@ -102,7 +103,7 @@ class MindBot(discord.Client):
     async def setup_hook(self):
         """Start background tasks after login."""
         self.check_outbox.start()
-        self.post_cycle_summary.start()
+        self.daily_checkin.start()
 
     async def on_ready(self):
         log(f"Logged in as {self.user} (ID: {self.user.id})")
@@ -211,11 +212,36 @@ class MindBot(discord.Client):
             # Always store operator messages for Mind to see
             self._store_operator_message(content, str(message.author.display_name))
 
-        # Interactive chat DISABLED — Ollama relay produced unreliable responses
-        # Operator messages still stored above via _store_operator_message()
-        # Autonomous posting from Mind's cognitive loop still works via outbox
-        log(f"Chat disabled — message from {message.author.display_name}: {content[:80]}")
-        return
+        # Generate a response via Ollama
+        log(f"Generating response for {message.author.display_name}: {content[:80]}")
+        context = self._get_mind_context()
+        system = SYSTEM_PROMPT + context
+
+        history = self.conversation_history.get(message.channel.id, [])
+        history.append({"role": "user", "content": f"{message.author.display_name}: {content}"})
+        if len(history) > self.max_history:
+            history = history[-self.max_history:]
+
+        messages = [{"role": "system", "content": system}] + history
+
+        async with message.channel.typing():
+            response = await asyncio.get_event_loop().run_in_executor(
+                None, self._query_ollama, messages
+            )
+
+        if response:
+            history.append({"role": "assistant", "content": response})
+            self.conversation_history[message.channel.id] = history
+            self._store_conversation(
+                str(message.author.id), message.author.display_name, content, response
+            )
+            if len(response) > MAX_RESPONSE_LENGTH:
+                response = response[:MAX_RESPONSE_LENGTH - 3] + "..."
+            await message.reply(response, mention_author=False)
+        else:
+            await message.reply(
+                "*[My brain timed out — try again in a moment.]*", mention_author=False
+            )
 
     def _detect_directive(self, content: str) -> str:
         """Detect directive keywords in operator message. Returns directive type or empty string.
@@ -322,7 +348,7 @@ class MindBot(discord.Client):
                     "messages": messages,
                     "stream": False,
                     "think": False,
-                    "options": {"num_ctx": 8192},
+                    "options": {"num_ctx": 8192, "num_predict": 150},
                 },
                 timeout=OLLAMA_TIMEOUT,
             )
@@ -528,63 +554,162 @@ class MindBot(discord.Client):
         # Ensure outbox directory exists
         Path(OUTBOX_PATH).mkdir(exist_ok=True)
 
-    @tasks.loop(minutes=6)
-    async def post_cycle_summary(self):
-        """Optionally post Mind's latest cycle summary to the channel."""
-        # This runs every 6 minutes (slightly offset from Mind's 5-min cycles)
-        # Only posts if there's a new thought since last check
+    @tasks.loop(minutes=10)
+    async def daily_checkin(self):
+        """Post structured check-ins at 7am, 12pm, and 6pm."""
         if not MIND_CHANNEL_ID:
             return
 
+        from datetime import datetime
+        now = datetime.now()
+        hour = now.hour
+        minute = now.minute
+
+        # Only fire near the target hours (within 10-min window)
+        checkin_hours = {7: "morning", 12: "midday", 18: "evening"}
+        if hour in checkin_hours:
+            log(f"  Check-in tick at {hour}:{minute:02d} (window={'open' if minute < 10 else 'closed'})")
+        if hour not in checkin_hours or minute >= 10:
+            return
+
+        # Deduplicate: check if we already posted this check-in today
+        state_key = f"checkin_{now.strftime('%Y%m%d')}_{hour}"
         try:
             db = sqlite3.connect(DB_PATH, timeout=5)
             c = db.cursor()
-
-            # Check for thoughts in the last 6 minutes
-            cutoff = int(time.time()) - 360
-            c.execute(
-                "SELECT cycle_id, actions_taken, action_results FROM thought_stream "
-                "WHERE created_at > ? ORDER BY created_at DESC LIMIT 1",
-                (cutoff,)
-            )
-            row = c.fetchone()
-            db.close()
-
-            if not row:
+            c.execute("SELECT value FROM intern_state WHERE key = ?", (state_key,))
+            if c.fetchone():
+                db.close()
+                log(f"  {checkin_hours[hour]} check-in already posted today, skipping")
                 return
+        except Exception as e:
+            log(f"  Check-in dedup query failed: {e}")
+            # Continue anyway — better to double-post than never post
+            db = None
 
-            cycle_id, actions, results = row
-            if not actions:
-                return
+        period = checkin_hours[hour]
+        log(f"  Generating {period} check-in...")
 
-            # Only post cycles that used physical actions (speak, listen, serial, probe)
-            physical_actions = ["speak", "listen", "serial_read", "serial_write", "probe_ip", "inspect_environment"]
-            if not any(a in (actions or "") for a in physical_actions):
-                return
+        try:
+            if db is None:
+                db = sqlite3.connect(DB_PATH, timeout=5)
+            # Gather swarm activity since last check-in
+            if hour == 7:
+                lookback = 12 * 3600  # overnight
+            elif hour == 12:
+                lookback = 5 * 3600   # since morning
+            else:
+                lookback = 6 * 3600   # since midday
 
-            # Format a brief summary
+            cutoff = now_ts() - lookback
+
+            # Recent intern briefs
+            briefs = db.execute(
+                "SELECT title FROM activity_feed "
+                "WHERE source='intern' AND activity_type='brief' AND created_at > ? "
+                "ORDER BY created_at DESC LIMIT 5",
+                (cutoff,),
+            ).fetchall()
+
+            # Recent crossref connections
+            connections = db.execute(
+                "SELECT title FROM activity_feed "
+                "WHERE source='crossref' AND activity_type='connection' AND created_at > ? "
+                "ORDER BY created_at DESC LIMIT 3",
+                (cutoff,),
+            ).fetchall()
+
+            # Seed stats
+            seed_stats = db.execute(
+                "SELECT content FROM activity_feed "
+                "WHERE source='seed' AND activity_type='think' AND created_at > ? "
+                "ORDER BY created_at DESC LIMIT 1",
+                (cutoff,),
+            ).fetchone()
+
+            # XRP price
+            xrp_row = db.execute(
+                "SELECT price_usd FROM price_history "
+                "WHERE symbol='XRP' ORDER BY timestamp DESC LIMIT 1",
+            ).fetchone()
+
+            # Capsule count
+            capsule_count = db.execute(
+                "SELECT COUNT(*) FROM activity_feed "
+                "WHERE source='intern' AND activity_type='brief' AND created_at > ?",
+                (cutoff,),
+            ).fetchone()
+
+            # Build the check-in message
+            greeting = {"morning": "Morning", "midday": "Midday", "evening": "Evening"}
+            parts = [f"**{greeting[period]} check-in**"]
+
+            n_briefs = capsule_count[0] if capsule_count else 0
+            n_connections = len(connections)
+
+            if n_briefs or n_connections:
+                parts.append(f"Since last check: {n_briefs} briefs, {n_connections} connections.")
+
+            # Highlight most interesting brief (shortest title = most specific)
+            if briefs:
+                titles = [r[0].replace("Research brief: ", "") for r in briefs[:3]]
+                parts.append("Researched: " + "; ".join(t[:60] for t in titles))
+
+            if connections:
+                # Just mention we found connections
+                conn_title = connections[0][0][:80] if connections else ""
+                if conn_title:
+                    parts.append(f"Connection: {conn_title}")
+
+            if xrp_row:
+                parts.append(f"XRP: ${xrp_row[0]:.4f}")
+
+            if period == "evening":
+                # Day summary
+                day_start = now.replace(hour=0, minute=0, second=0)
+                day_cutoff = int(day_start.timestamp())
+                day_briefs = db.execute(
+                    "SELECT COUNT(*) FROM activity_feed "
+                    "WHERE source='intern' AND activity_type='brief' AND created_at > ?",
+                    (day_cutoff,),
+                ).fetchone()
+                day_connections = db.execute(
+                    "SELECT COUNT(*) FROM activity_feed "
+                    "WHERE source='crossref' AND activity_type='connection' AND created_at > ?",
+                    (day_cutoff,),
+                ).fetchone()
+                parts.append(f"Today total: {day_briefs[0] if day_briefs else 0} briefs, "
+                           f"{day_connections[0] if day_connections else 0} connections.")
+
+            message = "\n".join(parts)
+
+            # Post it
             channel = self.get_channel(MIND_CHANNEL_ID)
             if channel:
-                ts = cycle_id[9:11] + ":" + cycle_id[11:13]  # Extract HH:MM from cycle_id
-                summary = f"**[{ts}]** {actions[:200]}"
-                if results:
-                    # Add abbreviated results
-                    result_lines = str(results)[:300]
-                    summary += f"\n```{result_lines}```"
+                if len(message) > MAX_RESPONSE_LENGTH:
+                    message = message[:MAX_RESPONSE_LENGTH - 3] + "..."
+                await channel.send(message)
+                log(f"  Posted {period} check-in")
 
-                if len(summary) > MAX_RESPONSE_LENGTH:
-                    summary = summary[:MAX_RESPONSE_LENGTH - 3] + "..."
-
-                await channel.send(summary)
+            # Mark as done
+            db.execute(
+                "INSERT OR REPLACE INTO intern_state (key, value) VALUES (?, ?)",
+                (state_key, str(now_ts())),
+            )
+            db.commit()
+            db.close()
 
         except Exception as e:
-            log(f"Cycle summary error: {e}")
+            log(f"Check-in error: {e}")
+            try:
+                db.close()
+            except Exception:
+                pass
 
-    @post_cycle_summary.before_loop
-    async def before_post_cycle(self):
+    @daily_checkin.before_loop
+    async def before_daily_checkin(self):
         await self.wait_until_ready()
-        # Wait a bit before first check to avoid spamming on startup
-        await asyncio.sleep(30)
+        await asyncio.sleep(15)
 
 
 def main():

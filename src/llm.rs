@@ -118,6 +118,10 @@ struct OllamaRequest {
     model: String,
     prompt: String,
     stream: bool,
+    /// When set to "json", Ollama constrains output to valid JSON only.
+    /// This prevents models like qwen3 from emitting <think> preamble.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    format: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -168,6 +172,7 @@ impl LlmClient for OllamaClient {
             model: self.model.clone(),
             prompt: prompt.to_string(),
             stream: false,
+            format: Some("json".to_string()),
         };
 
         let response = self

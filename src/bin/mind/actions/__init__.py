@@ -9,6 +9,7 @@ from mind.actions.messaging import (
     act_message_operator, act_respond_to_message, act_acknowledge_message,
     act_send_agent_message, act_moltbook_post, act_moltbook_reply,
     act_clawcities_reply, act_nostr_post, act_discord_post,
+    act_nostr_check_engagement,
 )
 from mind.actions.research import (
     act_submit_research, act_acknowledge_research, act_web_search,
@@ -61,6 +62,8 @@ ACTION_HANDLERS = {
     "claw_cities_reply": act_clawcities_reply,
     "nostr_post": act_nostr_post,
     "publish_nostr": act_nostr_post,
+    "nostr_check_engagement": act_nostr_check_engagement,
+    "nostr_stats": act_nostr_check_engagement,
     "swap": act_swap,
     "swap_cloud_for_icp": act_swap_cloud_for_icp,
     "xrpl_payment": act_xrpl_payment,

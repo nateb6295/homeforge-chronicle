@@ -7,7 +7,7 @@ from typing import Optional
 
 from mind.utils import log, safe_truncate, now_ts
 from mind.config import NOSTR_NSEC, NOSTR_COOLDOWN_MINS, MOLTBOOK_API, MOLTBOOK_API_KEY, CLAWCITIES_API, CLAWCITIES_API_KEY
-from mind.communication import send_ntfy, nostr_publish
+from mind.communication import send_ntfy, nostr_publish, nostr_fetch_stats
 
 
 import os
@@ -224,6 +224,34 @@ def act_nostr_post(mind, action: dict, cid: str) -> str:
         return f"true - Nostr post published to {len(relays_ok)} relays"
     except Exception as e:
         return f"false - Nostr post failed: {e}"
+
+
+def act_nostr_check_engagement(mind, action: dict, cid: str) -> str:
+    """Fetch Nostr follower count + engagement on recent posts."""
+    log("  Executing: NostrCheckEngagement")
+    if not NOSTR_NSEC:
+        return "false - NOSTR_NSEC not configured"
+    try:
+        stats = nostr_fetch_stats(NOSTR_NSEC, db=mind.db)
+        if "error" in stats:
+            return f"false - {stats['error']}"
+        summary = (
+            f"Followers: {stats['followers']} | "
+            f"Replies to last {stats['posts_checked']} posts: {stats['replies']} | "
+            f"Reactions: {stats['reactions']}"
+        )
+        log(f"    {summary}")
+        # Cache in scratch_pad so it shows in next cycle context
+        ts = now_ts()
+        mind.db.run("UPDATE scratch_pad SET resolved=1 WHERE category='nostr-stats'")
+        mind.db.run(
+            "INSERT INTO scratch_pad (content, category, priority, resolved, created_at, updated_at) "
+            "VALUES (?, 'nostr-stats', 3, 0, ?, ?)",
+            (summary, ts, ts)
+        )
+        return f"true - {summary}"
+    except Exception as e:
+        return f"false - engagement fetch failed: {e}"
 
 
 def act_discord_post(mind, action: dict, cid: str) -> str:

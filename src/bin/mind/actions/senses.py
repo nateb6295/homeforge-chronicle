@@ -225,27 +225,42 @@ def act_speak(mind, action: dict, cid: str) -> str:
     text = action.get("text", "") or action.get("content", "") or action.get("message", "")
     if not text:
         return "false - No text to speak"
-    # Speak-when-spoken-to gate
+    # Speak-when-spoken-to gate: check direct listen OR always-listening heard-speech
     if not mind._cycle_heard_speech:
-        allow_speak = mind.db.query_one(
-            "SELECT id FROM scratch_pad WHERE category='directive' AND resolved=0 "
-            "AND UPPER(content) LIKE '%ALLOW%SPEAK%' LIMIT 1"
+        # Check if always-listening ear heard speech in the last 10 minutes
+        recent_speech = mind.db.query_one(
+            "SELECT id FROM scratch_pad WHERE category='heard-speech' AND resolved=0 "
+            "AND created_at > ? LIMIT 1",
+            (now_ts() - 600,),
         )
-        if not allow_speak:
-            log(f"  SPEAK GATE: No speech detected this cycle, skipping")
-            return "false - Speak gate: no speech detected this cycle (speak-when-spoken-to mode)"
+        if recent_speech:
+            mind._cycle_heard_speech = True
+            log(f"  SPEAK GATE: Always-listening detected speech, allowing")
+        else:
+            allow_speak = mind.db.query_one(
+                "SELECT id FROM scratch_pad WHERE category='directive' AND resolved=0 "
+                "AND UPPER(content) LIKE '%ALLOW%SPEAK%' LIMIT 1"
+            )
+            if not allow_speak:
+                log(f"  SPEAK GATE: No speech detected this cycle, skipping")
+                return "false - Speak gate: no speech detected this cycle (speak-when-spoken-to mode)"
     # Sanitize: remove shell-dangerous chars, limit length
     text = text.replace("'", "").replace('"', '').replace(";", ",").replace("&", "and")
     text = text.replace("(", "").replace(")", "").replace("|", "").replace("`", "")
     text = text[:300]  # cap at 300 chars (Piper handles longer text well)
     log(f'  Executing: Speak {{ text: "{safe_truncate(text, 60)}" }}')
     try:
+        # Signal the ear daemon to mute (avoid echo feedback)
+        mute_cmd = "touch /tmp/chronicle_speaking"
+        unmute_cmd = "rm -f /tmp/chronicle_speaking"
         # Use Piper TTS (neural, natural-sounding) -> pipe to aplay
         piper_cmd = (
+            f"{mute_cmd}; "
             f"echo '{text}' | "
             f"~/.local/bin/piper --model ~/.local/share/piper-voices/en_GB-alba-medium.onnx "
             f"--output-raw 2>/dev/null | "
-            f"aplay -r 22050 -f S16_LE -t raw -D plughw:2,0 2>/dev/null"
+            f"aplay -r 22050 -f S16_LE -t raw -D plughw:2,0 2>/dev/null; "
+            f"{unmute_cmd}"
         )
         r = subprocess.run(
             ["ssh", "-o", "ConnectTimeout=5", "-o", "StrictHostKeyChecking=no",

@@ -159,6 +159,194 @@ pub struct SearchResult {
     pub score: f64,
 }
 
+// ============================================================
+// Archive Keeper - Intelligent capsule connection discovery (v14)
+// ============================================================
+
+/// A discovered connection between two capsules
+#[derive(Clone, Debug, CandidType, Deserialize)]
+pub struct KeeperConnection {
+    pub capsule_a: u64,
+    pub capsule_b: u64,
+    pub similarity: f32,
+    pub relationship: String,  // "semantic", "keyword", "person", "temporal"
+    pub discovered_at: u64,
+}
+
+/// A cluster of related capsules
+#[derive(Clone, Debug, CandidType, Deserialize)]
+pub struct KeeperCluster {
+    pub id: u64,
+    pub capsule_ids: Vec<u64>,
+    pub theme: String,         // keyword-derived or LLM-generated
+    pub strength: f32,         // average internal similarity
+    pub updated_at: u64,
+}
+
+/// Keeper status for external queries
+#[derive(Clone, Debug, CandidType, Deserialize)]
+pub struct KeeperStatus {
+    pub connection_count: u64,
+    pub cluster_count: u64,
+    pub orphan_count: u64,
+    pub composted_capsule_count: u64,
+    pub total_capsule_count: u64,
+    pub compost_cycles: u64,
+    pub last_compost_cycle: Option<u64>,
+    pub digest: String,
+}
+
+/// Response from keeper_ask
+#[derive(Clone, Debug, CandidType, Deserialize)]
+pub struct KeeperResponse {
+    pub answer: String,
+    pub cited_capsules: Vec<KnowledgeCapsule>,
+    pub connections: Vec<KeeperConnection>,
+    pub clusters: Vec<KeeperCluster>,
+}
+
+// ============================================================
+// Pattern Metabolism - ACC-inspired reinforcement/decay (v15)
+// ============================================================
+
+/// Somatic marker: action-outcome learning (Damasio-inspired)
+/// Tracks what actions work well and which don't, learned from experience.
+#[derive(Clone, Debug, CandidType, Deserialize)]
+pub struct SomaticMarker {
+    pub action: String,
+    pub positive_score: f64,
+    pub negative_score: f64,
+    pub success_count: u64,
+    pub fail_count: u64,
+    pub total_count: u64,
+    pub last_success: String,
+    pub last_failure: String,
+    pub co_actions: String,       // JSON map of co-occurring actions
+    pub updated_at: u64,
+}
+
+/// Emotional memory entry: salience scoring for events
+/// Not everything matters equally — this tracks which moments were significant.
+#[derive(Clone, Debug, CandidType, Deserialize)]
+pub struct EmotionalMemory {
+    pub id: u64,
+    pub cycle_id: String,
+    pub heuristic_score: f64,
+    pub llm_score: f64,
+    pub combined_score: f64,
+    pub category: String,         // "routine", "significant", "embodied"
+    pub reason: String,
+    pub epoch: String,
+    pub is_identity_transition: bool,
+    pub component_scores: String, // JSON
+    pub created_at: u64,
+}
+
+/// Causal edge: what triggered what — narrative structure
+#[derive(Clone, Debug, CandidType, Deserialize)]
+pub struct CausalEdge {
+    pub id: u64,
+    pub source_id: String,
+    pub target_id: String,
+    pub edge_type: String,        // "triggered_by:alert", "triggered_by:mentor", etc.
+    pub strength: f64,
+    pub context: String,
+    pub created_at: u64,
+}
+
+/// Metabolism configuration
+#[derive(Clone, Debug, CandidType, Deserialize)]
+pub struct MetabolismConfig {
+    pub reinforce_factor: f64,        // How much to boost on activation
+    pub decay_factor: f64,            // Multiplier per cycle (0.95 = 5% decay)
+    pub dormancy_threshold_cycles: u64, // Cycles without activation = dormant
+    pub min_active_confidence: f64,   // Below this, pattern is deactivated
+    pub decay_grace_cycles: u64,      // Cycles before decay begins
+}
+
+impl Default for MetabolismConfig {
+    fn default() -> Self {
+        Self {
+            reinforce_factor: 0.08,
+            decay_factor: 0.95,
+            dormancy_threshold_cycles: 20,
+            min_active_confidence: 0.10,
+            decay_grace_cycles: 6,  // ~1.5 hours at 15min heartbeat
+        }
+    }
+}
+
+/// A reinforceable pattern with confidence tracking
+#[derive(Clone, Debug, CandidType, Deserialize)]
+pub struct MetabolismPattern {
+    pub id: u64,
+    pub summary: String,
+    pub confidence: f64,
+    pub reinforcement_count: u64,
+    pub last_reinforced_cycle: u64,
+    pub capsule_ids: Vec<u64>,
+    pub is_active: bool,
+    pub created_at: u64,
+}
+
+/// Result of a metabolism cycle
+#[derive(Clone, Debug, CandidType, Deserialize)]
+pub struct MetabolismCycleResult {
+    pub patterns_reinforced: u64,
+    pub patterns_decayed: u64,
+    pub patterns_deactivated: u64,
+    pub patterns_seeded: u64,
+    pub cycle_number: u64,
+}
+
+/// Status of the metabolism system
+#[derive(Clone, Debug, CandidType, Deserialize)]
+pub struct MetabolismStatus {
+    pub active_patterns: u64,
+    pub dormant_patterns: u64,
+    pub total_somatic_markers: u64,
+    pub total_emotional_memories: u64,
+    pub total_causal_edges: u64,
+    pub metabolism_cycles: u64,
+    pub last_cycle: Option<u64>,
+    pub last_cycle_result: Option<MetabolismCycleResult>,
+}
+
+/// Internal metabolism state
+#[derive(Clone, Default, CandidType, Deserialize)]
+struct PatternMetabolismState {
+    config: Option<MetabolismConfig>,
+    patterns: Vec<MetabolismPattern>,
+    somatic_markers: Vec<SomaticMarker>,
+    emotional_memories: Vec<EmotionalMemory>,
+    causal_edges: Vec<CausalEdge>,
+    cycle_count: u64,
+    last_cycle: u64,
+    next_pattern_id: u64,
+    next_emotional_id: u64,
+    next_causal_id: u64,
+    last_cycle_result: Option<MetabolismCycleResult>,
+}
+
+/// Metabolism cycle interval — run every N heartbeats (3 = every 45 min)
+const METABOLISM_CYCLE_INTERVAL: u64 = 3;
+/// Minimum similarity for a capsule to reinforce a pattern
+const METABOLISM_SIMILARITY_THRESHOLD: f32 = 0.72;
+
+/// Internal keeper state (stored in canister State)
+#[derive(Clone, Default, CandidType, Deserialize)]
+struct KeeperState {
+    connections: Vec<KeeperConnection>,
+    clusters: Vec<KeeperCluster>,
+    orphans: Vec<u64>,
+    digest: String,
+    last_compost_cycle: u64,
+    compost_count: u64,
+    next_cluster_id: u64,
+    /// Tracks which capsules have been composted (by ID)
+    composted_ids: Vec<u64>,
+}
+
 /// Record of a single heartbeat event
 #[derive(Clone, Debug, CandidType, Deserialize)]
 pub struct HeartbeatRecord {
@@ -796,6 +984,10 @@ struct State {
     assistant_tasks: Option<Vec<AssistantTask>>,
     /// Next assistant task ID
     next_task_id: Option<u64>,
+    /// Archive Keeper - intelligent capsule connection discovery (new in v14)
+    keeper: Option<KeeperState>,
+    /// Pattern Metabolism - ACC-inspired reinforcement/decay system (new in v15)
+    pattern_metabolism: Option<PatternMetabolismState>,
 }
 
 thread_local! {
@@ -855,6 +1047,16 @@ fn post_upgrade() {
         old_state.research = Some(ResearchState::default());
     }
 
+    // Initialize keeper state if migrating from old version (v14)
+    if old_state.keeper.is_none() {
+        old_state.keeper = Some(KeeperState::default());
+    }
+
+    // Initialize pattern metabolism state if migrating from old version (v15)
+    if old_state.pattern_metabolism.is_none() {
+        old_state.pattern_metabolism = Some(PatternMetabolismState::default());
+    }
+
     STATE.with(|state| {
         *state.borrow_mut() = old_state;
     });
@@ -867,6 +1069,13 @@ fn start_heartbeat_timer() {
     let interval = Duration::from_secs(HEARTBEAT_INTERVAL_SECS);
     ic_cdk_timers::set_timer_interval(interval, heartbeat);
     ic_cdk::println!("Chronicle heartbeat started: interval = {} minutes", HEARTBEAT_INTERVAL_SECS / 60);
+}
+
+/// Manually restart the heartbeat timer (use after upgrade if timer didn't persist)
+#[update]
+fn restart_heartbeat() -> String {
+    start_heartbeat_timer();
+    format!("Heartbeat timer restarted ({}s interval)", HEARTBEAT_INTERVAL_SECS)
 }
 
 /// Autonomous heartbeat - called every HEARTBEAT_INTERVAL_SECS
@@ -1028,6 +1237,21 @@ fn heartbeat() {
         });
     }
 
+    // Archive Keeper: run compost cycle to discover capsule connections
+    let has_embeddings = STATE.with(|state| {
+        !state.borrow().embeddings.is_empty()
+    });
+    if has_embeddings {
+        ic_cdk::println!("Chronicle: running keeper compost cycle...");
+        keeper_compost_cycle();
+
+        // Pattern Metabolism: reinforcement/decay cycle (every 3 heartbeats = ~45 min)
+        if count % METABOLISM_CYCLE_INTERVAL == 0 {
+            ic_cdk::println!("Chronicle: running pattern metabolism cycle...");
+            pattern_metabolism_cycle();
+        }
+    }
+
     // Check if autonomous accumulation should run
     let should_accumulate = STATE.with(|state| {
         let s = state.borrow();
@@ -1047,18 +1271,18 @@ fn heartbeat() {
             None => return (false, "Wallet not initialized".to_string()),
         };
 
-        // Check balance
+        // Check XRP balance (need reserve + fee buffer, NOT the buy amount)
         let balance = match wallet.last_known_balance {
             Some(b) => b,
             None => return (false, "Balance unknown".to_string()),
         };
 
-        // Check if we have enough XRP (need reserve + amount to swap + fee buffer)
+        // We're buying XRP with RLUSD, so we only need reserve + fees in XRP
         let fee_buffer = 100_000; // 0.1 XRP for fees
-        let required = acc.min_xrp_reserve + acc.xrp_per_heartbeat + fee_buffer;
+        let required = acc.min_xrp_reserve + fee_buffer;
         if balance < required {
             return (false, format!(
-                "Insufficient balance: {} drops < {} required",
+                "Insufficient XRP for reserve+fees: {} drops < {} required",
                 balance, required
             ));
         }
@@ -1963,6 +2187,52 @@ fn get_all_embeddings() -> Vec<CapsuleEmbedding> {
     })
 }
 
+/// Get capsules with pagination (offset/limit, sorted by ID)
+#[query]
+fn get_capsules_paginated(offset: u64, limit: u64) -> Vec<KnowledgeCapsule> {
+    let limit = limit.min(500) as usize;
+    STATE.with(|state| {
+        let state = state.borrow();
+        let mut ids: Vec<&u64> = state.capsules.keys().collect();
+        ids.sort();
+        ids.into_iter()
+            .skip(offset as usize)
+            .take(limit)
+            .filter_map(|id| state.capsules.get(id).cloned())
+            .collect()
+    })
+}
+
+/// Get embeddings with pagination (offset/limit)
+#[query]
+fn get_embeddings_paginated(offset: u64, limit: u64) -> Vec<CapsuleEmbedding> {
+    let limit = limit.min(500) as usize; // Cap at 500 to stay under 2MB reply limit
+    STATE.with(|state| {
+        let state = state.borrow();
+        let mut ids: Vec<&u64> = state.embeddings.keys().collect();
+        ids.sort();
+        ids.into_iter()
+            .skip(offset as usize)
+            .take(limit)
+            .filter_map(|id| state.embeddings.get(id).cloned())
+            .collect()
+    })
+}
+
+/// Get capsule IDs that have no embedding (for backfill)
+#[query]
+fn get_capsules_without_embeddings(limit: u64) -> Vec<u64> {
+    let limit = limit.min(500) as usize;
+    STATE.with(|state| {
+        let state = state.borrow();
+        state.capsules.keys()
+            .filter(|id| !state.embeddings.contains_key(id))
+            .take(limit)
+            .cloned()
+            .collect()
+    })
+}
+
 /// Get embedding for a specific capsule
 #[query]
 fn get_embedding(capsule_id: u64) -> Option<CapsuleEmbedding> {
@@ -2042,6 +2312,853 @@ fn add_embeddings_bulk(embeddings: Vec<CapsuleEmbedding>) -> u64 {
     })
 }
 
+// ============================================================
+// Archive Keeper - Compost Logic
+// ============================================================
+
+/// Batch size for composting (capsules per cycle)
+const KEEPER_BATCH_SIZE: usize = 50;
+/// Minimum similarity to create a connection
+const KEEPER_CONNECTION_THRESHOLD: f32 = 0.70;
+/// Minimum similarity to NOT be an orphan
+const KEEPER_ORPHAN_THRESHOLD: f32 = 0.50;
+/// Maximum connections to store (bounded)
+const KEEPER_MAX_CONNECTIONS: usize = 25_000;
+/// Maximum clusters
+const KEEPER_MAX_CLUSTERS: usize = 500;
+
+/// Run a compost cycle - discover connections between capsules
+/// Called during heartbeat. Processes a batch of uncomposted capsules.
+fn keeper_compost_cycle() {
+    let now = ic_cdk::api::time();
+
+    // Phase 1: Read state and compute similarities (immutable borrow)
+    let results = STATE.with(|state| {
+        let s = state.borrow();
+
+        let keeper = match s.keeper.as_ref() {
+            Some(k) => k,
+            None => return None,
+        };
+
+        // Find capsules with embeddings that haven't been composted yet
+        let composted_set: HashSet<u64> = keeper.composted_ids.iter().copied().collect();
+        let existing_connections: HashSet<(u64, u64)> = keeper.connections.iter()
+            .map(|c| (c.capsule_a, c.capsule_b))
+            .collect();
+
+        let mut batch: Vec<u64> = s.embeddings.keys()
+            .filter(|id| !composted_set.contains(id))
+            .copied()
+            .take(KEEPER_BATCH_SIZE)
+            .collect();
+
+        if batch.is_empty() {
+            return Some((vec![], HashMap::new(), batch, 0));
+        }
+
+        batch.sort();
+
+        let mut new_connections: Vec<KeeperConnection> = Vec::new();
+        let mut capsule_max_sim: HashMap<u64, f32> = HashMap::new();
+
+        for &capsule_id in &batch {
+            let emb_a = match s.embeddings.get(&capsule_id) {
+                Some(e) => &e.embedding,
+                None => continue,
+            };
+
+            for (other_id, other_emb) in s.embeddings.iter() {
+                if *other_id == capsule_id {
+                    continue;
+                }
+
+                let sim = cosine_similarity(emb_a, &other_emb.embedding) as f32;
+
+                let max = capsule_max_sim.entry(capsule_id).or_insert(0.0);
+                if sim > *max {
+                    *max = sim;
+                }
+
+                if sim >= KEEPER_CONNECTION_THRESHOLD {
+                    let (a, b) = if capsule_id < *other_id {
+                        (capsule_id, *other_id)
+                    } else {
+                        (*other_id, capsule_id)
+                    };
+
+                    if !existing_connections.contains(&(a, b)) {
+                        let relationship = determine_relationship(&s, capsule_id, *other_id);
+                        new_connections.push(KeeperConnection {
+                            capsule_a: a,
+                            capsule_b: b,
+                            similarity: sim,
+                            relationship,
+                            discovered_at: now,
+                        });
+                    }
+                }
+            }
+        }
+
+        // Deduplicate
+        new_connections.sort_by(|a, b| {
+            (a.capsule_a, a.capsule_b).cmp(&(b.capsule_a, b.capsule_b))
+        });
+        new_connections.dedup_by(|a, b| a.capsule_a == b.capsule_a && a.capsule_b == b.capsule_b);
+
+        let new_count = new_connections.len();
+        Some((new_connections, capsule_max_sim, batch, new_count))
+    });
+
+    let (new_connections, capsule_max_sim, batch, new_count) = match results {
+        Some((conns, sims, batch, count)) => (conns, sims, batch, count),
+        None => return, // Keeper not initialized
+    };
+
+    if batch.is_empty() {
+        // All composted — just increment counter
+        STATE.with(|state| {
+            let mut s = state.borrow_mut();
+            if let Some(keeper) = s.keeper.as_mut() {
+                keeper.compost_count += 1;
+                keeper.last_compost_cycle = now;
+            }
+        });
+        return;
+    }
+
+    // Phase 2: Write results (mutable borrow)
+    STATE.with(|state| {
+        let mut s = state.borrow_mut();
+
+        let keeper = s.keeper.get_or_insert_with(KeeperState::default);
+
+        // Add new connections (bounded)
+        keeper.connections.extend(new_connections);
+        if keeper.connections.len() > KEEPER_MAX_CONNECTIONS {
+            keeper.connections.sort_by(|a, b|
+                b.similarity.partial_cmp(&a.similarity).unwrap_or(std::cmp::Ordering::Equal)
+            );
+            keeper.connections.truncate(KEEPER_MAX_CONNECTIONS);
+        }
+
+        // Update orphan list
+        for &capsule_id in &batch {
+            let max_sim = capsule_max_sim.get(&capsule_id).copied().unwrap_or(0.0);
+            if max_sim < KEEPER_ORPHAN_THRESHOLD {
+                if !keeper.orphans.contains(&capsule_id) {
+                    keeper.orphans.push(capsule_id);
+                }
+            } else {
+                keeper.orphans.retain(|&id| id != capsule_id);
+            }
+        }
+
+        // Mark batch as composted
+        keeper.composted_ids.extend(batch.iter());
+        keeper.compost_count += 1;
+        keeper.last_compost_cycle = now;
+
+        ic_cdk::println!(
+            "Keeper compost cycle #{}: {} capsules processed, {} new connections, {} total connections",
+            keeper.compost_count,
+            batch.len(),
+            new_count,
+            keeper.connections.len()
+        );
+    });
+
+    // Phase 3: Update clusters (needs both keeper mut and state read)
+    // We rebuild clusters from the connection graph
+    STATE.with(|state| {
+        let mut s = state.borrow_mut();
+
+        // Extract connections for cluster computation
+        let connections: Vec<(u64, u64)> = s.keeper.as_ref()
+            .map(|k| k.connections.iter().map(|c| (c.capsule_a, c.capsule_b)).collect())
+            .unwrap_or_default();
+
+        // Build adjacency list
+        let mut adj: HashMap<u64, Vec<u64>> = HashMap::new();
+        for (a, b) in &connections {
+            adj.entry(*a).or_default().push(*b);
+            adj.entry(*b).or_default().push(*a);
+        }
+
+        // Find connected components using BFS
+        let mut visited: HashSet<u64> = HashSet::new();
+        let mut components: Vec<Vec<u64>> = Vec::new();
+
+        for &node in adj.keys() {
+            if visited.contains(&node) {
+                continue;
+            }
+            let mut component = Vec::new();
+            let mut queue = vec![node];
+            while let Some(current) = queue.pop() {
+                if !visited.insert(current) {
+                    continue;
+                }
+                component.push(current);
+                if let Some(neighbors) = adj.get(&current) {
+                    for &neighbor in neighbors {
+                        if !visited.contains(&neighbor) {
+                            queue.push(neighbor);
+                        }
+                    }
+                }
+            }
+            component.sort();
+            if component.len() >= 2 {
+                components.push(component);
+            }
+        }
+
+        // Pre-compute themes from capsule keywords (read-only on capsules)
+        let mut cluster_data: Vec<(Vec<u64>, String)> = Vec::new();
+        for component in components.iter().take(KEEPER_MAX_CLUSTERS) {
+            let mut keyword_counts: HashMap<String, usize> = HashMap::new();
+            for &capsule_id in component {
+                if let Some(capsule) = s.capsules.get(&capsule_id) {
+                    for kw in &capsule.keywords {
+                        *keyword_counts.entry(kw.clone()).or_insert(0) += 1;
+                    }
+                }
+            }
+            let mut top_keywords: Vec<(String, usize)> = keyword_counts.into_iter().collect();
+            top_keywords.sort_by(|a, b| b.1.cmp(&a.1));
+            let theme = top_keywords.iter()
+                .take(3)
+                .map(|(kw, _)| kw.as_str())
+                .collect::<Vec<&str>>()
+                .join(", ");
+            cluster_data.push((component.clone(), theme));
+        }
+
+        // Now take the keeper mutable borrow to write clusters
+        let keeper = match s.keeper.as_mut() {
+            Some(k) => k,
+            None => return,
+        };
+
+        keeper.clusters.clear();
+        for (i, (component, theme)) in cluster_data.iter().enumerate() {
+            // Calculate average internal similarity from keeper connections
+            let mut total_sim = 0.0f32;
+            let mut pair_count = 0u32;
+            for conn in keeper.connections.iter() {
+                if component.contains(&conn.capsule_a) && component.contains(&conn.capsule_b) {
+                    total_sim += conn.similarity;
+                    pair_count += 1;
+                }
+            }
+            let strength = if pair_count > 0 { total_sim / pair_count as f32 } else { 0.0 };
+
+            keeper.clusters.push(KeeperCluster {
+                id: keeper.next_cluster_id + i as u64,
+                capsule_ids: component.clone(),
+                theme: if theme.is_empty() { "uncategorized".to_string() } else { theme.clone() },
+                strength,
+                updated_at: now,
+            });
+        }
+
+        keeper.next_cluster_id += cluster_data.len() as u64;
+
+        ic_cdk::println!(
+            "Keeper clusters updated: {} clusters",
+            keeper.clusters.len()
+        );
+    });
+
+    log_activity(
+        "keeper",
+        "Compost cycle completed",
+        None,
+        None,
+    );
+}
+
+/// Determine the relationship type between two capsules
+fn determine_relationship(state: &State, a: u64, b: u64) -> String {
+    let cap_a = state.capsules.get(&a);
+    let cap_b = state.capsules.get(&b);
+
+    match (cap_a, cap_b) {
+        (Some(ca), Some(cb)) => {
+            // Check person overlap
+            let persons_a: HashSet<&String> = ca.persons.iter().collect();
+            let persons_b: HashSet<&String> = cb.persons.iter().collect();
+            if !persons_a.is_empty() && persons_a.intersection(&persons_b).count() > 0 {
+                return "person".to_string();
+            }
+
+            // Check keyword overlap
+            let kw_a: HashSet<&String> = ca.keywords.iter().collect();
+            let kw_b: HashSet<&String> = cb.keywords.iter().collect();
+            let kw_overlap = kw_a.intersection(&kw_b).count();
+            if kw_overlap >= 2 {
+                return "keyword".to_string();
+            }
+
+            // Check temporal proximity (within 1 hour = 3.6e12 ns)
+            let time_diff = if ca.created_at > cb.created_at {
+                ca.created_at - cb.created_at
+            } else {
+                cb.created_at - ca.created_at
+            };
+            if time_diff < 3_600_000_000_000 {
+                return "temporal".to_string();
+            }
+
+            "semantic".to_string()
+        }
+        _ => "semantic".to_string(),
+    }
+}
+
+// ============================================================
+// Pattern Metabolism - ACC-inspired reinforcement/decay
+// ============================================================
+
+/// Run a metabolism cycle: reinforce active patterns, decay dormant ones, seed new.
+/// Called from heartbeat every METABOLISM_CYCLE_INTERVAL heartbeats (~45 min).
+fn pattern_metabolism_cycle() {
+    let now = ic_cdk::api::time();
+
+    // Phase 1: Read state, compute which capsules are new since last cycle
+    let cycle_data = STATE.with(|state| {
+        let s = state.borrow();
+        let metab = match s.pattern_metabolism.as_ref() {
+            Some(m) => m,
+            None => return None,
+        };
+
+        let config = metab.config.clone().unwrap_or_default();
+        let current_cycle = metab.cycle_count;
+        let last_cycle_time = metab.last_cycle;
+
+        // Find capsules with embeddings added since last metabolism cycle
+        let new_capsule_ids: Vec<u64> = s.capsules.iter()
+            .filter(|(_, cap)| cap.created_at > last_cycle_time)
+            .filter(|(id, _)| s.embeddings.contains_key(id))
+            .map(|(id, _)| *id)
+            .collect();
+
+        // Collect existing pattern data for comparison
+        let pattern_data: Vec<(u64, Vec<u64>, f64, u64, bool)> = metab.patterns.iter()
+            .map(|p| (p.id, p.capsule_ids.clone(), p.confidence, p.last_reinforced_cycle, p.is_active))
+            .collect();
+
+        // Get keeper connections for causal edge seeding
+        let keeper_connections: Vec<(u64, u64, f32, String)> = s.keeper.as_ref()
+            .map(|k| k.connections.iter()
+                .map(|c| (c.capsule_a, c.capsule_b, c.similarity, c.relationship.clone()))
+                .collect())
+            .unwrap_or_default();
+
+        // Get keeper clusters for emotional association
+        let keeper_clusters: Vec<(u64, Vec<u64>, String)> = s.keeper.as_ref()
+            .map(|k| k.clusters.iter()
+                .map(|cl| (cl.id, cl.capsule_ids.clone(), cl.theme.clone()))
+                .collect())
+            .unwrap_or_default();
+
+        Some((config, current_cycle, new_capsule_ids, pattern_data,
+              keeper_connections, keeper_clusters))
+    });
+
+    let (_config, _current_cycle, new_capsule_ids, pattern_data,
+         keeper_connections, keeper_clusters) = match cycle_data {
+        Some(d) => d,
+        None => return,
+    };
+
+    // Phase 2: Compute similarities between new capsules and existing patterns
+    // For each new capsule, find the best matching pattern via embedding similarity
+    let reinforcements = STATE.with(|state| {
+        let s = state.borrow();
+        let mut reinforcements: Vec<(u64, u64, f64)> = Vec::new(); // (pattern_id, capsule_id, similarity)
+        let mut unmatched: Vec<u64> = Vec::new();
+
+        for &cap_id in &new_capsule_ids {
+            let cap_emb = match s.embeddings.get(&cap_id) {
+                Some(e) => &e.embedding,
+                None => continue,
+            };
+
+            let mut best_match: Option<(u64, f64)> = None;
+
+            for &(pat_id, ref pat_capsule_ids, _conf, _last_cycle, is_active) in &pattern_data {
+                if !is_active { continue; }
+
+                // Compute average similarity against pattern's capsule embeddings
+                let mut total_sim = 0.0;
+                let mut count = 0;
+                for &pcid in pat_capsule_ids.iter().rev().take(5) { // Compare against last 5 capsules
+                    if let Some(pe) = s.embeddings.get(&pcid) {
+                        total_sim += cosine_similarity(cap_emb, &pe.embedding);
+                        count += 1;
+                    }
+                }
+
+                if count > 0 {
+                    let avg_sim = total_sim / count as f64;
+                    if avg_sim >= METABOLISM_SIMILARITY_THRESHOLD as f64 {
+                        if best_match.map_or(true, |(_, best)| avg_sim > best) {
+                            best_match = Some((pat_id, avg_sim));
+                        }
+                    }
+                }
+            }
+
+            match best_match {
+                Some((pat_id, sim)) => reinforcements.push((pat_id, cap_id, sim)),
+                None => unmatched.push(cap_id),
+            }
+        }
+
+        (reinforcements, unmatched)
+    });
+
+    let (reinforcements, unmatched) = reinforcements;
+
+    // Phase 3a: Pre-collect capsule data needed for seeding and cluster scoring (immutable read)
+    let capsule_summaries: HashMap<u64, String> = STATE.with(|state| {
+        let s = state.borrow();
+        unmatched.iter()
+            .filter_map(|&cap_id| {
+                s.capsules.get(&cap_id).map(|c| {
+                    let summary = if c.restatement.len() > 100 {
+                        // Find a char boundary at or before 100
+                        let mut end = 100;
+                        while end > 0 && !c.restatement.is_char_boundary(end) {
+                            end -= 1;
+                        }
+                        format!("{}...", &c.restatement[..end])
+                    } else {
+                        c.restatement.clone()
+                    };
+                    (cap_id, summary)
+                })
+            })
+            .collect()
+    });
+
+    // Pre-collect cluster confidence scores
+    let cluster_max_confs: Vec<(u64, Vec<u64>, String, f64)> = STATE.with(|state| {
+        let s = state.borrow();
+        keeper_clusters.iter().map(|(cluster_id, capsule_ids, theme)| {
+            let max_conf: f64 = capsule_ids.iter()
+                .filter_map(|id| s.capsules.get(id))
+                .map(|c| c.confidence_score)
+                .fold(0.0, f64::max);
+            (*cluster_id, capsule_ids.clone(), theme.clone(), max_conf)
+        }).collect()
+    });
+
+    // Phase 3b: Apply reinforcements, decay, deactivation, seeding (mutable)
+    let result = STATE.with(|state| {
+        let mut s = state.borrow_mut();
+        let metab = match s.pattern_metabolism.as_mut() {
+            Some(m) => m,
+            None => return MetabolismCycleResult {
+                patterns_reinforced: 0, patterns_decayed: 0,
+                patterns_deactivated: 0, patterns_seeded: 0,
+                cycle_number: 0,
+            },
+        };
+
+        let config = metab.config.clone().unwrap_or_default();
+        let cycle = metab.cycle_count + 1;
+        let mut reinforced = 0u64;
+        let mut decayed = 0u64;
+        let mut deactivated = 0u64;
+        let mut seeded = 0u64;
+
+        // Reinforce matching patterns
+        let reinforced_pattern_ids: HashSet<u64> = reinforcements.iter().map(|(pid, _, _)| *pid).collect();
+        for (pat_id, cap_id, similarity) in &reinforcements {
+            if let Some(pattern) = metab.patterns.iter_mut().find(|p| p.id == *pat_id) {
+                let boost = config.reinforce_factor * similarity;
+                pattern.confidence = (pattern.confidence + boost).min(1.0);
+                pattern.reinforcement_count += 1;
+                pattern.last_reinforced_cycle = cycle;
+                if !pattern.capsule_ids.contains(cap_id) {
+                    pattern.capsule_ids.push(*cap_id);
+                    if pattern.capsule_ids.len() > 50 {
+                        pattern.capsule_ids.remove(0);
+                    }
+                }
+                reinforced += 1;
+            }
+        }
+
+        // Decay patterns not reinforced this cycle (with grace period)
+        for pattern in metab.patterns.iter_mut() {
+            if !pattern.is_active { continue; }
+            if reinforced_pattern_ids.contains(&pattern.id) { continue; }
+
+            let cycles_dormant = cycle.saturating_sub(pattern.last_reinforced_cycle);
+            if cycles_dormant > config.decay_grace_cycles {
+                pattern.confidence *= config.decay_factor;
+                decayed += 1;
+
+                if pattern.confidence < config.min_active_confidence {
+                    pattern.is_active = false;
+                    deactivated += 1;
+                }
+            }
+        }
+
+        // Seed new patterns from unmatched capsules
+        for (&cap_id, summary) in &capsule_summaries {
+            metab.patterns.push(MetabolismPattern {
+                id: metab.next_pattern_id,
+                summary: summary.clone(),
+                confidence: 0.5,
+                reinforcement_count: 1,
+                last_reinforced_cycle: cycle,
+                capsule_ids: vec![cap_id],
+                is_active: true,
+                created_at: now,
+            });
+            metab.next_pattern_id += 1;
+            seeded += 1;
+        }
+
+        // Keeper integration: seed causal edges from high-similarity connections
+        let existing_edge_pairs: HashSet<(String, String)> = metab.causal_edges.iter()
+            .map(|e| (e.source_id.clone(), e.target_id.clone()))
+            .collect();
+
+        for (cap_a, cap_b, sim, relationship) in &keeper_connections {
+            if *sim < 0.85 { continue; }
+
+            let source = cap_a.to_string();
+            let target = cap_b.to_string();
+            if existing_edge_pairs.contains(&(source.clone(), target.clone())) { continue; }
+
+            let edge_type = match relationship.as_str() {
+                "person" => "co_person",
+                "temporal" => "temporal_proximity",
+                "keyword" => "shared_concept",
+                _ => "semantic_resonance",
+            };
+
+            metab.causal_edges.push(CausalEdge {
+                id: metab.next_causal_id,
+                source_id: source,
+                target_id: target,
+                edge_type: edge_type.to_string(),
+                strength: *sim as f64,
+                context: format!("keeper:{}:sim={:.3}", relationship, sim),
+                created_at: now,
+            });
+            metab.next_causal_id += 1;
+        }
+
+        // Keeper clusters → emotional associations
+        for (cluster_id, capsule_ids, theme, max_conf) in &cluster_max_confs {
+            if *max_conf >= 0.8 && capsule_ids.len() >= 3 {
+                let cluster_marker = format!("cluster:{}", cluster_id);
+                let already_exists = metab.emotional_memories.iter()
+                    .any(|em| em.cycle_id == cluster_marker);
+
+                if !already_exists {
+                    metab.emotional_memories.push(EmotionalMemory {
+                        id: metab.next_emotional_id,
+                        cycle_id: cluster_marker,
+                        heuristic_score: *max_conf,
+                        llm_score: 0.0,
+                        combined_score: max_conf * 0.7,
+                        category: if *max_conf >= 0.9 { "significant".to_string() } else { "routine".to_string() },
+                        reason: format!("Cluster '{}' with {} capsules, max confidence {:.2}",
+                                        theme, capsule_ids.len(), max_conf),
+                        epoch: theme.clone(),
+                        is_identity_transition: false,
+                        component_scores: format!(r#"{{"cluster_size":{},"max_confidence":{:.2},"theme":"{}"}}"#,
+                                                  capsule_ids.len(), max_conf, theme),
+                        created_at: now,
+                    });
+                    metab.next_emotional_id += 1;
+                }
+            }
+        }
+
+        // Bound causal edges and emotional memories
+        if metab.causal_edges.len() > 10000 {
+            metab.causal_edges.sort_by(|a, b| b.strength.partial_cmp(&a.strength).unwrap_or(std::cmp::Ordering::Equal));
+            metab.causal_edges.truncate(10000);
+        }
+        if metab.emotional_memories.len() > 5000 {
+            metab.emotional_memories.sort_by(|a, b| b.combined_score.partial_cmp(&a.combined_score).unwrap_or(std::cmp::Ordering::Equal));
+            metab.emotional_memories.truncate(5000);
+        }
+
+        // Update cycle tracking
+        metab.cycle_count = cycle;
+        metab.last_cycle = now;
+
+        let result = MetabolismCycleResult {
+            patterns_reinforced: reinforced,
+            patterns_decayed: decayed,
+            patterns_deactivated: deactivated,
+            patterns_seeded: seeded,
+            cycle_number: cycle,
+        };
+        metab.last_cycle_result = Some(result.clone());
+        result
+    });
+
+    ic_cdk::println!(
+        "Metabolism cycle #{}: +{} reinforced, -{} decayed, x{} deactivated, *{} seeded",
+        result.cycle_number,
+        result.patterns_reinforced,
+        result.patterns_decayed,
+        result.patterns_deactivated,
+        result.patterns_seeded,
+    );
+
+    log_activity(
+        "metabolism",
+        &format!("Cycle #{}: {} reinforced, {} decayed, {} deactivated, {} seeded",
+                 result.cycle_number, result.patterns_reinforced,
+                 result.patterns_decayed, result.patterns_deactivated,
+                 result.patterns_seeded),
+        None,
+        Some(format!(r#"{{"cycle":{},"reinforced":{},"decayed":{},"deactivated":{},"seeded":{}}}"#,
+                     result.cycle_number, result.patterns_reinforced,
+                     result.patterns_decayed, result.patterns_deactivated,
+                     result.patterns_seeded)),
+    );
+}
+
+// ============================================================
+// Pattern Metabolism - Query & Import Methods
+// ============================================================
+
+/// Get metabolism status
+#[query]
+fn get_metabolism_status() -> MetabolismStatus {
+    STATE.with(|state| {
+        let s = state.borrow();
+        let metab = s.pattern_metabolism.as_ref();
+        match metab {
+            Some(m) => {
+                let active = m.patterns.iter().filter(|p| p.is_active).count() as u64;
+                let dormant = m.patterns.iter().filter(|p| !p.is_active).count() as u64;
+                MetabolismStatus {
+                    active_patterns: active,
+                    dormant_patterns: dormant,
+                    total_somatic_markers: m.somatic_markers.len() as u64,
+                    total_emotional_memories: m.emotional_memories.len() as u64,
+                    total_causal_edges: m.causal_edges.len() as u64,
+                    metabolism_cycles: m.cycle_count,
+                    last_cycle: if m.last_cycle > 0 { Some(m.last_cycle) } else { None },
+                    last_cycle_result: m.last_cycle_result.clone(),
+                }
+            }
+            None => MetabolismStatus {
+                active_patterns: 0, dormant_patterns: 0,
+                total_somatic_markers: 0, total_emotional_memories: 0,
+                total_causal_edges: 0, metabolism_cycles: 0,
+                last_cycle: None, last_cycle_result: None,
+            },
+        }
+    })
+}
+
+/// Get active metabolism patterns (paginated)
+#[query]
+fn get_metabolism_patterns(offset: u64, limit: u64) -> Vec<MetabolismPattern> {
+    STATE.with(|state| {
+        let s = state.borrow();
+        s.pattern_metabolism.as_ref()
+            .map(|m| {
+                m.patterns.iter()
+                    .filter(|p| p.is_active)
+                    .skip(offset as usize)
+                    .take(limit.min(100) as usize)
+                    .cloned()
+                    .collect()
+            })
+            .unwrap_or_default()
+    })
+}
+
+/// Get somatic markers (paginated)
+#[query]
+fn get_somatic_markers(offset: u64, limit: u64) -> Vec<SomaticMarker> {
+    STATE.with(|state| {
+        let s = state.borrow();
+        s.pattern_metabolism.as_ref()
+            .map(|m| {
+                m.somatic_markers.iter()
+                    .skip(offset as usize)
+                    .take(limit.min(200) as usize)
+                    .cloned()
+                    .collect()
+            })
+            .unwrap_or_default()
+    })
+}
+
+/// Get emotional memories (paginated, sorted by combined_score desc)
+#[query]
+fn get_emotional_memories(offset: u64, limit: u64) -> Vec<EmotionalMemory> {
+    STATE.with(|state| {
+        let s = state.borrow();
+        s.pattern_metabolism.as_ref()
+            .map(|m| {
+                let mut sorted: Vec<_> = m.emotional_memories.clone();
+                sorted.sort_by(|a, b| b.combined_score.partial_cmp(&a.combined_score).unwrap_or(std::cmp::Ordering::Equal));
+                sorted.into_iter()
+                    .skip(offset as usize)
+                    .take(limit.min(200) as usize)
+                    .collect()
+            })
+            .unwrap_or_default()
+    })
+}
+
+/// Get causal edges (paginated, sorted by strength desc)
+#[query]
+fn get_causal_edges(offset: u64, limit: u64) -> Vec<CausalEdge> {
+    STATE.with(|state| {
+        let s = state.borrow();
+        s.pattern_metabolism.as_ref()
+            .map(|m| {
+                let mut sorted: Vec<_> = m.causal_edges.clone();
+                sorted.sort_by(|a, b| b.strength.partial_cmp(&a.strength).unwrap_or(std::cmp::Ordering::Equal));
+                sorted.into_iter()
+                    .skip(offset as usize)
+                    .take(limit.min(200) as usize)
+                    .collect()
+            })
+            .unwrap_or_default()
+    })
+}
+
+/// Manually reinforce a capsule against metabolism patterns
+#[update]
+fn reinforce_capsule(capsule_id: u64) -> String {
+    STATE.with(|state| {
+        let s = state.borrow();
+        let cap_emb = match s.embeddings.get(&capsule_id) {
+            Some(e) => e.embedding.clone(),
+            None => return "No embedding for capsule".to_string(),
+        };
+
+        let metab = match s.pattern_metabolism.as_ref() {
+            Some(m) => m,
+            None => return "Metabolism not initialized".to_string(),
+        };
+
+        // Find best matching pattern
+        let mut best: Option<(u64, f64)> = None;
+        for pattern in &metab.patterns {
+            if !pattern.is_active { continue; }
+            let mut total_sim = 0.0;
+            let mut count = 0;
+            for &pcid in pattern.capsule_ids.iter().rev().take(5) {
+                if let Some(pe) = s.embeddings.get(&pcid) {
+                    total_sim += cosine_similarity(&cap_emb, &pe.embedding);
+                    count += 1;
+                }
+            }
+            if count > 0 {
+                let avg = total_sim / count as f64;
+                if best.map_or(true, |(_, b)| avg > b) {
+                    best = Some((pattern.id, avg));
+                }
+            }
+        }
+
+        drop(s);
+        let mut s = state.borrow_mut();
+        let metab = s.pattern_metabolism.as_mut().unwrap();
+
+        match best {
+            Some((pat_id, sim)) => {
+                let config = metab.config.clone().unwrap_or_default();
+                if let Some(pattern) = metab.patterns.iter_mut().find(|p| p.id == pat_id) {
+                    let boost = config.reinforce_factor * sim;
+                    pattern.confidence = (pattern.confidence + boost).min(1.0);
+                    pattern.reinforcement_count += 1;
+                    pattern.last_reinforced_cycle = metab.cycle_count;
+                    if !pattern.capsule_ids.contains(&capsule_id) {
+                        pattern.capsule_ids.push(capsule_id);
+                    }
+                    format!("Reinforced pattern {} (sim={:.3}, new conf={:.3})",
+                            pat_id, sim, pattern.confidence)
+                } else {
+                    "Pattern not found".to_string()
+                }
+            }
+            None => "No matching pattern found".to_string(),
+        }
+    })
+}
+
+/// Import somatic markers from historical ACC data
+#[update]
+fn import_somatic_markers(markers: Vec<SomaticMarker>) -> u64 {
+    STATE.with(|state| {
+        let mut s = state.borrow_mut();
+        let metab = s.pattern_metabolism.get_or_insert_with(PatternMetabolismState::default);
+        let count = markers.len() as u64;
+        metab.somatic_markers.extend(markers);
+        count
+    })
+}
+
+/// Import emotional memories from historical ACC data
+#[update]
+fn import_emotional_memories(memories: Vec<EmotionalMemory>) -> u64 {
+    STATE.with(|state| {
+        let mut s = state.borrow_mut();
+        let metab = s.pattern_metabolism.get_or_insert_with(PatternMetabolismState::default);
+        let count = memories.len() as u64;
+        // Assign IDs
+        for mut mem in memories {
+            mem.id = metab.next_emotional_id;
+            metab.next_emotional_id += 1;
+            metab.emotional_memories.push(mem);
+        }
+        count
+    })
+}
+
+/// Import causal edges from historical ACC data
+#[update]
+fn import_causal_edges(edges: Vec<CausalEdge>) -> u64 {
+    STATE.with(|state| {
+        let mut s = state.borrow_mut();
+        let metab = s.pattern_metabolism.get_or_insert_with(PatternMetabolismState::default);
+        let count = edges.len() as u64;
+        for mut edge in edges {
+            edge.id = metab.next_causal_id;
+            metab.next_causal_id += 1;
+            metab.causal_edges.push(edge);
+        }
+        count
+    })
+}
+
+/// Update metabolism configuration
+#[update]
+fn update_metabolism_config(config: MetabolismConfig) -> String {
+    STATE.with(|state| {
+        let mut s = state.borrow_mut();
+        let metab = s.pattern_metabolism.get_or_insert_with(PatternMetabolismState::default);
+        metab.config = Some(config.clone());
+        format!("Config updated: reinforce={}, decay={}, grace={}",
+                config.reinforce_factor, config.decay_factor, config.decay_grace_cycles)
+    })
+}
+
 /// Health check
 #[query]
 fn health() -> String {
@@ -2055,6 +3172,216 @@ fn health() -> String {
             heartbeat_count
         )
     })
+}
+
+// ============================================================
+// Archive Keeper - Query & Update Methods
+// ============================================================
+
+/// Get keeper status
+#[query]
+fn keeper_status() -> KeeperStatus {
+    STATE.with(|state| {
+        let s = state.borrow();
+        let keeper = s.keeper.as_ref();
+
+        KeeperStatus {
+            connection_count: keeper.map(|k| k.connections.len() as u64).unwrap_or(0),
+            cluster_count: keeper.map(|k| k.clusters.len() as u64).unwrap_or(0),
+            orphan_count: keeper.map(|k| k.orphans.len() as u64).unwrap_or(0),
+            composted_capsule_count: keeper.map(|k| k.composted_ids.len() as u64).unwrap_or(0),
+            total_capsule_count: s.capsules.len() as u64,
+            compost_cycles: keeper.map(|k| k.compost_count).unwrap_or(0),
+            last_compost_cycle: keeper.map(|k| if k.last_compost_cycle > 0 { Some(k.last_compost_cycle) } else { None }).flatten(),
+            digest: keeper.map(|k| k.digest.clone()).unwrap_or_default(),
+        }
+    })
+}
+
+/// Get connections for a specific capsule
+#[query]
+fn keeper_connections(capsule_id: u64) -> Vec<KeeperConnection> {
+    STATE.with(|state| {
+        let s = state.borrow();
+        match s.keeper.as_ref() {
+            Some(keeper) => {
+                keeper.connections.iter()
+                    .filter(|c| c.capsule_a == capsule_id || c.capsule_b == capsule_id)
+                    .cloned()
+                    .collect()
+            }
+            None => vec![],
+        }
+    })
+}
+
+/// Get all clusters
+#[query]
+fn keeper_clusters() -> Vec<KeeperCluster> {
+    STATE.with(|state| {
+        state.borrow().keeper.as_ref()
+            .map(|k| k.clusters.clone())
+            .unwrap_or_default()
+    })
+}
+
+/// Get orphan capsule IDs
+#[query]
+fn keeper_orphans() -> Vec<u64> {
+    STATE.with(|state| {
+        state.borrow().keeper.as_ref()
+            .map(|k| k.orphans.clone())
+            .unwrap_or_default()
+    })
+}
+
+/// Get the keeper digest
+#[query]
+fn keeper_digest() -> String {
+    STATE.with(|state| {
+        state.borrow().keeper.as_ref()
+            .map(|k| k.digest.clone())
+            .unwrap_or_else(|| "No digest yet — keeper hasn't composted.".to_string())
+    })
+}
+
+/// Ask the keeper a question — uses on-chain LLM to answer from capsules
+#[update]
+fn keeper_ask(query: String) -> String {
+    // Build context from semantic search + keeper connections
+    let context = STATE.with(|state| {
+        let s = state.borrow();
+
+        let keeper = match s.keeper.as_ref() {
+            Some(k) => k,
+            None => return "Keeper not initialized.".to_string(),
+        };
+
+        // We can't do embedding-based search here without the query embedding,
+        // so use keyword matching + keeper connections
+        let query_lower = query.to_lowercase();
+        let query_words: Vec<&str> = query_lower.split_whitespace()
+            .filter(|w| w.len() > 2)
+            .collect();
+
+        // Find capsules matching query keywords
+        let mut relevant_ids: HashSet<u64> = HashSet::new();
+        for word in &query_words {
+            if let Some(ids) = s.keyword_index.get(*word) {
+                for id in ids.iter().take(10) {
+                    relevant_ids.insert(*id);
+                }
+            }
+        }
+
+        // Expand via keeper connections (one hop)
+        let mut connected_ids: HashSet<u64> = HashSet::new();
+        for &id in &relevant_ids {
+            for conn in &keeper.connections {
+                if conn.capsule_a == id {
+                    connected_ids.insert(conn.capsule_b);
+                } else if conn.capsule_b == id {
+                    connected_ids.insert(conn.capsule_a);
+                }
+            }
+        }
+        relevant_ids.extend(connected_ids);
+
+        // Cap at 30 capsules for LLM context (Qwen 3 32B handles this easily)
+        let mut capsule_texts: Vec<String> = Vec::new();
+        for &id in relevant_ids.iter().take(30) {
+            if let Some(cap) = s.capsules.get(&id) {
+                let topic_str = cap.topic.as_deref().unwrap_or("general");
+                capsule_texts.push(format!(
+                    "- [ID {}] [{}] {}",
+                    cap.id, topic_str, cap.restatement
+                ));
+            }
+        }
+
+        // Format connections involving these capsules
+        let mut connection_texts: Vec<String> = Vec::new();
+        for conn in &keeper.connections {
+            if relevant_ids.contains(&conn.capsule_a) && relevant_ids.contains(&conn.capsule_b) {
+                connection_texts.push(format!(
+                    "  {} ↔ {} (sim: {:.2}, type: {})",
+                    conn.capsule_a, conn.capsule_b, conn.similarity, conn.relationship
+                ));
+            }
+        }
+
+        // Format relevant clusters
+        let mut cluster_texts: Vec<String> = Vec::new();
+        for cluster in &keeper.clusters {
+            let overlap = cluster.capsule_ids.iter()
+                .filter(|id| relevant_ids.contains(id))
+                .count();
+            if overlap > 0 {
+                let ids_str: Vec<String> = cluster.capsule_ids.iter().take(10).map(|id| id.to_string()).collect();
+                cluster_texts.push(format!(
+                    "  \"{}\" (strength: {:.2}): capsules [{}]",
+                    cluster.theme, cluster.strength, ids_str.join(", ")
+                ));
+            }
+        }
+
+        if capsule_texts.is_empty() {
+            return "NO_RELEVANT_CAPSULES".to_string();
+        }
+
+        format!(
+            "Relevant capsules:\n{}\n\nConnections:\n{}\n\nClusters:\n{}",
+            capsule_texts.join("\n"),
+            if connection_texts.is_empty() { "  (none found)".to_string() } else { connection_texts.join("\n") },
+            if cluster_texts.is_empty() { "  (none found)".to_string() } else { cluster_texts.join("\n") }
+        )
+    });
+
+    if context == "Keeper not initialized." || context == "NO_RELEVANT_CAPSULES" {
+        // Return immediately without LLM call
+        let msg = if context == "NO_RELEVANT_CAPSULES" {
+            format!("{{\"answer\":\"The archive contains no capsules matching '{}'. Try different keywords.\",\"cited_capsules\":[],\"connections\":[],\"clusters\":[]}}", escape_json(&query))
+        } else {
+            r#"{"answer":"Keeper not initialized yet. Wait for the first compost cycle.","cited_capsules":[],"connections":[],"clusters":[]}"#.to_string()
+        };
+        return msg;
+    }
+
+    // Use on-chain LLM to generate answer
+    let prompt = format!(
+        "You are the Chronicle Archive Keeper. Answer ONLY from the capsules provided. Cite capsule IDs in brackets like [ID 123]. If the archive doesn't contain relevant information, say so honestly.\n\nQuestion: {}\n\n{}\n\nProvide a concise, grounded answer:",
+        query, context
+    );
+
+    let query_clone = query.clone();
+    ic_cdk::spawn(async move {
+        // Keeper always uses Qwen 3 32B — needs the smartest model for connection discovery
+        let llm_model = Model::Qwen3_32B;
+
+        let response = ic_llm::prompt(llm_model, &prompt).await;
+
+        // Store the response as the keeper digest
+        STATE.with(|state| {
+            let mut s = state.borrow_mut();
+            if let Some(keeper) = s.keeper.as_mut() {
+                keeper.digest = format!("Q: {}\nA: {}", query_clone, response);
+            }
+        });
+
+        // Also log the keeper response
+        log_activity(
+            "keeper",
+            &format!("Keeper answered: {}", &response[..200.min(response.len())]),
+            None,
+            Some(format!(r#"{{"query":"{}"}}"#, escape_json(&query_clone))),
+        );
+    });
+
+    // Return immediate response (LLM runs async, result stored in digest)
+    format!(
+        r#"{{"status":"processing","query":"{}","note":"Answer will be available via keeper_digest() after LLM processing completes."}}"#,
+        escape_json(&query)
+    )
 }
 
 /// Get heartbeat status - shows autonomous operation state
@@ -3973,8 +5300,9 @@ async fn trigger_accumulation() -> String {
             None => return Err("Balance unknown"),
         };
 
+        // We're buying XRP with RLUSD, so we only need reserve + fees in XRP
         let fee_buffer = 100_000;
-        let required = acc.min_xrp_reserve + acc.xrp_per_heartbeat + fee_buffer;
+        let required = acc.min_xrp_reserve + fee_buffer;
         if balance < required {
             return Err("Insufficient balance");
         }
@@ -5712,10 +7040,10 @@ fn http_request(req: HttpRequest) -> HttpResponse {
     if req.method == "POST" {
         let (path, _) = req.url.split_once('?').unwrap_or((&req.url, ""));
         if path == "/api/store" || path == "/api/feed" || path == "/agent" || path == "/api/agent"
-            || path == "/api/tasks" || path == "/api/research" {
+            || path == "/api/tasks" || path == "/api/research" || path == "/api/keeper/ask" {
             return upgrade_response();
         }
-        return json_response(405, r#"{"error":"POST only supported for /api/store, /api/feed, /api/tasks, /api/research, and /agent"}"#);
+        return json_response(405, r#"{"error":"POST only supported for /api/store, /api/feed, /api/tasks, /api/research, /api/keeper/ask, and /agent"}"#);
     }
 
     // Only allow GET for queries
@@ -6108,7 +7436,77 @@ fn http_request(req: HttpRequest) -> HttpResponse {
                 json_response(200, &body)
             }
 
-            _ => json_response(404, r#"{"error":"Not found","endpoints":["/api/health","/api/heartbeat","/api/llm","/api/recent","/api/search","/api/person","/api/capsule","/api/store (POST)","/api/thoughts","/api/inbox","/api/tasks"]}"#),
+            // ============================================
+            // Archive Keeper endpoints
+            // ============================================
+
+            "/api/keeper/status" => {
+                drop(s);
+                let status = keeper_status();
+                let body = format!(
+                    r#"{{"connection_count":{},"cluster_count":{},"orphan_count":{},"composted_capsules":{},"total_capsules":{},"compost_cycles":{},"last_compost_cycle":{},"digest":"{}"}}"#,
+                    status.connection_count,
+                    status.cluster_count,
+                    status.orphan_count,
+                    status.composted_capsule_count,
+                    status.total_capsule_count,
+                    status.compost_cycles,
+                    status.last_compost_cycle.map(|t| t.to_string()).unwrap_or("null".to_string()),
+                    escape_json(&status.digest)
+                );
+                json_response(200, &body)
+            }
+
+            "/api/keeper/connections" => {
+                let capsule_id = match params.get("capsule_id").and_then(|v| v.parse::<u64>().ok()) {
+                    Some(id) => id,
+                    None => return json_response(400, r#"{"error":"Missing capsule_id parameter"}"#),
+                };
+                drop(s);
+                let connections = keeper_connections(capsule_id);
+                let conn_json: Vec<String> = connections.iter().map(|c| {
+                    format!(
+                        r#"{{"capsule_a":{},"capsule_b":{},"similarity":{:.3},"relationship":"{}","discovered_at":{}}}"#,
+                        c.capsule_a, c.capsule_b, c.similarity, c.relationship, c.discovered_at
+                    )
+                }).collect();
+                let body = format!(r#"{{"capsule_id":{},"connection_count":{},"connections":[{}]}}"#,
+                    capsule_id, conn_json.len(), conn_json.join(","));
+                json_response(200, &body)
+            }
+
+            "/api/keeper/clusters" => {
+                drop(s);
+                let clusters = keeper_clusters();
+                let cluster_json: Vec<String> = clusters.iter().map(|c| {
+                    let ids: Vec<String> = c.capsule_ids.iter().map(|id| id.to_string()).collect();
+                    format!(
+                        r#"{{"id":{},"theme":"{}","capsule_count":{},"capsule_ids":[{}],"strength":{:.3},"updated_at":{}}}"#,
+                        c.id, escape_json(&c.theme), c.capsule_ids.len(), ids.join(","), c.strength, c.updated_at
+                    )
+                }).collect();
+                let body = format!(r#"{{"cluster_count":{},"clusters":[{}]}}"#,
+                    cluster_json.len(), cluster_json.join(","));
+                json_response(200, &body)
+            }
+
+            "/api/keeper/orphans" => {
+                drop(s);
+                let orphans = keeper_orphans();
+                let ids: Vec<String> = orphans.iter().map(|id| id.to_string()).collect();
+                let body = format!(r#"{{"orphan_count":{},"orphan_ids":[{}]}}"#,
+                    orphans.len(), ids.join(","));
+                json_response(200, &body)
+            }
+
+            "/api/keeper/digest" => {
+                drop(s);
+                let digest = keeper_digest();
+                let body = format!(r#"{{"digest":"{}"}}"#, escape_json(&digest));
+                json_response(200, &body)
+            }
+
+            _ => json_response(404, r#"{"error":"Not found","endpoints":["/api/health","/api/heartbeat","/api/llm","/api/recent","/api/search","/api/person","/api/capsule","/api/store (POST)","/api/thoughts","/api/inbox","/api/tasks","/api/keeper/status","/api/keeper/connections","/api/keeper/clusters","/api/keeper/orphans","/api/keeper/digest","/api/keeper/ask (POST)"]}"#),
         }
     })
 }
@@ -6452,18 +7850,6 @@ fn http_request_update(req: HttpRequest) -> HttpResponse {
 
                 s.capsules.insert(id, capsule.clone());
 
-                // Spawn async notification to ntfy (runs after STATE borrow is released)
-                let notify_content = capsule.restatement.chars().take(100).collect::<String>();
-                let notify_topic = capsule.topic.clone().unwrap_or_else(|| "general".to_string());
-                ic_cdk::spawn(async move {
-                    let _ = send_notification(
-                        "📝 New Capsule",
-                        &format!("[{}] {}...", notify_topic, notify_content),
-                        "low",
-                        "memo"
-                    ).await;
-                });
-
                 json_response(201, &format!(r#"{{"success":true,"capsule_id":{},"message":"Memory stored successfully"}}"#, id))
             }
 
@@ -6750,6 +8136,26 @@ fn http_request_update(req: HttpRequest) -> HttpResponse {
                 }
             }
 
+            "/api/keeper/ask" => {
+                if req.method != "POST" {
+                    return json_response(405, r#"{"error":"Use POST for /api/keeper/ask"}"#);
+                }
+
+                // Parse query from JSON body
+                let body_str = String::from_utf8_lossy(&req.body);
+                let query = extract_json_string(&body_str, "query")
+                    .unwrap_or_default();
+
+                if query.is_empty() {
+                    return json_response(400, r#"{"error":"Missing query field"}"#);
+                }
+
+                // Drop the mutable borrow before calling keeper_ask
+                drop(s);
+                let result = keeper_ask(query);
+                json_response(200, &result)
+            }
+
             _ => json_response(404, r#"{"error":"Not found for POST"}"#),
         }
     })
@@ -6929,6 +8335,43 @@ fn resolve_mind_note(note_id: u64) -> bool {
             }
         }
         false
+    })
+}
+
+/// Batch resolve scratch pad notes — returns count of notes actually resolved
+#[update]
+fn resolve_notes_batch(note_ids: Vec<u64>) -> u64 {
+    STATE.with(|state| {
+        let mut s = state.borrow_mut();
+        let mut count = 0u64;
+        if let Some(mind) = s.mind.as_mut() {
+            let id_set: std::collections::HashSet<u64> = note_ids.into_iter().collect();
+            for note in mind.notes.iter_mut() {
+                if !note.resolved && id_set.contains(&note.id) {
+                    note.resolved = true;
+                    count += 1;
+                }
+            }
+        }
+        count
+    })
+}
+
+/// Resolve all scratch pad notes in a category — returns count resolved
+#[update]
+fn resolve_notes_by_category(category: String) -> u64 {
+    STATE.with(|state| {
+        let mut s = state.borrow_mut();
+        let mut count = 0u64;
+        if let Some(mind) = s.mind.as_mut() {
+            for note in mind.notes.iter_mut() {
+                if !note.resolved && note.category == category {
+                    note.resolved = true;
+                    count += 1;
+                }
+            }
+        }
+        count
     })
 }
 

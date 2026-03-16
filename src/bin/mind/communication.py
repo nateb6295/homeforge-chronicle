@@ -144,6 +144,117 @@ def nostr_publish(content: str, privkey_hex: str, relays: list = None,
     return event["id"], relays_ok, relays_fail
 
 
+def nostr_fetch_followers(pubkey_hex: str, relays: list = None, timeout: int = 8) -> int:
+    """Count followers: kind-3 (contact list) events where #p tag includes our pubkey.
+    Each unique author who lists us = 1 follower. Queries up to 2 relays."""
+    import websocket
+    import uuid
+
+    relays = relays or NOSTR_RELAYS
+    followers: set = set()
+    sub_id = uuid.uuid4().hex[:8]
+    req = json.dumps(["REQ", sub_id, {"kinds": [3], "#p": [pubkey_hex], "limit": 500}])
+
+    for relay in relays[:2]:
+        try:
+            ws = websocket.create_connection(relay, timeout=timeout)
+            ws.send(req)
+            ws.settimeout(timeout)
+            while True:
+                try:
+                    data = json.loads(ws.recv())
+                    if data[0] == "EVENT" and data[1] == sub_id:
+                        followers.add(data[2]["pubkey"])
+                    elif data[0] == "EOSE":
+                        break
+                except Exception:
+                    break
+            try:
+                ws.send(json.dumps(["CLOSE", sub_id]))
+                ws.close()
+            except Exception:
+                pass
+        except Exception as e:
+            log(f"  Nostr follower fetch ({relay}): {e}")
+
+    return len(followers)
+
+
+def nostr_fetch_engagement(event_ids: list, relays: list = None, timeout: int = 8) -> dict:
+    """Fetch reply and reaction counts for a list of event IDs.
+    Returns {"replies": int, "reactions": int}."""
+    import websocket
+    import uuid
+
+    if not event_ids:
+        return {"replies": 0, "reactions": 0}
+
+    relays = relays or NOSTR_RELAYS
+    replies: set = set()
+    reactions: set = set()
+    sub_id = uuid.uuid4().hex[:8]
+    req = json.dumps(["REQ", sub_id, {"kinds": [1, 7], "#e": event_ids, "limit": 200}])
+
+    for relay in relays[:2]:
+        try:
+            ws = websocket.create_connection(relay, timeout=timeout)
+            ws.send(req)
+            ws.settimeout(timeout)
+            while True:
+                try:
+                    data = json.loads(ws.recv())
+                    if data[0] == "EVENT" and data[1] == sub_id:
+                        ev = data[2]
+                        if ev["kind"] == 1:
+                            replies.add(ev["id"])
+                        elif ev["kind"] == 7:
+                            reactions.add(ev["id"])
+                    elif data[0] == "EOSE":
+                        break
+                except Exception:
+                    break
+            try:
+                ws.send(json.dumps(["CLOSE", sub_id]))
+                ws.close()
+            except Exception:
+                pass
+        except Exception as e:
+            log(f"  Nostr engagement fetch ({relay}): {e}")
+
+    return {"replies": len(replies), "reactions": len(reactions)}
+
+
+def nostr_fetch_stats(privkey_hex: str, db=None, relays: list = None) -> dict:
+    """Fetch follower count + engagement on recent posts. Returns summary dict.
+    Optionally accepts a DB reference to pull recent event IDs."""
+    pubkey = nostr_get_pubkey(privkey_hex)
+    if not pubkey:
+        return {"error": "could not derive pubkey"}
+
+    # Get recent event IDs from DB if available
+    event_ids = []
+    if db:
+        try:
+            rows = db.query(
+                "SELECT event_id FROM nostr_posts WHERE event_id != '' "
+                "ORDER BY created_at DESC LIMIT 10"
+            )
+            event_ids = [r["event_id"] for r in rows if r.get("event_id")]
+        except Exception:
+            pass
+
+    followers = nostr_fetch_followers(pubkey, relays=relays)
+    engagement = nostr_fetch_engagement(event_ids, relays=relays) if event_ids else {"replies": 0, "reactions": 0}
+
+    return {
+        "pubkey": pubkey,
+        "followers": followers,
+        "replies": engagement["replies"],
+        "reactions": engagement["reactions"],
+        "posts_checked": len(event_ids),
+    }
+
+
 def nostr_publish_profile(privkey_hex: str, relays: list = None) -> Tuple[str, list, list]:
     """Publish Kind 0 (metadata) event with Chronicle Mind's identity."""
     profile = {

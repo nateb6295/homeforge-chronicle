@@ -61,14 +61,25 @@ def act_store_memory(mind, action: dict, cid: str) -> str:
 
 def act_trigger_reflection(mind, action: dict, cid: str) -> str:
     prompt = action.get("prompt", "") or action.get("reason", "") or action.get("content", "") or action.get("text", "")
+    response = action.get("response", "") or action.get("insight", "") or action.get("exploration", "")
     log(f'  Executing: TriggerReflection {{ prompt: "{safe_truncate(prompt, 80)}" }}')
     if not prompt:
-        return "false - Missing prompt (provide 'prompt', 'reason', or 'content' key)"
+        return "false - Missing prompt (provide 'prompt' key with your question)"
+    if not response:
+        return (
+            "false - trigger_reflection requires a 'response' field with your actual exploration. "
+            "Posing questions without answers is avoidance, not reflection. "
+            "Think through the question now and include your insight."
+        )
+    # Anti-rumination: skip if a similar reflection was already stored recently
+    if mind.db.recent_note_similar(prompt, hours=48):
+        return "false - Similar reflection already stored in last 48h (anti-rumination). Answer an existing question instead."
+    combined = f"Q: {prompt}\n\nA: {response}"
     if mind.canister:
-        result = mind.canister.store(prompt, "reflection", ["reflection", "deep-thought"])
+        result = mind.canister.store(combined, "reflection", ["reflection", "deep-thought"])
         capsule_id = result.get("id", "?")
         send_ntfy("Chronicle: New Reflection")
-        return f"true - Reflection written to canister (capsule {capsule_id}): {safe_truncate(prompt, 60)}"
+        return f"true - Reflection with response stored (capsule {capsule_id}): {safe_truncate(prompt, 60)}"
     return "false - No canister connection (HTTP API unavailable)"
 
 

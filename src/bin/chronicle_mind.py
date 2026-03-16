@@ -761,6 +761,55 @@ class ChronicleMind:
 
         log(f"  [TASK-MODE] Complete. Actions: {action_names}, Results: {results_summary[:120]}")
 
+    # ── Mission-Only Focused Prompt ──────────────────────────────
+
+    def _build_mission_prompt(self, ctx: dict, mission: dict, directive_lines: list = None) -> str:
+        """Stripped prompt used when an active mission exists.
+        Less is more — model sees only the current step and what previous steps found."""
+        title    = mission.get("title", "?")
+        steps    = mission.get("steps", [])
+        current  = mission.get("current_step", 1)
+        total    = len(steps)
+
+        current_step = next((s for s in steps if s["id"] == current), None)
+        step_action  = current_step["action"] if current_step else "?"
+        done_steps   = [s for s in steps if s.get("done")]
+
+        lines = []
+
+        # Preserve any active directives — they're absolute even in mission mode
+        if directive_lines:
+            lines.extend(directive_lines)
+
+        lines.append(f"=== MISSION: {title} ===")
+        lines.append(f"Step {current}/{total}: {step_action}")
+        lines.append("")
+
+        if done_steps:
+            lines.append("What previous steps found:")
+            for s in done_steps:
+                result = s.get("result", "completed")
+                lines.append(f"  [{s['id']}] {s['action'][:60]} → {str(result)[:120]}")
+            lines.append("")
+
+        # Minimal environmental context — just enough to ground her
+        from datetime import datetime as _dt
+        xrp  = ctx.get("xrp_price", 0)
+        now  = _dt.now().strftime("%A %I:%M%p").lstrip("0")
+        lines.append(f"Time: {now} | XRP: ${xrp:.4f}")
+        lines.append("")
+
+        lines.append(f"Your only job: execute step {current}.")
+        lines.append(f"The action: {step_action}")
+        lines.append("")
+        lines.append("When done: call progress_mission with result=[what you found, in plain words].")
+        lines.append("If blocked: call progress_mission with result='blocked: [reason]' so the mission advances.")
+        lines.append("Nothing else. One action.")
+        lines.append("")
+        lines.append('Reply ONLY with a JSON array: [{"action": "...", "reason": "..."}]')
+
+        return "\n".join(lines)
+
     # ── Build LLM Prompt ─────────────────────────────────────────
 
     def build_prompt(self, ctx: dict, deep: bool = False) -> str:
@@ -799,8 +848,14 @@ class ChronicleMind:
         except Exception:
             pass
 
-        # ── Active Mission (multi-cycle objective — shown early for attention) ──
+        # ── MISSION CYCLE MODE — strip everything, focus on the one step ──
         mission = ctx.get("active_mission")
+        if mission:
+            return self._build_mission_prompt(ctx, mission, directive_lines=lines)
+
+        # ── Active Mission (multi-cycle objective — shown early for attention) ──
+        if False:  # unreachable — kept for reference; missions now use focused prompt above
+            mission = ctx.get("active_mission")
         if mission:
             title = mission.get("title", "")
             db_id = mission.get("_db_id", "?")
@@ -1384,7 +1439,12 @@ class ChronicleMind:
                 mins_ago = (now_ts() - last_nostr) / 60
                 nostr_ready = mins_ago >= NOSTR_COOLDOWN_MINS
                 cooldown = "ready" if nostr_ready else f"cooldown {NOSTR_COOLDOWN_MINS - mins_ago:.0f}m"
-                lines.append(f"\nNostr: last post {mins_ago:.0f}m ago ({cooldown})")
+                # Show cached engagement stats if available
+                nostr_stats_row = self.db.query_one(
+                    "SELECT content FROM scratch_pad WHERE category='nostr-stats' AND resolved=0 LIMIT 1"
+                )
+                stats_str = f" | {nostr_stats_row['content']}" if nostr_stats_row else " | run nostr_check_engagement to see stats"
+                lines.append(f"\nNostr: last post {mins_ago:.0f}m ago ({cooldown}){stats_str}")
                 ctx["nostr_ready"] = nostr_ready
             else:
                 lines.append("\nNostr: connected, never posted (consider introducing yourself!)")
@@ -1984,6 +2044,12 @@ class ChronicleMind:
             resolved_count = self.db.auto_resolve_old_notes(max_age_hours=24)
             if resolved_count > 0:
                 log(f"  Housekeeping: auto-resolved {resolved_count} stale notes (>24h)")
+            # Fast-resolve heard-speech (ambient audio fragments, no value after 2h)
+            self.db.run(
+                "UPDATE scratch_pad SET resolved=1 WHERE resolved=0 "
+                "AND category='heard-speech' AND created_at < ?",
+                (now_ts() - 7200,)
+            )
 
             # Phase 0.5: Operator directive check (BEFORE any LLM calls)
             self._restricted_actions = set()
