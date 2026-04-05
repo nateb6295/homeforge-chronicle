@@ -1,0 +1,634 @@
+#!/usr/bin/env python3
+"""Algo Seeker — Chronicle's own recommendation algorithm.
+
+Nate asked: "How do we crack an algo or even add one?"
+
+This IS the algo. Instead of passively waiting for RSS feeds, it:
+1. Analyzes Nate's capture patterns — who he reads, what themes recur
+2. Actively searches for content from those sources and intersections
+3. Injects discoveries into the pipeline as seeker:algo items
+
+The captures ARE the training signal. Every link Nate saves teaches
+this system what to look for next.
+
+Usage:
+    python3 algo_seeker.py              # Run one seek cycle
+    python3 algo_seeker.py authors      # Show top captured authors
+    python3 algo_seeker.py themes       # Show current capture themes
+    python3 algo_seeker.py dry          # Seek but don't inject
+"""
+
+import json
+import os
+import re
+import sqlite3
+import sys
+import time
+from collections import Counter
+from datetime import datetime
+
+DB_PATH = os.environ.get("CHRONICLE_DB",
+    "/mnt/hdd/chronicle-data/processed.db")
+
+STATE_PATH = os.path.expanduser("~/chronicle/algo_seeker_state.json")
+
+# SearXNG on Jetson
+SEARXNG_URL = "http://192.168.1.11:8080/search"
+
+# X API
+X_BEARER_TOKEN = os.environ.get("X_BEARER_TOKEN", "")
+X_API_BASE = "https://api.x.com/2"
+
+# How far back to analyze captures
+AUTHOR_LOOKBACK_DAYS = 7
+THEME_LOOKBACK_HOURS = 48
+
+# Max items to inject per cycle
+MAX_INJECT = 5
+
+# Discord webhook for reporting
+OPUS_WEBHOOK = (
+    "https://discord.com/api/webhooks/1483843624926970057/"
+    "2hZYzQQcyDEVD0A9UQqJsHlnV9D1m-6AfwNCnNWxGUC_8A0-ViX2dRVkBHF17_b2oDxJ"
+)
+
+
+def _db():
+    return sqlite3.connect(DB_PATH, timeout=10)
+
+
+def _load_state():
+    if os.path.exists(STATE_PATH):
+        try:
+            with open(STATE_PATH) as f:
+                return json.load(f)
+        except Exception:
+            pass
+    return {"last_run": 0, "injected_urls": [], "seek_count": 0}
+
+
+def _save_state(state):
+    # Keep injected_urls bounded
+    state["injected_urls"] = state["injected_urls"][-200:]
+    with open(STATE_PATH, "w") as f:
+        json.dump(state, f, indent=2)
+
+
+def web_search(query, max_results=5):
+    """Search via SearXNG with DDG fallback."""
+    import requests
+    # SearXNG
+    try:
+        resp = requests.get(SEARXNG_URL, params={
+            "q": query, "format": "json",
+            "engines": "google,duckduckgo,brave",
+        }, timeout=12)
+        resp.raise_for_status()
+        data = resp.json()
+        results = [{"title": r["title"], "url": r["url"],
+                     "body": r.get("content", "")}
+                   for r in data.get("results", [])[:max_results]]
+        if results:
+            return results
+    except Exception:
+        pass
+    # DDG fallback
+    try:
+        try:
+            from ddgs import DDGS
+        except ImportError:
+            from duckduckgo_search import DDGS
+        with DDGS() as ddgs:
+            results = list(ddgs.text(query, max_results=max_results))
+            return [{"title": r["title"], "url": r["href"],
+                     "body": r["body"]} for r in results]
+    except Exception:
+        return []
+
+
+def _x_headers():
+    return {"Authorization": f"Bearer {X_BEARER_TOKEN}"}
+
+
+def x_user_id(username):
+    """Resolve X username to user ID (cached in state)."""
+    import requests
+    state = _load_state()
+    cache = state.get("x_user_ids", {})
+    if username in cache:
+        return cache[username]
+    try:
+        resp = requests.get(
+            f"{X_API_BASE}/users/by/username/{username}",
+            headers=_x_headers(), timeout=10)
+        if resp.status_code == 200:
+            uid = resp.json()["data"]["id"]
+            cache[username] = uid
+            state["x_user_ids"] = cache
+            _save_state(state)
+            return uid
+    except Exception:
+        pass
+    return None
+
+
+def x_author_tweets(username, max_results=10):
+    """Fetch recent tweets from an X author. Returns list of tweet dicts."""
+    import requests
+    uid = x_user_id(username)
+    if not uid:
+        return []
+    try:
+        resp = requests.get(
+            f"{X_API_BASE}/users/{uid}/tweets",
+            params={
+                "max_results": max(10, min(max_results, 100)),
+                "tweet.fields": "created_at,text,public_metrics",
+                "exclude": "retweets,replies",
+            },
+            headers=_x_headers(), timeout=10)
+        if resp.status_code == 200:
+            tweets = resp.json().get("data", [])
+            results = []
+            for t in tweets:
+                # Extract URLs from tweet text
+                urls = re.findall(r'https?://\S+', t.get("text", ""))
+                results.append({
+                    "tweet_id": t["id"],
+                    "text": t.get("text", ""),
+                    "created_at": t.get("created_at", ""),
+                    "urls": urls,
+                    "metrics": t.get("public_metrics", {}),
+                    "author": username,
+                })
+            return results
+        elif resp.status_code == 429:
+            print(f"  X API rate limited for @{username}")
+    except Exception as e:
+        print(f"  X API error for @{username}: {e}")
+    return []
+
+
+def top_authors(days=AUTHOR_LOOKBACK_DAYS, limit=15):
+    """Find most-captured Twitter/X accounts."""
+    db = _db()
+    cutoff = int(time.time()) - (days * 86400)
+    rows = db.execute(
+        "SELECT content FROM activity_feed "
+        "WHERE (source LIKE '%capture%') "
+        "AND content LIKE '%x.com/%' "
+        "AND created_at > ? ",
+        (cutoff,)
+    ).fetchall()
+    db.close()
+
+    author_counts = Counter()
+    for (content,) in rows:
+        # Extract username from x.com/USERNAME/status/...
+        matches = re.findall(r'x\.com/([a-zA-Z0-9_]+)/status/', content)
+        for m in matches:
+            if m.lower() not in ("i", "x", "home"):
+                author_counts[m.lower()] += 1
+
+    return author_counts.most_common(limit)
+
+
+def capture_themes(hours=THEME_LOOKBACK_HOURS):
+    """Extract topic clusters from recent capture briefs."""
+    db = _db()
+    cutoff = int(time.time()) - (hours * 3600)
+
+    # Get briefs generated from captures
+    rows = db.execute(
+        "SELECT content FROM activity_feed "
+        "WHERE source='intern' AND activity_type='brief' "
+        "AND created_at > ? "
+        "ORDER BY created_at DESC LIMIT 40",
+        (cutoff,)
+    ).fetchall()
+    db.close()
+
+    if not rows:
+        return []
+
+    # Extract significant multi-word phrases and single terms
+    stopwords = {
+        "about", "after", "against", "also", "been", "before", "being",
+        "between", "both", "could", "different", "during", "each",
+        "every", "first", "from", "have", "here", "into", "just",
+        "like", "long", "many", "more", "most", "much", "must",
+        "only", "other", "over", "same", "should", "since", "some",
+        "such", "than", "that", "their", "them", "then", "there",
+        "these", "they", "this", "those", "through", "under", "very",
+        "want", "well", "were", "what", "when", "where", "which",
+        "while", "will", "with", "would", "your", "article", "brief",
+        "system", "systems", "approach", "using", "based", "however",
+        "specific", "within", "rather", "suggests", "according",
+        "provides", "including", "potential", "across", "toward",
+        "without", "research", "researchers", "study",
+    }
+
+    word_counts = Counter()
+    bigram_counts = Counter()
+
+    for (content,) in rows:
+        words = [w.lower() for w in re.findall(r'[a-zA-Z]{5,}', content)]
+        sig_words = [w for w in words if w not in stopwords]
+        word_counts.update(set(sig_words))
+
+        # Bigrams from significant words
+        for i in range(len(sig_words) - 1):
+            bigram_counts[(sig_words[i], sig_words[i+1])] += 1
+
+    # Themes = words appearing in 3+ briefs, or bigrams in 2+
+    themes = []
+    for word, count in word_counts.most_common(30):
+        if count >= 3:
+            themes.append({"term": word, "count": count, "type": "word"})
+
+    for (w1, w2), count in bigram_counts.most_common(15):
+        if count >= 2:
+            themes.append({"term": f"{w1} {w2}", "count": count, "type": "bigram"})
+
+    return themes
+
+
+def _already_seen(url, state, db):
+    """Check if we've already injected or briefed this URL."""
+    if url in state.get("injected_urls", []):
+        return True
+    # Check activity_feed
+    existing = db.execute(
+        "SELECT 1 FROM activity_feed WHERE content LIKE ? LIMIT 1",
+        (f"%{url[:80]}%",)
+    ).fetchone()
+    if existing:
+        return True
+    # Check feed_articles (id is the URL)
+    existing = db.execute(
+        "SELECT 1 FROM feed_articles WHERE id LIKE ? LIMIT 1",
+        (f"%{url[:80]}%",)
+    ).fetchone()
+    return bool(existing)
+
+
+def capture_topics(hours=24):
+    """Extract specific topics from raw capture URLs/text, not briefs.
+    More specific than theme extraction from processed briefs."""
+    db = _db()
+    cutoff = int(time.time()) - (hours * 3600)
+    rows = db.execute(
+        "SELECT content FROM activity_feed "
+        "WHERE source LIKE '%capture%' "
+        "AND created_at > ? "
+        "ORDER BY created_at DESC LIMIT 30",
+        (cutoff,)
+    ).fetchall()
+    db.close()
+
+    if not rows:
+        return []
+
+    # Extract the tweet text portion (after the URL)
+    topics = Counter()
+    # Domain-specific terms that signal real interest (not stopwords)
+    domain_terms = {
+        "neural", "brain", "consciousness", "cognition", "embodied",
+        "agent", "autonomous", "sovereignty", "decentralized", "infrastructure",
+        "crypto", "blockchain", "token", "defi", "staking",
+        "model", "training", "inference", "fine-tuning", "distillation",
+        "biology", "genetic", "protein", "evolution", "organism",
+        "prediction", "forecast", "signal", "sensor", "feedback",
+        "security", "privacy", "encryption", "surveillance",
+        "open-source", "local-first", "self-hosted", "homeforge",
+        "scaffold", "transfer", "mechanism", "architecture",
+        "gemma", "llama", "claude", "openai", "anthropic",
+        "xrp", "flare", "icp", "dfinity", "ripple",
+    }
+
+    for (content,) in rows:
+        words = set(w.lower() for w in re.findall(r'[a-zA-Z]{4,}', content))
+        relevant = words & domain_terms
+        topics.update(relevant)
+
+    return topics.most_common(20)
+
+
+def _build_search_queries(authors, themes):
+    """Build diverse search queries from captures analysis."""
+    queries = []
+    import random as _rnd
+
+    # Get specific capture topics
+    cap_topics = capture_topics()
+    topic_words = [t[0] for t in cap_topics[:10]]
+
+    # Author-based: search for their NAME + topics (not their Twitter URL)
+    # We want articles, papers, talks BY these people — not their tweets
+    author_name_map = {
+        "umbertoleon": "Umberto Leon Dominguez neuroscience",
+        "medical_xpress": "medical research breakthrough",
+        "karpathy": "Andrej Karpathy AI",
+        "decisionneurop": "decision neuroscience",
+        "deanwball": "Dean Ball AI policy regulation",
+        "fly51fly": "machine learning research paper",
+        "viemccoy": "viemccoy philosophy language cognition",
+        "pierresamaties": "Pierre Samaties research",
+        "biologyaidaily": "biology AI daily research",
+        "sauers_": "sauers AI research",
+        "leothecurious": "leothecurious systems thinking",
+        "dr_singularity": "Dr Singularity science breakthrough",
+        "d33v33d0": "Martin DeVido Verdant Autonomics AI robotics",
+        "emollick": "Ethan Mollick AI education future of work",
+        "jayalammar": "Jay Alammar AI visualization transformer",
+        "intuitmachine": "Carlos Perez intuition machine deep learning",
+        "josephjacks_": "Joseph Jacks open source AI infrastructure",
+        "nousresearch": "Nous Research open source LLM fine-tuning",
+        "fireandvision": "fire and vision neuroscience consciousness",
+        "raemon777": "Raemon rationality AI alignment",
+        "sciencecorp_": "Science Corp neurotech brain-computer interface",
+        "daniellefong": "Danielle Fong energy science",
+        "celestediwind": "Celeste Di Wind research",
+    }
+    for author, count in authors[:10]:
+        if count >= 3:
+            name_query = author_name_map.get(author, author)
+            # Mix author with a capture topic for cross-pollination
+            topic = _rnd.choice(topic_words) if topic_words else ""
+            queries.append({
+                "query": f"{name_query} {topic} 2026",
+                "reason": f"author @{author} ({count} captures) × {topic}",
+                "type": "author",
+            })
+
+    # Topic intersection queries: pair capture topics with each other
+    if len(topic_words) >= 2:
+        pairs_tried = set()
+        for _ in range(4):
+            t1, t2 = _rnd.sample(topic_words[:8], 2)
+            pair_key = tuple(sorted([t1, t2]))
+            if pair_key not in pairs_tried:
+                pairs_tried.add(pair_key)
+                queries.append({
+                    "query": f"{t1} {t2} research paper 2026",
+                    "reason": f"topic intersection: {t1} × {t2}",
+                    "type": "topic",
+                })
+
+    # Cross-domain intersection queries (biology ↔ network is Nate's thesis)
+    intersections = [
+        ("biological mechanism network architecture transfer", "bio→network"),
+        ("decentralized autonomous agent local infrastructure", "sovereignty-AI"),
+        ("embodied cognition computational neuroscience prediction", "embodied-mind"),
+        ("self-distillation model improvement autonomous", "self-improving systems"),
+        ("protein folding network topology pattern", "bio→network protein"),
+        ("wearable sensor signal processing noise filtering", "sensor-grade"),
+        ("knowledge distillation model compression inference", "distillation"),
+    ]
+    # Pick 3 random intersection queries per run (variety)
+    for q, reason in _rnd.sample(intersections, min(3, len(intersections))):
+        queries.append({
+            "query": f"{q} 2026",
+            "reason": reason,
+            "type": "intersection",
+        })
+
+    # Feed gap queries: topics Nate captures about but feeds miss
+    gap_terms = ["biology neuroscience mechanism", "embodied cognition robotics",
+                 "sensor wearable signal", "protein structure network",
+                 "knowledge distillation transfer learning"]
+    gap_q = _rnd.choice(gap_terms)
+    queries.append({
+        "query": f"{gap_q} research breakthrough 2026",
+        "reason": "feed gap coverage",
+        "type": "gap",
+    })
+
+    return queries
+
+
+def seek(dry_run=False):
+    """Run one seek cycle. The core algorithm."""
+    state = _load_state()
+
+    # Rate limit: don't run more than once per 90 minutes
+    if time.time() - state.get("last_run", 0) < 5400 and not dry_run:
+        print("Skipping — last run was less than 90 minutes ago.")
+        return []
+
+    print(f"=== Algo Seeker — {datetime.now().strftime('%Y-%m-%d %H:%M')} ===")
+
+    # Step 1: Analyze capture patterns
+    authors = top_authors()
+    themes = capture_themes()
+
+    print(f"\nTop authors ({len(authors)}):")
+    for author, count in authors[:10]:
+        print(f"  @{author}: {count} captures")
+
+    print(f"\nActive themes ({len(themes)}):")
+    for t in themes[:10]:
+        print(f"  {t['term']}: {t['count']}x ({t['type']})")
+
+    # Step 2: Build search queries
+    queries = _build_search_queries(authors, themes)
+    print(f"\nSearch queries ({len(queries)}):")
+    for q in queries:
+        print(f"  [{q['type']}] {q['query'][:70]}  ({q['reason']})")
+
+    # Step 3a: Pull recent tweets from top authors via X API
+    all_results = []
+    db = _db()
+    x_results = 0
+
+    if X_BEARER_TOKEN:
+        # Pull from top 10 authors — covers 90%+ of Nate's capture sources
+        print(f"\nX API — pulling tweets from top {min(10, len(authors))} authors...")
+        for author, count in authors[:10]:
+            tweets = x_author_tweets(author, max_results=10)
+            for tw in tweets:
+                # Use tweet URL as the result URL
+                tweet_url = f"https://x.com/{author}/status/{tw['tweet_id']}"
+                if _already_seen(tweet_url, state, db):
+                    continue
+                # Prefer linked articles over bare tweets
+                linked_urls = [u for u in tw.get("urls", [])
+                               if not any(d in u for d in ["x.com/", "twitter.com/", "t.co/"])]
+                url = linked_urls[0] if linked_urls else tweet_url
+                if _already_seen(url, state, db):
+                    continue
+                all_results.append({
+                    "title": f"@{author}: {tw['text'][:80]}",
+                    "url": url,
+                    "body": tw["text"],
+                    "seek_reason": f"author @{author} ({count} captures)",
+                    "seek_type": "x_timeline",
+                })
+                x_results += 1
+        print(f"  Found {x_results} new tweets with links")
+
+    # Step 3b: Search via SearXNG + DDG (supplementary)
+    for q in queries:
+        results = web_search(q["query"], max_results=4)
+        for r in results:
+            url = r.get("url", "")
+            if not url or _already_seen(url, state, db):
+                continue
+            # Skip social media, profile pages, aggregators
+            if any(d in url for d in ["x.com/", "twitter.com/", "reddit.com/",
+                                       "facebook.com/", "instagram.com/",
+                                       "youtube.com/", "24vids.com/",
+                                       "nitter.", "tweetdeck.",
+                                       "linkedin.com/in/",
+                                       "linkedin.com/company/",
+                                       "scholar.google.com/citations"]):
+                continue
+            r["seek_reason"] = q["reason"]
+            r["seek_type"] = q["type"]
+            all_results.append(r)
+
+    # Deduplicate by URL domain+path
+    seen_urls = set()
+    unique_results = []
+    for r in all_results:
+        url_key = r["url"].split("?")[0].lower()
+        if url_key not in seen_urls:
+            seen_urls.add(url_key)
+            unique_results.append(r)
+
+    print(f"\nFound {len(unique_results)} new items (from {len(all_results)} raw)")
+
+    if dry_run:
+        for r in unique_results[:MAX_INJECT]:
+            print(f"  [{r['seek_type']}] {r['title'][:70]}")
+            print(f"    {r['url'][:80]}")
+            print(f"    reason: {r['seek_reason']}")
+        db.close()
+        return unique_results
+
+    # Step 4: Inject top results into activity_feed
+    injected = []
+    now = int(time.time())
+
+    for r in unique_results[:MAX_INJECT]:
+        content = (
+            f"[Algo Seeker/{r['seek_type']}] {r['title']}\n"
+            f"{r['url']}\n"
+            f"Reason: {r['seek_reason']}\n"
+            f"{r.get('body', '')[:200]}"
+        )
+        db.execute(
+            "INSERT INTO activity_feed (source, activity_type, content, created_at) "
+            "VALUES (?, ?, ?, ?)",
+            ("seeker:algo", "discovery", content, now)
+        )
+        state["injected_urls"].append(r["url"])
+        injected.append(r)
+        print(f"  INJECTED: {r['title'][:70]}")
+
+    db.commit()
+    db.close()
+
+    state["last_run"] = now
+    state["seek_count"] = state.get("seek_count", 0) + 1
+    _save_state(state)
+
+    # Report to Discord
+    if injected:
+        import requests as req
+        msg = f"**Algo Seeker** — cycle #{state['seek_count']}\n"
+        msg += f"Analyzed {len(authors)} authors, {len(themes)} themes\n"
+        msg += f"Injected {len(injected)} discoveries:\n"
+        for r in injected:
+            msg += f"• [{r['seek_type']}] {r['title'][:60]}\n"
+        try:
+            req.post(OPUS_WEBHOOK, json={"content": msg[:1900]}, timeout=10)
+        except Exception:
+            pass
+
+    return injected
+
+
+def feed_gaps():
+    """Identify topics Nate captures about that our RSS feeds DON'T cover.
+    Compare capture topics against feed_articles titles to find blind spots."""
+    db = _db()
+
+    # What Nate captures about (last 7 days)
+    cap_topics = capture_topics(hours=168)  # 7 days
+    cap_terms = set(t[0] for t in cap_topics)
+
+    # What our feeds produce (last 7 days, sample titles)
+    cutoff = int(time.time()) - (7 * 86400)
+    rows = db.execute(
+        "SELECT source, title FROM feed_articles "
+        "WHERE posted_at > datetime(?, 'unixepoch') "
+        "ORDER BY RANDOM() LIMIT 500",
+        (cutoff,)
+    ).fetchall()
+    db.close()
+
+    # Count which capture topics appear in feed titles
+    feed_coverage = Counter()
+    for _, title in rows:
+        title_lower = (title or "").lower()
+        for term in cap_terms:
+            if term in title_lower:
+                feed_coverage[term] += 1
+
+    # Gaps: topics Nate captures about but feeds rarely cover
+    print("=== Feed Gap Analysis ===")
+    print(f"Capture topics: {len(cap_terms)} | Feed articles sampled: {len(rows)}")
+    print()
+
+    gaps = []
+    covered = []
+    for term, cap_count in cap_topics:
+        feed_count = feed_coverage.get(term, 0)
+        ratio = feed_count / max(len(rows), 1) * 100
+        if feed_count <= 2:
+            gaps.append((term, cap_count, feed_count))
+        else:
+            covered.append((term, cap_count, feed_count))
+
+    print("GAPS (Nate cares, feeds miss):")
+    for term, cap, feed in gaps:
+        print(f"  {term}: {cap} captures, {feed} feed articles")
+
+    print(f"\nCOVERED (feeds already track):")
+    for term, cap, feed in covered[:10]:
+        print(f"  {term}: {cap} captures, {feed} feed articles")
+
+    if gaps:
+        print(f"\nSuggested actions:")
+        gap_terms = [g[0] for g in gaps[:5]]
+        print(f"  Add RSS feeds or searches for: {', '.join(gap_terms)}")
+
+    return gaps
+
+
+def main():
+    if len(sys.argv) > 1:
+        cmd = sys.argv[1]
+        if cmd == "authors":
+            authors = top_authors()
+            print(f"Top captured authors (last {AUTHOR_LOOKBACK_DAYS} days):")
+            for author, count in authors:
+                print(f"  @{author}: {count} captures")
+        elif cmd == "themes":
+            themes = capture_themes()
+            print(f"Capture themes (last {THEME_LOOKBACK_HOURS}h):")
+            for t in themes:
+                print(f"  {t['term']}: {t['count']}x ({t['type']})")
+        elif cmd == "gaps":
+            feed_gaps()
+        elif cmd == "dry":
+            seek(dry_run=True)
+        else:
+            print(__doc__)
+    else:
+        seek()
+
+
+if __name__ == "__main__":
+    main()
