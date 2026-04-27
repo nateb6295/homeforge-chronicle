@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+# Wrapper that sources chronicle.env with auto-export, then execs the rest.
+# Use this in cron to ensure python subprocesses see env vars.
+#
+# WHY: `. chronicle.env && python3 ...` does NOT export vars to subprocesses.
+# Bash's source command sets vars in the current shell only. Subprocesses
+# inherit only EXPORTED vars. Many cron jobs were silently failing because
+# webhooks / API keys weren't reaching their python scripts.
+#
+# Use:
+#   * * * * * /home/nate-agx/chronicle/bin/with_chronicle_env python3 /path/script.py
+#
+# Or replace this in existing cron lines:
+#   . /home/nate-agx/chronicle/chronicle.env && python3 ...
+# becomes:
+#   /home/nate-agx/chronicle/bin/with_chronicle_env python3 ...
+set -e
+ENV_FILE="${CHRONICLE_ENV:-$HOME/chronicle/chronicle.env}"
+if [ -f "$ENV_FILE" ]; then
+  set -a
+  # shellcheck disable=SC1090
+  . "$ENV_FILE"
+  set +a
+fi
+exec "$@"
