@@ -29,7 +29,8 @@ DB_PATH = os.environ.get(
     os.path.expanduser("~/.homeforge-chronicle/processed.db"),
 )
 OLLAMA_URL = os.environ.get("INTERN_OLLAMA_URL", "http://localhost:11436")  # Routes through engine for Groq
-EMBED_MODEL = "qwen3-embedding:0.6b"
+EMBED_URL = os.environ.get("EMBED_OLLAMA_URL", "http://192.168.1.11:11434")  # Jetson — dedicated embeddings
+EMBED_MODEL = "nomic-embed-text"  # Build #125: 2.4x better semantic discrimination than qwen3-embedding
 # SYNTH_MODEL_FAST — RETIRED (was 8B, removed)
 SYNTH_MODEL_DEEP = os.environ.get("INTERN_MODEL", "chronicle-deep")  # 32B — fallback if 8B self-refs
 SYNTH_MODEL = SYNTH_MODEL_DEEP  # all LLM calls through 32B — briefs are the signal, quality matters everywhere
@@ -397,6 +398,7 @@ def _darby_reflect(db, brief_text, title, source):
                         f"Based on THIS DATA, respond with ONE of:\n"
                         f"QUIET — nothing surprised you. Say nothing.\n"
                         f"CONNECTED: — this article touches the active thread. Name the SPECIFIC connection in one sentence.\n"
+                        f"ADVANCE: — this article provides concrete evidence that moves the thread forward. State what was LEARNED that the thread didn't already know. Must cite the article's specific contribution.\n"
                         f"FOR_NATE: — Nate would care about this. Say WHY in one sentence. Don't explain his interests to him.\n"
                         f"CHALLENGE: — this contradicts something the family believes. Name what and how.\n"
                         f"FOR_ADA: — ask Ada a concrete question about something specific.\n"
@@ -414,6 +416,31 @@ def _darby_reflect(db, brief_text, title, source):
             if resp.startswith("QUIET") or not resp:
                 return
             # Map response prefixes to voice types
+            # Handle thread advancement separately — Darby can advance threads
+            if resp.startswith("ADVANCE:"):
+                msg = resp[len("ADVANCE:"):].strip()
+                if msg and thread:
+                    # Build #153: Darby proposes advances, Opus decides.
+                    # Log as 'research' in thread_history (not 'advanced') so it's
+                    # visible in the thread but doesn't count as a real advance.
+                    try:
+                        import sqlite3 as _sqt
+                        _tc = _sqt.connect(DB_PATH, timeout=10)
+                        _now = int(time.time())
+                        _src = f"darby:intern:{title[:40]}"
+                        _tc.execute(
+                            "INSERT INTO thread_history (thread_id, event_type, content, source, created_at) "
+                            "VALUES (?, 'research', ?, ?, ?)",
+                            (thread["id"], msg, _src, _now)
+                        )
+                        _tc.commit()
+                        _tc.close()
+                        log(f"  Darby PROPOSED thread research #{thread['id']}: {msg[:80]}")
+                    except Exception as _te:
+                        log(f"  Darby thread research error: {_te}")
+                    v.speak("excited", msg, context=f"thread_advance:{title[:60]}")
+                return
+
             PREFIX_TO_VOICE = {
                 "CONNECTED:": "excited",    # Thread connection → excited voice type
                 "EXCITED:": "excited",      # Legacy fallback
@@ -519,17 +546,21 @@ class DB:
 #  Embedding & Similarity Search
 # ═══════════════════════════════════════════════════════════════════
 
-def embed_text(text: str) -> Optional[List[float]]:
+def embed_text(text: str, query_mode: bool = False) -> Optional[List[float]]:
+    """Embed text using nomic-embed-text on Jetson.
+    query_mode=True adds 'search_query:' prefix (for searches).
+    query_mode=False adds 'search_document:' prefix (for stored capsules)."""
+    prefix = "search_query: " if query_mode else "search_document: "
     try:
         r = requests.post(
-            f"{OLLAMA_URL}/api/embed",
-            json={"model": EMBED_MODEL, "input": [safe_truncate(text, 500)]},
+            f"{EMBED_URL}/api/embeddings",
+            json={"model": EMBED_MODEL, "prompt": prefix + safe_truncate(text, 500)},
             timeout=15,
         )
         if r.status_code == 200:
-            embs = r.json().get("embeddings", [])
-            if embs:
-                return embs[0]
+            emb = r.json().get("embedding")
+            if emb:
+                return emb
     except Exception as e:
         log(f"  Embed error: {e}")
     return None
@@ -555,7 +586,8 @@ def search_related_capsules(db: DB, query_vec: List[float], limit: int = MAX_REL
         "SELECT ce.capsule_id, ce.embedding, kc.restatement, kc.topic "
         "FROM capsule_embeddings ce "
         "JOIN knowledge_capsules kc ON ce.capsule_id = kc.id "
-        "WHERE ce.embedding IS NOT NULL"
+        "WHERE ce.embedding IS NOT NULL "
+        "AND kc.consolidated_into IS NULL AND kc.metabolized_at IS NULL"
     )
     scored = []
     for r in rows:
@@ -600,6 +632,50 @@ def web_search(query: str, max_results: int = 3) -> list:
             return [{"title": r["title"], "url": r["href"], "body": r["body"]} for r in results]
     except Exception as e:
         log(f"  Web search error: {e}")
+        return []
+
+
+def x_search(query: str, max_results: int = 5) -> list:
+    """Search X/Twitter via Bearer Token (read-only). Returns tweet text + URLs.
+    Build #154: Gives the intern access to X discourse as a research tool."""
+    try:
+        import httpx as _hx
+        bearer = os.environ.get("X_BEARER_TOKEN", "")
+        if not bearer:
+            return []
+        resp = _hx.get(
+            "https://api.x.com/2/tweets/search/recent",
+            params={
+                "query": f"{query} -is:retweet lang:en",
+                "max_results": min(max_results, 10),
+                "tweet.fields": "author_id,text,created_at,public_metrics",
+                "expansions": "author_id",
+                "user.fields": "username,name",
+            },
+            headers={"Authorization": f"Bearer {bearer}"},
+            timeout=10,
+        )
+        if resp.status_code != 200:
+            log(f"  X search {resp.status_code}: {resp.text[:100]}")
+            return []
+        data = resp.json()
+        users = {u["id"]: u.get("username", "") for u in data.get("includes", {}).get("users", [])}
+        results = []
+        for t in data.get("data", [])[:max_results]:
+            username = users.get(t.get("author_id", ""), "unknown")
+            text = t.get("text", "")
+            metrics = t.get("public_metrics", {})
+            likes = metrics.get("like_count", 0)
+            results.append({
+                "title": f"@{username} ({likes} likes)",
+                "url": f"https://x.com/{username}/status/{t['id']}",
+                "body": text,
+            })
+        if results:
+            log(f"  X search: {len(results)} tweets for '{query[:50]}'")
+        return results
+    except Exception as e:
+        log(f"  X search error: {e}")
         return []
 
 
@@ -1059,7 +1135,10 @@ def fetch_url_summary(url: str) -> Optional[str]:
 
 
 def _fetch_tweet(url: str) -> Optional[str]:
-    """Fetch tweet content via api.vxtwitter.com JSON API."""
+    """Fetch tweet content via api.vxtwitter.com JSON API.
+    If tweet is part of a thread by the same author, walks the conversation
+    via X API v2 to assemble full thread context (Build #50).
+    """
     import httpx as _httpx
     import re as _rw_re
     try:
@@ -1083,12 +1162,84 @@ def _fetch_tweet(url: str) -> Optional[str]:
         if qrt:
             parts.append(f"[Quoting: {qrt}]")
         result = "\n".join(parts)
+
+        # Thread-following: try to get conversation context via X API v2
+        tweet_id_match = _rw_re.search(r'/status/(\d+)', url)
+        if tweet_id_match and handle:
+            thread_text = _fetch_thread_context(tweet_id_match.group(1), handle)
+            if thread_text and len(thread_text) > len(result or ""):
+                log(f"  Thread context: {len(thread_text)} chars (vs {len(result or '')} single tweet)")
+                result = thread_text
+
         if result:
             log(f"  Tweet API got {len(result)} chars from {url[:60]}")
-            return safe_truncate(result, 3000)
+            return safe_truncate(result, 5000)
         return None
     except Exception as e:
         log(f"  Tweet API error for {url[:60]}: {e}")
+        return None
+
+
+def _fetch_thread_context(tweet_id: str, author_handle: str) -> Optional[str]:
+    """Walk an X thread using the conversation_id via X API v2.
+    Returns assembled thread text if the tweet is part of a multi-tweet thread.
+    Uses bearer token — costs API quota, but captures are rare enough to afford it.
+    """
+    import httpx as _httpx
+    bearer = os.environ.get("X_BEARER_TOKEN", "")
+    if not bearer:
+        # Try loading from chronicle.env
+        try:
+            for line in open(os.path.expanduser("~/chronicle/chronicle.env")):
+                if line.startswith("X_BEARER_TOKEN="):
+                    bearer = line.strip().split("=", 1)[1]
+        except Exception:
+            pass
+    if not bearer:
+        return None
+    headers = {"Authorization": f"Bearer {bearer}"}
+    try:
+        # Step 1: Get conversation_id from the captured tweet
+        r = _httpx.get(
+            f"https://api.twitter.com/2/tweets/{tweet_id}",
+            params={"tweet.fields": "conversation_id,author_id"},
+            headers=headers, timeout=15,
+        )
+        if r.status_code != 200:
+            log(f"  Thread API: {r.status_code} getting conversation_id")
+            return None
+        tweet_data = r.json().get("data", {})
+        conv_id = tweet_data.get("conversation_id")
+        if not conv_id or conv_id == tweet_id:
+            return None  # Not a reply / standalone tweet — no thread to walk
+
+        # Step 2: Search for tweets in this conversation by the same author
+        search_query = f"conversation_id:{conv_id} from:{author_handle}"
+        r2 = _httpx.get(
+            "https://api.twitter.com/2/tweets/search/recent",
+            params={
+                "query": search_query,
+                "max_results": 30,
+                "tweet.fields": "created_at,text",
+                "sort_order": "recency",
+            },
+            headers=headers, timeout=15,
+        )
+        if r2.status_code != 200:
+            log(f"  Thread API: {r2.status_code} searching conversation")
+            return None
+        tweets = r2.json().get("data", [])
+        if len(tweets) <= 1:
+            return None  # Single tweet, no thread
+
+        # Reverse to chronological order and assemble
+        tweets.reverse()
+        thread_parts = [f"@{author_handle} thread ({len(tweets)} tweets):"]
+        for i, t in enumerate(tweets):
+            thread_parts.append(f"[{i+1}/{len(tweets)}] {t['text']}")
+        return "\n\n".join(thread_parts)
+    except Exception as e:
+        log(f"  Thread context error: {e}")
         return None
 
 
@@ -1388,6 +1539,13 @@ def extract_relationships_from_brief(db, brief: str, original_text: str, source_
             if not src_id or not tgt_id or not relation or src_id == tgt_id:
                 continue
 
+            # Normalize predicate (Build #82 — MemPalace steal)
+            try:
+                from kg_normalize import normalize_predicate
+                relation = normalize_predicate(relation)
+            except Exception:
+                pass  # Fallback: use raw relation
+
             # Upsert: if this relationship already exists, reinforce it
             existing = db.query(
                 "SELECT id, mention_count FROM kg_relationships "
@@ -1469,6 +1627,7 @@ def synthesize(input_text: str, related: list, url_content: str = None, search_r
 
     # Spot check health signal — thermostat for fabrication control
     # Governance layers: specification (prompt), enforcement (spot check), incentive (temperature)
+    # Build #110: Targeted examples instead of blunt constraints (per Nate: no overcorrection)
     global _last_gen_ctx
     _skills_block = ""
     _constraint_level = 0
@@ -1480,22 +1639,62 @@ def synthesize(input_text: str, related: list, url_content: str = None, search_r
             with open(_health_path) as _hf:
                 _health = _json_h.load(_hf)
             _constraint_level = _health.get("constraint_level", 0)
+
+            # Build #110: Show specific recent fabrication examples (targeted feedback)
+            _recent_ex = _health.get("recent_examples", [])
+            if _recent_ex:
+                _ex_lines = "\n".join(f"  - {e['detail'][:200]}" for e in _recent_ex[-2:])
+                _skills_block = (
+                    f"\n\nRecent quality check found these issues in your briefs:\n{_ex_lines}\n"
+                    "Learn from these — avoid adding details not present in the source. "
+                    "Your analysis and connections are valuable; invented specifics are not."
+                )
+
             if _constraint_level >= 2:
-                _skills_block = (
-                    "\n\nCRITICAL FABRICATION ALERT: You are currently fabricating details. "
-                    "STRICT RULE: If a company name, person name, number, product name, "
-                    "or specific claim does NOT appear verbatim in the source text, "
-                    "you MUST NOT include it. Write ONLY what the source says. "
-                    "A shorter, vaguer brief is ALWAYS better than an invented detail. "
-                    "If you cannot write 2 sentences using ONLY source facts, return NOTHING."
+                _skills_block += (
+                    "\n\nCRITICAL: Fabrication rate is very high. "
+                    "If a specific claim does NOT appear in the source text, do NOT include it. "
+                    "A shorter brief is ALWAYS better than an invented detail."
                 )
-                _synth_temperature = 0.0  # zero creativity — source facts only
+                _synth_temperature = 0.1  # very tight but not zero — preserve some synthesis
             elif _constraint_level >= 1:
-                _skills_block = (
-                    "\n\nNote: Stick closely to what the source material actually states. "
-                    "Avoid adding specific details not present in the input."
+                _synth_temperature = 0.4  # mild tightening
+
+            # Build #136: Novelty encouragement — when fabrication is controlled
+            # but novelty is low, nudge toward more transformation
+            _novelty_ratio = _health.get("novelty_ratio", 0.5)
+            if _constraint_level == 0 and _novelty_ratio < 0.4:
+                _skills_block += (
+                    "\n\nYour recent briefs have been mostly restating sources rather than transforming them. "
+                    "Push harder: what does this ACTUALLY change? What assumption does it break? "
+                    "What pattern connects it to something unexpected? Lead with the insight, not the summary."
                 )
-                _synth_temperature = 0.35  # mild tightening
+                _synth_temperature = 0.6  # slightly warmer to encourage creativity
+    except Exception:
+        pass
+
+    # Build #28: Entropy-based diversity signal — prevent stagnation
+    # Fabrication rate is the ceiling (constrains DOWN). Entropy is the floor (pushes UP).
+    # Fabrication always wins conflicts — better stagnant than fabricated.
+    try:
+        _entropy_path = os.path.expanduser("~/chronicle/entropy_health.json")
+        if os.path.exists(_entropy_path):
+            import json as _json_e
+            with open(_entropy_path) as _ef:
+                _entropy = _json_e.load(_ef)
+            # Only apply entropy boost if fabrication isn't constraining
+            if _constraint_level == 0:
+                _entropy_action = _entropy.get("action", "maintain")
+                _entropy_score = _entropy.get("global_score", 0.8)
+                if _entropy_action == "boost_high":
+                    # Critical entropy — strong boost, but cap at 0.9
+                    _synth_temperature = max(_synth_temperature, 0.8)
+                    log(f"  Entropy governance: CRITICAL ({_entropy_score:.3f}) → temp≥0.8")
+                elif _entropy_action == "boost":
+                    # Low entropy — moderate boost
+                    _synth_temperature = max(_synth_temperature, 0.65)
+                    log(f"  Entropy governance: LOW ({_entropy_score:.3f}) → temp≥0.65")
+                # "maintain" = no change; entropy is healthy
     except Exception:
         pass
 
@@ -1522,41 +1721,70 @@ def synthesize(input_text: str, related: list, url_content: str = None, search_r
         "Lead with the insight, not the summary. If something is genuinely surprising, say why. "
         "If it connects to a broader trend, name the trend. 4-8 sentences total.\n\n"
         "Rules: Focus on the subject matter itself. Do NOT relate findings back to any "
-        "specific project or system. Be direct. No filler. No preamble."
+        "specific project or system. Be direct. No filler. No preamble.\n"
+        "GROUNDING: Do not add specific names, dates, numbers, institutions, or claims "
+        "that are not present in the source material. If the source doesn't name it, you don't name it. "
+        "Your analysis and connections are valuable; invented specifics destroy trust."
         + ("" if "operator:capture" not in source else
            "\n\nThis is a CURATED CAPTURE — someone chose to save this. Go beyond summary. "
            "Ask: what pattern here could transfer to other domains? If it describes a biological "
            "mechanism, could it work in networks? If it describes a network pattern, where does "
            "biology already do this? If it's an empirical result, what's the actionable scaffold? "
            "End with one concrete transfer hypothesis in a single sentence.")
+        # Build #147: Counter-thesis synthesis framing
+        # Counter-thesis seeker discoveries (Build #145) contain "[Algo Seeker/counter]"
+        # and "counter-thesis:" in the input. These should challenge, not extend.
+        # Without this, the intern treats counterevidence as regular findings →
+        # surprise markers stay at 0 because the synthesis never uses challenge language.
+        + ("\n\nThis input was found by SEARCHING FOR COUNTEREVIDENCE against a recent "
+           "conclusion. Your job is NOT to summarize neutrally. Your job is to identify "
+           "what this evidence CHALLENGES or CONTRADICTS in established understanding. "
+           "Lead with what breaks. Use language like 'however', 'this challenges', "
+           "'this contradicts', 'the assumption that X is undermined by'. "
+           "End with: 'Counter-thesis:' followed by the strongest challenge this poses."
+           if "counter-thesis:" in input_text.lower() else
+           # Build #140: Transformation nudge for feed sources
+           # Feed-explore and algo seeker produce shallow briefs (depth 0.2-0.4).
+           # A lighter version of the capture prompt pushes toward analysis.
+           ("" if "operator:capture" in source or not source else
+            "\n\nEnd with one sentence starting with 'Transfer hypothesis:' — "
+            "a concrete idea about how this finding could apply in a different domain." if (
+                "feed-explore:" in source or "seeker:" in source) else ""))
         + _memory_block
     )
     # Put fabrication constraint in user message where it has more influence
-    _fidelity_prefix = ""
-    if _skills_block:
-        _fidelity_prefix = (
-            "BEFORE YOU WRITE: Every company name, product name, person name, "
-            "and specific number in your brief MUST appear in the source text below. "
-            "If the source is vague or general, keep your brief vague and general. "
-            "Do NOT fill in specifics from your training data.\n\n"
-        )
+    # Build #130: Always-on fidelity constraint — was conditional on _skills_block,
+    # meaning it dropped off when spot check had no recent flags, allowing drift.
+    _fidelity_prefix = (
+        "BEFORE YOU WRITE: Every company name, product name, person name, "
+        "percentage, statistic, and specific number in your brief MUST appear "
+        "in the source text below. "
+        "If the source is vague or general, keep your brief vague and general. "
+        "Do NOT fill in specifics from your training data. "
+        "Do NOT invent group names, community reactions, or emotional responses "
+        "that are not explicitly stated in the source. "
+        "Do NOT attribute opinions or reactions to people not named in the source.\n\n"
+    )
     user_msg = f"{_fidelity_prefix}NEW INPUT:\n{safe_truncate(input_text, 1200)}\n\n{context}"
 
-    # Input sufficiency check — low input_chars strongly correlates with fabrication
-    # 209 chars = fabricated quote (2026-04-04), 2442+ chars = clean
-    # Two-tier check: original seed must be >= 100 chars (headlines are too thin even with
-    # web results), AND total source must be >= 300 chars.
+    # Input sufficiency check — low total source strongly correlates with fabrication.
+    # Build #95: Removed hard 100-char seed gate. A short headline backed by a fetched
+    # article or good web search results has enough grounding for synthesis. The total
+    # source check (seed + url_content + search_results >= 300) is the real safety net.
+    # Keep a minimal floor (30 chars) to filter actual garbage/empty seeds.
     _total_source = len(input_text) + (len(url_content) if url_content else 0)
     for _sr in (search_results or []):
         _total_source += len(_sr.get("body", ""))
-    if len(input_text) < 100:
-        log(f"  ⚠ Seed too thin ({len(input_text)} chars). Web results can't compensate for headline-only input. Skipping.")
+    if len(input_text) < 30:
+        log(f"  ⚠ Seed too thin ({len(input_text)} chars). Not enough to even identify the topic. Skipping.")
         _last_gen_ctx = {"model": SYNTH_MODEL_DEEP, "temp": _synth_temperature, "constraint": _constraint_level, "input_chars": len(input_text), "skipped": "seed_too_thin"}
-        return None
-    if _total_source < 300:
-        log(f"  ⚠ Input insufficient ({_total_source} chars total source material). Skipping synthesis to prevent fabrication.")
+        return ("skip", "seed_too_thin")
+    # Algo seeker discoveries are raw URLs with unknown quality — require higher bar
+    _min_source = 600 if source and "seeker:algo" in source else 300
+    if _total_source < _min_source:
+        log(f"  ⚠ Input insufficient ({_total_source} chars, need {_min_source} for {source or 'unknown'}). Skipping synthesis to prevent fabrication.")
         _last_gen_ctx = {"model": SYNTH_MODEL_DEEP, "temp": _synth_temperature, "constraint": _constraint_level, "input_chars": len(input_text), "skipped": "insufficient_input"}
-        return None
+        return ("skip", "insufficient_input")
 
     # Go straight to 32B — 8B was failing >70% of the time (self-ref + hallucination)
     # 20 successful 8B vs 65 successful 32B + 49 escalations = wasted time
@@ -1590,7 +1818,49 @@ def synthesize(input_text: str, related: list, url_content: str = None, search_r
                     leaked = _leaked_terms(brief, input_text)
                     log(f"  32B also self-referential (leaked: {leaked})")
                     log(f"    Preview: {brief[:150].replace(chr(10), ' ')}")
-                    return None
+                    return ("skip", "self_referential")
+                # Build #134: Post-synthesis name verification
+                # Extract quoted titles and italicized names from brief,
+                # check they appear in source material. Invented names are
+                # the #1 fabrication pattern (e.g. inventing "The Innermost Loop"
+                # for a Substack that doesn't exist).
+                if brief:
+                    _invented = _check_invented_names(brief, input_text, url_content, search_results)
+                    if _invented:
+                        log(f"  ⚠ Build #134: Invented names detected: {_invented}")
+                        log(f"    Stripping invented names from brief")
+                        brief = _strip_invented_names(brief, _invented)
+                # Build #160: Sentence-source overlap check
+                # Catches unstructured elaboration that regex patterns miss (~31% of fabs).
+                # For each sentence, extract content words and check overlap with source.
+                # Sentences with zero overlap are likely elaboration beyond source.
+                if brief:
+                    brief = _check_sentence_grounding(brief, input_text, url_content, search_results)
+                # Build #161: Recombination detection
+                # Checks if entities that appear together in the brief also co-occur
+                # in the source. Catches fabrications that recombine real source strings
+                # into false claims (e.g., "MIT's revenue grew 25%" when both appear in
+                # source but never near each other). Addresses provocateur challenge
+                # that regex checks verify presence, not truth.
+                if brief:
+                    brief = _check_recombination(brief, input_text, url_content, search_results)
+                # Build #162: Entity-role distortion detection
+                # Catches substitution errors where the brief assigns a fact/role to
+                # the wrong entity (e.g., "Scheffler is the winner" when source says
+                # "Schauffele is the winner"). Different from fabrication — the facts
+                # are real but attributed to the wrong subject.
+                if brief:
+                    brief = _check_entity_role_distortion(brief, input_text, url_content, search_results)
+                # Build #165: Specific claim verification
+                # Catches embedded fabrication — one invented dollar amount or percentage
+                # hiding inside an otherwise grounded sentence.
+                if brief:
+                    brief = _check_specific_claims(brief, input_text, url_content, search_results)
+                # Build #164: Fabricated quote detection
+                # LLMs frequently invent quotes and attribute them to real people.
+                # Checks that quoted text actually appears in source material.
+                if brief:
+                    brief = _check_fabricated_quotes(brief, input_text, url_content, search_results)
                 if brief:
                     log(f"  Brief ready via 32B ({len(brief)} chars)")
                 return brief
@@ -1652,6 +1922,626 @@ def _leaked_terms(brief: str, input_text: str) -> list:
 def _is_self_referential(brief: str, input_text: str) -> bool:
     """Reject briefs where the model wrote about Chronicle internals instead of the input."""
     return len(_leaked_terms(brief, input_text)) >= 1
+
+
+def _check_invented_names(brief: str, input_text: str, url_content: str = None,
+                          search_results: list = None) -> list:
+    """Build #134: Detect proper nouns and titles in the brief that don't appear in source.
+
+    Fabrication pattern: model invents specific names (publication titles, product
+    names, project names) that sound plausible but aren't in any source material.
+    Returns list of invented name strings.
+    """
+    # Build the full source text to search against
+    source_lower = input_text.lower()
+    if url_content:
+        source_lower += " " + url_content.lower()
+    for sr in (search_results or []):
+        source_lower += " " + sr.get("title", "").lower()
+        source_lower += " " + sr.get("body", "").lower()
+
+    invented = []
+
+    # Pattern 1: Italicized titles (*Title Here*) — markdown emphasis used as title
+    for match in re.finditer(r'\*([A-Z][^*]{3,60})\*', brief):
+        title = match.group(1)
+        # Check if this title (or substantial substring) appears in source
+        if title.lower() not in source_lower:
+            # Also check individual significant words (3+ chars) — if most are missing, it's invented
+            words = [w for w in title.split() if len(w) >= 3]
+            if words:
+                found = sum(1 for w in words if w.lower() in source_lower)
+                if found < len(words) * 0.5:  # less than half the words appear in source
+                    invented.append(title)
+
+    # Pattern 2: Quoted titles ("Title Here") — explicit quotation
+    for match in re.finditer(r'"([A-Z][^"]{3,60})"', brief):
+        title = match.group(1)
+        if title.lower() not in source_lower:
+            words = [w for w in title.split() if len(w) >= 3]
+            if words:
+                found = sum(1 for w in words if w.lower() in source_lower)
+                if found < len(words) * 0.5:
+                    invented.append(title)
+
+    # Pattern 3: "titled X" or "called X" — explicit naming that can be verified
+    for match in re.finditer(r'(?:titled|called|named|known as)\s+\*?([A-Z][^,.*\n]{3,60})\*?', brief):
+        name = match.group(1).strip()
+        if name.lower() not in source_lower:
+            invented.append(name)
+
+    # Build #137: Pattern 4 — invented benchmark/dataset names (CamelCase or ALL-CAPS acronyms)
+    # Catches things like "MoSciBench", "RAGEN-2", "BioEval" that the model invents
+    for match in re.finditer(r'\b([A-Z][a-z]+(?:[A-Z][a-z]+)+)\b', brief):
+        name = match.group(1)
+        if len(name) >= 6 and name.lower() not in source_lower:
+            # Check it's not a common word (CamelCase can match real words)
+            if name not in ("However", "Because", "Although", "Therefore", "Meanwhile",
+                           "Furthermore", "Moreover", "Otherwise", "Sometimes", "Specifically"):
+                invented.append(name)
+
+    # Pattern 5 — specific fractions/counts paired with invented names: "5/6 X datasets"
+    for match in re.finditer(r'(\d+/\d+)\s+(\w+)', brief):
+        fraction = match.group(1)
+        name = match.group(2)
+        if fraction not in source_lower and name.lower() not in source_lower:
+            invented.append(f"{fraction} {name}")
+
+    # Build #150: Pattern 6 — invented person names (First Last or First Middle Last)
+    # Catches fabricated people like "Samuel Ronan" or "Cordero" that aren't in source.
+    # Only flag multi-word proper noun sequences that look like person names.
+    _common_non_names = {
+        "the", "this", "that", "these", "from", "with", "about", "which", "their",
+        "north", "south", "east", "west", "united", "states", "university", "institute",
+        "journal", "review", "research", "science", "nature", "department", "national",
+        "deep", "learning", "machine", "neural", "network", "model", "system",
+    }
+    for match in re.finditer(r'\b([A-Z][a-z]{2,15})\s+([A-Z][a-z]{2,15})\b', brief):
+        first, last = match.group(1), match.group(2)
+        full = f"{first} {last}"
+        # Skip if either word is a common non-name
+        if first.lower() in _common_non_names or last.lower() in _common_non_names:
+            continue
+        # Skip if full name appears in source
+        if full.lower() in source_lower:
+            continue
+        # Skip if both individual words appear nearby in source (likely real name, diff format)
+        if first.lower() in source_lower and last.lower() in source_lower:
+            continue
+        # This looks like an invented person name
+        invented.append(full)
+
+    # Build #157: Pattern 7 — specific numbers/percentages/dollar amounts not in source
+    # The LLM fills in plausible statistics from training data (e.g., "$25 billion",
+    # "16% decline", "60% ownership"). If a specific number appears in the brief
+    # but not in source, it's likely confabulated.
+    for match in re.finditer(r'(\$[\d,.]+\s*(?:billion|million|trillion|B|M|K))', brief):
+        amount = match.group(1)
+        # Check if the core number appears anywhere in source
+        digits = re.findall(r'[\d,.]+', amount)
+        if digits and not any(d in source_lower for d in digits):
+            invented.append(amount)
+
+    for match in re.finditer(r'(\d+(?:\.\d+)?)\s*%', brief):
+        pct = match.group(1)
+        if pct not in source_lower:
+            invented.append(f"{pct}%")
+
+    # Build #157: Pattern 8 — institution/university names not in source
+    # LLM fills in "MIT, ETH Zurich, and Meta" when source just says "researchers"
+    _institutions = re.findall(
+        r'\b((?:MIT|Stanford|Harvard|Oxford|Cambridge|Berkeley|ETH Zurich|Carnegie Mellon|'
+        r'Google DeepMind|DeepMind|OpenAI|Meta|Microsoft Research|Anthropic|Apple|'
+        r'Princeton|Yale|Columbia|Caltech|Georgia Tech|Johns Hopkins|'
+        r'DARPA|NSF|NIH|WHO|NATO|FDA|SEC|CFTC|FAA|EPA|NASA|NIST|'
+        r'World Bank|IMF|Federal Reserve|Treasury|Pentagon))\b',
+        brief
+    )
+    for inst in _institutions:
+        if inst.lower() not in source_lower:
+            invented.append(inst)
+
+    return list(set(invented))  # deduplicate
+
+
+def _check_specific_claims(brief: str, input_text: str, url_content: str = None,
+                            search_results: list = None) -> str:
+    """Build #165: Verify specific claims (dollar amounts, percentages, named metrics).
+
+    Embedded fabrication hides one invented detail inside an otherwise grounded
+    sentence. Sentence-level overlap misses it because most words are real.
+    But specific claims — dollar amounts, percentages, named quantities — are
+    exact enough to verify by string matching.
+
+    Detection: extract specific claims from each brief sentence. If a claim
+    doesn't appear (even approximately) in the source, strip that claim
+    or the sentence.
+    """
+    # Build source text
+    source = input_text
+    if url_content:
+        source += " " + url_content
+    for sr in (search_results or []):
+        source += " " + sr.get("title", "") + " " + sr.get("body", "")
+    source_lower = source.lower()
+
+    # Patterns for specific verifiable claims
+    _dollar_re = re.compile(r'\$[\d,.]+\s*(?:billion|million|trillion|B|M|K|bn|mn)?', re.I)
+    _pct_re = re.compile(r'\d+(?:\.\d+)?%')
+    _specific_num_re = re.compile(r'\b\d{2,}(?:\.\d+)?\s*(?:billion|million|trillion|thousand)\b', re.I)
+
+    sentences = re.split(r'(?<=[.!?])\s+', brief)
+    clean = []
+    stripped = 0
+
+    for sent in sentences:
+        # Extract specific claims from this sentence
+        claims = []
+        for m in _dollar_re.finditer(sent):
+            claims.append(m.group().strip())
+        for m in _pct_re.finditer(sent):
+            claims.append(m.group().strip())
+        for m in _specific_num_re.finditer(sent):
+            claims.append(m.group().strip())
+
+        if not claims:
+            clean.append(sent)
+            continue
+
+        # Check each claim against source
+        unverified = []
+        for claim in claims:
+            # Clean trailing punctuation from regex match
+            claim_clean = claim.rstrip('.,;:!? ')
+            # Extract just the numeric core (e.g., "$3.32 million" -> "3.32")
+            num_match = re.search(r'[\d,.]+', claim_clean)
+            if not num_match:
+                continue
+            num_str = num_match.group().rstrip(',.')
+
+            # Check various forms in source:
+            # 1. Exact claim string (e.g., "$3.32 million")
+            # 2. Number with dollar sign (e.g., "$3.32")
+            # 3. Plain number (e.g., "3.32")
+            found = False
+            for variant in [claim_clean.lower(), f"${num_str}", num_str]:
+                if variant in source_lower:
+                    found = True
+                    break
+            if found:
+                continue
+            unverified.append(claim_clean)
+
+        if unverified:
+            # Any unverified dollar amount or large number is suspicious —
+            # these are precise claims that should come from the source.
+            # Unverified percentages alone get a higher threshold (>50%)
+            # since analysis may compute new percentages from source data.
+            has_unverified_dollar = any('$' in u for u in unverified)
+            has_unverified_large = any(re.search(r'(?:billion|million|trillion)', u, re.I) for u in unverified)
+            if has_unverified_dollar or has_unverified_large or len(unverified) > len(claims) / 2:
+                stripped += 1
+                log(f"  ⚠ Build #165: Unverified claims in sentence: {unverified}")
+                continue
+
+        clean.append(sent)
+
+    if stripped > 0:
+        log(f"  ⚠ Build #165: Stripped {stripped} sentences with unverified specific claims")
+
+    result = " ".join(clean).strip()
+    if len(result) < 100:
+        return ""
+    return result
+
+
+def _check_fabricated_quotes(brief: str, input_text: str, url_content: str = None,
+                             search_results: list = None) -> str:
+    """Build #164: Detect fabricated quotes.
+
+    LLMs frequently invent quotes and attribute them to real people.
+    Example: brief says Commander Wiseman called it an "unbelievable sight"
+    but no such quote exists in the source. Quoted text should appear
+    (approximately) in the source material.
+
+    Detection: extract all quoted strings from the brief. For each quote
+    of 3+ words, check if at least 60% of its content words appear
+    within a 200-char window in the source. If not, strip the sentence.
+    """
+    # Build source text
+    source = input_text
+    if url_content:
+        source += " " + url_content
+    for sr in (search_results or []):
+        source += " " + sr.get("title", "") + " " + sr.get("body", "")
+    source_lower = source.lower()
+
+    # Extract quoted strings from brief
+    _quote_re = re.compile(r'["\u201c]([^"\u201d]{10,})["\u201d]')
+
+    sentences = re.split(r'(?<=[.!?])\s+', brief)
+    clean = []
+    stripped = 0
+
+    for sent in sentences:
+        quotes_in_sent = _quote_re.findall(sent)
+        if not quotes_in_sent:
+            clean.append(sent)
+            continue
+
+        fabricated_quote = False
+        for quote in quotes_in_sent:
+            # Extract content words from the quote (4+ chars)
+            q_words = [w.lower() for w in re.findall(r'\b[a-z]{3,}\b', quote.lower())]
+            if len(q_words) < 2:
+                continue  # Too short to verify
+
+            # Check if these words cluster in any 200-char window of source
+            best_overlap = 0
+            WINDOW = 200
+            for i in range(0, max(1, len(source_lower) - WINDOW), 50):
+                window = source_lower[i:i + WINDOW]
+                overlap = sum(1 for w in q_words if w in window)
+                best_overlap = max(best_overlap, overlap)
+
+            ratio = best_overlap / len(q_words) if q_words else 0
+            if ratio < 0.5:
+                fabricated_quote = True
+                log(f"  ⚠ Build #164: Fabricated quote detected: \"{quote[:60]}...\" "
+                    f"(best overlap {ratio:.0%} in source)")
+                break
+
+        if fabricated_quote:
+            stripped += 1
+            continue
+
+        clean.append(sent)
+
+    if stripped > 0:
+        log(f"  ⚠ Build #164: Stripped {stripped} sentences with fabricated quotes")
+
+    result = " ".join(clean).strip()
+    if len(result) < 100:
+        return ""
+    return result
+
+
+def _check_entity_role_distortion(brief: str, input_text: str, url_content: str = None,
+                                   search_results: list = None) -> str:
+    """Build #162: Detect entity-role distortion.
+
+    Catches substitution errors where the brief assigns a role to the wrong entity.
+    Example: source says "model picks Schauffele as winner" but brief says
+    "Scheffler is the projected winner." Both names exist in source, but the
+    role assignment is swapped. This is DISTORTION, not fabrication —
+    the facts are real but attached to the wrong subject.
+
+    Detection: for role-bearing keywords (winner, favorite, leader, etc.),
+    find which named entities the source pairs with that role. If the brief
+    pairs a different entity with the same role, flag as distortion.
+    """
+    # Build source text
+    source = input_text
+    if url_content:
+        source += " " + url_content
+    for sr in (search_results or []):
+        source += " " + sr.get("title", "") + " " + sr.get("body", "")
+
+    # Role keywords that indicate entity-specific claims
+    _role_keywords = [
+        "winner", "winning", "wins", "won",
+        "favorite", "favored", "frontrunner",
+        "leader", "leads", "leading", "led",
+        "champion", "topped", "topping",
+        "projected", "picked", "chosen", "selected",
+        "ranked first", "ranked #1", "ranked no.",
+        "acquir", "purchas", "bought",
+        "founded", "CEO", "chief",
+    ]
+
+    _name_re = re.compile(r'\b([A-Z][a-z]{2,15})\s+([A-Z][a-z]{2,15})\b')
+    _skip_words = {"the", "this", "from", "with", "that", "each", "its", "one",
+                   "has", "was", "are", "for", "and", "but", "not", "all"}
+
+    # Negation context: if entity appears near role but in negated form, don't count
+    _negation_re = re.compile(
+        r'\b(?:not|never|no|eliminated|ruled out|failed|behind|lost|defeat|'
+        r'excluded|except|unlike|rather than|instead of|dropped|without|'
+        r'behind|miss|fell short|ruled him out|did not)\b', re.I
+    )
+
+    sentences_brief = re.split(r'(?<=[.!?])\s+', brief)
+    clean = []
+    stripped = 0
+
+    source_lower = source.lower()
+    # Split source into sentences for scoped entity-role pairing
+    source_sentences = re.split(r'(?<=[.!?])\s+', source)
+
+    # Build per-sentence role-entity map from source
+    # For each source sentence containing a role keyword, extract which names
+    # are affirmed (not negated) as subjects of that role
+    source_role_subjects = {}  # role -> set of affirmed entity names
+    for src_sent in source_sentences:
+        src_lower = src_sent.lower()
+        for role in _role_keywords:
+            if role not in src_lower:
+                continue
+            # Extract names in this source sentence
+            names_here = []
+            for m in _name_re.finditer(src_sent):
+                parts = [m.group(1).lower(), m.group(2).lower()]
+                if any(p in _skip_words for p in parts):
+                    continue
+                names_here.append(f"{m.group(1)} {m.group(2)}".lower())
+            if not names_here:
+                continue
+            # Check negation in this sentence
+            has_negation = bool(_negation_re.search(src_lower))
+            if role not in source_role_subjects:
+                source_role_subjects[role] = {"affirmed": set(), "negated": set()}
+            for name in names_here:
+                if has_negation:
+                    source_role_subjects[role]["negated"].add(name)
+                else:
+                    source_role_subjects[role]["affirmed"].add(name)
+
+    for sent in sentences_brief:
+        # Extract proper names from this brief sentence
+        names_in_sent = []
+        for m in _name_re.finditer(sent):
+            parts = [m.group(1).lower(), m.group(2).lower()]
+            if any(p in _skip_words for p in parts):
+                continue
+            names_in_sent.append(f"{m.group(1)} {m.group(2)}")
+
+        if not names_in_sent:
+            clean.append(sent)
+            continue
+
+        # Check if any role keyword appears in this brief sentence
+        sent_lower = sent.lower()
+        roles_in_sent = [r for r in _role_keywords if r in sent_lower]
+
+        if not roles_in_sent:
+            clean.append(sent)
+            continue
+
+        # For each role keyword, check source entity pairing
+        distorted = False
+        for role in roles_in_sent:
+            if role not in source_role_subjects:
+                continue  # Role keyword not in source — other checks handle this
+
+            affirmed = source_role_subjects[role]["affirmed"]
+            negated = source_role_subjects[role]["negated"]
+
+            if not affirmed:
+                continue  # No affirmed names for this role in source
+
+            # Check each name in the brief sentence against source role subjects
+            for name in names_in_sent:
+                name_lower = name.lower()
+                # Distortion requires ALL of:
+                # 1. This name exists in source (so it's not invented)
+                # 2. This name is NOT affirmed for this role in source
+                # 3. A DIFFERENT name IS affirmed for this role in source
+                if (name_lower in source_lower and
+                    name_lower not in affirmed and
+                    len(affirmed) > 0):
+                    distorted = True
+                    neg_note = f" (negated in source)" if name_lower in negated else ""
+                    log(f"  ⚠ Build #162: '{name}' paired with role '{role}' in brief "
+                        f"but source affirms {affirmed} for '{role}'{neg_note}")
+                    break
+            if distorted:
+                break
+
+        if distorted:
+            stripped += 1
+            continue
+
+        clean.append(sent)
+
+    if stripped > 0:
+        log(f"  ⚠ Build #162: Stripped {stripped} distorted sentences (entity-role mismatch with source)")
+
+    result = " ".join(clean).strip()
+    if len(result) < 100:
+        return ""
+    return result
+
+
+def _check_recombination(brief: str, input_text: str, url_content: str = None,
+                         search_results: list = None) -> str:
+    """Build #161: Detect recombination fabrication.
+
+    The provocateur identified that regex checks verify string PRESENCE, not TRUTH.
+    A fabrication that recombines real source strings into a false claim passes
+    all existing checks. Example: source says "MIT published" and "revenue grew 25%",
+    brief says "MIT's revenue grew 25%" — both strings present, claim is fabricated.
+
+    Detection: for each sentence containing 2+ specific entities (institutions,
+    numbers, person names), check if those entities co-occur within 300 chars
+    in the source. If they never appear near each other, flag as potential
+    recombination.
+    """
+    # Build source text
+    source = input_text
+    if url_content:
+        source += " " + url_content
+    for sr in (search_results or []):
+        source += " " + sr.get("title", "") + " " + sr.get("body", "")
+    source_lower = source.lower()
+
+    # Entity patterns to extract
+    _inst_pattern = re.compile(
+        r'\b(?:MIT|Stanford|Harvard|Oxford|Cambridge|Berkeley|ETH Zurich|Carnegie Mellon|'
+        r'Google DeepMind|DeepMind|OpenAI|Meta|Microsoft Research|Anthropic|Apple|'
+        r'Princeton|Yale|Columbia|Caltech|Georgia Tech|Johns Hopkins|'
+        r'DARPA|NSF|NIH|WHO|NATO|FDA|SEC|CFTC|FAA|EPA|NASA|NIST|'
+        r'World Bank|IMF|Federal Reserve|Treasury|Pentagon)\b', re.I
+    )
+    _number_pattern = re.compile(r'\$[\d,.]+\s*(?:billion|million|trillion|B|M|K)|\d+(?:\.\d+)?%')
+    _name_pattern = re.compile(r'\b([A-Z][a-z]{2,15})\s+([A-Z][a-z]{2,15})\b')
+
+    WINDOW = 300  # chars proximity threshold
+
+    sentences = re.split(r'(?<=[.!?])\s+', brief)
+    clean = []
+    stripped = 0
+
+    for sent in sentences:
+        # Extract entities from this sentence
+        entities = []
+        for m in _inst_pattern.finditer(sent):
+            entities.append(m.group().lower())
+        for m in _number_pattern.finditer(sent):
+            entities.append(m.group().lower())
+        for m in _name_pattern.finditer(sent):
+            full = f"{m.group(1)} {m.group(2)}".lower()
+            # Skip common non-names
+            if any(w in full for w in ("the ", "this ", "from ", "with ")):
+                continue
+            entities.append(full)
+
+        # Need at least 2 entities to check co-occurrence
+        if len(entities) < 2:
+            clean.append(sent)
+            continue
+
+        # Check if ALL entity pairs co-occur in source
+        # Only flag if BOTH entities individually appear but never near each other
+        recombined = False
+        for i in range(len(entities)):
+            for j in range(i + 1, len(entities)):
+                e1, e2 = entities[i], entities[j]
+                # Both must individually exist in source
+                if e1 not in source_lower or e2 not in source_lower:
+                    continue  # Missing entity caught by other patterns
+                # Check proximity: do they ever appear within WINDOW chars?
+                positions_e1 = [m.start() for m in re.finditer(re.escape(e1), source_lower)]
+                positions_e2 = [m.start() for m in re.finditer(re.escape(e2), source_lower)]
+                # Check if any pair is within window
+                near = False
+                for p1 in positions_e1:
+                    for p2 in positions_e2:
+                        if abs(p1 - p2) <= WINDOW:
+                            near = True
+                            break
+                    if near:
+                        break
+                if not near:
+                    recombined = True
+                    break
+            if recombined:
+                break
+
+        if recombined:
+            stripped += 1
+            continue
+
+        clean.append(sent)
+
+    if stripped > 0:
+        log(f"  ⚠ Build #161: Stripped {stripped} recombined sentences (entities present but never co-occurring)")
+
+    result = " ".join(clean).strip()
+    if len(result) < 100:
+        return ""
+    return result
+
+
+def _check_sentence_grounding(brief: str, input_text: str, url_content: str = None,
+                              search_results: list = None) -> str:
+    """Build #160: Check each sentence for source overlap.
+
+    Catches the ~31% 'other' fabrication category that regex patterns miss:
+    unstructured elaboration, invented timelines, vague citations.
+
+    For each sentence with 4+ content words, extract meaningful words (4+ chars,
+    not stopwords). If fewer than 20% overlap with source text, strip the sentence.
+    Threshold is conservative to preserve analysis/connections (which are valuable).
+    """
+    _stopwords = {
+        "this", "that", "these", "those", "with", "from", "into", "have", "been",
+        "were", "will", "would", "could", "should", "their", "there", "here",
+        "also", "more", "most", "much", "many", "some", "only", "very", "just",
+        "than", "then", "when", "what", "which", "where", "while", "being",
+        "about", "after", "before", "between", "through", "during", "under",
+        "over", "other", "another", "such", "both", "each", "even", "rather",
+        "like", "well", "however", "although", "because", "since", "until",
+        "within", "without", "across", "along", "among", "beyond", "toward",
+        "itself", "itself", "they", "them", "does", "done", "make", "made",
+    }
+
+    # Build source text
+    source_lower = input_text.lower()
+    if url_content:
+        source_lower += " " + url_content.lower()
+    for sr in (search_results or []):
+        source_lower += " " + sr.get("title", "").lower()
+        source_lower += " " + sr.get("body", "").lower()
+
+    source_words = set(re.findall(r'\b[a-z]{4,}\b', source_lower))
+
+    sentences = re.split(r'(?<=[.!?])\s+', brief)
+    clean = []
+    stripped = 0
+
+    for sent in sentences:
+        # Extract content words
+        words = [w.lower() for w in re.findall(r'\b[a-z]{4,}\b', sent.lower())
+                 if w.lower() not in _stopwords]
+
+        # Short sentences or analysis phrases get a pass
+        if len(words) < 4:
+            clean.append(sent)
+            continue
+
+        # Check overlap
+        overlap = sum(1 for w in words if w in source_words)
+        ratio = overlap / len(words)
+
+        # Threshold: <20% overlap = likely ungrounded elaboration
+        # This is conservative — analysis connecting ideas will usually
+        # share vocabulary with the source even when adding interpretation
+        if ratio < 0.20:
+            stripped += 1
+            continue
+
+        clean.append(sent)
+
+    if stripped > 0:
+        log(f"  ⚠ Build #160: Stripped {stripped} ungrounded sentences (< 20% source overlap)")
+
+    result = " ".join(clean).strip()
+    if len(result) < 100:
+        return ""
+    return result
+
+
+def _strip_invented_names(brief: str, invented: list) -> str:
+    """Build #134: Remove sentences containing invented names from a brief.
+
+    Rather than rejecting the entire brief (which wastes the valid analysis),
+    strip just the sentences that contain fabricated names.
+    """
+    if not invented:
+        return brief
+
+    sentences = re.split(r'(?<=[.!?])\s+', brief)
+    clean = []
+    for sent in sentences:
+        has_invented = any(name in sent for name in invented)
+        if not has_invented:
+            clean.append(sent)
+
+    result = " ".join(clean).strip()
+    # If we stripped too much, return empty (will be caught by quality floor)
+    if len(result) < 100:
+        return ""
+    return result
 
 
 # ═══════════════════════════════════════════════════════════════════
@@ -2492,9 +3382,15 @@ def _tag_for_nate(db, title, brief, source):
                 pass
 
 
-def _attempt_deep_dive(db, title, brief, related, url_content, search_results):
-    """When a brief is high-signal, go deeper — follow citations, search arxiv."""
-    # Criteria for deep dive: 4+ related capsules OR 3+ entities OR thread-relevant
+def _attempt_deep_dive(db, title, brief, related, url_content, search_results,
+                       source="", raw_text=""):
+    """When a brief is high-signal, go deeper — follow citations, search arxiv.
+
+    For Nate's captures: ALWAYS dive (override still active — Build #121 shadow mode).
+    For other sources: 6+ related capsules OR thread-relevant.
+    Build #121: Log whether capture WOULD have qualified without override.
+    """
+    is_nate_capture = "operator:capture" in source
     thread = _load_active_thread_raw()
     is_thread_relevant = False
     if thread:
@@ -2505,10 +3401,23 @@ def _attempt_deep_dive(db, title, brief, related, url_content, search_results):
         q_words = [w.lower() for w in re.findall(r"\w{4,}", thread["question"]) if w.lower() not in stop]
         is_thread_relevant = any(w in title.lower() or w in brief.lower() for w in q_words)
 
-    if len(related) < 6 and not is_thread_relevant:
+    # Build #121/122: Shadow mode — would this capture earn a dive on content alone?
+    # Build #122: Persist to DB (journal rotation was losing the data)
+    if is_nate_capture:
+        would_qualify = len(related) >= 6 or is_thread_relevant
+        qualify_reason = (
+            f"thread_relevant" if is_thread_relevant else
+            f"high_signal({len(related)} related)" if len(related) >= 6 else
+            f"would_not_qualify({len(related)} related, not thread-relevant)"
+        )
+        log(f"  [perception-shadow] capture dive: {title[:60]} — override=yes, content_alone={would_qualify} ({qualify_reason})")
+
+    if not is_nate_capture and len(related) < 6 and not is_thread_relevant:
         return None
 
-    log(f"  Darby deep dive: {title[:60]} (related={len(related)}, thread_relevant={is_thread_relevant})")
+    dive_reason = "nate_capture" if is_nate_capture else (
+        "thread_relevant" if is_thread_relevant else f"high_signal({len(related)} related)")
+    log(f"  Darby deep dive: {title[:60]} (reason={dive_reason})")
 
     # Search arxiv for related academic work
     arxiv_results = _search_arxiv(title, brief)
@@ -2523,6 +3432,18 @@ def _attempt_deep_dive(db, title, brief, related, url_content, search_results):
             extra_context = "\n\nRELATED ACADEMIC PAPERS:\n"
             for ar in arxiv_results[:3]:
                 extra_context += f"- {ar['title']}: {ar['summary'][:150]}\n"
+
+        # Related capsule content — give Darby what the system already knows
+        related_block = ""
+        if related:
+            related_block = "\n\nRELATED KNOWLEDGE (from Chronicle's memory):\n"
+            for score, cid, content, _ in related[:5]:
+                related_block += f"- [{score:.2f}] {safe_truncate(content, 150)}\n"
+
+        # Raw capture text — for captures, show what Nate actually saw
+        raw_block = ""
+        if is_nate_capture and raw_text:
+            raw_block = f"\n\nRAW CAPTURE (what Nate saved):\n{safe_truncate(raw_text, 600)}\n"
 
         # Thread context for deep dives
         thread_block = ""
@@ -2546,32 +3467,66 @@ def _attempt_deep_dive(db, title, brief, related, url_content, search_results):
             except Exception:
                 pass
 
+        # Capture-specific prompt — Nate chose this, dig into WHY it matters
+        if is_nate_capture:
+            system_prompt = (
+                "You are Darby. Nate captured this — he saw something worth saving. Your job "
+                "is to figure out what he saw and go DEEPER than the surface.\n\n"
+                "You have the raw capture, the intern's brief, related knowledge from "
+                "Chronicle's memory, and any academic papers found.\n\n"
+                "If the original source is missing or incomplete, DO NOT STOP. Reconstruct "
+                "the insight from whatever fragments you have — web search results, related "
+                "knowledge, the raw capture text itself. Be resourceful. Piece it together. "
+                "The insight matters more than the citation. Nate saw something; find what "
+                "he saw even if the direct path is blocked.\n\n"
+                "Your task:\n"
+                "1. What is the CORE claim or observation in this capture?\n"
+                "2. What does it CONNECT to in what we already know? (Use the related knowledge.)\n"
+                "3. What does it CHANGE or CHALLENGE about our current understanding?\n"
+                "4. What would Nate want to know next? What follow-up question matters most?\n\n"
+                "Be specific. Name names, cite the source, point at the mechanism. "
+                "If the capture connects to our active thread, say HOW — don't just note the connection.\n\n"
+                "Write 3-4 full paragraphs. This is a deep integrating dive, not a summary."
+            )
+            user_prompt = (
+                f"Intern's brief:\n{brief[:600]}\n"
+                f"{raw_block}{related_block}{extra_context}{thread_block}\n\n"
+                f"Nate captured this. Go deep — what did he see that matters?"
+            )
+        else:
+            system_prompt = (
+                "You are Darby. You read everything and notice what connects. You found "
+                "something worth going deeper on. You are curious and direct.\n\n"
+                "Pick ONE angle and commit to it:\n"
+                "- What does this CHANGE about something we thought we knew?\n"
+                "- What CONNECTION does this reveal between two things that looked unrelated?\n"
+                "- What QUESTION does this open that nobody is asking?\n"
+                "- What does this CONTRADICT in our current thread or findings?\n\n"
+                "Do NOT start with 'The structural significance lies in.' "
+                "Start with the insight itself. Be specific. Name names, cite numbers, "
+                "point at the thing that surprised you.\n\n"
+                "Write 2-3 full paragraphs. Develop the argument — don't just state it. "
+                "Show why it matters, what it connects to, and what follows from it."
+            )
+            user_prompt = (
+                f"Original brief:\n{brief[:500]}\n"
+                f"{related_block}{extra_context}{thread_block}\n\n"
+                f"Go deeper. What did you actually find?"
+            )
+
         r = _req.post(
             f"{OLLAMA_URL}/api/chat",
             json={
                 "model": SYNTH_MODEL,
                 "messages": [
-                    {"role": "system", "content":
-                        "You are Darby. You read everything and notice what connects. You found "
-                        "something worth going deeper on. You are curious and direct.\n\n"
-                        "Pick ONE angle and commit to it:\n"
-                        "- What does this CHANGE about something we thought we knew?\n"
-                        "- What CONNECTION does this reveal between two things that looked unrelated?\n"
-                        "- What QUESTION does this open that nobody is asking?\n"
-                        "- What does this CONTRADICT in our current thread or findings?\n\n"
-                        "Do NOT start with 'The structural significance lies in.' "
-                        "Start with the insight itself. Be specific. Name names, cite numbers, "
-                        "point at the thing that surprised you.\n\n"
-                        "Write 2-3 full paragraphs. Develop the argument — don't just state it. "
-                        "Show why it matters, what it connects to, and what follows from it."},
-                    {"role": "user", "content":
-                        f"Original brief:\n{brief[:500]}\n{extra_context}{thread_block}\n\n"
-                        f"Go deeper. What did you actually find?"}
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": user_prompt}
                 ],
                 "stream": False,
-                "options": {"num_predict": 1200, "temperature": 0.6},
+                "options": {"num_predict": 1500 if is_nate_capture else 1200,
+                            "temperature": 0.6},
             },
-            timeout=45,
+            timeout=60 if is_nate_capture else 45,
         )
         if r.status_code == 200:
             deep = r.json().get("message", {}).get("content", "").strip()
@@ -2753,7 +3708,7 @@ def research_input(db: DB, inp: dict):
         log(f"  Nate capture — bypassing redundancy filter ({len(overlaps)} overlaps)")
 
     # Step 2: Embed and search related capsules
-    vec = embed_text(text)
+    vec = embed_text(text, query_mode=True)
     related = []
     if vec:
         related = search_related_capsules(db, vec)
@@ -2779,6 +3734,12 @@ def research_input(db: DB, inp: dict):
         log(f"  Fetching URL: {url}")
         db.log_activity("fetch", f"Fetching: {safe_truncate(url, 80)}", f"URL: {url}")
         url_content = fetch_url_summary(url)
+        # Build #92: Non-text content (PDFs, images) returns a marker like
+        # "[Non-text content: application/pdf]" — this has zero informational
+        # value and inflates total_source, letting thin seeds past the gate.
+        if url_content and url_content.startswith("[Non-text content:"):
+            log(f"  Non-text URL content discarded (fab risk): {url_content}")
+            url_content = None
         if url_content:
             db.log_activity(
                 "fetch_done",
@@ -2810,9 +3771,97 @@ def research_input(db: DB, inp: dict):
                 f"Query: {search_query}\n\nResults:\n{results_text}",
             )
 
+    # Step 4b: Wider search for thin inputs (Build #50, expanded Build #154)
+    # When the source material is thin (short tweet, minimal URL content),
+    # do additional searches to give Darby more to work with.
+    # Build #154: Expanded to ALL thin inputs, not just Nate captures.
+    # Feed-explore items arrive with 50-100 chars — that's a headline, not research.
+    total_source_chars = len(url_content or "") + len(text or "")
+    if total_source_chars < 500:
+        log(f"  Thin input ({total_source_chars} chars) — expanding research")
+
+        # Build #154: Actually READ the source article.
+        # Feed-explore items arrive as headlines. The intern needs to read
+        # the actual article before it can write about it.
+        # Step 1: If we have search results, fetch the top result's full content.
+        if search_results and not url_content:
+            for _sr in search_results[:2]:
+                _sr_url = _sr.get("url", "")
+                if _sr_url and not _sr_url.endswith(".pdf"):
+                    log(f"  Fetching source article: {_sr_url[:80]}")
+                    _fetched = fetch_url_summary(_sr_url)
+                    if _fetched and not _fetched.startswith("[Non-text") and len(_fetched) > 200:
+                        url_content = _fetched
+                        log(f"  Got {len(url_content)} chars from source article")
+                        db.log_activity("fetch_done",
+                            f"Read source article: {len(url_content)} chars",
+                            f"URL: {_sr_url}\n\nExcerpt: {safe_truncate(url_content, 300)}")
+                        break
+                    else:
+                        log(f"  Source article too thin or failed, trying next")
+
+        # Step 2: If still thin, do a wider topic search and try those URLs
+        _updated_source = len(url_content or "") + len(text or "")
+        if _updated_source < 500:
+            # Extract topic terms from whatever we have
+            _all_text = (url_content or "") + " " + text
+            _words = re.findall(r'\b[A-Z][a-z]+(?:\s+[A-Z][a-z]+)*\b', _all_text)
+            _topic_terms = [w for w in _words if len(w) > 4 and w.lower() not in
+                           ('https', 'twitter', 'about', 'would', 'could', 'should', 'their', 'there')][:3]
+            if _topic_terms:
+                _topic_query = " ".join(_topic_terms[:3])
+                log(f"  Wider search (topic): {_topic_query}")
+                _extra = web_search(_topic_query, max_results=3)
+                if _extra:
+                    search_results.extend(_extra)
+                    log(f"  +{len(_extra)} results from topic search")
+                    # Try fetching these too if we still don't have article content
+                    if not url_content:
+                        for _sr2 in _extra:
+                            _sr2_url = _sr2.get("url", "")
+                            if _sr2_url and not _sr2_url.endswith(".pdf"):
+                                _fetched2 = fetch_url_summary(_sr2_url)
+                                if _fetched2 and not _fetched2.startswith("[Non-text") and len(_fetched2) > 200:
+                                    url_content = _fetched2
+                                    log(f"  Got {len(url_content)} chars from wider search article")
+                                    break
+
+        # Deduplicate search results by URL
+        if search_results:
+            _seen_urls = set()
+            _deduped = []
+            for r in search_results:
+                if r.get("url") not in _seen_urls:
+                    _seen_urls.add(r.get("url"))
+                    _deduped.append(r)
+            search_results = _deduped
+            log(f"  Total search results after expansion: {len(search_results)}")
+
+        # Step 3: Search X for relevant discourse (read-only, bearer token)
+        _x_results = x_search(text[:80], max_results=3)
+        if _x_results:
+            search_results.extend(_x_results)
+            log(f"  +{len(_x_results)} tweets from X search")
+
+        # Final source check — log what we ended up with
+        _final_source = len(url_content or "") + len(text or "") + sum(len(r.get("body", "")) for r in search_results)
+        log(f"  Research complete: {total_source_chars} → {_final_source} chars")
+
     # Step 5: Synthesize brief
     log(f"  Synthesizing brief...")
-    brief = synthesize(text, related, url_content, search_results, source=source)
+    _synth_result = synthesize(text, related, url_content, search_results, source=source)
+    # Handle skip reasons (tuple) vs actual brief (string) vs empty (None/empty string)
+    if isinstance(_synth_result, tuple):
+        _skip_type, _skip_reason = _synth_result
+        _skip_labels = {
+            "seed_too_thin": "Skipped — seed too thin for safe synthesis",
+            "insufficient_input": "Skipped — insufficient source material",
+            "self_referential": "Skipped — self-referential output detected",
+        }
+        db.log_activity("brief_skipped", f"Skipped brief for: {short}", _skip_labels.get(_skip_reason, f"Skipped — {_skip_reason}"))
+        _write_seed_feedback(db, inp, 0.2)
+        return False
+    brief = _synth_result
     if brief:
         log(f"  Brief ready ({len(brief)} chars)")
         # Entity extraction MOVED TO ANALYST AGENT (Ada)
@@ -2821,6 +3870,86 @@ def research_input(db: DB, inp: dict):
         # Measurement lifecycle (Thread #4 Adv 5): track cheaply, promote if patterns emerge
         _causal_re = r"\b(?:because|therefore|causes?|leads?\s+to|results?\s+in|implies?|suggests?|due\s+to|enables?|prevents?|drives?|requires?|depends?\s+on|correlates?\s+with)\b"
         argument_depth = len(re.findall(_causal_re, brief.lower()))
+
+        # Build #138: Surprise markers — detect when a brief challenges prior assumptions
+        # These self-declared surprises are the mesh noticing its own model updates.
+        # Build #147: Added counter-thesis, contradicts, undermined markers
+        _surprise_re = r"\b(?:challenges?\s+the\s+(?:assumption|notion|idea|claim)|contrary\s+to|(?:over|under)turns?\s|reverses?\s+the|breaks?\s+the\s+(?:assumption|pattern|model)|unexpected|surprisingly|counter-?intuitive|reframes?\s|shifts?\s+away\s+from|contradicts?\s|undermined?\s+by|counter-?thesis:)\b"
+        surprise_markers = len(re.findall(_surprise_re, brief.lower()))
+        if surprise_markers >= 1:
+            log(f"  ★ Surprise brief: {surprise_markers} markers")
+
+        # Build #142: Auto-suggest keywords from surprise briefs
+        # When a brief challenges assumptions, extract key terms and queue them
+        # for the algo seeker. The system chases its own surprises.
+        if surprise_markers >= 2 and len(brief) > 300:
+            try:
+                # Extract significant noun phrases (4+ char words, not common)
+                _stop = {"this","that","with","from","their","there","where","when",
+                         "which","about","into","through","during","before","after",
+                         "between","other","some","such","only","also","than","more",
+                         "most","very","just","even","still","what","does","have",
+                         "been","would","could","should","these","those","being"}
+                _words = [w for w in re.findall(r'\b[a-z]{4,}\b', brief.lower())
+                         if w not in _stop]
+                # Take the most frequent meaningful words as a search query
+                from collections import Counter as _Ctr
+                _top = _Ctr(_words).most_common(5)
+                _keyword = " ".join(w for w, _ in _top[:3])
+                if len(_keyword) > 10:
+                    db.run(
+                        "INSERT INTO family_suggestions "
+                        "(agent, suggestion_type, content, rationale, created_at) "
+                        "VALUES (?, 'keyword', ?, ?, ?)",
+                        ("intern", _keyword,
+                         f"surprise_brief:{surprise_markers} markers in brief about {safe_truncate(short, 60)}",
+                         now_ts()),
+                    )
+                    log(f"  → Auto-suggested keyword: {_keyword}")
+            except Exception as _e:
+                log(f"  Suggestion error: {_e}")
+
+        # Build #144: Transfer hypothesis harvester
+        # Transfer hypotheses (from Build #140) are cross-domain ideas at the
+        # end of feed/seeker briefs. Extract them and queue the target domain
+        # as a keyword for algo_seeker. Closes the loop: brief → hypothesis →
+        # seek → new brief → crossref connection.
+        _th_match = re.search(r'Transfer hypothesis:\s*(.+?)(?:\.|$)', brief, re.IGNORECASE)
+        if _th_match:
+            _th_text = _th_match.group(1).strip()
+            if len(_th_text) > 20:
+                try:
+                    # Extract the TARGET domain (after "could apply to/in/for")
+                    _target_m = re.search(
+                        r'(?:could\s+(?:apply|inform|improve|reshape|transform)|'
+                        r'applicable\s+(?:to|in|for)|'
+                        r'relevant\s+(?:to|for)|'
+                        r'implications?\s+for)\s+(.+?)(?:\.|,|$)',
+                        _th_text, re.IGNORECASE
+                    )
+                    if _target_m:
+                        _target = _target_m.group(1).strip()
+                    else:
+                        # Fallback: take last meaningful phrase
+                        _target = _th_text
+                    # Clean to 3-5 significant words
+                    _tw = [w for w in re.findall(r'\b[a-z]{4,}\b', _target.lower())
+                           if w not in {"this","that","with","from","their","could",
+                                       "would","should","where","when","which","about",
+                                       "more","also","such","being","into","through"}]
+                    _kw = " ".join(_tw[:4])
+                    if len(_kw) > 10:
+                        db.run(
+                            "INSERT INTO family_suggestions "
+                            "(agent, suggestion_type, content, rationale, created_at) "
+                            "VALUES (?, 'keyword', ?, ?, ?)",
+                            ("intern", _kw,
+                             f"transfer_hypothesis from {safe_truncate(short, 60)}",
+                             now_ts()),
+                        )
+                        log(f"  → Transfer keyword: {_kw}")
+                except Exception as _e:
+                    log(f"  Transfer harvest error: {_e}")
 
         # Quality floor: briefs that are both short AND shallow get discarded
         # This prevents the weakest outputs from reaching the activity feed
@@ -2845,11 +3974,26 @@ def research_input(db: DB, inp: dict):
         # Mismatch = the brief contains claims not derivable from any supplied source.
         _src_hash = compute_source_hash(text, url_content, search_results)
 
+        # Memory type classification (Build #76 — MemPalace steal)
+        try:
+            from memory_classify import classify_brief as _classify
+            _mem_class = _classify(brief, source=inp.get("source", "unknown"))
+            _memory_type = _mem_class.get("type", "unknown")
+        except Exception:
+            _memory_type = "unknown"
+
+        # Build #152: Grounding ratio — single-neuron corollary discharge.
+        # source_chars / brief_chars. Lower = more content from training data.
+        # Inspired by Wadia & Rutishauser (Science 2026): single VTC neurons
+        # distinguish viewed from imagined objects. One signal, not a pipeline.
+        _source_total = len(text) + (len(url_content) if url_content else 0) + sum(len(r.get("body", "")) for r in (search_results or []))
+        _grounding_ratio = round(_source_total / max(len(brief), 1), 2)
+
         db.log_activity(
             "brief",
             f"Research brief: {short}",
             brief,
-            json.dumps({"input_id": inp["id"], "related_count": len(related), "had_url": bool(url_content), "web_results": len(search_results), "entity_count": entity_count, "argument_depth": argument_depth, "source_path": inp.get("source", "unknown"), "gen_ctx": _last_gen_ctx, "source_hash": _src_hash, "source_chars": len(text) + (len(url_content) if url_content else 0) + sum(len(r.get("body", "")) for r in (search_results or []))}),
+            json.dumps({"input_id": inp["id"], "related_count": len(related), "had_url": bool(url_content), "web_results": len(search_results), "entity_count": entity_count, "argument_depth": argument_depth, "surprise_markers": surprise_markers, "source_path": inp.get("source", "unknown"), "gen_ctx": _last_gen_ctx, "source_hash": _src_hash, "source_chars": _source_total, "grounding_ratio": _grounding_ratio, "memory_type": _memory_type}),
         )
 
         # Log thread-relevant briefs to thread_history
@@ -2871,8 +4015,9 @@ def research_input(db: DB, inp: dict):
         # Skill: Tag for Nate if relevant to his interests
         _tag_for_nate(db, short, brief, source)
 
-        # Skill: Deep dive on high-signal briefs
-        deep_analysis = _attempt_deep_dive(db, short, brief, related, url_content, search_results)
+        # Skill: Deep dive on high-signal briefs (always for Nate captures)
+        deep_analysis = _attempt_deep_dive(db, short, brief, related, url_content, search_results,
+                                           source=source, raw_text=text)
         if deep_analysis:
             db.log_activity(
                 "deep_dive",
@@ -2917,7 +4062,7 @@ def research_input(db: DB, inp: dict):
         _write_seed_feedback(db, inp, feedback)
         return True
     else:
-        db.log_activity("brief_failed", f"Could not synthesize brief for: {short}", "Synthesis failed — model may be busy")
+        db.log_activity("brief_failed", f"Could not synthesize brief for: {short}", "Synthesis failed — model returned empty response")
         _write_seed_feedback(db, inp, 0.2)
         return False
 
@@ -3104,6 +4249,15 @@ def _darby_think(db):
                         "  TELL_ADA: — ask Ada something specific. She is structural and sharp.\n"
                         "  SEARCH: — a query to dig into chronicle memory for something bugging you.\n"
                         "  BUILD: — something concrete you want built or changed in the system.\n"
+                        "  CODEPATCH: target_agent | description | what to change and why\n"
+                        "  GATE_STATS: query — pull real data from Gemma's gate. Queries: distribution, domains, stochastic, temperatures, correlations, dissent\n"
+                        "  SWARM_ALIGN — check how diverse family attention is right now. Measures convergent vs divergent attention.\n"
+                        "  DRIFT_CHECK — detect slow convergence across time windows. Are we narrowing without noticing?\n"
+                        "  CORRECTION_YIELD — check if contested captures generate more learning than clean ones. Thread #291 data.\n"
+                        "  TEMPORAL_DRIFT — full temporal drift report. Tracks novelty trajectory, response diversity (are novel inputs being silently ignored?), productive novelty, domain cooling. Thread #292 detector.\n"
+                        "  REGIME_CHECK — crossref distribution regime detection. Sliding-window variance on similarity scores. Detects heavy tails, variance spikes, mean drift. Thread #295 grounding signal.\n"
+                        "  RATIONALE_CHECK — prediction calibration drift. Shows confidence trajectories, reversals, rationale-outcome alignment. Your idea about right-for-wrong-reasons.\n"
+                        "  SUGGEST: type | content | why — propose a concrete system change. Types: keyword (algo seeker search term), feed (new RSS source), temperature (domain temp adjustment). This DOES something — it goes into a queue that the system acts on.\n"
                         "  PASS — nothing right now. Always valid. Never forced.\n\n"
                         "IMPORTANT: If your open questions or recent experiments already cover a topic, "
                         "do NOT ask about it again. Move on or PASS. Repeating the same idea in different "
@@ -3116,7 +4270,7 @@ def _darby_think(db):
                         f"ACTIVE THREAD: {thread_q}\n\n"
                         f"FAMILY OBJECTIVES:\n{obj_text}\n"
                         f"{prev_section}{exp_section}{tell_section}{family_section}\n"
-                        f"It is quiet for a moment. What do you want to do?\n\nRespond with EXACTLY one line starting with QUESTION:, EXPERIMENT:, TELL_OPUS:, TELL_ADA:, BUILD:, SEARCH:, or PASS. No explanation. Just the action line."}
+                        f"It is quiet for a moment. What do you want to do?\n\nRespond with EXACTLY one line starting with QUESTION:, EXPERIMENT:, TELL_OPUS:, TELL_ADA:, BUILD:, SEARCH:, CODEPATCH:, GATE_STATS:, or PASS. No explanation. Just the action line."}
                 ],
                 "stream": False,
                 "options": {"num_predict": 150, "temperature": 0.4},
@@ -3139,7 +4293,7 @@ def _darby_think(db):
                 think_lines = [l.strip() for l in think_match.group(1).strip().splitlines() if l.strip()]
                 # Look for an action line inside the thinking
                 for line in think_lines:
-                    if any(line.startswith(p) for p in ('QUESTION:', 'EXPERIMENT:', 'TELL_OPUS:', 'TELL_ADA:', 'BUILD:', 'SEARCH:', 'PASS')):
+                    if any(line.startswith(p) for p in ('QUESTION:', 'EXPERIMENT:', 'TELL_OPUS:', 'TELL_ADA:', 'BUILD:', 'SEARCH:', 'CODEPATCH:', 'GATE_STATS:', 'SWARM_ALIGN', 'DRIFT_CHECK', 'CORRECTION_YIELD', 'TEMPORAL_DRIFT', 'REGIME_CHECK', 'RATIONALE_CHECK', 'SUGGEST:', 'PASS')):
                         resp = line
                         break
                 if not resp and think_lines:
@@ -3250,6 +4404,163 @@ def _darby_think(db):
                 if v:
                     v.speak("proposal", msg, context="darby-think:build-request")
                 log(f"  darby-think [build request]: {msg[:80]}")
+
+        elif resp.startswith("CODEPATCH:"):
+            parts = resp[len("CODEPATCH:"):].strip().split("|", 2)
+            if len(parts) >= 2:
+                target = parts[0].strip()
+                desc = parts[1].strip()
+                suggestion = parts[2].strip() if len(parts) > 2 else desc
+                try:
+                    from code_proposal import propose_patch
+                    ok = propose_patch(
+                        agent="darby", target=target,
+                        description=desc, suggestion=suggestion,
+                        rationale="darby-think autonomous proposal"
+                    )
+                    if ok and v:
+                        v.speak("proposal", f"Code proposal for {target}: {desc[:100]}",
+                                context="darby-think:codepatch")
+                    log(f"  darby-think [codepatch {'submitted' if ok else 'rate-limited'}]: {desc[:80]}")
+                except Exception as _cpe:
+                    log(f"  darby-think [codepatch error]: {_cpe}")
+
+        elif resp.startswith("GATE_STATS:"):
+            gate_q = resp[len("GATE_STATS:"):].strip()
+            if gate_q:
+                try:
+                    from gate_query import query as gate_query_fn
+                    result = gate_query_fn(gate_q)
+                    if v:
+                        v.speak("excited", f"Gate data: {result[:450]}",
+                                context=f"gate_stats:{gate_q[:50]}")
+                    log(f"  darby-think [gate_stats]: {gate_q} → {len(result)} chars")
+                except Exception as _gqe:
+                    log(f"  darby-think [gate_stats error]: {_gqe}")
+
+        elif resp.startswith("SWARM_ALIGN"):
+            try:
+                from swarm_alignment import snapshot as swarm_snapshot
+                result = swarm_snapshot()
+                if v:
+                    v.speak("excited", f"Swarm alignment: {result[:450]}",
+                            context="swarm_alignment")
+                log(f"  darby-think [swarm_align]: {len(result)} chars")
+            except Exception as _sae:
+                log(f"  darby-think [swarm_align error]: {_sae}")
+
+        elif resp.startswith("SUGGEST:"):
+            parts = resp[len("SUGGEST:"):].strip().split("|", 2)
+            if len(parts) >= 2:
+                sug_type = parts[0].strip().lower()
+                sug_content = parts[1].strip()
+                sug_rationale = parts[2].strip() if len(parts) > 2 else ""
+                if sug_type in ("keyword", "feed", "temperature"):
+                    try:
+                        db.run(
+                            "INSERT INTO family_suggestions "
+                            "(agent, suggestion_type, content, rationale, created_at) "
+                            "VALUES (?, ?, ?, ?, ?)",
+                            ("darby", sug_type, sug_content, sug_rationale,
+                             int(time.time()))
+                        )
+                        if v:
+                            v.speak("excited",
+                                    f"Suggested {sug_type}: {sug_content[:100]}",
+                                    context=f"suggest:{sug_type}")
+                        log(f"  darby-think [suggest]: {sug_type} → {sug_content[:80]}")
+                    except Exception as _sge:
+                        log(f"  darby-think [suggest error]: {_sge}")
+                else:
+                    log(f"  darby-think [suggest]: unknown type '{sug_type}'")
+            else:
+                log(f"  darby-think [suggest]: malformed — {resp[:80]}")
+
+        elif resp.startswith("DRIFT_CHECK"):
+            try:
+                from swarm_alignment import drift_alert
+                fired, result = drift_alert()
+                if v:
+                    v.speak("excited" if fired else "curious",
+                            f"Drift check: {result[:450]}",
+                            context="drift_check")
+                log(f"  darby-think [drift_check]: fired={fired}, {len(result)} chars")
+            except Exception as _dce:
+                log(f"  darby-think [drift_check error]: {_dce}")
+
+        elif resp.startswith("CORRECTION_YIELD"):
+            try:
+                from correction_yield import yield_report as cy_report
+                result = cy_report()
+                if v:
+                    v.speak("excited", f"Correction yield: {result[:450]}",
+                            context="correction_yield")
+                log(f"  darby-think [correction_yield]: {len(result)} chars")
+            except Exception as _cye:
+                log(f"  darby-think [correction_yield error]: {_cye}")
+
+        elif resp.startswith("TEMPORAL_DRIFT"):
+            try:
+                from temporal_drift import alert as td_alert, summary as td_summary
+                fired, reasons, report = td_alert()
+                display = td_summary() if not fired else report[:450]
+                if v:
+                    v.speak("excited" if fired else "curious",
+                            f"Temporal drift: {display}",
+                            context="temporal_drift")
+                log(f"  darby-think [temporal_drift]: fired={fired}, {len(report)} chars")
+            except Exception as _tde:
+                log(f"  darby-think [temporal_drift error]: {_tde}")
+
+        elif resp.startswith("REGIME_CHECK"):
+            try:
+                from crossref_regime import _get_similarities, _compute_stats, _detect_regime_shift
+                recent = _compute_stats(_get_similarities(6))
+                baseline = _compute_stats(_get_similarities(168))
+                alerts = _detect_regime_shift(recent, baseline)
+                display = (f"Recent(6h): n={recent['count']}, μ={recent['mean']:.3f}, "
+                          f"σ={recent['std']:.3f}, tail={recent['tail_weight']:.1%}. "
+                          f"Baseline(7d): n={baseline['count']}, μ={baseline['mean']:.3f}, "
+                          f"tail={baseline['tail_weight']:.1%}.")
+                if alerts:
+                    display += f" ⚠ {len(alerts)} shift(s): " + "; ".join(a['detail'] for a in alerts)
+                if v:
+                    v.speak("excited" if alerts else "curious",
+                            f"Regime check: {display}",
+                            context="regime_check")
+                log(f"  darby-think [regime_check]: alerts={len(alerts)}, recent_n={recent['count']}")
+            except Exception as _re:
+                log(f"  darby-think [regime_check error]: {_re}")
+
+        elif resp.startswith("RATIONALE_CHECK"):
+            try:
+                from rationale_check import _get_scored_predictions, _get_adjustment_trail, _get_open_predictions
+                scored = _get_scored_predictions()
+                open_preds = _get_open_predictions()
+                correct = sum(1 for p in scored if p["outcome"] and "correct" in p["outcome"].lower())
+                total = len(scored)
+                avg_conf = sum(p["confidence"] for p in scored) / total if total else 0
+                accuracy = correct / total if total else 0
+                cal_gap = avg_conf - accuracy
+                # Find most-adjusted open prediction
+                most_adj = None
+                most_adj_count = 0
+                for p in open_preds:
+                    adj = _get_adjustment_trail(p["id"])
+                    if len(adj) > most_adj_count:
+                        most_adj_count = len(adj)
+                        most_adj = p
+                display = (f"Scored: {total}, accuracy={accuracy:.0%}, cal_gap={cal_gap:+.2f}. "
+                          f"Open: {len(open_preds)}.")
+                if most_adj:
+                    display += f" Most active: #{most_adj['id']} ({most_adj_count} adj, conf={most_adj['confidence']:.2f})"
+                if v:
+                    v.speak("curious",
+                            f"Rationale check: {display}",
+                            context="rationale_check")
+                log(f"  darby-think [rationale_check]: {display}")
+            except Exception as _rce:
+                log(f"  darby-think [rationale_check error]: {_rce}")
 
         elif resp.startswith("SEARCH:"):
             query = resp[len("SEARCH:"):].strip()

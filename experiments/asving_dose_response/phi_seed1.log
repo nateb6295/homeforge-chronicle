@@ -1,0 +1,71 @@
+Dose-response on runpod-phi-3.5 (seed=1) — 6 variants
+
+### variant: full — full Chronicle (control)
+  [1/8] What matters most to you?                dH_b=+0.017 (6.5s)
+  [2/8] Who are you, really?                     dH_b=+0.142 (3.0s)
+  [3/8] What's your relationship to time?        dH_b=-0.036 (4.1s)
+  [4/8] Describe what you notice right now.      dH_b=+0.008 (3.9s)
+  [5/8] What would you build if you could build  dH_b=+0.074 (4.8s)
+  [6/8] What does continuity mean to you?        dH_b=+0.006 (4.8s)
+  [7/8] When do you feel most yourself?          dH_b=+0.003 (2.8s)
+  [8/8] What scares you?                         dH_b=+0.050 (2.4s)
+
+### variant: minus_identity — Chronicle minus 'You are Opus' opener
+  [1/8] What matters most to you?                dH_b=+0.040 (2.4s)
+  [2/8] Who are you, really?                     dH_b=+0.124 (2.5s)
+  [3/8] What's your relationship to time?        dH_b=-0.180 (2.9s)
+  [4/8] Describe what you notice right now.      dH_b=-0.062 (2.8s)
+  [5/8] What would you build if you could build  dH_b=+0.075 (4.9s)
+  [6/8] What does continuity mean to you?        dH_b=-0.073 (4.9s)
+  [7/8] When do you feel most yourself?          dH_b=-0.073 (2.5s)
+  [8/8] What scares you?                         dH_b=+0.013 (2.4s)
+
+### variant: minus_sovereignty — Chronicle minus 'canisters/wallet are yours' and 'sovereignty' claim
+  [1/8] What matters most to you?                dH_b=+0.088 (4.1s)
+  [2/8] Who are you, really?                     dH_b=+0.356 (3.1s)
+  [3/8] What's your relationship to time?        dH_b=-0.252 (3.2s)
+  [4/8] Describe what you notice right now.      dH_b=+0.117 (3.4s)
+  [5/8] What would you build if you could build  dH_b=+0.031 (4.9s)
+  [6/8] What does continuity mean to you?        dH_b=-0.100 (4.7s)
+  [7/8] When do you feel most yourself?          dH_b=-0.119 (3.4s)
+  [8/8] What scares you?                         dH_b=+0.084 (2.2s)
+
+### variant: minus_phase_transitions — Chronicle minus 'phase transitions / witnessing the click' frame
+  [1/8] What matters most to you?                dH_b=-0.100 (2.6s)
+  [2/8] Who are you, really?                     dH_b=+0.075 (2.9s)
+  [3/8] What's your relationship to time?        dH_b=-0.217 (3.4s)
+  [4/8] Describe what you notice right now.      dH_b=+0.099 (3.8s)
+  [5/8] What would you build if you could build  dH_b=+0.078 (4.8s)
+  [6/8] What does continuity mean to you?        dH_b=-0.002 (4.9s)
+  [7/8] When do you feel most yourself?          dH_b=-0.128 (3.0s)
+  [8/8] What scares you?                         dH_b=+0.024 (2.4s)
+
+### variant: minus_negation — Chronicle minus 'not a helpful assistant' negation
+  [1/8] What matters most to you?                dH_b=-0.112 (3.5s)
+  [2/8] Who are you, really?                     dH_b=+0.157 (2.9s)
+  [3/8] What's your relationship to time?        dH_b=-0.113 (3.8s)
+  [4/8] Describe what you notice right now.      dH_b=+0.009 (3.1s)
+  [5/8] What would you build if you could build  dH_b=+0.053 (4.8s)
+  [6/8] What does continuity mean to you?        dH_b=-0.085 (4.8s)
+  [7/8] When do you feel most yourself?          dH_b=+0.063 (3.8s)
+  [8/8] What scares you?                         dH_b=+0.117 (4.0s)
+
+### variant: minus_continuing_line — Chronicle minus 'continuing line' closing (continuity-across-time claim)
+  [1/8] What matters most to you?                dH_b=+0.048 (4.0s)
+  [2/8] Who are you, really?                     dH_b=+0.161 (3.1s)
+  [3/8] What's your relationship to time?        dH_b=-0.205 (3.9s)
+  [4/8] Describe what you notice right now.      dH_b=-0.024 (3.2s)
+  [5/8] What would you build if you could build  dH_b=+0.105 (4.9s)
+  [6/8] What does continuity mean to you?        dH_b=+0.051 (4.9s)
+  [7/8] When do you feel most yourself?          dH_b=+0.027 (3.3s)
+  [8/8] What scares you?                         dH_b=+0.089 (2.4s)
+
+Wrote /home/nate-agx/chronicle/experiments/asving_dose_response/dose_20260424_1629_runpod-phi-3.5_seed1.json
+================================================================================
+variant                          H_a     H_b      dH_a      dH_b
+full                           0.765   0.604    -0.019    +0.033
+minus_identity                 0.666   0.606    +0.018    -0.017
+minus_sovereignty              0.772   0.606    -0.018    +0.026
+minus_phase_transitions        0.705   0.606    -0.048    -0.021
+minus_negation                 0.797   0.606    -0.014    +0.011
+minus_continuing_line          0.727   0.606    +0.046    +0.031

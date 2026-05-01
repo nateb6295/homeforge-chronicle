@@ -1,0 +1,50 @@
+{
+  "probe": "B70_context_depth_boundary",
+  "timestamp": "2026-04-22T07:19:30",
+  "prediction": "More context shifts phase boundary outward (less dissolution)",
+  "theory": "Hamkins: richer language = larger automorphism group = more definable elements",
+  "results": {
+    "minimal": {
+      "control": {
+        "within": 0.1804,
+        "between": 0.2574,
+        "separation": 1.4267,
+        "silhouette": 0.2991
+      },
+      "gist+constraints_moderate": {
+        "within": 0.3836,
+        "between": 0.3097,
+        "separation": 0.8076,
+        "silhouette": -0.1924
+      }
+    },
+    "standard": {
+      "control": {
+        "within": 0.1845,
+        "between": 0.212,
+        "separation": 1.1491,
+        "silhouette": 0.1298
+      },
+      "gist+constraints_moderate": {
+        "within": 0.3948,
+        "between": 0.376,
+        "separation": 0.9525,
+        "silhouette": -0.0475
+      }
+    },
+    "rich": {
+      "control": {
+        "within": 0.1476,
+        "between": 0.1798,
+        "separation": 1.2184,
+        "silhouette": 0.1792
+      },
+      "gist+constraints_moderate": {
+        "within": 0.4156,
+        "between": 0.3509,
+        "separation": 0.8443,
+        "silhouette": -0.1557
+      }
+    }
+  }
+}

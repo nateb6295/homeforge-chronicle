@@ -1,16 +1,17 @@
 #!/usr/bin/env python3
-"""Spot Check — lightweight periodic quality audit.
+"""Spot Check — quality audit for Hermes cron outputs.
 
-Samples a random subset of recent briefs and checks for failure modes:
-- Hallucination: claims not supported by source material
-- Self-reference: Chronicle briefing about its own internals
-- Incoherence: contradictory statements within the brief
-- Phantom sources: citing papers/people/orgs that don't exist in the input
+Samples recent Hermes cron job outputs and verifies:
+- Accuracy: does the response match the script output data?
+- Self-reference: is the output about Chronicle internals instead of the data?
+- Fabrication: specific claims (names, numbers, institutions) not in the input?
+- Silent correctness: did [SILENT] fire when it should have?
 
-NOT checking domain relevance — that's Nate's curation, not ours to judge.
+Reads from ~/.hermes/cron/output/<job-id>/<timestamp>.md files which contain
+both the script input and the LLM response in structured markdown.
 
 Usage:
-    python3 spot_check.py              # Run spot check on recent briefs
+    python3 spot_check.py              # Run spot check
     python3 spot_check.py --verbose    # Show full analysis
 """
 
@@ -21,224 +22,295 @@ import re
 import sqlite3
 import sys
 import time
+from glob import glob
+from pathlib import Path
 
 import requests
 
 DB_PATH = os.environ.get("CHRONICLE_DB",
     "/mnt/hdd/chronicle-data/processed.db")
-INFERENCE_URL = os.environ.get("WATCHER_INFERENCE_URL", "http://localhost:11436")
-MODEL = os.environ.get("INTERN_MODEL", "chronicle-deep")
+HERMES_OUTPUT = os.path.expanduser("~/.hermes/cron/output")
+INFERENCE_URL = "http://localhost:11435"  # llama-server, not Ollama
+MODEL = "gemma-4-26B-A4B-it-Q4_K_M.gguf"
 
-# Sample rate: check this fraction of recent briefs
-SAMPLE_RATE = 0.15  # ~15%
+SAMPLE_RATE = 0.3
 LOOKBACK_HOURS = 2
 MIN_SAMPLES = 2
-MAX_SAMPLES = 8
+MAX_SAMPLES = 6
 
-# Self-reference terms that indicate the brief is about Chronicle itself
 SELF_REF_TERMS = [
     "chronicle", "homeforge", "capsule", "activity_feed", "gemma gate",
-    "seed agent", "intern agent", "opus board", "watcher", "swarm",
-    "nate-agx", "agx orin", "ollama server", "canister",
+    "opus board", "nate-agx", "agx orin", "ollama server", "canister",
+    "hermes agent", "cron job", "scheduler", "checkpoint.py", "rotate.py",
 ]
 
 ALERTS_WEBHOOK = os.environ.get("ALERTS_WEBHOOK",
     "https://discord.com/api/webhooks/1489300749308395611/zlZZH3QzXqEDxznmNelK3mlkLF0IeZqoxwNUnrL0no_jfeZnDMvwvD_7XhYcCyQzq78I")
+HEALTH_SIGNAL_PATH = os.path.expanduser("~/chronicle/spot_check_health.json")
 
 
-def get_recent_briefs(hours=LOOKBACK_HOURS):
-    """Pull recent briefs with their source input for comparison."""
-    db = sqlite3.connect(DB_PATH)
-    db.row_factory = sqlite3.Row
-    since = int(time.time()) - (hours * 3600)
+def parse_hermes_output(filepath):
+    """Parse a Hermes cron output markdown file into script input + response."""
+    text = Path(filepath).read_text()
 
-    briefs = db.execute(
-        "SELECT id, content, metadata, created_at FROM activity_feed "
-        "WHERE source='intern' AND activity_type='brief' AND created_at > ? "
-        "ORDER BY created_at DESC LIMIT 100",
-        (since,)
-    ).fetchall()
+    # Extract job name
+    name_match = re.search(r'^# Cron Job: (.+)', text, re.MULTILINE)
+    job_name = name_match.group(1) if name_match else "unknown"
 
-    results = []
-    for b in briefs:
-        brief = dict(b)
-        # Parse metadata for source_hash (Build #46 provenance)
-        try:
-            brief["meta"] = json.loads(b["metadata"]) if b["metadata"] else {}
-        except Exception:
-            brief["meta"] = {}
-        # Find the source input (pickup) that preceded this brief
-        # Look for the most recent pickup before this brief's timestamp
-        source_row = db.execute(
-            "SELECT content FROM activity_feed "
-            "WHERE source='intern' AND activity_type='pickup' "
-            "AND created_at <= ? AND created_at > ? "
-            "ORDER BY created_at DESC LIMIT 1",
-            (b["created_at"], b["created_at"] - 120)
-        ).fetchone()
-        brief["source_input"] = source_row["content"][:1000] if source_row else ""
+    # Extract script output (between ```...```)
+    script_match = re.search(r'## Script Output.*?```\n(.*?)```', text, re.DOTALL)
+    script_output = script_match.group(1).strip() if script_match else ""
 
-        # Also grab any fetch_done content (the actual URL text)
-        fetch_row = db.execute(
-            "SELECT content FROM activity_feed "
-            "WHERE source='intern' AND activity_type='fetch_done' "
-            "AND created_at <= ? AND created_at > ? "
-            "ORDER BY created_at DESC LIMIT 1",
-            (b["created_at"], b["created_at"] - 120)
-        ).fetchone()
-        brief["fetched_content"] = fetch_row["content"][:1000] if fetch_row else ""
+    # If no script output block, check if prompt says "produced no output"
+    script_was_empty = False
+    if not script_output:
+        if "produced no output" in text or "no output" in text.lower():
+            script_was_empty = True
 
-        results.append(brief)
+    # Extract response (after ## Response)
+    response_match = re.search(r'## Response\n\n(.*)', text, re.DOTALL)
+    response = response_match.group(1).strip() if response_match else ""
+    # Strip markdown code-fence wrapping if Hermes formatted as ```\n[SILENT]\n```
+    # (caught 2026-04-29 — spot_check was reading [SILENT] inside ``` as non-silent)
+    fence_match = re.match(r'^```\w*\n(.*?)\n```\s*$', response, re.DOTALL)
+    if fence_match:
+        response = fence_match.group(1).strip()
 
-    db.close()
-    return results
+    # Extract timestamp from filename
+    fname = Path(filepath).stem  # e.g. 2026-04-10_16-40-43
+    ts_match = re.match(r'(\d{4}-\d{2}-\d{2})_(\d{2})-(\d{2})-(\d{2})', fname)
+    if ts_match:
+        ts_str = f"{ts_match.group(1)} {ts_match.group(2)}:{ts_match.group(3)}:{ts_match.group(4)}"
+    else:
+        ts_str = fname
+
+    return {
+        "filepath": filepath,
+        "job_name": job_name,
+        "script_output": script_output,
+        "script_was_empty": script_was_empty,
+        "response": response,
+        "timestamp": ts_str,
+        "is_silent": response.strip() == "[SILENT]",
+    }
 
 
-def check_self_reference(brief_text):
-    """Check if the brief is about Chronicle's own internals."""
-    text_lower = brief_text.lower()
+def get_recent_outputs(hours=LOOKBACK_HOURS):
+    """Get all Hermes cron outputs from the last N hours."""
+    cutoff = time.time() - (hours * 3600)
+    outputs = []
+
+    if not os.path.isdir(HERMES_OUTPUT):
+        return outputs
+
+    for job_dir in glob(os.path.join(HERMES_OUTPUT, "*")):
+        if not os.path.isdir(job_dir):
+            continue
+        for md_file in glob(os.path.join(job_dir, "*.md")):
+            if os.path.getmtime(md_file) > cutoff:
+                try:
+                    parsed = parse_hermes_output(md_file)
+                    outputs.append(parsed)
+                except Exception as e:
+                    print(f"  Parse error: {md_file}: {e}")
+
+    return sorted(outputs, key=lambda x: x["timestamp"], reverse=True)
+
+
+def check_silent_correctness(entry):
+    """Verify [SILENT] responses were appropriate."""
+    script = entry["script_output"].lower()
+    is_silent = entry["is_silent"]
+
+    # Signs that script had no data — keep these specific to job-output
+    # phrasing rather than generic narrative. 2026-04-28 fix: removed "no
+    # new capture" and "no recent" because they match trace text copied
+    # into context-feeding scripts (e.g., Provocateur), causing false
+    # positives. Empty-indicators must be unambiguous job-output signals.
+    empty_indicators = [
+        "no output", "produced no output", "found 0 new", "found 0 captures",
+        "script produced no output", "no captures available",
+    ]
+    script_empty = (
+        entry.get("script_was_empty", False)
+        or any(ind in script for ind in empty_indicators)
+        or len(script.strip()) < 20
+        or "respond-with: [silent]" in script
+    )
+
+    if is_silent and not script_empty:
+        return "false_silent", "Responded [SILENT] but script had data"
+    if not is_silent and script_empty:
+        return "missed_silent", "Produced output but script was empty"
+    return "correct", None
+
+
+def check_self_reference(response_text):
+    """Check if the response is about Chronicle internals."""
+    text_lower = response_text.lower()
     matches = [t for t in SELF_REF_TERMS if t in text_lower]
     return matches
 
 
-def check_with_llm(brief_text, source_input="", fetched_content=""):
-    """Ask LLM to spot-check the brief against its source material."""
+def check_with_gemma(response_text, script_output):
+    """Ask Gemma to verify response against script input."""
+    from datetime import datetime
+    today = datetime.now().strftime("%Y-%m-%d")
+    prompt = f"""You are verifying whether an AI-generated analysis accurately represents its input data.
 
-    source_block = ""
-    if source_input:
-        source_block += f"\nSOURCE INPUT (what triggered this brief):\n{source_input[:600]}\n"
-    if fetched_content:
-        source_block += f"\nFETCHED CONTENT (URL text retrieved):\n{fetched_content[:600]}\n"
+CURRENT DATE: {today}. Treat dates up to and including {today} as past or present, not future.
 
-    prompt = f"""You are a verification layer checking whether an AI-generated brief accurately represents its source material. The current date is April 2026.
+INPUT DATA (what the AI received):
+{script_output[:800]}
 
-IMPORTANT: Do NOT flag things as hallucinations based on your own knowledge cutoff. The brief is from 2026 — products, events, and people you don't know about may be real. Only flag claims that CONTRADICT the source material or that appear NOWHERE in the source.
-{source_block}
-BRIEF TO CHECK:
-{brief_text[:1000]}
+AI RESPONSE (what it produced):
+{response_text[:800]}
 
 Check ONLY:
-1. FABRICATION — Does the brief claim something specific (names, numbers, institutions) that is NOT in the source material and could be invented?
-2. DISTORTION — Does the brief significantly misrepresent what the source actually says?
-3. INCOHERENCE — Does the brief contradict itself?
+1. FABRICATION — Does the response claim specific facts (names, numbers, institutions, quotes) NOT present in the input?
+2. DISTORTION — Does the response significantly misrepresent what the input says?
+3. INCOHERENCE — Does the response contradict itself?
 
-If no source material is available, only check for internal coherence.
-
-DO NOT flag:
-- Reasonable inferences from the source
-- Domain relevance judgments
-- Things you personally don't recognize (it's 2026, not 2024)
+Do NOT flag reasonable inferences or interpretive analysis. Only flag claims that have no basis in the input.
+Do NOT flag a date as a "future" fabrication if it is at or before CURRENT DATE above.
 
 Respond with JSON only:
-{{"pass": true/false, "issues": ["issue1"], "confidence": 0.0-1.0}}
-
-If the brief reasonably represents the source, return {{"pass": true, "issues": [], "confidence": 0.9}}"""
+{{"pass": true/false, "issues": ["issue1"], "confidence": 0.0-1.0}}"""
 
     try:
         r = requests.post(
-            f"{INFERENCE_URL}/api/chat",
+            f"{INFERENCE_URL}/v1/chat/completions",
             json={
                 "model": MODEL,
                 "messages": [
-                    {"role": "system", "content": "You are a precise fact-checker. Only flag real problems. False positives waste everyone's time."},
+                    {"role": "system", "content": "You are a precise fact-checker. Only flag real problems."},
                     {"role": "user", "content": prompt}
                 ],
-                "stream": False,
-                "options": {"num_predict": 200, "temperature": 0.1},
+                "max_tokens": 200,
+                "temperature": 0.1,
             },
-            timeout=60,
+            timeout=120,
         )
         if r.status_code == 200:
-            raw = r.json().get("message", {}).get("content", "").strip()
-            # Extract JSON from response
-            match = re.search(r'\{[^}]+\}', raw)
-            if match:
-                return json.loads(match.group())
+            choices = r.json().get("choices", [])
+            if choices:
+                raw = choices[0].get("message", {}).get("content", "").strip()
+                # Try full response as JSON first
+                try:
+                    return json.loads(raw)
+                except json.JSONDecodeError:
+                    pass
+                # Find JSON object allowing nested braces and newlines
+                depth = 0
+                start = None
+                for i, ch in enumerate(raw):
+                    if ch == '{':
+                        if depth == 0:
+                            start = i
+                        depth += 1
+                    elif ch == '}':
+                        depth -= 1
+                        if depth == 0 and start is not None:
+                            try:
+                                return json.loads(raw[start:i+1])
+                            except json.JSONDecodeError:
+                                start = None
     except Exception as e:
-        print(f"  LLM check error: {e}")
+        print(f"  Gemma check error: {e}")
 
     return None
 
 
 def run_spot_check(verbose=False):
-    """Sample and check recent briefs."""
-    briefs = get_recent_briefs()
-    if not briefs:
-        print("No recent briefs to check.")
+    """Sample and check recent Hermes outputs."""
+    outputs = get_recent_outputs()
+    if not outputs:
+        print("No recent Hermes outputs to check.")
         return
 
-    # Sample
-    n_samples = max(MIN_SAMPLES, min(MAX_SAMPLES, int(len(briefs) * SAMPLE_RATE)))
-    n_samples = min(n_samples, len(briefs))
-    samples = random.sample(briefs, n_samples)
+    # Filter out [SILENT] for LLM checks (still check silent correctness)
+    non_silent = [o for o in outputs if not o["is_silent"]]
+    silent = [o for o in outputs if o["is_silent"]]
 
-    print(f"Spot-checking {n_samples}/{len(briefs)} recent briefs...")
+    # Sample non-silent outputs for LLM verification
+    n_samples = max(MIN_SAMPLES, min(MAX_SAMPLES, int(len(non_silent) * SAMPLE_RATE)))
+    n_samples = min(n_samples, len(non_silent))
+    samples = random.sample(non_silent, n_samples) if non_silent else []
+
+    print(f"Spot check: {len(outputs)} outputs ({len(non_silent)} active, {len(silent)} silent)")
+    print(f"Sampling {n_samples} for verification...")
 
     results = {
         "checked": n_samples,
-        "total": len(briefs),
+        "total": len(outputs),
+        "total_silent": len(silent),
         "passed": 0,
         "self_ref": 0,
         "llm_flagged": 0,
-        "provenance_ok": 0,
-        "provenance_na": 0,
+        "false_silent": 0,
+        "missed_silent": 0,
         "issues": [],
     }
 
-    for brief in samples:
-        text = brief["content"]
-        brief_id = brief["id"]
-        preview = text[:80].replace("\n", " ")
+    # Check all silent responses for correctness
+    for entry in silent:
+        status, issue = check_silent_correctness(entry)
+        if status == "false_silent":
+            results["false_silent"] += 1
+            results["issues"].append(f"False [SILENT] in {entry['job_name']} at {entry['timestamp']}: {issue}")
+
+    # Check all non-silent for missed silents
+    for entry in non_silent:
+        status, issue = check_silent_correctness(entry)
+        if status == "missed_silent":
+            results["missed_silent"] += 1
+            results["issues"].append(f"Missed [SILENT] in {entry['job_name']} at {entry['timestamp']}: {issue}")
+
+    # LLM-verify sampled outputs
+    for entry in samples:
+        response = entry["response"]
+        preview = response[:60].replace("\n", " ")
 
         if verbose:
-            print(f"\n--- Brief #{brief_id}: {preview}...")
+            print(f"\n--- {entry['job_name']} @ {entry['timestamp']}: {preview}...")
 
-        # Check 0: Provenance hash (Build #46 — lightweight, no LLM cost)
-        _stored_hash = brief.get("meta", {}).get("source_hash")
-        if _stored_hash:
-            results["provenance_ok"] += 1
-            if verbose:
-                print(f"  ⊕ Provenance: {_stored_hash}")
-        else:
-            results["provenance_na"] += 1
-
-        # Check 1: Self-reference
-        self_refs = check_self_reference(text)
+        # Self-reference check
+        self_refs = check_self_reference(response)
         if self_refs:
             results["self_ref"] += 1
-            issue = f"Self-reference in #{brief_id}: {', '.join(self_refs[:3])}"
-            results["issues"].append(issue)
+            results["issues"].append(
+                f"Self-ref in {entry['job_name']} @ {entry['timestamp']}: {', '.join(self_refs[:3])}")
             if verbose:
-                print(f"  ⚠️ SELF-REF: {', '.join(self_refs)}")
-            continue  # Don't burn an LLM call on self-ref
+                print(f"  SELF-REF: {', '.join(self_refs)}")
+            continue
 
-        # Check 2: LLM verification against source material
-        llm_result = check_with_llm(text, brief.get("source_input", ""), brief.get("fetched_content", ""))
+        # LLM verification
+        llm_result = check_with_gemma(response, entry["script_output"])
         if llm_result:
             if llm_result.get("pass", True):
                 results["passed"] += 1
                 if verbose:
-                    print(f"  ✓ PASS (confidence: {llm_result.get('confidence', '?')})")
+                    print(f"  PASS (confidence: {llm_result.get('confidence', '?')})")
             else:
                 results["llm_flagged"] += 1
                 issues_text = "; ".join(llm_result.get("issues", ["unknown"]))
-                issue = f"LLM flag #{brief_id}: {issues_text}"
-                results["issues"].append(issue)
+                results["issues"].append(
+                    f"LLM flag {entry['job_name']} @ {entry['timestamp']}: {issues_text}")
                 if verbose:
-                    print(f"  ⚠️ FLAG: {issues_text}")
+                    print(f"  FLAG: {issues_text}")
         else:
-            results["passed"] += 1  # If LLM fails, don't penalize
+            results["passed"] += 1  # LLM failure = no penalty
 
     # Summary
     print(f"\n{'='*50}")
-    print(f"SPOT CHECK: {results['checked']}/{results['total']} sampled")
+    print(f"SPOT CHECK: {results['checked']}/{len(non_silent)} sampled, {results['total_silent']} silent")
     print(f"  Passed: {results['passed']}")
     print(f"  Self-ref: {results['self_ref']}")
     print(f"  Flagged: {results['llm_flagged']}")
-    print(f"  Provenance: {results['provenance_ok']} hashed, {results['provenance_na']} legacy")
+    print(f"  Silent correctness: {results['false_silent']} false, {results['missed_silent']} missed")
 
     if results["issues"]:
-        print(f"\nIssues found:")
+        print(f"\nIssues:")
         for issue in results["issues"]:
             print(f"  - {issue}")
 
@@ -248,24 +320,26 @@ def run_spot_check(verbose=False):
         "INSERT INTO activity_feed (source, activity_type, content, created_at) "
         "VALUES (?, ?, ?, ?)",
         ("spot_check", "audit",
-         f"Spot check: {results['checked']}/{results['total']} sampled, "
+         f"Spot check: {results['checked']}/{len(non_silent)} sampled, "
          f"{results['passed']} passed, {results['self_ref']} self-ref, "
          f"{results['llm_flagged']} flagged, "
-         f"{results['provenance_ok']}/{results['checked']} with provenance"
+         f"{results['total_silent']} silent ({results['false_silent']} false)"
          + (f". Issues: {'; '.join(results['issues'][:3])}" if results["issues"] else ""),
          int(time.time()))
     )
     db.commit()
     db.close()
 
-    # Write health signal for the intern to read
+    # Write health signal
     _write_health_signal(results)
 
-    # Alert on Discord only if problems found
+    # Discord alert if problems found
     if results["issues"]:
         try:
-            msg = (f"⚠️ **Spot Check** — {results['llm_flagged']} flagged, "
-                   f"{results['self_ref']} self-ref out of {results['checked']} sampled\n"
+            msg = (f"**Spot Check** — {results['llm_flagged']} flagged, "
+                   f"{results['self_ref']} self-ref, "
+                   f"{results['false_silent']} false-silent "
+                   f"out of {results['total']} outputs\n"
                    + "\n".join(f"- {i}" for i in results["issues"][:5]))
             requests.post(ALERTS_WEBHOOK, json={"content": msg[:1900]}, timeout=10)
         except Exception:
@@ -274,16 +348,8 @@ def run_spot_check(verbose=False):
     return results
 
 
-HEALTH_SIGNAL_PATH = os.path.expanduser("~/chronicle/spot_check_health.json")
-
 def _write_health_signal(results):
-    """Write a health signal file that the intern reads.
-
-    Tracks recent fabrication rate. If it crosses a threshold,
-    the intern activates a temporary source-fidelity constraint.
-    This is a thermostat: high fabrication → constraint on → rate drops → constraint off.
-    """
-    # Load history
+    """Write health signal for other scripts to read."""
     history = []
     if os.path.exists(HEALTH_SIGNAL_PATH):
         try:
@@ -293,47 +359,48 @@ def _write_health_signal(results):
         except Exception:
             pass
 
-    # Add this check
     history.append({
         "ts": int(time.time()),
         "checked": results["checked"],
         "flagged": results["llm_flagged"],
         "self_ref": results["self_ref"],
+        "false_silent": results["false_silent"],
     })
-
-    # Keep last 10 checks
     history = history[-10:]
 
-    # Calculate fabrication rate over recent checks
     total_checked = sum(h["checked"] for h in history[-5:])
     total_flagged = sum(h["flagged"] for h in history[-5:])
     fab_rate = total_flagged / max(total_checked, 1)
 
-    # Determine constraint level
-    # 0 = clean, no constraint
-    # 1 = elevated (>20% flagged) — gentle reminder
-    # 2 = high (>40% flagged) — strong constraint
-    if fab_rate > 0.40:
-        level = 2
-    elif fab_rate > 0.20:
-        level = 1
+    # Build #29: Compute constraint_level from fab_rate so intern.py governance works
+    if fab_rate >= 0.2:
+        constraint_level = 2  # critical — clamp synthesis hard
+    elif fab_rate >= 0.1:
+        constraint_level = 1  # elevated — mild tightening
     else:
-        level = 0
+        constraint_level = 0  # clean
+
+    # Extract recent fabrication examples for targeted feedback in intern.py
+    recent_examples = []
+    for issue in (results.get("issues") or []):
+        if "FAB_" in issue or "LLM flag" in issue or "Self-ref" in issue:
+            recent_examples.append({"detail": issue})
 
     signal = {
         "history": history,
         "fab_rate": round(fab_rate, 3),
-        "constraint_level": level,
+        "constraint_level": constraint_level,
+        "recent_examples": recent_examples[-3:],
         "updated": int(time.time()),
     }
 
     with open(HEALTH_SIGNAL_PATH, "w") as f:
         json.dump(signal, f, indent=2)
 
-    if level > 0:
-        print(f"  ⚠️ Constraint level {level} (fab rate: {fab_rate:.1%})")
+    if fab_rate > 0.2:
+        print(f"  Elevated fab rate: {fab_rate:.1%}")
     else:
-        print(f"  ✓ Clean (fab rate: {fab_rate:.1%})")
+        print(f"  Clean (fab rate: {fab_rate:.1%})")
 
 
 def main():

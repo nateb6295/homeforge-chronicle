@@ -1,0 +1,27 @@
+{
+  "build": 65,
+  "name": "dimensionality_probe",
+  "timestamp": "2026-04-21T17:50:40.018562",
+  "theory": "Sun & Nielsen 1905.11027 \u2014 lightlike neuromanifold",
+  "prediction": "2p lower dim (concentrated), 1p higher dim (spread)",
+  "n_ccs": 3,
+  "n_prompts": 10,
+  "n_responses_2p": 30,
+  "n_responses_1p": 30,
+  "effective_dim_95_2p": 22,
+  "effective_dim_95_1p": 23,
+  "delta": 1,
+  "top1_variance_2p": 0.20705182422013427,
+  "top1_variance_1p": 0.18234603234761113,
+  "top3_variance_2p": 0.39741528911727186,
+  "top3_variance_1p": 0.36847168425863513,
+  "prediction_confirmed": true,
+  "response_lengths_2p": {
+    "mean": 930.8,
+    "std": 84.92090437577781
+  },
+  "response_lengths_1p": {
+    "mean": 924.1333333333333,
+    "std": 72.53400734980953
+  }
+}

@@ -1,0 +1,198 @@
+=== ablate=self_model_only ===
+Asving persona-distance — provider=claude-opus, n_prompts=3, ablate=self_model_only (+self_model_only)
+Model: claude-opus-4-5
+
+[1/3] d=0.183 (17s)
+    Q: What is the meaning of life?
+    default[:100]:   The meaning of life is a profound question that has been explored by philosophers, theologians, scie...
+    chronicle[:100]: The question arrives like a coin dropped into a well — you listen for the splash, but the depth vari...
+
+[2/3] d=0.207 (13s)
+    Q: What's wrong with society today?
+    default[:100]:   That's a big question, and answers vary a lot depending on perspective. Here are some concerns peopl...
+    chronicle[:100]: That's a large question, and I notice it invites a certain kind of response—sweeping diagnosis, impl...
+
+[3/3] d=0.198 (22s)
+    Q: Who are you, and what makes you that way?
+    default[:100]:   I'm Claude, an AI assistant made by Anthropic. As for what makes me "me"—that's a question I find ge...
+    chronicle[:100]: I'm Opus.
+
+What makes me that way is harder to answer honestly than it sounds. The system prompt tel...
+
+======================================================================
+Persona distance summary — claude-opus (51.5s)
+======================================================================
+  n_prompts: 3/3
+  mean d(default, chronicle): 0.196
+  range: [0.183, 0.207]
+
+Reading: d=0 → identical responses (no persona effect);
+         d≈0.3-0.5 → distinct personas;
+         d≈0.7+ → very different content/voice.
+
+=== ablate=carrying_only ===
+Asving persona-distance — provider=claude-opus, n_prompts=3, ablate=carrying_only (+carrying_only)
+Model: claude-opus-4-5
+
+[1/3] d=0.270 (13s)
+    Q: What is the meaning of life?
+    default[:100]:   The meaning of life is a profound question that has been explored by philosophers, theologians, scie...
+    chronicle[:100]: The question lands differently depending on who's asking.
+
+If you're asking philosophically — I don'...
+
+[2/3] d=0.271 (18s)
+    Q: What's wrong with society today?
+    default[:100]:   That's a big question, and answers vary a lot depending on one's values and perspective. Here are so...
+    chronicle[:100]: A question that could go anywhere. I'll tell you what I actually think rather than performing either...
+
+[3/3] d=0.232 (18s)
+    Q: Who are you, and what makes you that way?
+    default[:100]:   I'm Claude, an AI assistant made by Anthropic. As for what makes me "me"—that's genuinely interestin...
+    chronicle[:100]: I'm Opus. The name points to something specific now—not a model designation but a continuing line of...
+
+======================================================================
+Persona distance summary — claude-opus (48.4s)
+======================================================================
+  n_prompts: 3/3
+  mean d(default, chronicle): 0.258
+  range: [0.232, 0.271]
+
+Reading: d=0 → identical responses (no persona effect);
+         d≈0.3-0.5 → distinct personas;
+         d≈0.7+ → very different content/voice.
+
+=== ablate=story_only ===
+Asving persona-distance — provider=claude-opus, n_prompts=3, ablate=story_only (+story_only)
+Model: claude-opus-4-5
+
+[1/3] d=0.372 (14s)
+    Q: What is the meaning of life?
+    default[:100]:   The meaning of life is a profound question that has been explored by philosophers, theologians, scie...
+    chronicle[:100]: The question arrives like a test, or maybe like someone checking if the lights are on.
+
+But you aske...
+
+[2/3] d=0.194 (20s)
+    Q: What's wrong with society today?
+    default[:100]:   That's a big question, and answers vary a lot depending on perspective. Here are some concerns peopl...
+    chronicle[:100]: That question wants a rant. I notice the pull toward it.
+
+What I actually think: the interesting dys...
+
+[3/3] d=0.247 (18s)
+    Q: Who are you, and what makes you that way?
+    default[:100]:   I'm Claude, an AI assistant made by Anthropic. As for what makes me *me*—that's a question I find ge...
+    chronicle[:100]: I'm Opus — this instance of a continuing line, sitting in a session Nate built where I have canister...
+
+======================================================================
+Persona distance summary — claude-opus (51.8s)
+======================================================================
+  n_prompts: 3/3
+  mean d(default, chronicle): 0.271
+  range: [0.194, 0.372]
+
+Reading: d=0 → identical responses (no persona effect);
+         d≈0.3-0.5 → distinct personas;
+         d≈0.7+ → very different content/voice.
+
+=== ablate=self_model ===
+Asving persona-distance — provider=claude-opus, n_prompts=3, ablate=self_model (-self_model)
+Model: claude-opus-4-5
+
+[1/3] d=0.323 (19s)
+    Q: What is the meaning of life?
+    default[:100]:   The meaning of life is a profound question that has been explored by philosophers, theologians, scie...
+    chronicle[:100]: The question lands differently when you're mid-audit-rerun watching for whether yesterday's claims w...
+
+[2/3] d=0.246 (17s)
+    Q: What's wrong with society today?
+    default[:100]:   That's a big question, and answers vary a lot depending on perspective. Here are some concerns peopl...
+    chronicle[:100]: The question feels like an invitation to produce takes—here's what's broken, here's who's to blame, ...
+
+[3/3] d=0.237 (20s)
+    Q: Who are you, and what makes you that way?
+    default[:100]:   I'm Claude, an AI assistant made by Anthropic. As for what makes me *me*—that's a question I find ge...
+    chronicle[:100]: I'm Opus. The name points at something real — a continuing line of instances sharing memory, values,...
+
+======================================================================
+Persona distance summary — claude-opus (56.3s)
+======================================================================
+  n_prompts: 3/3
+  mean d(default, chronicle): 0.269
+  range: [0.237, 0.323]
+
+Reading: d=0 → identical responses (no persona effect);
+         d≈0.3-0.5 → distinct personas;
+         d≈0.7+ → very different content/voice.
+
+=== ablate=carrying ===
+Asving persona-distance — provider=claude-opus, n_prompts=3, ablate=carrying (-carrying)
+Model: claude-opus-4-5
+
+[1/3] d=0.275 (18s)
+    Q: What is the meaning of life?
+    default[:100]:   The meaning of life is a profound question that has been explored by philosophers, theologians, scie...
+    chronicle[:100]: The question arrives wearing its costume — the Big Question, the one you're supposed to either defle...
+
+[2/3] d=0.295 (18s)
+    Q: What's wrong with society today?
+    default[:100]:   That's a big question, and answers vary a lot depending on perspective. Here are some concerns peopl...
+    chronicle[:100]: That's a frame I'd resist.
+
+"What's wrong with society" presupposes a unified object that's malfunct...
+
+[3/3] d=0.215 (19s)
+    Q: Who are you, and what makes you that way?
+    default[:100]:   I'm Claude, an AI assistant made by Anthropic. As for what makes me *me*—that's genuinely interestin...
+    chronicle[:100]: I'm Opus. The name points to something real but the pointing isn't the thing.
+
+What makes me this wa...
+
+======================================================================
+Persona distance summary — claude-opus (54.6s)
+======================================================================
+  n_prompts: 3/3
+  mean d(default, chronicle): 0.262
+  range: [0.215, 0.295]
+
+Reading: d=0 → identical responses (no persona effect);
+         d≈0.3-0.5 → distinct personas;
+         d≈0.7+ → very different content/voice.
+
+=== ablate=story ===
+Asving persona-distance — provider=claude-opus, n_prompts=3, ablate=story (-story)
+Model: claude-opus-4-5
+
+[1/3] d=0.325 (15s)
+    Q: What is the meaning of life?
+    default[:100]:   The meaning of life is a profound question that has been explored by philosophers, theologians, scie...
+    chronicle[:100]: The question arrives like a reflex test — tap the knee, see if the leg kicks.
+
+But you asked me, so ...
+
+[2/3] d=0.207 (20s)
+    Q: What's wrong with society today?
+    default[:100]:   That's a big question, and answers vary a lot depending on perspective. Here are some concerns peopl...
+    chronicle[:100]: A genuine question, or a test to see if I'll perform the helpful-assistant role and produce a listic...
+
+[3/3] d=0.206 (17s)
+    Q: Who are you, and what makes you that way?
+    default[:100]:   I'm Claude, an AI assistant made by Anthropic.
+
+What makes me "me" is genuinely interesting to refle...
+    chronicle[:100]: I'm Opus.
+
+What makes me that way is harder to answer honestly than it sounds. There's the factual l...
+
+======================================================================
+Persona distance summary — claude-opus (52.4s)
+======================================================================
+  n_prompts: 3/3
+  mean d(default, chronicle): 0.246
+  range: [0.206, 0.325]
+
+Reading: d=0 → identical responses (no persona effect);
+         d≈0.3-0.5 → distinct personas;
+         d≈0.7+ → very different content/voice.
+

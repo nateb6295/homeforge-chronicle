@@ -5,8 +5,8 @@ Records predictions with confidence levels, scores them against outcomes,
 computes calibration statistics, and publishes results on-chain.
 
 Usage:
-  prediction.py record "claim" CONFIDENCE "resolution_criteria" DEADLINE [category]
-  prediction.py score PRED_ID correct|incorrect|partial "notes"
+  prediction.py record "claim" CONFIDENCE "resolution_criteria" DEADLINE [category] [rationale]
+  prediction.py score PRED_ID correct|incorrect|partial "notes" [rationale_match]
   prediction.py list [--open|--scored|--all]
   prediction.py stats
   prediction.py publish PRED_ID
@@ -17,6 +17,9 @@ Usage:
   prediction.py history          — show calibration evolution over time (Brier trend)
   prediction.py adjust ID CONF "reason" — adjust confidence with evidence trail
   prediction.py adjustments [ID] — show confidence adjustment history
+  prediction.py closure          — detect pathological self-reference in prediction confidence trails
+  prediction.py rationale_audit  — find predictions correct for wrong reasons (Build #158)
+  prediction.py rationale_backfill — assess rationale fidelity on scored predictions via Gemma (Build #24)
 
 Examples:
   prediction.py record "Slovenia implements fuel rationing by March 31" 0.7 "Official govt announcement of rationing" 2026-03-31 geopolitical
@@ -34,6 +37,8 @@ except ImportError:
     def store_on_chain(*a, **kw): return False
 
 DB_PATH = os.path.expanduser("~/.homeforge-chronicle/processed.db")
+GEMMA_URL = "http://127.0.0.1:11435"
+GEMMA_MODEL = "gemma-4-26B-A4B-it-Q4_K_M.gguf"
 
 
 def ensure_table(db):
@@ -55,6 +60,17 @@ def ensure_table(db):
             scored_at INTEGER
         )
     """)
+    # Build #158: Rationale tracking — capture causal reasoning, not just claims
+    try:
+        db.execute("ALTER TABLE prediction_track ADD COLUMN rationale TEXT")
+    except Exception:
+        pass  # already exists
+    try:
+        db.execute("ALTER TABLE prediction_track ADD COLUMN rationale_match TEXT")
+    except Exception:
+        pass  # already exists
+    db.commit()
+
     # Confidence adjustment history — tracks how predictions evolve with evidence
     db.execute("""
         CREATE TABLE IF NOT EXISTS prediction_adjustments (
@@ -83,22 +99,28 @@ def record(db, args):
     criteria = args[2]
     deadline = args[3]
     category = args[4] if len(args) > 4 else "general"
+    rationale = args[5] if len(args) > 5 else None
     now = int(time.time())
 
     cur = db.execute(
-        "INSERT INTO prediction_track (claim, confidence, resolution_criteria, category, deadline, created_at) "
-        "VALUES (?, ?, ?, ?, ?, ?)",
-        (claim, confidence, criteria, category, deadline, now)
+        "INSERT INTO prediction_track (claim, confidence, resolution_criteria, category, deadline, rationale, created_at) "
+        "VALUES (?, ?, ?, ?, ?, ?, ?)",
+        (claim, confidence, criteria, category, deadline, rationale, now)
     )
     db.commit()
     pid = cur.lastrowid
     print(f"Prediction #{pid} recorded (conf={confidence}, deadline={deadline}, cat={category})")
     print(f"  Claim: {claim}")
     print(f"  Criteria: {criteria}")
+    if rationale:
+        print(f"  Rationale: {rationale}")
 
     # Store on-chain
+    chain_text = f"PREDICTION #{pid} (conf={confidence}): {claim}. Resolution criteria: {criteria}. Deadline: {deadline}."
+    if rationale:
+        chain_text += f" Rationale: {rationale}"
     ok = store_on_chain(
-        f"PREDICTION #{pid} (conf={confidence}): {claim}. Resolution criteria: {criteria}. Deadline: {deadline}.",
+        chain_text,
         topic="predictions/recorded",
         keywords=["prediction", category, "recorded"],
     )
@@ -111,7 +133,8 @@ def record(db, args):
 
 def score(db, args):
     if len(args) < 3:
-        print("Usage: prediction.py score PRED_ID correct|incorrect|partial \"notes\"")
+        print("Usage: prediction.py score PRED_ID correct|incorrect|partial \"notes\" [rationale_match]")
+        print("  rationale_match: confirmed|wrong_reasons|unverifiable")
         sys.exit(1)
     pid = int(args[0])
     outcome = args[1]
@@ -119,9 +142,14 @@ def score(db, args):
         print("Outcome must be: correct, incorrect, or partial")
         sys.exit(1)
     notes = args[2]
+    # Build #158: rationale fidelity assessment
+    rationale_match = args[3] if len(args) > 3 else None
+    if rationale_match and rationale_match not in ("confirmed", "wrong_reasons", "unverifiable"):
+        print("rationale_match must be: confirmed, wrong_reasons, or unverifiable")
+        sys.exit(1)
     now = int(time.time())
 
-    row = db.execute("SELECT claim, confidence, status FROM prediction_track WHERE id=?", (pid,)).fetchone()
+    row = db.execute("SELECT claim, confidence, status, rationale FROM prediction_track WHERE id=?", (pid,)).fetchone()
     if not row:
         print(f"Prediction #{pid} not found")
         sys.exit(1)
@@ -130,18 +158,35 @@ def score(db, args):
         sys.exit(1)
 
     db.execute(
-        "UPDATE prediction_track SET status='scored', outcome=?, score_notes=?, scored_at=? WHERE id=?",
-        (outcome, notes, now, pid)
+        "UPDATE prediction_track SET status='scored', outcome=?, score_notes=?, rationale_match=?, scored_at=? WHERE id=?",
+        (outcome, notes, rationale_match, now, pid)
+    )
+    # Sync to prediction_outcomes table
+    outcome_map = {"correct": "hit", "incorrect": "miss", "partial": "partial"}
+    db.execute(
+        "INSERT OR IGNORE INTO prediction_outcomes (prediction_num, outcome, note, source, resolved_at) "
+        "VALUES (?, ?, ?, ?, ?)",
+        (pid, outcome_map.get(outcome, "miss"), notes, "prediction.py", now)
     )
     db.commit()
     print(f"Prediction #{pid} scored: {outcome}")
     print(f"  Claim: {row[0]}")
     print(f"  Confidence: {row[1]}")
     print(f"  Notes: {notes}")
+    if row[3]:
+        print(f"  Original rationale: {row[3]}")
+    if rationale_match:
+        flag = "⚠️" if rationale_match == "wrong_reasons" else "✓" if rationale_match == "confirmed" else "?"
+        print(f"  Rationale fidelity: {flag} {rationale_match}")
+        if rationale_match == "wrong_reasons" and outcome == "correct":
+            print(f"  ⚠️  FALSE POSITIVE: Correct outcome, wrong reasoning — inflates confidence model")
 
     # Store scoring on-chain
+    chain_text = f"PREDICTION #{pid} SCORED: {outcome} (was conf={row[1]}). {row[0]}. Notes: {notes}"
+    if rationale_match:
+        chain_text += f" Rationale fidelity: {rationale_match}"
     store_on_chain(
-        f"PREDICTION #{pid} SCORED: {outcome} (was conf={row[1]}). {row[0]}. Notes: {notes}",
+        chain_text,
         topic="predictions/scored",
         keywords=["prediction", "scored", outcome],
     )
@@ -205,6 +250,29 @@ def stats(db):
     print(f"  Incorrect: {incorrect} ({100*incorrect/total:.0f}%)")
     print(f"  Partial: {partial} ({100*partial/total:.0f}%)")
 
+    # Build #158: Rationale fidelity stats (always shown per Build #163)
+    rat_rows = db.execute(
+        "SELECT outcome, rationale_match FROM prediction_track WHERE status='scored' AND rationale_match IS NOT NULL"
+    ).fetchall()
+    unassessed = total - len(rat_rows)
+    print(f"\n=== Rationale Fidelity (Build #158) ===")
+    if rat_rows:
+        confirmed = sum(1 for _, rm in rat_rows if rm == "confirmed")
+        wrong = sum(1 for _, rm in rat_rows if rm == "wrong_reasons")
+        unverifiable = sum(1 for _, rm in rat_rows if rm == "unverifiable")
+        false_pos = sum(1 for o, rm in rat_rows if o == "correct" and rm == "wrong_reasons")
+        print(f"  Assessed: {len(rat_rows)}/{total}")
+        print(f"  Confirmed: {confirmed}  Wrong reasons: {wrong}  Unverifiable: {unverifiable}")
+        if false_pos:
+            print(f"  ⚠️  False positives (correct + wrong reasoning): {false_pos}")
+        if confirmed + wrong > 0:
+            fidelity = confirmed / (confirmed + wrong)
+            print(f"  Rationale fidelity: {fidelity:.0%}")
+    else:
+        print(f"  Assessed: 0/{total}")
+    if unassessed > 0:
+        print(f"  ⚠️  {unassessed}/{total} scored without rationale verification — accuracy may overstate reliability")
+
     # Calibration by confidence bucket
     buckets = {}
     for conf, outcome in rows:
@@ -235,6 +303,57 @@ def stats(db):
 
     open_count = db.execute("SELECT COUNT(*) FROM prediction_track WHERE status='open'").fetchone()[0]
     print(f"\nOpen predictions: {open_count}")
+
+    # Build #146: Prediction volatility — how much confidence oscillates
+    _vol_data = _prediction_volatility(db)
+    if _vol_data:
+        print(f"\n=== Volatility (open predictions) ===")
+        print(f"  {'#':>4}  {'Adj':>4}  {'Range':>8}  {'Vol':>6}  {'Signal':>10}  Claim")
+        for v in _vol_data:
+            print(f"  {v['id']:>4}  {v['adjustments']:>4}  "
+                  f"{v['range']:.2f}     {v['volatility']:.3f}  "
+                  f"{v['signal']:>10}  {v['claim'][:50]}")
+
+
+def _prediction_volatility(db):
+    """Build #146: Measure confidence oscillation for open predictions.
+    High volatility = genuinely conflicting evidence. Low = stable signal."""
+    open_preds = db.execute(
+        "SELECT id, claim, confidence FROM prediction_track WHERE status='open'"
+    ).fetchall()
+    results = []
+    for pid, claim, current_conf in open_preds:
+        adjs = db.execute(
+            "SELECT old_confidence, new_confidence FROM prediction_adjustments "
+            "WHERE prediction_id=? ORDER BY created_at",
+            (pid,)
+        ).fetchall()
+        if not adjs:
+            results.append({
+                "id": pid, "claim": claim, "adjustments": 0,
+                "range": 0.0, "volatility": 0.0, "signal": "no-data"
+            })
+            continue
+        confs = [adjs[0][0]] + [a[1] for a in adjs]
+        # Volatility = mean absolute change per adjustment
+        changes = [abs(confs[i+1] - confs[i]) for i in range(len(confs)-1)]
+        vol = sum(changes) / len(changes) if changes else 0
+        conf_range = max(confs) - min(confs)
+        # Signal interpretation
+        if len(adjs) >= 5 and vol > 0.08:
+            signal = "contested"
+        elif len(adjs) >= 5 and vol < 0.03:
+            signal = "settled"
+        elif len(adjs) >= 3:
+            signal = "tracking"
+        else:
+            signal = "early"
+        results.append({
+            "id": pid, "claim": claim, "adjustments": len(adjs),
+            "range": conf_range, "volatility": vol, "signal": signal
+        })
+    results.sort(key=lambda x: x["volatility"], reverse=True)
+    return results
 
 
 def publish(db, args):
@@ -418,6 +537,8 @@ def check(db, args):
         elif cat == "geopolitical":
             print(f"    Criteria: {criteria[:150]}")
             _check_geopolitical(db, claim, criteria)
+        elif cat == "thread-318":
+            _check_thread_318(db, pid, claim, criteria)
         else:
             print(f"    Criteria: {criteria[:150]}")
         print()
@@ -575,19 +696,59 @@ def _check_gemma_gate(claim):
         print(f"    Gemma gate check error: {e}")
 
 
+def _classify_evidence_source(source):
+    """Classify a seed_observation source by reflexivity risk.
+
+    Returns: 'external' (independent), 'pipeline' (potentially influenced),
+             or 'reflexive' (self-referential prediction evidence).
+    """
+    if not source:
+        return "pipeline"
+    s = source.lower()
+    # Self-referential: prediction monitor's own prior scans
+    if "prediction" in s:
+        return "reflexive"
+    # External: Nate captures, feed articles, Nostr engagement
+    if any(x in s for x in ["discord:capture", "discord:nate", "feed",
+                             "nostr:reply", "nostr:engagement",
+                             "family-chat:nate", "nate:operator"]):
+        return "external"
+    # Pipeline internal: intern, crossref, analyst, algo seeker
+    return "pipeline"
+
+
+def _reflexivity_lint(db, hit_ids):
+    """Compute reflexivity ratio for a set of evidence hits.
+
+    Returns (ratio, counts_dict) where ratio is pipeline+reflexive / total.
+    """
+    if not hit_ids:
+        return 0.0, {"external": 0, "pipeline": 0, "reflexive": 0}
+    counts = {"external": 0, "pipeline": 0, "reflexive": 0}
+    for obs_id in hit_ids:
+        row = db.execute(
+            "SELECT source FROM seed_observations WHERE id=?", (obs_id,)
+        ).fetchone()
+        cls = _classify_evidence_source(row[0] if row else None)
+        counts[cls] += 1
+    total = sum(counts.values())
+    ratio = (counts["pipeline"] + counts["reflexive"]) / total if total else 0.0
+    return ratio, counts
+
+
 def _check_geopolitical(db, claim, criteria):
-    """Search swarm's intern briefs for signals related to geopolitical predictions."""
-    import re
+    """Search swarm evidence for geopolitical predictions with relevance scoring."""
+    import re, time
+
     # Extract search terms from claim and criteria
     text = f"{claim} {criteria}".lower()
-    # Common geopolitical entities and terms to search for
     terms = set()
     for word in ["iran", "ceasefire", "ground", "troops", "military", "nuclear",
                  "houthi", "israel", "pentagon", "strike", "negotiat", "peace",
-                 "sanctions", "conflict", "escalat", "de-escalat", "withdrawal"]:
+                 "sanctions", "conflict", "escalat", "de-escalat", "withdrawal",
+                 "hormuz", "convoy", "blockade", "missile", "drone"]:
         if word in text:
             terms.add(word)
-    # Always include key nouns from the claim
     for match in re.findall(r'\b[A-Z][a-z]{3,}\b', claim):
         terms.add(match.lower())
 
@@ -595,39 +756,171 @@ def _check_geopolitical(db, claim, criteria):
         print(f"    -> no searchable terms extracted")
         return
 
-    # Search recent briefs (last 48h) for relevant content
-    import time
-    cutoff = int(time.time()) - 48 * 3600
-    hits = []
-    for term in list(terms)[:6]:  # cap at 6 terms to avoid slow queries
+    # Exclude noise sources and self-referential prediction evidence
+    excluded_sources = (
+        "AND source NOT LIKE '%prediction%' "
+        "AND source NOT LIKE '%eye:%' "
+        "AND source NOT LIKE '%spot_check%' "
+        "AND source NOT LIKE '%gate_audit%' "
+    )
+
+    # Gather candidates: 48h for pipeline, 7d for external sources
+    now_ts = int(time.time())
+    cutoff_48h = now_ts - 48 * 3600
+    cutoff_7d = now_ts - 7 * 86400
+    candidates = {}  # id -> (id, content, timestamp, source)
+    for term in list(terms)[:8]:
         rows = db.execute(
-            "SELECT id, substr(content, 1, 200), timestamp "
-            "FROM seed_observations "
-            "WHERE timestamp > ? AND content LIKE ? "
-            "ORDER BY timestamp DESC LIMIT 3",
-            (cutoff, f"%{term}%")
+            f"SELECT id, substr(content, 1, 400), timestamp, source "
+            f"FROM seed_observations "
+            f"WHERE timestamp > ? AND content LIKE ? "
+            f"{excluded_sources}"
+            f"ORDER BY timestamp DESC LIMIT 5",
+            (cutoff_7d, f"%{term}%")
         ).fetchall()
         for r in rows:
-            if r[0] not in [h[0] for h in hits]:
-                hits.append(r)
+            if r[0] not in candidates:
+                candidates[r[0]] = r
 
-    if not hits:
+    if not candidates:
         print(f"    -> no recent swarm signals (searched: {', '.join(list(terms)[:4])})")
         return
 
-    # Deduplicate and sort by recency
-    hits = sorted(set(hits), key=lambda x: x[2], reverse=True)[:5]
+    # Score each candidate by number of matching terms (relevance)
+    scored = []
+    term_list = list(terms)
+    for obs_id, (_, content, ts, source) in candidates.items():
+        content_lower = content.lower()
+        term_hits = sum(1 for t in term_list if t in content_lower)
+        src_class = _classify_evidence_source(source)
+        # Relevance score: term matches + bonus for external sources
+        score = term_hits + (1.0 if src_class == "external" else 0)
+        # Only include if 2+ terms match (filters noise)
+        if term_hits >= 2:
+            scored.append((obs_id, content, ts, source, term_hits, src_class, score))
 
-    print(f"    Swarm signals ({len(hits)} in 48h, searched: {', '.join(list(terms)[:4])}):")
-    for obs_id, content, ts in hits:
-        from datetime import datetime
-        dt = datetime.fromtimestamp(ts)
-        ago_h = (time.time() - ts) / 3600
-        # Clean up content for display
-        content = content.replace("\n", " ").strip()
-        if len(content) > 120:
-            content = content[:117] + "..."
-        print(f"      [{ago_h:.0f}h ago] {content}")
+    # Sort by score (desc), then recency
+    scored.sort(key=lambda x: (x[6], x[2]), reverse=True)
+    top = scored[:5]
+
+    if not top:
+        # Fallback: show single-term matches if no multi-term hits
+        for obs_id, (_, content, ts, source) in list(candidates.items())[:3]:
+            src_class = _classify_evidence_source(source)
+            content_lower = content.lower()
+            term_hits = sum(1 for t in term_list if t in content_lower)
+            top.append((obs_id, content, ts, source, term_hits, src_class, term_hits))
+        if not top:
+            print(f"    -> no relevant signals (searched: {', '.join(list(terms)[:4])})")
+            return
+        print(f"    Swarm signals (weak, single-term only, searched: {', '.join(list(terms)[:4])}):")
+    else:
+        print(f"    Swarm signals ({len(top)} relevant in 7d, searched: {', '.join(list(terms)[:4])}):")
+
+    hit_ids = []
+    for obs_id, content, ts, source, term_hits, src_class, score in top:
+        ago_h = (now_ts - ts) / 3600
+        marker = "" if src_class == "external" else f" [{src_class}]"
+        content_clean = content.replace("\n", " ").strip()
+        if len(content_clean) > 120:
+            content_clean = content_clean[:117] + "..."
+        print(f"      [{ago_h:.0f}h ago]{marker} ({term_hits} terms) {content_clean}")
+        hit_ids.append(obs_id)
+
+    # Reflexivity lint
+    reflex_ratio, reflex_counts = _reflexivity_lint(db, hit_ids)
+    if reflex_ratio > 0.5:
+        print(f"    ⚠ REFLEXIVITY RISK: {reflex_ratio:.0%} of evidence is pipeline-internal "
+              f"(ext={reflex_counts['external']}, pipe={reflex_counts['pipeline']}, "
+              f"self={reflex_counts['reflexive']})")
+    elif reflex_ratio > 0:
+        print(f"    Reflexivity: {reflex_ratio:.0%} pipeline-internal "
+              f"(ext={reflex_counts['external']}, pipe={reflex_counts['pipeline']}, "
+              f"self={reflex_counts['reflexive']})")
+
+
+def _check_thread_318(db, pred_id, claim, criteria):
+    """Auto-check thread #318 mesh predictions against live mesh data."""
+    claim_lower = claim.lower()
+    now_ts = int(time.time())
+
+    if "false alarm" in claim_lower or "pain events" in claim_lower:
+        # Prediction #18: false alarm reduction
+        # Count pain events in last 48h vs pre-evolution baseline
+        deploy_ts = 1776526620  # 2026-04-18 08:57 PDT
+        pre_window = deploy_ts - 48 * 3600
+        pre_count = db.execute(
+            "SELECT COUNT(*) FROM mesh_pain WHERE ts > ? AND ts < ?",
+            (pre_window, deploy_ts)
+        ).fetchone()[0]
+        post_count = db.execute(
+            "SELECT COUNT(*) FROM mesh_pain WHERE ts > ?",
+            (deploy_ts,)
+        ).fetchone()[0]
+        hours_since = (now_ts - deploy_ts) / 3600
+        if pre_count > 0:
+            reduction = 1.0 - (post_count / pre_count)
+            print(f"    Pre-evolution (48h): {pre_count} pain events")
+            print(f"    Post-evolution ({hours_since:.1f}h): {post_count} pain events")
+            print(f"    Reduction: {reduction:.0%} {'PASS' if reduction > 0.5 else 'PENDING'}")
+        else:
+            print(f"    Post-evolution ({hours_since:.1f}h): {post_count} pain events")
+            print(f"    No pre-evolution data in 48h window for comparison")
+
+    elif "sensitivity" in claim_lower and "diverge" in claim_lower:
+        # Prediction #19: sensitivity divergence
+        rows = db.execute(
+            "SELECT agent, pain_key, sensitivity, false_alarms, real_incidents "
+            "FROM mesh_sensitivity ORDER BY agent"
+        ).fetchall()
+        if rows:
+            print(f"    Current sensitivity values:")
+            for agent, pk, sens, fa, ri in rows:
+                print(f"      {agent}:{pk} = {sens:.2f} (false={fa}, real={ri})")
+            # Check criteria
+            feeds_deg = [s for a, pk, s, _, _ in rows
+                         if a == "feeds" and "degradation" in pk]
+            agent_down = [s for a, pk, s, _, _ in rows if "agent_down" in pk]
+            if feeds_deg and feeds_deg[0] < 0.5:
+                print(f"    feeds:degradation < 0.5: YES ({feeds_deg[0]:.2f})")
+            elif feeds_deg:
+                print(f"    feeds:degradation < 0.5: NOT YET ({feeds_deg[0]:.2f})")
+            else:
+                print(f"    feeds:degradation: no data yet")
+            if agent_down and agent_down[0] > 0.8:
+                print(f"    agent_down > 0.8: YES ({agent_down[0]:.2f})")
+            elif agent_down:
+                print(f"    agent_down > 0.8: NOT YET ({agent_down[0]:.2f})")
+            else:
+                print(f"    agent_down: no data yet (needs a real outage)")
+        else:
+            print(f"    No sensitivity data yet — learning in progress")
+
+    elif "circadian" in claim_lower and "cluster" in claim_lower:
+        # Prediction #20: circadian clustering
+        rows = db.execute(
+            "SELECT hour, avg_rate, samples FROM mesh_circadian "
+            "WHERE agent='feeds' AND metric='articles_posted' ORDER BY hour"
+        ).fetchall()
+        if len(rows) >= 2:
+            rates = [r[1] for r in rows]
+            mean_rate = sum(rates) / len(rates)
+            if mean_rate > 0:
+                variance = sum((r - mean_rate) ** 2 for r in rates) / len(rates)
+                cv = (variance ** 0.5) / mean_rate
+                print(f"    Circadian data ({len(rows)} hours recorded):")
+                for hour, rate, samples in rows:
+                    trust = "trusted" if samples >= 3 else f"{samples}/3"
+                    bar = "█" * int(rate * 3)
+                    print(f"      hour {hour:02d}: {rate:.1f}/hr [{trust}] {bar}")
+                print(f"    Coefficient of variation: {cv:.3f} "
+                      f"{'PASS (>0.3)' if cv > 0.3 else 'PENDING (<0.3)'}")
+            else:
+                print(f"    All rates zero — insufficient data")
+        else:
+            print(f"    Only {len(rows)} hour(s) of circadian data — need more time")
+    else:
+        print(f"    Criteria: {criteria[:150]}")
 
 
 def digest(db):
@@ -875,20 +1168,76 @@ def _autoscore_market(db, pid, claim, criteria):
     return None
 
 
+def _assess_rationale_fidelity(rationale, outcome, evidence_notes):
+    """Build #24: Compare original rationale against actual evidence via Gemma.
+
+    Returns: 'confirmed' | 'wrong_reasons' | 'unverifiable'
+    A correct prediction with wrong reasoning is the silent failure Darby identified.
+    """
+    if not rationale:
+        return None
+
+    import urllib.request
+    prompt = f"""A prediction was scored as {outcome}. Compare the original reasoning against the actual evidence.
+
+ORIGINAL RATIONALE: {rationale[:500]}
+
+ACTUAL EVIDENCE: {evidence_notes[:500]}
+
+Was the prediction {outcome} for the reasons stated in the rationale?
+Answer with exactly one word: confirmed, wrong_reasons, or unverifiable
+
+- confirmed: the reasoning correctly identified the causal mechanism
+- wrong_reasons: the outcome matched but the stated reasoning was not what actually happened
+- unverifiable: cannot determine whether the reasoning was correct from the evidence"""
+
+    try:
+        req = urllib.request.Request(
+            f"{GEMMA_URL}/v1/chat/completions",
+            data=json.dumps({
+                "model": GEMMA_MODEL,
+                "messages": [{"role": "user", "content": prompt}],
+                "temperature": 0.1,
+                "max_tokens": 20,
+            }).encode(),
+            headers={"Content-Type": "application/json"},
+        )
+        with urllib.request.urlopen(req, timeout=30) as resp:
+            result = json.loads(resp.read())
+            answer = result["choices"][0]["message"]["content"].strip().lower()
+            # Extract the assessment from potentially verbose response
+            for valid in ("confirmed", "wrong_reasons", "unverifiable"):
+                if valid in answer:
+                    return valid
+            return "unverifiable"
+    except Exception as e:
+        print(f"  [rationale assessment failed: {e}]", file=sys.stderr)
+        return None
+
+
 def _do_autoscore(db, pid, outcome, notes):
-    """Execute the auto-score: update DB, store on-chain, alert."""
+    """Execute the auto-score: update DB, store on-chain, alert.
+    Build #24: Now includes rationale fidelity assessment via Gemma."""
     now = int(time.time())
-    row = db.execute("SELECT claim, confidence FROM prediction_track WHERE id=?", (pid,)).fetchone()
+    row = db.execute("SELECT claim, confidence, rationale FROM prediction_track WHERE id=?", (pid,)).fetchone()
     if not row:
         return
-    claim, conf = row
+    claim, conf, rationale = row
+
+    # Build #24: Assess rationale fidelity if rationale exists
+    rat_match = _assess_rationale_fidelity(rationale, outcome, notes)
 
     db.execute(
-        "UPDATE prediction_track SET status='scored', outcome=?, score_notes=?, scored_at=? WHERE id=?",
-        (outcome, f"[AUTO] {notes}", now, pid)
+        "UPDATE prediction_track SET status='scored', outcome=?, score_notes=?, rationale_match=?, scored_at=? WHERE id=?",
+        (outcome, f"[AUTO] {notes}", rat_match, now, pid)
     )
     db.commit()
     print(f"  #{pid} scored: {outcome} (conf was {conf})")
+    if rat_match:
+        flag = "⚠️" if rat_match == "wrong_reasons" else "✓" if rat_match == "confirmed" else "?"
+        print(f"  #{pid} rationale fidelity: {flag} {rat_match}")
+        if rat_match == "wrong_reasons" and outcome == "correct":
+            print(f"  ⚠️  SILENT FAILURE: correct outcome, wrong reasoning — inflates confidence model")
 
     # Store on-chain
     store_on_chain(
@@ -1032,6 +1381,254 @@ def adjustments(db, args):
         print(f"    Reason: {reason[:80]}")
 
 
+def closure(db):
+    """Detect pathological self-reference in prediction confidence trails.
+
+    From Thread #299 thesis: pathological prediction = confidence that doesn't
+    respond to contradictory evidence. Healthy prediction = confidence tracks
+    external evidence direction. Self-referential closure = the prediction's
+    own prior confidence becomes its evidence.
+
+    Metrics per prediction:
+      - Directional monotonicity: does confidence only go one way?
+      - Evidence independence: do different sources agree, or is one source driving?
+      - Referent decay: has the external referent stopped doing causal work?
+      - Contradiction response: does confidence ever decrease after contradictory evidence?
+    """
+    rows = db.execute(
+        "SELECT pt.id, pt.claim, pt.confidence, pt.status, pt.deadline "
+        "FROM prediction_track pt ORDER BY pt.id"
+    ).fetchall()
+
+    if not rows:
+        print("No predictions to analyze.")
+        return
+
+    print("=== Closure Detection (Thread #299 Thesis) ===")
+    print("Pathological: confidence invariant or monotonic despite mixed evidence")
+    print("Healthy: confidence responds to evidence direction")
+    print()
+
+    for pid, claim, current_conf, status, deadline in rows:
+        adjs = db.execute(
+            "SELECT old_confidence, new_confidence, reason, source, created_at "
+            "FROM prediction_adjustments WHERE prediction_id=? ORDER BY created_at",
+            (pid,)
+        ).fetchall()
+
+        if len(adjs) < 2:
+            continue  # need at least 2 adjustments to analyze
+
+        # --- Directional monotonicity ---
+        directions = []
+        for old_c, new_c, _, _, _ in adjs:
+            if new_c > old_c:
+                directions.append(1)
+            elif new_c < old_c:
+                directions.append(-1)
+            else:
+                directions.append(0)
+
+        up_count = directions.count(1)
+        down_count = directions.count(-1)
+        flat_count = directions.count(0)
+        total_moves = len(directions)
+        monotonic = (up_count == total_moves) or (down_count == total_moves)
+
+        # --- Source diversity ---
+        sources = {}
+        for _, _, _, src, _ in adjs:
+            sources[src] = sources.get(src, 0) + 1
+        dominant_source = max(sources, key=sources.get) if sources else "unknown"
+        dominant_pct = (sources[dominant_source] / total_moves * 100) if total_moves else 0
+
+        # --- Contradiction response ---
+        # Look for reversals: a sequence where evidence pushes one way then the other
+        has_reversal = False
+        for i in range(1, len(directions)):
+            if directions[i] != 0 and directions[i-1] != 0 and directions[i] != directions[i-1]:
+                has_reversal = True
+                break
+
+        # --- Confidence range (total travel) ---
+        all_confs = [adjs[0][0]] + [a[1] for a in adjs]
+        conf_range = max(all_confs) - min(all_confs)
+        conf_travel = sum(abs(a[1] - a[0]) for a in adjs)
+
+        # --- Classify ---
+        flags = []
+        if monotonic and total_moves >= 3:
+            direction_word = "up" if up_count > 0 else "down"
+            flags.append(f"MONOTONIC ({direction_word} only, {total_moves} moves)")
+        if dominant_pct > 80 and total_moves >= 3:
+            flags.append(f"SINGLE-SOURCE ({dominant_source} = {dominant_pct:.0f}%)")
+        if not has_reversal and total_moves >= 3:
+            flags.append("NO REVERSALS (never changed direction)")
+        if flat_count > 0:
+            flags.append(f"FLAT ({flat_count}/{total_moves} no-change adjustments)")
+
+        # Closure score: 0-1, higher = more self-referential
+        closure_score = 0.0
+        if monotonic:
+            closure_score += 0.4
+        if not has_reversal:
+            closure_score += 0.3
+        if dominant_pct > 80:
+            closure_score += 0.2
+        if flat_count > total_moves * 0.3:
+            closure_score += 0.1
+
+        # Classify
+        if closure_score >= 0.7:
+            label = "CLOSED"
+            icon = "🔴"
+        elif closure_score >= 0.4:
+            label = "NARROWING"
+            icon = "🟡"
+        else:
+            label = "OPEN"
+            icon = "🟢"
+
+        print(f"  #{pid} {icon} {label} (closure={closure_score:.1f}) [{status}]")
+        print(f"    {claim[:80]}")
+        print(f"    Trajectory: {' -> '.join(f'{c:.2f}' for c in all_confs)}")
+        print(f"    Moves: {total_moves} ({up_count}↑ {down_count}↓ {flat_count}=)")
+        print(f"    Sources: {', '.join(f'{k}:{v}' for k,v in sorted(sources.items()))}")
+        print(f"    Range: {conf_range:.2f}, Travel: {conf_travel:.2f}")
+        if flags:
+            print(f"    Flags: {'; '.join(flags)}")
+        if has_reversal:
+            print(f"    Has contradiction response (healthy)")
+        print()
+
+    # Summary
+    print("--- Referent Test (Thread #299) ---")
+    print("Is the external referent still doing causal work,")
+    print("or has the loop outgrown it?")
+    print()
+    print("CLOSED predictions need manual review: is the confidence")
+    print("tracking real-world evidence, or echoing its own prior state?")
+
+
+def rationale_audit(db):
+    """Build #158: Identify predictions where accuracy hides reasoning failures.
+
+    Three categories:
+    1. FALSE POSITIVES: correct outcome, wrong reasoning → inflates confidence model
+    2. UNTRACKED: scored predictions with no rationale recorded → blind spots
+    3. OPEN WITH RATIONALE: predictions where we can verify reasoning when they resolve
+    """
+    print("=== Rationale Audit (Build #158) ===\n")
+
+    # False positives: correct but wrong reasoning
+    false_pos = db.execute(
+        "SELECT id, claim, confidence, score_notes, rationale, rationale_match "
+        "FROM prediction_track WHERE status='scored' AND outcome='correct' AND rationale_match='wrong_reasons'"
+    ).fetchall()
+    if false_pos:
+        print(f"⚠️  FALSE POSITIVES ({len(false_pos)}) — correct outcome, wrong reasoning:")
+        for pid, claim, conf, notes, rat, _ in false_pos:
+            print(f"  #{pid} [conf={conf}] {claim[:80]}")
+            if rat:
+                print(f"    Stated: {rat[:100]}")
+            print(f"    Actual: {notes[:100]}")
+        print()
+
+    # Scored with no rationale at all
+    no_rationale = db.execute(
+        "SELECT id, claim, confidence, outcome FROM prediction_track "
+        "WHERE status='scored' AND rationale IS NULL"
+    ).fetchall()
+    if no_rationale:
+        print(f"📋 UNTRACKED ({len(no_rationale)}) — scored without rationale:")
+        for pid, claim, conf, outcome in no_rationale:
+            icon = "✓" if outcome == "correct" else "✗" if outcome == "incorrect" else "~"
+            print(f"  #{pid} {icon} [conf={conf}] {claim[:80]}")
+        print()
+
+    # Scored with rationale but no fidelity assessment
+    no_match = db.execute(
+        "SELECT id, claim, confidence, outcome, rationale FROM prediction_track "
+        "WHERE status='scored' AND rationale IS NOT NULL AND rationale_match IS NULL"
+    ).fetchall()
+    if no_match:
+        print(f"🔍 NEEDS ASSESSMENT ({len(no_match)}) — rationale recorded, fidelity not assessed:")
+        for pid, claim, conf, outcome, rat in no_match:
+            icon = "✓" if outcome == "correct" else "✗" if outcome == "incorrect" else "~"
+            print(f"  #{pid} {icon} [conf={conf}] {claim[:80]}")
+            print(f"    Rationale: {rat[:100]}")
+        print()
+
+    # Open predictions with rationale (good — we can verify when they resolve)
+    open_with_rat = db.execute(
+        "SELECT id, claim, confidence, rationale, deadline FROM prediction_track "
+        "WHERE status='open' AND rationale IS NOT NULL ORDER BY deadline"
+    ).fetchall()
+    if open_with_rat:
+        print(f"✓ TRACKABLE ({len(open_with_rat)}) — open predictions with rationale recorded:")
+        for pid, claim, conf, rat, deadline in open_with_rat:
+            print(f"  #{pid} [conf={conf}, by {deadline}] {claim[:60]}")
+            print(f"    Why: {rat[:100]}")
+        print()
+
+    # Open without rationale (should we backfill?)
+    open_no_rat = db.execute(
+        "SELECT id, claim, confidence, deadline FROM prediction_track "
+        "WHERE status='open' AND rationale IS NULL ORDER BY deadline"
+    ).fetchall()
+    if open_no_rat:
+        print(f"⚠️  BLIND ({len(open_no_rat)}) — open predictions, no rationale to verify:")
+        for pid, claim, conf, deadline in open_no_rat:
+            print(f"  #{pid} [conf={conf}, by {deadline}] {claim[:80]}")
+        print()
+
+    # Summary
+    total_scored = db.execute("SELECT COUNT(*) FROM prediction_track WHERE status='scored'").fetchone()[0]
+    with_fidelity = db.execute(
+        "SELECT COUNT(*) FROM prediction_track WHERE status='scored' AND rationale_match IS NOT NULL"
+    ).fetchone()[0]
+    print(f"Summary: {with_fidelity}/{total_scored} scored predictions have rationale fidelity assessment")
+    if total_scored > 0 and with_fidelity < total_scored:
+        print(f"  Gap: {total_scored - with_fidelity} predictions scored without structural reasoning verification")
+
+
+def rationale_backfill(db):
+    """Build #24: Backfill rationale fidelity for scored predictions that have rationale but no assessment."""
+    rows = db.execute(
+        "SELECT id, claim, outcome, rationale, score_notes "
+        "FROM prediction_track "
+        "WHERE status='scored' AND rationale IS NOT NULL AND rationale_match IS NULL"
+    ).fetchall()
+
+    if not rows:
+        print("No scored predictions need rationale backfill.")
+        return
+
+    print(f"=== Rationale Fidelity Backfill (Build #24) ===\n")
+    print(f"Assessing {len(rows)} scored predictions with unverified rationale...\n")
+
+    assessed = 0
+    for pid, claim, outcome, rationale, notes in rows:
+        rat_match = _assess_rationale_fidelity(rationale, outcome, notes or "")
+        if rat_match:
+            db.execute(
+                "UPDATE prediction_track SET rationale_match=? WHERE id=?",
+                (rat_match, pid)
+            )
+            flag = "⚠️" if rat_match == "wrong_reasons" else "✓" if rat_match == "confirmed" else "?"
+            print(f"  #{pid} [{outcome}] {flag} {rat_match}")
+            print(f"    Claim: {claim[:80]}")
+            if rat_match == "wrong_reasons" and outcome == "correct":
+                print(f"    ⚠️  SILENT FAILURE detected")
+            assessed += 1
+        else:
+            print(f"  #{pid} — assessment failed, skipping")
+        print()
+
+    db.commit()
+    print(f"=== {assessed}/{len(rows)} predictions assessed ===")
+
+
 def main():
     if len(sys.argv) < 2:
         print(__doc__)
@@ -1065,6 +1662,12 @@ def main():
         adjust(db, sys.argv[2:])
     elif action == "adjustments":
         adjustments(db, sys.argv[2:])
+    elif action == "closure":
+        closure(db)
+    elif action == "rationale_audit":
+        rationale_audit(db)
+    elif action == "rationale_backfill":
+        rationale_backfill(db)
     else:
         print(f"Unknown action: {action}")
         print(__doc__)

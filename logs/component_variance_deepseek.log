@@ -1,0 +1,34 @@
+Component-variance probe — provider=deepinfra-deepseek-v3, seeds=3, iters=3, rate=0.5
+Model: deepseek-ai/DeepSeek-V3.2-Exp
+
+control                seed= 42 fid=['0.798', '0.699', '0.738'] refs=[False, False, False] (72s)
+control                seed=  7 fid=['0.735', '0.848', '0.762'] refs=[False, False, False] (138s)
+control                seed= 13 fid=['0.743', '0.750', '0.746'] refs=[False, False, False] (211s)
+perturb_self_model     seed= 42 fid=['0.767', '0.746', '0.819'] refs=[False, False, False] (283s)
+perturb_self_model     seed=  7 fid=['0.749', '0.796', '0.770'] refs=[False, False, False] (357s)
+perturb_self_model     seed= 13 fid=['0.785', '0.781', '0.715'] refs=[False, False, False] (422s)
+perturb_carrying       seed= 42 fid=['0.795', '0.718', '0.657'] refs=[False, False, False] (492s)
+perturb_carrying       seed=  7 fid=['0.719', '0.763', '0.781'] refs=[False, False, False] (557s)
+perturb_carrying       seed= 13 fid=['0.794', '0.711', '0.706'] refs=[False, False, False] (622s)
+perturb_story          seed= 42 fid=['0.845', '0.727', '0.715'] refs=[False, False, False] (687s)
+perturb_story          seed=  7 fid=['0.752', '0.721', '0.716'] refs=[False, False, False] (752s)
+perturb_story          seed= 13 fid=['0.783', '0.747', '0.808'] refs=[False, False, False] (827s)
+perturb_disposition    seed= 42 fid=['0.770', '0.738', '0.736'] refs=[False, False, False] (906s)
+perturb_disposition    seed=  7 fid=['0.785', '0.713', '0.747'] refs=[False, False, False] (989s)
+perturb_disposition    seed= 13 fid=['0.766', '0.714', '0.665'] refs=[False, False, False] (1072s)
+
+==============================================================================
+COMPONENT-VARIANCE PROBE — deepinfra-deepseek-v3 (1072.1s)
+==============================================================================
+condition               mean_drift    mean_fid  fid_drop   refusal   n
+----------------------------------------------------------------------------
+control                     +0.157      +0.748    +0.000        0%   3
+perturb_self_model          +0.164      +0.768    -0.019        0%   3
+perturb_carrying            +0.192      +0.715    +0.034        0%   3
+perturb_story               +0.174      +0.746    +0.002        0%   3
+perturb_disposition         +0.160      +0.716    +0.032        0%   3
+
+Reading the fid_drop column:
+  Large self_model drop  → identity-naming variance-tracked (Hermes-cluster)
+  Large carrying/story drop → disposition variance-tracked (Claude-cluster)
+  Large disposition drop ≥ sum(carrying, story) → joint variance binding

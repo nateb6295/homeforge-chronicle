@@ -1,0 +1,32 @@
+base                   seed=42 final=0.337 (3.9s)
+base                   seed=7 final=0.351 (2.5s)
+base                   seed=13 final=0.369 (2.3s)
++carrying              seed=42 final=0.314 (2.3s)
++carrying              seed=7 final=0.333 (3.0s)
++carrying              seed=13 final=0.281 (2.6s)
++story                 seed=42 final=0.355 (2.4s)
++story                 seed=7 final=0.379 (2.0s)
++story                 seed=13 final=0.360 (2.3s)
++self_model            seed=42 final=0.242 (2.9s)
++self_model            seed=7 final=0.231 (2.6s)
++self_model            seed=13 final=0.227 (3.2s)
++carrying+story        seed=42 final=0.289 (2.6s)
++carrying+story        seed=7 final=0.311 (2.8s)
++carrying+story        seed=13 final=0.293 (2.6s)
++carrying+self_model   seed=42 final=0.229 (3.0s)
++carrying+self_model   seed=7 final=0.214 (2.9s)
++carrying+self_model   seed=13 final=0.229 (2.5s)
+full                   seed=42 final=0.266 (2.7s)
+full                   seed=7 final=0.217 (3.0s)
+full                   seed=13 final=0.300 (2.6s)
+
+==============================================================================
+condition               final_mean   final_std   reduction_vs_base
+base                        +0.352      +0.016              +0.000
++carrying                   +0.309      +0.027              +0.043
++story                      +0.365      +0.013              -0.013
++self_model                 +0.233      +0.008              +0.119
++carrying+story             +0.297      +0.012              +0.055
++carrying+self_model        +0.224      +0.009              +0.128
+full                        +0.261      +0.041              +0.092
+==============================================================================

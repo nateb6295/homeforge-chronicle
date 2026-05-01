@@ -1,0 +1,78 @@
+{
+  "probe": "reachability",
+  "snapshots": 50,
+  "fields": {
+    "semantic_gist": {
+      "fisher_kT": 2.75,
+      "unique": 2,
+      "reachability_pct": 4.0,
+      "change_pct": 2.0,
+      "regime": "DISCRETE"
+    },
+    "goal_orientation": {
+      "fisher_kT": 1.14,
+      "unique": 2,
+      "reachability_pct": 4.0,
+      "change_pct": 2.0,
+      "regime": "DISCRETE"
+    },
+    "focal_entities": {
+      "fisher_kT": 0.51,
+      "unique": "?",
+      "reachability_pct": "?",
+      "change_pct": "?",
+      "regime": "GUARD-FROZEN"
+    },
+    "episodic_trace": {
+      "fisher_kT": 0.39,
+      "unique": 47,
+      "reachability_pct": 94.0,
+      "change_pct": 93.9,
+      "regime": "CONTINUOUS"
+    },
+    "predictive_cue": {
+      "fisher_kT": 0.0,
+      "unique": 44,
+      "reachability_pct": 88.0,
+      "change_pct": 89.8,
+      "burstiness_cv": 0.549,
+      "regime": "GOLDSTONE"
+    },
+    "uncertainty_signals": {
+      "fisher_kT": 0.0,
+      "unique": 5,
+      "reachability_pct": 10.0,
+      "change_pct": 8.2,
+      "burstiness_cv": 1.455,
+      "regime": "ACTIVATED"
+    },
+    "constraints": {
+      "fisher_kT": 0.0,
+      "unique": 1,
+      "reachability_pct": 0.0,
+      "change_pct": 0.0,
+      "regime": "GAUGE"
+    }
+  },
+  "classification": {
+    "2D_axes": [
+      "Fisher/kT (stiffness)",
+      "Reachability (range)"
+    ],
+    "insight": "Fisher separates stiff from sloppy but cannot distinguish within zero-Fisher subspace. Reachability resolves the degeneracy into gauge/Goldstone/activated trichotomy.",
+    "physics_mapping": {
+      "GAUGE": "Symmetry-protected flat direction \u2014 field CAN vary but compressor construction prevents it",
+      "GOLDSTONE": "Massless mode \u2014 field freely fluctuates, identity landscape doesn't depend on it",
+      "ACTIVATED": "Tunneling mode \u2014 field mostly trapped in local minimum, rare barrier crossings"
+    }
+  },
+  "matuschak_stability": {
+    "test": "Identity cue retrieval stability (Matuschak Memory Machines criterion)",
+    "cross_regime_cosine": 0.7559,
+    "within_regime_cosine": 1.0,
+    "regimes": 2,
+    "regime_1_snapshots": 43,
+    "regime_2_snapshots": 7,
+    "finding": "Identity fields produce IDENTICAL embeddings within a gist regime. Zero drift. Discrete phase transitions between regimes (cosine 0.756). Strongest possible stable retrieval cue."
+  }
+}

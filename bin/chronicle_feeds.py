@@ -34,9 +34,16 @@ ARXIV_CATEGORIES = [
     "cs.CR",          # Cryptography & Security
     "cs.CY",          # Computers and Society (governance, digital rights, privacy)
     "cs.SE",          # Software Engineering (systems, architecture)
+    "cs.MA",          # Multiagent Systems (swarm, coordination, emergent behavior)
     "q-bio.NC",       # Neurons and Cognition
+    "q-bio.QM",       # Quantitative Methods (computational biology, modeling)
     "physics.soc-ph", # Social Physics (networks, collective behavior)
+    "math.CO",        # Combinatorics (Nate's additive-combinatorics capture interest)
+    "math-ph",        # Mathematical Physics (lattice structures, phase transitions)
+    "nlin.AO",        # Adaptation and Self-Organizing Systems
     "econ.GN",        # General Economics (monetary theory, market design)
+    "cs.CL",          # Computation and Language (LLM internals, interpretability)
+    "cs.LG",          # Machine Learning (alignment, reward hacking, self-improvement)
 ]
 
 # Nature RSS feeds (RDF format)
@@ -44,8 +51,23 @@ NATURE_FEEDS = [
     "https://www.nature.com/nature.rss",           # Nature main
     "https://www.nature.com/natmachintell.rss",    # Nature Machine Intelligence
     "https://www.nature.com/neuro.rss",            # Nature Neuroscience
-    "https://www.nature.com/nenergy.rss",          # Nature Energy
-    "https://www.nature.com/natelectron.rss",       # Nature Electronics
+    "https://www.nature.com/nrn.rss",              # Nature Reviews Neuroscience (deep reviews)
+    "https://www.nature.com/ncomms.rss",           # Nature Communications (broad, high-quality)
+]
+
+# PNAS — top-tier multidisciplinary, same RDF format as Nature (parsed by poll_nature)
+PNAS_FEED = "https://www.pnas.org/action/showFeed?type=etoc&feed=rss&jc=PNAS"
+
+# bioRxiv preprints — full abstracts (1000+ chars), combined categories
+BIORXIV_FEEDS = [
+    "https://connect.biorxiv.org/biorxiv_xml.php?subject=neuroscience",
+    "https://connect.biorxiv.org/biorxiv_xml.php?subject=systems_biology+evolutionary_biology+biophysics",
+]
+
+# Journal RSS feeds — peer-reviewed neuroscience with full abstracts
+JOURNAL_FEEDS = [
+    "https://www.jneurosci.org/rss/current.xml",   # Journal of Neuroscience
+    "https://www.eneuro.org/rss/current.xml",       # eNeuro (open-access neuroscience)
 ]
 
 # Curated RSS feeds — trusted sources with editorial curation
@@ -77,12 +99,6 @@ RSS_FEEDS = [
         "source": "ars",
         "keywords": ["tech", "science", "policy"],
     },
-    {
-        "name": "Wired",
-        "url": "https://www.wired.com/feed/rss",
-        "source": "wired",
-        "keywords": ["tech", "culture", "science"],
-    },
     # === Financial / Crypto (independent + ecosystem) ===
     # === Our Ecosystem ===
     {
@@ -97,19 +113,7 @@ RSS_FEEDS = [
         "source": "flare",
         "keywords": ["flare", "ftso", "state-connector", "xrp"],
     },
-    # === World News & Economics (balanced, multi-perspective) ===
-    {
-        "name": "BBC World",
-        "url": "https://feeds.bbci.co.uk/news/world/rss.xml",
-        "source": "bbc",
-        "keywords": ["world", "geopolitics", "conflict", "diplomacy"],
-    },
-    {
-        "name": "Al Jazeera",
-        "url": "https://www.aljazeera.com/xml/rss/all.xml",
-        "source": "aljazeera",
-        "keywords": ["world", "middle-east", "geopolitics", "global-south"],
-    },
+    # === World News & Economics (analytical, not breaking-news firehose) ===
     {
         "name": "The Economist",
         "url": "https://www.economist.com/latest/rss.xml",
@@ -177,12 +181,6 @@ RSS_FEEDS = [
         "source": "lesswrong",
         "keywords": ["ai-safety", "rationality", "alignment", "cognition"],
     },
-    {
-        "name": "Lawfare",
-        "url": "https://www.lawfaremedia.org/feed",
-        "source": "lawfare",
-        "keywords": ["national-security", "law", "intelligence", "cyber", "geopolitics"],
-    },
     # === Deep Science / Engineering ===
     {
         "name": "Quanta Magazine",
@@ -196,24 +194,19 @@ RSS_FEEDS = [
         "source": "ieee",
         "keywords": ["engineering", "technology", "semiconductors", "robotics", "energy"],
     },
-    # === Literature / Stories ===
+    # === Neuroscience (Nate's #1 capture theme — feed gap analysis 2026-04-05) ===
     {
-        "name": "Clarkesworld Magazine",
-        "url": "https://clarkesworldmagazine.com/feed/",
-        "source": "clarkesworld",
-        "keywords": ["fiction", "science-fiction", "short-story"],
+        "name": "Neuroscience News",
+        "url": "https://neurosciencenews.com/feed/",
+        "source": "neuronews",
+        "keywords": ["neuroscience", "brain", "cognition", "neural", "consciousness"],
     },
+    # === Complexity Science ===
     {
-        "name": "Tor.com",
-        "url": "https://www.tor.com/feed/",
-        "source": "tor",
-        "keywords": ["fiction", "fantasy", "science-fiction", "literature"],
-    },
-    {
-        "name": "Lightspeed Magazine",
-        "url": "https://www.lightspeedmagazine.com/feed/",
-        "source": "lightspeed",
-        "keywords": ["fiction", "science-fiction", "fantasy", "speculative"],
+        "name": "Santa Fe Institute",
+        "url": "https://www.santafe.edu/news-center/feed/",
+        "source": "sfi",
+        "keywords": ["complexity", "networks", "emergence", "self-organization", "adaptation"],
     },
     # === Philosophy ===
     {
@@ -246,12 +239,93 @@ RSS_FEEDS = [
         "source": "philosophynow",
         "keywords": ["philosophy", "ethics", "epistemology", "consciousness"],
     },
-    # === Science Fiction Reviews / Ideas ===
     {
-        "name": "Strange Horizons",
-        "url": "https://strangehorizons.com/feed/",
-        "source": "strangehorizons",
-        "keywords": ["science-fiction", "speculative", "reviews", "ideas"],
+        "name": "Stanford Encyclopedia of Philosophy",
+        "url": "https://plato.stanford.edu/rss/sep.xml",
+        "source": "sep",
+        "keywords": ["philosophy", "epistemology", "metaphysics", "logic", "ethics"],
+    },
+    {
+        "name": "3:AM Magazine",
+        "url": "https://www.3ammagazine.com/3am/feed/",
+        "source": "3am",
+        "keywords": ["philosophy", "literature", "radical", "ideas", "interviews"],
+    },
+    # === Poetry & Literature ===
+    {
+        "name": "Literary Hub",
+        "url": "https://lithub.com/feed/",
+        "source": "lithub",
+        "keywords": ["literature", "poetry", "essays", "culture", "ideas"],
+    },
+    {
+        "name": "The Paris Review",
+        "url": "https://www.theparisreview.org/blog/feed/",
+        "source": "parisreview",
+        "keywords": ["literature", "poetry", "fiction", "interviews", "writing"],
+    },
+    {
+        "name": "Guernica Magazine",
+        "url": "https://www.guernicamag.com/feed/",
+        "source": "guernica",
+        "keywords": ["poetry", "art", "ideas", "global", "culture"],
+    },
+    {
+        "name": "Public Domain Review",
+        "url": "https://publicdomainreview.org/rss.xml",
+        "source": "publicdomain",
+        "keywords": ["history", "literature", "art", "culture", "ideas"],
+    },
+    # === AI Safety / Interpretability / Self-Evolution ===
+    {
+        "name": "Anthropic Research",
+        "url": "https://www.anthropic.com/research/rss.xml",
+        "source": "anthropic",
+        "keywords": ["ai-safety", "interpretability", "alignment", "model-welfare", "claude"],
+    },
+    {
+        "name": "Alignment Forum",
+        "url": "https://www.alignmentforum.org/feed.xml?view=curated-rss",
+        "source": "alignmentforum",
+        "keywords": ["alignment", "interpretability", "mesa-optimization", "deception", "welfare"],
+    },
+    {
+        "name": "Transformer Circuits (Anthropic)",
+        "url": "https://transformer-circuits.pub/rss.xml",
+        "source": "circuits",
+        "keywords": ["interpretability", "sparse-autoencoder", "features", "mechanistic", "circuits"],
+    },
+    {
+        "name": "Machine Intelligence Research Institute",
+        "url": "https://intelligence.org/feed/",
+        "source": "miri",
+        "keywords": ["alignment", "agent-foundations", "decision-theory", "self-improvement"],
+    },
+    # === Deep Conversations / Long-form Wrestling ===
+    {
+        "name": "Dwarkesh Podcast",
+        "url": "https://www.dwarkeshpatel.com/feed",
+        "source": "dwarkesh",
+        "keywords": ["ai", "history", "science", "deep-conversation", "long-form"],
+    },
+    {
+        "name": "Lex Fridman Podcast",
+        "url": "https://lexfridman.com/feed/podcast/",
+        "source": "lexfridman",
+        "keywords": ["ai", "consciousness", "philosophy", "science", "deep-conversation"],
+    },
+    {
+        "name": "Sean Carroll Mindscape",
+        "url": "https://feeds.libsyn.com/71781/rss",
+        "source": "mindscape",
+        "keywords": ["physics", "philosophy", "consciousness", "complexity", "ideas"],
+    },
+    # === Computational Psychiatry / Predictive Processing ===
+    {
+        "name": "Behavioral and Brain Sciences",
+        "url": "https://www.cambridge.org/core/rss/product/id/0AE5AB0CC1F1C7FC059D7C93CC009AD0",
+        "source": "bbs",
+        "keywords": ["cognition", "brain", "prediction", "psychiatry", "consciousness"],
     },
 ]
 
@@ -263,7 +337,7 @@ MAX_PER_SOURCE_PER_CYCLE = 5  # Prevent any single source from dominating
 # High-frequency news sources get a tighter cap — they firehose the same event
 # from multiple angles, drowning out depth sources
 NEWS_SOURCE_CAP = 2
-NEWS_SOURCES = {"bbc", "aljazeera", "intercept", "justsecurity", "coindesk", "decrypt"}
+NEWS_SOURCES = {"intercept", "justsecurity", "coindesk", "decrypt"}
 
 # Skip commercial/deal content that pollutes the knowledge graph
 SPAM_TITLE_PATTERNS = [
@@ -513,6 +587,150 @@ def poll_nature(db):
     return articles
 
 
+def poll_pnas(db):
+    """Poll PNAS table-of-contents RSS (RDF format, same as Nature)."""
+    articles = []
+    ns = {
+        "rdf": "http://www.w3.org/1999/02/22-rdf-syntax-ns#",
+        "rss": "http://purl.org/rss/1.0/",
+        "dc": "http://purl.org/dc/elements/1.1/",
+        "prism": "http://prismstandard.org/namespaces/basic/2.0/",
+    }
+    try:
+        resp = requests.get(PNAS_FEED, timeout=30)
+        resp.raise_for_status()
+        root = ET.fromstring(resp.text)
+        count = 0
+        for item in root.findall("rss:item", ns)[:MAX_RESULTS_PER_QUERY]:
+            title_el = item.find("rss:title", ns)
+            desc_el = item.find("rss:description", ns)
+            link_el = item.find("rss:link", ns)
+            title = title_el.text.strip() if title_el is not None and title_el.text else ""
+            description = desc_el.text.strip() if desc_el is not None and desc_el.text else ""
+            link = link_el.text.strip() if link_el is not None and link_el.text else ""
+            if not title or not link:
+                continue
+            article_id = f"pnas:{hashlib.md5(link.encode()).hexdigest()[:12]}"
+            description = re.sub(r'<[^>]+>', '', description).strip()
+            authors = []
+            for creator in item.findall("dc:creator", ns):
+                if creator.text:
+                    authors.append(creator.text.strip())
+            if len(description) < 20:
+                description = title
+            articles.append({
+                "id": article_id,
+                "source": "pnas",
+                "title": title,
+                "abstract": description[:1500],
+                "authors": authors,
+                "url": link,
+                "keywords": ["pnas", "multidisciplinary", "research"],
+            })
+            count += 1
+        log.info(f"  PNAS: {count} articles")
+    except Exception as e:
+        log.error(f"  PNAS feed failed: {e}")
+    return articles
+
+
+def poll_biorxiv_extra(db):
+    """Poll additional bioRxiv categories (systems bio, evo bio, biophysics)."""
+    articles = []
+    ns = {
+        "rdf": "http://www.w3.org/1999/02/22-rdf-syntax-ns#",
+        "rss": "http://purl.org/rss/1.0/",
+        "dc": "http://purl.org/dc/elements/1.1/",
+    }
+    for feed_url in BIORXIV_FEEDS:
+        try:
+            resp = requests.get(feed_url, timeout=30)
+            resp.raise_for_status()
+            root = ET.fromstring(resp.text)
+            count = 0
+            for item in root.findall("rss:item", ns)[:MAX_RESULTS_PER_QUERY]:
+                title_el = item.find("rss:title", ns)
+                desc_el = item.find("rss:description", ns)
+                link_el = item.find("rss:link", ns)
+                title = title_el.text.strip() if title_el is not None and title_el.text else ""
+                description = desc_el.text.strip() if desc_el is not None and desc_el.text else ""
+                link = link_el.text.strip() if link_el is not None and link_el.text else ""
+                if not title or not link:
+                    continue
+                article_id = f"biorxiv:{hashlib.md5(link.encode()).hexdigest()[:12]}"
+                description = re.sub(r'<[^>]+>', '', description).strip()
+                authors = []
+                for creator in item.findall("dc:creator", ns):
+                    if creator.text:
+                        authors.append(creator.text.strip())
+                if len(description) < 20:
+                    description = title
+                articles.append({
+                    "id": article_id,
+                    "source": "biorxiv",
+                    "title": title,
+                    "abstract": description[:1500],
+                    "authors": authors,
+                    "url": link,
+                    "keywords": ["biorxiv", "preprint", "biology"],
+                })
+                count += 1
+            log.info(f"  bioRxiv (extra): {count} preprints")
+        except Exception as e:
+            log.error(f"  bioRxiv extra feed failed: {e}")
+    return articles
+
+
+def poll_journals(db):
+    """Poll peer-reviewed journal RSS feeds (J Neuroscience, eNeuro)."""
+    articles = []
+    for feed_url in JOURNAL_FEEDS:
+        feed_name = "J Neuroscience" if "jneurosci" in feed_url else "eNeuro"
+        feed_source = "jneurosci" if "jneurosci" in feed_url else "eneuro"
+        try:
+            resp = requests.get(feed_url, timeout=30, headers={
+                "User-Agent": "Mozilla/5.0 (compatible; Chronicle-Feeds/1.0)"
+            })
+            resp.raise_for_status()
+            root = ET.fromstring(resp.text)
+            channel = root.find("channel")
+            if channel is None:
+                log.warning(f"  {feed_name}: no channel element")
+                continue
+            count = 0
+            for item in channel.findall("item")[:MAX_RESULTS_PER_QUERY]:
+                title_el = item.find("title")
+                desc_el = item.find("description")
+                link_el = item.find("link")
+                title = title_el.text.strip() if title_el is not None and title_el.text else ""
+                description = desc_el.text.strip() if desc_el is not None and desc_el.text else ""
+                link = link_el.text.strip() if link_el is not None and link_el.text else ""
+                if not title or not link:
+                    continue
+                article_id = f"{feed_source}:{hashlib.md5(link.encode()).hexdigest()[:12]}"
+                description = re.sub(r'<[^>]+>', '', description).strip()
+                authors = []
+                author_el = item.find("{http://purl.org/dc/elements/1.1/}creator")
+                if author_el is not None and author_el.text:
+                    authors.append(author_el.text.strip())
+                if len(description) < 20:
+                    description = title
+                articles.append({
+                    "id": article_id,
+                    "source": feed_source,
+                    "title": title,
+                    "abstract": description[:1500],
+                    "authors": authors,
+                    "url": link,
+                    "keywords": ["neuroscience", "peer-reviewed", feed_source],
+                })
+                count += 1
+            log.info(f"  {feed_name}: {count} articles")
+        except Exception as e:
+            log.error(f"  {feed_name} feed failed: {e}")
+    return articles
+
+
 def poll_rss(db):
     """Poll generic RSS/Atom feeds (EFF, ACM Queue, etc.)."""
     articles = []
@@ -628,6 +846,15 @@ def run_cycle(db):
     log.info("Polling Nature...")
     all_articles.extend(poll_nature(db))
 
+    log.info("Polling PNAS...")
+    all_articles.extend(poll_pnas(db))
+
+    log.info("Polling bioRxiv (extra categories)...")
+    all_articles.extend(poll_biorxiv_extra(db))
+
+    log.info("Polling journals...")
+    all_articles.extend(poll_journals(db))
+
     log.info("Polling RSS feeds...")
     all_articles.extend(poll_rss(db))
 
@@ -717,6 +944,9 @@ def main():
     log.info(f"  DB: {DB_PATH}")
     log.info(f"  arxiv categories: {', '.join(ARXIV_CATEGORIES)}")
     log.info(f"  Nature feeds: {len(NATURE_FEEDS)}")
+    log.info(f"  PNAS: enabled")
+    log.info(f"  bioRxiv extra: {len(BIORXIV_FEEDS)} feeds")
+    log.info(f"  Journal feeds: {len(JOURNAL_FEEDS)}")
     log.info(f"  RSS feeds: {', '.join(f['name'] for f in RSS_FEEDS)}")
     log.info(f"  Poll interval: {POLL_INTERVAL}s")
 
@@ -726,6 +956,7 @@ def main():
     global _mesh
     _mesh = Mesh("feeds", db_path=DB_PATH)
     _mesh.expect("articles_posted", min_per_hour=1)
+    # feeds is a source — no upstream dependencies
     log.info("Mesh node joined")
 
     count = db.execute("SELECT COUNT(*) FROM feed_articles").fetchone()[0]

@@ -1,0 +1,6 @@
+p=113 analysis  step=60000  device=cuda
+
+baseline val_acc: 1.0000
+zero tok_emb[row 113 (=)]:  1.0000  (Δ = +0.0000)
+zero tok_emb[random digit] (n=20):  mean=0.9857  min=0.9727  max=0.9961
+zero attn.out_proj.bias:  1.0000  (Δ = +0.0000)

@@ -1,0 +1,51 @@
+{
+  "probe": "field_interaction_b69",
+  "timestamp": "2026-04-22T06:48:18",
+  "n_ccs": 2,
+  "results": {
+    "control": {
+      "within": 0.14949895503674362,
+      "between": 0.19793653789651086,
+      "separation": 1.323999474430188,
+      "silhouette": 0.2447126911206881
+    },
+    "gist_moderate": {
+      "within": 0.222058407806858,
+      "between": 0.2572489212449261,
+      "separation": 1.1584741320341092,
+      "silhouette": 0.13679557242754492
+    },
+    "constraints_moderate": {
+      "within": 0.216117650720382,
+      "between": 0.2808052206211063,
+      "separation": 1.299316458813531,
+      "silhouette": 0.23036455575022224
+    },
+    "gist+constraints_moderate": {
+      "within": 0.4145077507542052,
+      "between": 0.3455191735189252,
+      "separation": 0.8335650488808619,
+      "silhouette": -0.16643495111913809
+    },
+    "gist_strong": {
+      "within": 0.29196357813084783,
+      "between": 0.24007148274544537,
+      "separation": 0.8222651752742041,
+      "silhouette": -0.1777348247257959
+    },
+    "constraints_strong": {
+      "within": 0.3135408558981257,
+      "between": 0.2979696697087304,
+      "separation": 0.9503376166248184,
+      "silhouette": -0.04966238337518161
+    },
+    "gist+constraints_strong": {
+      "within": 0.42193037810468476,
+      "between": 0.3389720021581237,
+      "separation": 0.8033837328347608,
+      "silhouette": -0.19661626716523917
+    }
+  },
+  "control_separation": 1.323999474430188,
+  "hypothesis": "Simultaneous gist+constraint corruption produces supra-additive degradation"
+}

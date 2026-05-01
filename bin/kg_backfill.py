@@ -136,6 +136,13 @@ def store_relationships(db, rels, entities, context, timestamp):
         if not src_id or not tgt_id or not relation or src_id == tgt_id:
             continue
 
+        # Normalize predicate (Build #82)
+        try:
+            from kg_normalize import normalize_predicate
+            relation = normalize_predicate(relation)
+        except Exception:
+            pass
+
         # Upsert
         existing = db.execute(
             "SELECT id, mention_count FROM kg_relationships "

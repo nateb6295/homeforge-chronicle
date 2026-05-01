@@ -103,7 +103,7 @@ def discord_alert(message):
         if result.returncode == 0:
             log("Discord alert sent")
         else:
-            log(f"Discord alert failed: {result.stderr[:200]}")
+            log(f"Discord alert failed (rc={result.returncode}): stderr={result.stderr[:1500]} stdout={result.stdout[:500]}")
     except Exception as e:
         log(f"Discord alert error: {e}")
 

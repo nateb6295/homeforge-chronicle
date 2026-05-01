@@ -142,14 +142,15 @@ def format_state_change(entity_id: str, old_state: dict, new_state: dict) -> Opt
 
 def entity_to_mqtt_topic(entity_id: str) -> str:
     """Map entity_id to MQTT topic under homeforge/home/."""
-    # binary_sensor.driveway_person → homeforge/home/driveway/person
+    # binary_sensor.driveway_person → homeforge/home/kitchen/person
     # sensor.0x54ef44100138b955_illuminance → homeforge/home/living_room/illuminance
     # weather.forecast_home → homeforge/home/weather
     domain, _, name = entity_id.partition(".")
 
     # Camera detection events → group by location
+    # Note: HA entity still says "driveway" but camera is physically in the kitchen
     if "driveway" in name:
-        location = "driveway"
+        location = "kitchen"
         detail = name.replace("driveway_", "").replace("reolink_", "")
     elif "lumus" in name:
         location = "lumus"

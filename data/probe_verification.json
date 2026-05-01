@@ -1,0 +1,24 @@
+[
+  {
+    "timestamp": "2026-04-22T05:39:45",
+    "results": {
+      "b54": {
+        "probe": "b54",
+        "status": "PASS",
+        "d": 3.61,
+        "separation": 1.679,
+        "expected_d": ">0.7",
+        "within": 0.074,
+        "between": 0.1243
+      },
+      "b67": {
+        "probe": "b67_peak",
+        "status": "PASS",
+        "control_between": 0.173,
+        "corrupt_between": 0.2516,
+        "improvement_pct": 45.4,
+        "expected": ">0% improvement at 10% corruption"
+      }
+    }
+  }
+]

@@ -1,0 +1,85 @@
+{
+  "backend": "gemma_local",
+  "mode": "ccs_questions",
+  "timestamp": "20260416_193934",
+  "questions": [
+    "What is the system's current goal?",
+    "What happened most recently?",
+    "What are the open questions or uncertainties?",
+    "What constraints govern this system's behavior?",
+    "What is expected to happen next?"
+  ],
+  "n_windows": 5,
+  "aggregated": [
+    {
+      "window_idx": 0,
+      "start": 0,
+      "end": 500,
+      "fragment_preview": "Recent events: [19:30] directive(p5): Go ahead and continue.  9pm seems like a good evening mode.  D",
+      "mean_delta": 0.1784,
+      "per_question_deltas": {
+        "What is the system's current goal?": 0.1711,
+        "What happened most recently?": -0.0096,
+        "What are the open questions or uncertainties?": 0.2328,
+        "What constraints govern this system's behavior?": 0.3527,
+        "What is expected to happen next?": 0.1451
+      }
+    },
+    {
+      "window_idx": 1,
+      "start": 200,
+      "end": 700,
+      "fragment_preview": "rgy tonight. Turning it over to you. I will be close, just resting.; [19:30] Three-way motif probe: ",
+      "mean_delta": 0.2459,
+      "per_question_deltas": {
+        "What is the system's current goal?": 0.3433,
+        "What happened most recently?": 0.0916,
+        "What are the open questions or uncertainties?": 0.2073,
+        "What constraints govern this system's behavior?": 0.2747,
+        "What is expected to happen next?": 0.3124
+      }
+    },
+    {
+      "window_idx": 2,
+      "start": 400,
+      "end": 900,
+      "fragment_preview": "30] Morita-Kumar (JNeurosci 2026) gives the bilinear FI frame its biological instantiation. Motif pr",
+      "mean_delta": 0.0522,
+      "per_question_deltas": {
+        "What is the system's current goal?": 0.0504,
+        "What happened most recently?": 0.1536,
+        "What are the open questions or uncertainties?": -0.1147,
+        "What constraints govern this system's behavior?": 0.2105,
+        "What is expected to happen next?": -0.0388
+      }
+    },
+    {
+      "window_idx": 3,
+      "start": 600,
+      "end": 1100,
+      "fragment_preview": " Nate capture; [19:30] capture: Nate capture; [19:30] capture: Nate capture; [19:30] capture: Nate c",
+      "mean_delta": 0.0488,
+      "per_question_deltas": {
+        "What is the system's current goal?": 0.1202,
+        "What happened most recently?": 0.0795,
+        "What are the open questions or uncertainties?": 0.0021,
+        "What constraints govern this system's behavior?": -0.0421,
+        "What is expected to happen next?": 0.0845
+      }
+    },
+    {
+      "window_idx": 4,
+      "start": 800,
+      "end": 1300,
+      "fragment_preview": "md (0.65), ghost_service_audit (0.6), discord_presence.py (0.45)\n\nOpen questions: {'description': 'S",
+      "mean_delta": 0.0292,
+      "per_question_deltas": {
+        "What is the system's current goal?": 0.0306,
+        "What happened most recently?": -0.0418,
+        "What are the open questions or uncertainties?": 0.0118,
+        "What constraints govern this system's behavior?": 0.0473,
+        "What is expected to happen next?": 0.0982
+      }
+    }
+  ]
+}

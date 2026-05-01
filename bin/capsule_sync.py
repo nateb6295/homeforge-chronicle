@@ -26,7 +26,8 @@ DB_PATH = os.environ.get("CHRONICLE_DB", "/mnt/hdd/chronicle-data/processed.db")
 CANISTER_URL = "https://fqqku-bqaaa-aaaai-q4wha-cai.raw.icp0.io"
 TOKEN_PATH = os.path.expanduser("~/.homeforge-chronicle/.api_token")
 OLLAMA_URL = os.environ.get("CHRONICLE_OLLAMA_URL", "http://localhost:11435")
-EMBED_MODEL = "qwen3-embedding:0.6b"
+EMBED_URL = os.environ.get("EMBED_OLLAMA_URL", "http://192.168.1.11:11434")  # Jetson — dedicated embeddings
+EMBED_MODEL = "nomic-embed-text"  # Build #125: better semantic discrimination
 DATA_DIR = os.environ.get("CHRONICLE_DATA_DIR", "/mnt/hdd/chronicle-data")
 FAISS_INDEX_PATH = os.path.join(DATA_DIR, "capsules.faiss")
 
@@ -34,6 +35,13 @@ FAISS_INDEX_PATH = os.path.join(DATA_DIR, "capsules.faiss")
 BATCH_SIZE = 50        # capsules per HTTP request (API caps at 50)
 EMBED_BATCH = 10       # embeddings per Ollama batch call
 MAX_PER_CYCLE = 500    # max capsules to process per timer cycle
+
+# Build #45: Topics that are auto-generated noise — supersede on arrival.
+# chronicle/reflection: Gemma generates identical "my memory is growing" every cycle.
+#   80.1% never accessed; accessed ones hit only by coincidental keyword overlap.
+# chronicle/heartbeat: System pulse data, not useful as capsules.
+# crossref/connection: Service stopped. Random connections (sim=0.000) that pollute search.
+AUTOSUPERSEDE_TOPICS = {"chronicle/reflection", "chronicle/heartbeat", "crossref/connection"}
 
 
 def log(msg: str):
@@ -53,16 +61,26 @@ def _vec_to_blob(vec: list) -> bytes:
     return struct.pack(f"{len(vec)}f", *vec)
 
 
-def _embed_texts(texts: list, ollama_url: str = OLLAMA_URL) -> list:
-    """Batch embed texts via Ollama. Returns list of vectors (or empty lists on failure)."""
+def _embed_texts(texts: list, ollama_url: str = None) -> list:
+    """Batch embed texts via nomic-embed-text on Jetson.
+    Adds 'search_document:' prefix for stored capsule embeddings."""
+    url = ollama_url or EMBED_URL
+    prefixed = [f"search_document: {t}" for t in texts]
     try:
-        r = requests.post(
-            f"{ollama_url}/api/embed",
-            json={"model": EMBED_MODEL, "input": texts},
-            timeout=60,
-        )
-        if r.status_code == 200:
-            return r.json().get("embeddings", [])
+        # nomic-embed-text uses /api/embeddings (single) — batch by iterating
+        results = []
+        for text in prefixed:
+            r = requests.post(
+                f"{url}/api/embeddings",
+                json={"model": EMBED_MODEL, "prompt": text},
+                timeout=30,
+            )
+            if r.status_code == 200:
+                emb = r.json().get("embedding")
+                results.append(emb if emb else [])
+            else:
+                results.append([])
+        return results
     except Exception as e:
         log(f"  Embed error: {e}")
     return []
@@ -179,22 +197,53 @@ def sync_cycle(db: sqlite3.Connection, token: str, max_capsules: int = MAX_PER_C
 
     log(f"  {fetch_count} new capsules to sync (local: {local_max_id}, remote: {remote_max_id})")
 
+    # Build #77: Content-hash dedup — prevent duplicate feed capsules
+    # Feeds sometimes post the same article to canister multiple times (different IDs).
+    # Check first 80 chars of restatement against recent capsules to catch content dupes.
+    recent_hashes = set()
+    try:
+        rows = db.execute(
+            "SELECT substr(restatement, 1, 80) FROM knowledge_capsules "
+            "WHERE created_at > ? AND topic LIKE 'feed/%'",
+            (int(time.time()) - 7200,)  # last 2 hours
+        ).fetchall()
+        recent_hashes = {r[0] for r in rows if r[0]}
+    except Exception:
+        pass  # dedup is best-effort, don't block sync
+
     # Insert any capsules from the recent batch that we need
     inserted = 0
+    deduped = 0
+    content_deduped = 0
     for c in capsules:
         cid = c.get("id", 0)
         if cid <= local_max_id:
             continue
+        topic = c.get("topic") or ""
+        text = c.get("restatement") or ""
+        now_ts_val = int(time.time())
+        # Build #77: Content-hash dedup for feed capsules
+        content_key = text[:80] if text else ""
+        if topic.startswith("feed/") and content_key in recent_hashes:
+            content_deduped += 1
+            continue  # skip content duplicate
+        # Build #45: Auto-supersede noise topics on arrival
+        supersede = now_ts_val if topic in AUTOSUPERSEDE_TOPICS else None
         try:
             db.execute(
                 "INSERT OR IGNORE INTO knowledge_capsules "
-                "(id, conversation_id, restatement, timestamp, topic, confidence_score, created_at) "
-                "VALUES (?, ?, ?, ?, ?, ?, ?)",
-                (cid, f"canister:{cid}", c.get("restatement", ""),
-                 c.get("timestamp", ""), c.get("topic", ""),
-                 c.get("confidence", 0.8), int(time.time())),
+                "(id, conversation_id, restatement, timestamp, topic, confidence_score, created_at, superseded_at) "
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+                (cid, f"canister:{cid}", text,
+                 c.get("timestamp", ""), topic,
+                 c.get("confidence", 0.8), now_ts_val, supersede),
             )
             inserted += 1
+            if supersede:
+                deduped += 1
+            # Track this content for intra-batch dedup
+            if content_key:
+                recent_hashes.add(content_key)
         except Exception as e:
             log(f"  Insert error for capsule {cid}: {e}")
 
@@ -203,19 +252,33 @@ def sync_cycle(db: sqlite3.Connection, token: str, max_capsules: int = MAX_PER_C
     remaining = [i for i in range(start_id, remote_max_id + 1)
                  if i not in recent_ids and i > local_max_id]
 
-    for cid in remaining[:max_capsules - inserted]:
+    for cid in remaining[:max_capsules - inserted - content_deduped]:
         c = _fetch_capsule(token, cid)
         if c:
+            topic = c.get("topic") or ""
+            text = c.get("restatement") or ""
+            now_ts_val = int(time.time())
+            # Build #77: Content-hash dedup for feed capsules
+            content_key = text[:80] if text else ""
+            if topic.startswith("feed/") and content_key in recent_hashes:
+                content_deduped += 1
+                continue
+            # Build #45: Auto-supersede noise topics on arrival
+            supersede = now_ts_val if topic in AUTOSUPERSEDE_TOPICS else None
             try:
                 db.execute(
                     "INSERT OR IGNORE INTO knowledge_capsules "
-                    "(id, conversation_id, restatement, timestamp, topic, confidence_score, created_at) "
-                    "VALUES (?, ?, ?, ?, ?, ?, ?)",
-                    (c["id"], f"canister:{c['id']}", c.get("restatement", ""),
-                     c.get("timestamp", ""), c.get("topic", ""),
-                     c.get("confidence", 0.8), int(time.time())),
+                    "(id, conversation_id, restatement, timestamp, topic, confidence_score, created_at, superseded_at) "
+                    "VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+                    (c["id"], f"canister:{c['id']}", text,
+                     c.get("timestamp", ""), topic,
+                     c.get("confidence", 0.8), now_ts_val, supersede),
                 )
                 inserted += 1
+                if supersede:
+                    deduped += 1
+                if content_key:
+                    recent_hashes.add(content_key)
             except Exception as e:
                 log(f"  Insert error for capsule {cid}: {e}")
         if inserted % 50 == 0 and inserted > 0:
@@ -223,9 +286,11 @@ def sync_cycle(db: sqlite3.Connection, token: str, max_capsules: int = MAX_PER_C
             log(f"  Progress: {inserted} capsules inserted...")
 
     db.commit()
-    log(f"  Inserted {inserted} capsule metadata records")
+    dedup_msg = f" ({deduped} noise-deduped)" if deduped else ""
+    content_msg = f" ({content_deduped} content-deduped)" if content_deduped else ""
+    log(f"  Inserted {inserted} capsule metadata records{dedup_msg}{content_msg}")
 
-    # Embed in batches
+    # Embed in batches (skip superseded — they don't need embeddings)
     embedded = _embed_new_capsules(db)
     log(f"  Embedded {embedded} capsules")
 
@@ -332,7 +397,7 @@ def _embed_new_capsules(db: sqlite3.Connection, capsules: list = None,
             continue
 
         for cid, vec in zip(ids, vecs):
-            if not vec or len(vec) != 1024:
+            if not vec or len(vec) < 256:  # nomic-embed-text = 768 dims
                 continue
             db.execute(
                 "INSERT OR REPLACE INTO capsule_embeddings (capsule_id, embedding, model_name, created_at) "
@@ -422,6 +487,14 @@ def main():
         backfill(db, token, count)
         db.close()
         return
+
+    # Mesh — join the nervous system
+    try:
+        from chronicle_mesh import Mesh
+        mesh = Mesh("capsule_sync", db_path=DB_PATH)
+        mesh.depends_on("feeds")  # syncs what feeds produces
+    except Exception:
+        pass
 
     # Normal sync cycle
     log("Starting capsule sync...")

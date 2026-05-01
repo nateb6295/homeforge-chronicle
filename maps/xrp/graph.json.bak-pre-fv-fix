@@ -1,0 +1,274 @@
+{
+  "ecosystem": "xrp",
+  "version": 1,
+  "created": "2026-04-16",
+  "last_updated": "2026-04-29",
+  "nodes": [
+    {
+      "id": "ripple",
+      "name": "Ripple",
+      "type": "company",
+      "role": "anchor",
+      "site": "https://ripple.com",
+      "notes": "Payments, RLUSD issuer, primary XRPL contributor",
+      "added": "2026-04-16"
+    },
+    {
+      "id": "xrpl_foundation",
+      "name": "XRP Ledger Foundation",
+      "type": "foundation",
+      "role": "anchor",
+      "site": "https://xrpl.org",
+      "notes": "Neutral steward of XRPL; grants program",
+      "added": "2026-04-16"
+    },
+    {
+      "id": "sologenic",
+      "name": "Sologenic",
+      "type": "protocol",
+      "role": "anchor",
+      "site": "https://sologenic.org",
+      "notes": "Tokenization + DEX on XRPL; CORE token",
+      "added": "2026-04-16"
+    },
+    {
+      "id": "xumm",
+      "name": "Xumm (Xaman)",
+      "type": "wallet",
+      "role": "anchor",
+      "site": "https://xumm.app",
+      "notes": "Self-custody XRPL wallet, developer tooling",
+      "added": "2026-04-16"
+    },
+    {
+      "id": "futureverse",
+      "name": "Futureverse",
+      "type": "platform",
+      "role": "anchor",
+      "site": "https://futureverse.com",
+      "notes": "Metaverse/AI infrastructure on XRPL sidechain (Root Network)",
+      "added": "2026-04-16"
+    },
+    {
+      "id": "sbi_ripple_asia",
+      "name": "SBI Ripple Asia",
+      "type": "company",
+      "role": "anchor",
+      "site": "https://sbirippleasia.com",
+      "notes": "Asia-Pacific Ripple JV; stablecoin issuance approvals in Japan",
+      "added": "2026-04-16"
+    },
+    {
+      "id": "flare",
+      "name": "Flare Network",
+      "type": "protocol",
+      "role": "anchor",
+      "site": "https://flare.network",
+      "notes": "L1 with XRPL oracle; stXRP substrate",
+      "added": "2026-04-16"
+    },
+    {
+      "id": "firelight",
+      "name": "Firelight Finance",
+      "type": "protocol",
+      "role": "anchor",
+      "site": "https://firelight.fi",
+      "notes": "stXRP LSD vault on Flare (Nate's position)",
+      "added": "2026-04-16"
+    },
+    {
+      "id": "exodus",
+      "name": "Exodus Movement",
+      "type": "wallet",
+      "role": "anchor",
+      "site": "https://exodus.com",
+      "notes": "Native XRPL + RLUSD support (captured 2026-04-16)",
+      "added": "2026-04-16"
+    },
+    {
+      "id": "xrpl",
+      "name": "XRP Ledger",
+      "type": "protocol",
+      "notes": "A decentralized, public blockchain led by a global community of businesses and developers.",
+      "role": "candidate",
+      "added": "2026-04-16",
+      "discovered_via": "xrpl_foundation"
+    },
+    {
+      "id": "xrpl_org",
+      "name": "XRPL.org",
+      "type": "foundation",
+      "notes": "A community by and for the developers and entrepreneurs who rely on the XRPL.",
+      "role": "candidate",
+      "added": "2026-04-16",
+      "discovered_via": "xrpl_foundation"
+    },
+    {
+      "id": "sologenic_development_foundation",
+      "name": "Sologenic Development Foundation Limited",
+      "type": "foundation",
+      "notes": "Company incorporated in the UAE that significantly contributed to the initial coding of the Sologenic DEX interface.",
+      "role": "candidate",
+      "added": "2026-04-16",
+      "discovered_via": "sologenic"
+    },
+    {
+      "id": "ftso",
+      "name": "FTSO",
+      "type": "protocol",
+      "notes": "Flare Time Series Oracle protocol that provides decentralized price and data feeds to the Flare network.",
+      "role": "candidate",
+      "added": "2026-04-16",
+      "discovered_via": "flare"
+    },
+    {
+      "id": "fassets",
+      "name": "Fassets",
+      "type": "protocol",
+      "notes": "Protocol for bringing non-smart contract tokens like Bitcoin and XRP onto Flare Network as native assets.",
+      "role": "candidate",
+      "added": "2026-04-16",
+      "discovered_via": "flare"
+    },
+    {
+      "id": "fdc",
+      "name": "FDC",
+      "type": "protocol",
+      "notes": "Flare Data Consensus protocol that enables secure and decentralized data acquisition.",
+      "role": "candidate",
+      "added": "2026-04-16",
+      "discovered_via": "flare"
+    },
+    {
+      "id": "flarestake",
+      "name": "FlareStake",
+      "type": "dapp",
+      "notes": "Staking application built on the Flare Network for participating in network consensus.",
+      "role": "candidate",
+      "added": "2026-04-16",
+      "discovered_via": "flare"
+    },
+    {
+      "id": "ledger",
+      "name": "Ledger",
+      "type": "wallet",
+      "notes": "Hardware wallet company that integrates with Exodus for secure crypto management.",
+      "role": "candidate",
+      "added": "2026-04-29",
+      "discovered_via": "exodus"
+    },
+    {
+      "id": "trezor",
+      "name": "Trezor",
+      "type": "wallet",
+      "notes": "Hardware wallet company that integrates with Exodus for secure crypto management.",
+      "role": "candidate",
+      "added": "2026-04-29",
+      "discovered_via": "exodus"
+    }
+  ],
+  "edges": [
+    {
+      "from": "ripple",
+      "to": "xrpl_foundation",
+      "kind": "founding_contributor",
+      "note": "Ripple seeded + funds XRPL Foundation"
+    },
+    {
+      "from": "ripple",
+      "to": "sbi_ripple_asia",
+      "kind": "joint_venture",
+      "note": "SBI-Ripple JV for APAC"
+    },
+    {
+      "from": "firelight",
+      "to": "flare",
+      "kind": "built_on",
+      "note": "Firelight's stXRP vault runs on Flare"
+    },
+    {
+      "from": "flare",
+      "to": "xrpl_foundation",
+      "kind": "oracle_bridge",
+      "note": "Flare reads XRPL state via FTSO oracles"
+    },
+    {
+      "from": "exodus",
+      "to": "ripple",
+      "kind": "integrates_rlusd",
+      "note": "Exodus wallet added native RLUSD + XRPL support"
+    },
+    {
+      "from": "futureverse",
+      "to": "ripple",
+      "kind": "sidechain_partner",
+      "note": "Root Network is EVM sidechain on XRPL"
+    },
+    {
+      "from": "xrpl_foundation",
+      "to": "xrpl",
+      "kind": "stewards",
+      "notes": "The XRPL Foundation is part of the community that maintains the open-source XRP Ledger."
+    },
+    {
+      "from": "xrpl_foundation",
+      "to": "xrpl_org",
+      "kind": "parent_of",
+      "notes": "The XRPL Foundation connects the community at XRPL.org."
+    },
+    {
+      "from": "sologenic",
+      "to": "xrpl",
+      "kind": "built_on",
+      "notes": "Sologenic DEX is an interface for the XRP Ledger DEX, facilitating trading of IOUs issued on the XRP Ledger."
+    },
+    {
+      "from": "sologenic",
+      "to": "sologenic_development_foundation",
+      "kind": "parent_of",
+      "notes": "The Sologenic Development Foundation Limited is the legal entity behind the Sologenic DEX interface and services."
+    },
+    {
+      "from": "flare",
+      "to": "ftso",
+      "kind": "stewards",
+      "notes": "Flare Network maintains and operates the FTSO protocol as part of its core infrastructure."
+    },
+    {
+      "from": "flare",
+      "to": "fassets",
+      "kind": "stewards",
+      "notes": "Flare Network developed and maintains the Fassets protocol for cross-chain asset integration."
+    },
+    {
+      "from": "flare",
+      "to": "fdc",
+      "kind": "stewards",
+      "notes": "Flare Network operates the Flare Data Consensus protocol for decentralized data acquisition."
+    },
+    {
+      "from": "exodus",
+      "to": "ledger",
+      "kind": "integrates",
+      "notes": "Exodus integrates with Ledger hardware wallets for secure crypto management and swapping."
+    },
+    {
+      "from": "exodus",
+      "to": "trezor",
+      "kind": "integrates",
+      "notes": "Exodus integrates with Trezor hardware wallets for secure crypto management and swapping."
+    }
+  ],
+  "pending_research": [
+    "sbi_ripple_asia",
+    "firelight",
+    "xumm",
+    "futureverse"
+  ],
+  "stats": {
+    "nodes_total": 18,
+    "edges_total": 15,
+    "last_cycle_new_nodes": 2,
+    "last_cycle_new_edges": 2
+  }
+}

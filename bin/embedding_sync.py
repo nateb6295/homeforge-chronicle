@@ -28,12 +28,20 @@ def log(msg):
     print(f"[{time.strftime('%H:%M:%S')}] {msg}", flush=True)
 
 
-def dfx_call(method, args="()"):
-    """Run a dfx canister call."""
+def dfx_call(method, args="()", query=False):
+    """Run a dfx canister call.
+
+    Pass query=True for #[query] methods so they run as non-replicated reads
+    (free cycles) instead of replicated updates. dfx defaults to update mode
+    unless --query is explicit; calling a #[query] method without the flag
+    burns cycles on consensus for a read that doesn't need it.
+    """
+    cmd = [DFX_BIN, "canister", "--network", "ic", "call", CANISTER_ID, method, args]
+    if query:
+        cmd.append("--query")
     try:
         result = subprocess.run(
-            [DFX_BIN, "canister", "--network", "ic", "call", CANISTER_ID, method, args],
-            capture_output=True, text=True, timeout=60, env=DFX_ENV,
+            cmd, capture_output=True, text=True, timeout=60, env=DFX_ENV,
         )
         return result.stdout.strip()
     except Exception as e:
@@ -43,8 +51,8 @@ def dfx_call(method, args="()"):
 
 def get_counts():
     """Get capsule and embedding counts."""
-    cap_raw = dfx_call("get_capsule_count")
-    emb_raw = dfx_call("get_embedding_count")
+    cap_raw = dfx_call("get_capsule_count", query=True)
+    emb_raw = dfx_call("get_embedding_count", query=True)
     cap_match = re.search(r'([\d_]+)', cap_raw)
     emb_match = re.search(r'([\d_]+)', emb_raw)
     caps = int(cap_match.group(1).replace('_', '')) if cap_match else 0
@@ -54,7 +62,7 @@ def get_counts():
 
 def get_capsules_batch(offset, limit):
     """Fetch a batch of capsules from canister."""
-    raw = dfx_call("get_capsules_paginated", f"({offset} : nat64, {limit} : nat64)")
+    raw = dfx_call("get_capsules_paginated", f"({offset} : nat64, {limit} : nat64)", query=True)
     if not raw:
         return []
     capsules = []
@@ -79,7 +87,7 @@ def get_capsules_batch(offset, limit):
 
 def has_embedding(capsule_id):
     """Check if a capsule already has an embedding on-chain."""
-    raw = dfx_call("get_embedding", f"({capsule_id} : nat64)")
+    raw = dfx_call("get_embedding", f"({capsule_id} : nat64)", query=True)
     # Returns "(null)" when no embedding exists, or "(opt record { ... })" when it does
     return raw.strip() != "(null)" and "opt record" in raw
 

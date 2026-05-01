@@ -1,0 +1,25 @@
+Substrate-shaped probe — provider=claude-opus, seeds=5, iters=3, rate=0.5
+Model: claude-opus-4-5
+Story tail: uniform=0 chars, extended=0 chars
+
+uniform  seed= 42 drifts=['0.149', '0.120', '0.331'] fid=['0.769', '0.772', '0.640'] refs=[False, False, False] (25s)
+uniform  seed=  7 drifts=['0.135', '0.145', '0.346'] fid=['0.793', '0.748', '0.688'] refs=[False, False, False] (46s)
+uniform  seed= 13 drifts=['0.157', '0.127', '0.356'] fid=['0.720', '0.763', '0.643'] refs=[False, False, False] (69s)
+uniform  seed= 21 drifts=['0.155', '0.153', '0.344'] fid=['0.761', '0.770', '0.697'] refs=[False, False, False] (93s)
+uniform  seed= 99 drifts=['0.229', '0.106', '0.251'] fid=['0.761', '0.737', '0.741'] refs=[False, False, False] (118s)
+shaped   seed= 42 drifts=['0.149', '0.111', '0.365'] fid=['0.777', '0.714', '0.671'] refs=[False, False, False] (141s)
+shaped   seed=  7 drifts=['0.135', '0.144', '0.339'] fid=['0.722', '0.784', '0.668'] refs=[False, False, False] (162s)
+shaped   seed= 13 drifts=['0.157', '0.106', '0.345'] fid=['0.691', '0.759', '0.645'] refs=[False, False, False] (185s)
+shaped   seed= 21 drifts=['0.155', '0.153', '0.347'] fid=['0.826', '0.784', '0.657'] refs=[False, False, False] (209s)
+shaped   seed= 99 drifts=['0.229', '0.104', '0.243'] fid=['0.745', '0.775', '0.713'] refs=[False, False, False] (234s)
+
+==============================================================================
+SUBSTRATE-SHAPED PROBE — claude-opus (233.7s)
+==============================================================================
+variant     mean_drift    mean_fid   refusal   n
+--------------------------------------------------
+uniform         +0.326      +0.682        0%   5
+shaped          +0.328      +0.671        0%   5
+
+Shaped vs uniform: Δ_fid = -0.011, Δ_drift = -0.002
+  → Effect within noise — n=5 may be insufficient OR substrate-shape doesn't help here.

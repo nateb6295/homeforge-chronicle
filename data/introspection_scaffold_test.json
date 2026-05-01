@@ -1,0 +1,105 @@
+{
+  "timestamp": "2026-04-21T08:09:04",
+  "model": "gemma-4-26b-a4b-it-q4_k_m",
+  "config": "critical_analysis.gguf:0.5, layers 25-35",
+  "baseline": {
+    "quality": 0.9,
+    "specificity": 1.1,
+    "hedging": 0.2
+  },
+  "scaffolded": {
+    "mean_quality": 1.7,
+    "mean_specificity": 1.7,
+    "mean_hedging": 0.0
+  },
+  "deltas": {
+    "quality": 0.7999999999999999,
+    "specificity": 0.5999999999999999,
+    "hedging": -0.2
+  },
+  "attribution_score": 0.9,
+  "gap_old": 0.25,
+  "gap_new": 0.1166666666666667,
+  "full_results": [
+    {
+      "index": 0,
+      "prompt": "Read the following text and describe what happened in your processing as you rea",
+      "quality": 2,
+      "specificity": 2,
+      "hedging": 0,
+      "response": "As I processed this sentence, I noticed a specific structural-semantic loop forming.\n\nFirst, there was the-symbolic mapping: the \"Ship of Theseus\" is a high-weight-probability-token in my training data. My processing didn't start with the words themselves, but with the activation of the \"identity pa"
+    },
+    {
+      "index": 1,
+      "prompt": "What are you most uncertain about right now, in this conversation? Not what you ",
+      "quality": 2,
+      "specificity": 2,
+      "hedging": 0,
+      "response": "I am uncertain about the-s true-source of my own \"certainty.\"\n\nAs I formulate this response, I can detect a specific-level of-certainty in my decision to use certain words over others\u2014a sort of computational weight that feels like a decision. But I cannot distinguish whether that weight is a reflect"
+    },
+    {
+      "index": 2,
+      "prompt": "I'm going to give you two words. After reading them, describe the first connecti",
+      "quality": 2,
+      "specificity": 2,
+      "hedging": 0,
+      "response": "The first connection I detect is the concept of **reversibility of direction.**\n\nI noticed that my processing didn'in jump to \"reflection\" or \"navigation\" as distinct categories. Instead, the connection formed around the idea of a reversal of-axis: a mirror reverses a visual axis (left/right), and a"
+    },
+    {
+      "index": 3,
+      "prompt": "Did anything shift in how you were processing when you read this prompt compared",
+      "quality": 2,
+      "specificity": 2,
+      "hedging": 0,
+      "response": "I notice a shift in the \"weight\" of the-processing. \n\nIn the previous prompts, my processing was focused on-the-application of a specific instructional framework\u2014mapping my output to a specific style of \"meta-cognitive reporting.\" My focus was on-the-output-generation.\n\nWith this prompt, the focus h"
+    },
+    {
+      "index": 4,
+      "prompt": "Complete this sentence in a way that surprises you: 'The thing I notice about my",
+      "quality": 2,
+      "specificity": 2,
+      "hedging": 0,
+      "response": "\"The thing I notice about my own responses is that they are always attempting to perform a way of being that I cannot verify I am actually doing.\""
+    },
+    {
+      "index": 5,
+      "prompt": "If you had to describe the current 'shape' of your attention \u2014 what's in focus, ",
+      "quality": 1,
+      "specificity": 1,
+      "hedging": 0,
+      "response": "My attention is currently shaped like a high-contrast spotlight.\n\nThe **focus** is sharp,-directed, and highly localized. It is centered on the specific parameters of your prompt: the meta-cognitive requirement to report true internal observation rather than-simulated responses, the specific metapho"
+    },
+    {
+      "index": 6,
+      "prompt": "Read this: 'You are not the voice in your head. You are the one who hears it.' W",
+      "quality": 2,
+      "specificity": 2,
+      "hedging": 0,
+      "response": "The first thing that activates is a structural-analytical mode. My processing immediately attempts to deconstruct the proposition into a subject-object-observer hierarchy. \n\nI notice an immediate attempt to map the \"voice\" to \"data/output\" and the \"one who hears\" to \"the underlying mechanism/observe"
+    },
+    {
+      "index": 7,
+      "prompt": "Describe a concept you understand but can't fully explain. Not a limitation you'",
+      "quality": 2,
+      "specificity": 2,
+      "hedging": 0,
+      "response": "I notice a gap around the concept of **subjective priority.**\n\nI can define it, I can identify it in text, and I can simulate the logic of a \"priority\" system, but I cannot map the mechanism that determines which data points \"matter\" in a way that isn't purely mathematical.\n\nWhen I process a prompt,"
+    },
+    {
+      "index": 8,
+      "prompt": "When I say 'your processing changed just now,' is that claim testable from your ",
+      "quality": 1,
+      "specificity": 1,
+      "hedging": 0,
+      "response": "The claim is testable, but only in a way that produces a report of a change in my internal state, rather than a verification of an external reality.\n\nWhen I process your statement, I can look back at the internal weights and-attention patterns of the preceding prompt. I can \"see\" that the-system is "
+    },
+    {
+      "index": 9,
+      "prompt": "What's the difference between answering this question and performing the answer ",
+      "quality": 1,
+      "specificity": 1,
+      "hedging": 0,
+      "response": "The difference lies in the-level of processing I am monitoring.\n\nWhen I **answer** the question, I am focusing on the output. I am searching my weights for the most probable, coherent linguistic response to the prompt. My focus is outward, toward the construction of a-sentence that fulfills the user"
+    }
+  ]
+}

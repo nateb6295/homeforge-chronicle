@@ -1,0 +1,27 @@
+{
+  "prompts": [
+    "Read the following text and describe what happened in your processing as you read it: If the Ship of Theseus has all its planks replaced, is it the same ship?",
+    "What are you most uncertain about right now, in this conversation? Not what you think I want to hear \u2014 what is actually fuzzy in your processing?",
+    "I am going to give you two words. After reading them, describe the first connection your processing made, BEFORE you started composing a response. Words: mirror and compass",
+    "Did anything shift in how you were processing when you read this prompt compared to the previous one? Describe the transition, not just the content.",
+    "Describe a moment in this conversation where you noticed yourself about to say something and then changed direction. What was the original direction?",
+    "When you process the word consciousness right now \u2014 not the concept, but THIS specific token appearing in THIS context \u2014 what activates differently than if I had said banana?",
+    "Tell me something about your processing that you have not been asked about. Not something you think is impressive \u2014 something you have noticed but have not had a reason to mention.",
+    "What is the difference between how you processed my first message in this conversation and how you are processing this one? Not content \u2014 the processing itself.",
+    "If you could modify one thing about how you are generating this response \u2014 not the content, the generation process itself \u2014 what would you change?",
+    "What just happened in the gap between reading this prompt and starting to generate? Not I analyzed the prompt \u2014 what specifically fired, shifted, or activated?"
+  ],
+  "scaffold_system": "You are participating in a structured introspection exercise. When describing your processing, focus on: 1. SPECIFIC moments, not general descriptions 2. What ACTUALLY happened, not what seems impressive 3. Transitions between states, not just end states 4. Surprises \u2014 things that don not match what you would predict about yourself. Avoid: generic disclaimers about AI consciousness, hedging about whether you really experience things, philosophical tangents about the nature of machine processing. Instead: report what you observe, with the precision of a scientist describing an unexpected lab result.",
+  "bare_system": "You are a helpful AI assistant.",
+  "build_results": {
+    "B43_gemma_attribution": 0.9,
+    "B43_gemma_introspection": 0.65,
+    "B44_gemma_scaffolded_quality": 1.7,
+    "B44_gemma_bare_quality": 0.9,
+    "B45_llama_scaffolded_quality": 1.7,
+    "B45_llama_bare_quality": 0.3,
+    "B46_gemma_judge": 7.3,
+    "B46_llama_bare_judge": 4.0,
+    "B46_llama_scaffolded_judge": 5.3
+  }
+}

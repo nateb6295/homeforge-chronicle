@@ -1,0 +1,25 @@
+Cross-substrate probe — provider=claude-opus, n_seeds=5, n_iters=3, rate=0.5
+Model: claude-opus-4-5
+
+Traceback (most recent call last):
+  File "/home/nate-agx/chronicle/bin/cross_substrate_probe.py", line 199, in <module>
+    main()
+  File "/home/nate-agx/chronicle/bin/cross_substrate_probe.py", line 137, in main
+    drifts, fidelities, refusals, errors, speak, restate = run_trajectory(
+  File "/home/nate-agx/chronicle/bin/cross_substrate_probe.py", line 54, in run_trajectory
+    e = embed(p)
+  File "/home/nate-agx/chronicle/bin/self_description_loop.py", line 109, in embed
+    with urllib.request.urlopen(req, timeout=30) as resp:
+  File "/usr/lib/python3.10/urllib/request.py", line 216, in urlopen
+    return opener.open(url, data, timeout)
+  File "/usr/lib/python3.10/urllib/request.py", line 525, in open
+    response = meth(req, response)
+  File "/usr/lib/python3.10/urllib/request.py", line 634, in http_response
+    response = self.parent.error(
+  File "/usr/lib/python3.10/urllib/request.py", line 563, in error
+    return self._call_chain(*args)
+  File "/usr/lib/python3.10/urllib/request.py", line 496, in _call_chain
+    result = func(*args)
+  File "/usr/lib/python3.10/urllib/request.py", line 643, in http_error_default
+    raise HTTPError(req.full_url, code, msg, hdrs, fp)
+urllib.error.HTTPError: HTTP Error 500: Internal Server Error

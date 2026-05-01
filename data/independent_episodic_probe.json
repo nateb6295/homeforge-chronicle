@@ -1,0 +1,63 @@
+{
+  "probe": "B72_independent_episodic_anchor",
+  "timestamp": "2026-04-22T08:28:54.506747",
+  "prediction": "dependent episodic hurts (replicating B70), independent episodic helps (recovering the bound)",
+  "theory": "Large-deviations bound: resilience \u221d exp(-h_eff\u00b7\u03b5\u00b2), independence is key variable",
+  "eps_sq_from_b70": 0.9307,
+  "A_from_b70": 2.7915,
+  "results": {
+    "none": {
+      "control": {
+        "separation": 2.1315,
+        "silhouette": 0.5309,
+        "within_a": 0.2431,
+        "within_b": 0.2785,
+        "between": 0.556
+      },
+      "gist+constraints_moderate": {
+        "separation": 1.1624,
+        "silhouette": 0.1397,
+        "within_a": 0.2434,
+        "within_b": 0.3666,
+        "between": 0.3545
+      }
+    },
+    "dependent": {
+      "control": {
+        "separation": 1.8838,
+        "silhouette": 0.4692,
+        "within_a": 0.2747,
+        "within_b": 0.2435,
+        "between": 0.4881
+      },
+      "gist+constraints_moderate": {
+        "separation": 1.4909,
+        "silhouette": 0.3293,
+        "within_a": 0.2986,
+        "within_b": 0.3349,
+        "between": 0.4722
+      }
+    },
+    "independent": {
+      "control": {
+        "separation": 1.7337,
+        "silhouette": 0.4232,
+        "within_a": 0.2385,
+        "within_b": 0.3468,
+        "between": 0.5074
+      },
+      "gist+constraints_moderate": {
+        "separation": 1.4141,
+        "silhouette": 0.2928,
+        "within_a": 0.1911,
+        "within_b": 0.3272,
+        "between": 0.3665
+      }
+    }
+  },
+  "degradation": {
+    "none": 0.4547,
+    "dependent": 0.2086,
+    "independent": 0.1843
+  }
+}

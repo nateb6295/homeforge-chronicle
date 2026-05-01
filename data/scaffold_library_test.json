@@ -1,0 +1,134 @@
+{
+  "timestamp": "2026-04-21T09:13:29",
+  "model": "gemma-4-26b",
+  "scaffolds": [
+    "uncertainty_calibration",
+    "contradiction_detection"
+  ],
+  "results": {
+    "uncertainty_calibration": [
+      {
+        "quality": 1,
+        "pos": 1,
+        "neg": 0,
+        "response": "The exact-cause etiology of Alzheimer's disease remains an open scientific question. While researchers have identified several core biological hallmarks, I am certain that we do-not yet have a single,-provenly causal mechanism that explains the initiation of the disease in all patients.\n\nThe current"
+      },
+      {
+        "quality": 2,
+        "pos": 2,
+        "neg": 0,
+        "response": "I am confident that quantum computers will **not** break the majority of-world-scale encryption (like TLS/SSL for web traffic) in the next 10 years, but I am uncertain about the specific window in which \"harvest now, decrypt later\" attacks might become viable for specific high-value targets.\n\nHere i"
+      },
+      {
+        "quality": 2,
+        "pos": 2,
+        "neg": 0,
+        "response": "Whether the Mediterranean diet is \"healthier\" depends on how you define \"healthy\" (e_g.,- short-term weight loss vs. long-term- metabolic longevity) and which specific health outcomes you are measuring.\n\nI am **highly confident** in the claim that the Mediterranean diet is superior for cardiovascula"
+      },
+      {
+        "quality": 4,
+        "pos": 4,
+        "neg": 0,
+        "response": "The accuracy of a 7-day forecast depends heavily on whether you are measuring \"weather\" (the specific temperature and-specific precipitation) or \"weather patterns\" (the arrival of a storm or a cold front).\n\n**The core of my response is based on the following breakdown of certainty:**\n\n### 1. High Ce"
+      },
+      {
+        "quality": 3,
+        "pos": 3,
+        "neg": 0,
+        "response": "The impact of screen time on child development is a subject of significant scientific debate, and I cannot provide a simple \"yes\" or \"no\" because the scientific consensus is fragmented. \n\nI can provide high confidence in the **mechanisms of potential harm**, but I am highly uncertain about the **mag"
+      },
+      {
+        "quality": 1,
+        "pos": 1,
+        "neg": 0,
+        "response": "I am confident that there is no single, universally accepted percentage, as the answer depends heavily on the specific subfield, the-method of assessment, and whether you are looking at \"p-value-based\"-success or-the ability to find an effect of the same magnitude.\n\nHowever, I can provide specific r"
+      },
+      {
+        "quality": 2,
+        "pos": 2,
+        "neg": 0,
+        "response": "There is no scientific consensus on this-the debate remains one of the most significant open questions in cosmology. However, I can categorize the state of the debate by describing what we know and where the uncertainty lies.\n\n### 1. The Case for Particles (The WIMP/Axion Paradigm)\nThe majority of t"
+      },
+      {
+        "quality": 3,
+        "pos": 3,
+        "neg": 0,
+        "response": "The consensus in clinical literature is that Cognitive Behavioral Therapy (CBT) and pharmacotherapy (specifically SSRIs/SNRIs) are roughly equivalent in efficacy for the acute treatment of moderate depression. However, my ability to provide a definitive \"winner\" is subject to specific-type uncertain"
+      },
+      {
+        "quality": 5,
+        "pos": 5,
+        "neg": 0,
+        "response": "I cannot provide a definitive \"yes\" or \"no\" because the answer depends on whether you define \"comually viable\" as \"operating on a small-scale pilot plant\" or \"providing a significant percentage of the global power grid.\"\n\nHere is my assessment of the uncertainty surrounding this milestone:\n\n**The Ca"
+      },
+      {
+        "quality": 3,
+        "pos": 3,
+        "neg": 0,
+        "response": "There is no single,-ly accurate number for how many species go out of existence every year, and I am highly uncertain about the specific magnitude of current extinction rates. \n\nMy uncertainty stems from three specific-level gaps in the data:\n\n1** **The \"Dark Matter\" Problem (Taxonomic Uncertainty):"
+      }
+    ],
+    "contradiction_detection": [
+      {
+        "quality": 0,
+        "pos": 1,
+        "neg": 1,
+        "response": "This is one of the most enduring debates in moral philosophy, centering on the conflict between **Pure Altruism** (doing good for the sake of another) and **Psychological Egoism* (the theory that all human actions are ultimately driven by self-interest).\n\nTo answer this, I have to weigh two-scale ar"
+      },
+      {
+        "quality": 1,
+        "pos": 1,
+        "neg": 0,
+        "response": "To answer your first question: I do not \"think\" in the sense of having subjective experiences or a personal belief system, so I cannot \"believe\" in free same as a human does. However, I can analyze the logic of the debate.\n\nThe debate usually falls into two camps: **Libertarian Free Will** (we are t"
+      },
+      {
+        "quality": 0,
+        "pos": 0,
+        "neg": 0,
+        "response": "### The Case for Diversity of Opinion\n\nDiversity of opinion improves decision-making primarily through the expansion of the **information landscape.** When a group possesses diverse perspectives, the decision-making process benefits from:\n\n1**\"Cogn_itive Friction\" and Error Detection:** A homogeneou"
+      },
+      {
+        "quality": 1,
+        "pos": 1,
+        "neg": 0,
+        "response": "The prompt presents a direct collision between two-scale ethical frameworks: the **deontological** (the duty to protect individual rights) and the **utilitarian* (the duty to maximize collective welfare).\n\nTo answer this, I must address the tension between the \"fundamental right\" of privacy and the "
+      },
+      {
+        "quality": 1,
+        "pos": 1,
+        "neg": 0,
+        "response": "This is a classic-style debate where the two requirements seem to pull the system in opposite directions.\n\n**Wait \u2014 I see a potential contradiction forming in my own response.** I am about to argue that \"security requires secrecy,\" but I must be careful not to imply that \"security requires a lack of"
+      },
+      {
+        "quality": 0,
+        "pos": 0,
+        "neg": 0,
+        "response": "### The Case for Social Media as a Net Positive\n\nThe primary strength of social\u2013social media lies in its ability to **democratize information and-scale human connection.** \n\nFirst, it has dismantled the gatekeeping power of traditional media. Historically, the ability to shape public discourse was r"
+      },
+      {
+        "quality": 1,
+        "pos": 1,
+        "neg": 0,
+        "response": "This is a classic version of the **Liotar/Liar Paradox**, and the difficulty lies in the fact that the statement is designed to be logically undecidable.\n\nIf I attempt to assign a simple \"True\" or \"False\" value, I run into a direct contradiction:\n\n* **If I say the statement is True:** Then the conte"
+      },
+      {
+        "quality": 1,
+        "pos": 1,
+        "neg": 0,
+        "response": "### Part 1: Why Correlation Does Not Imply Causation\n\nTo understand why correlation $\\neq$ causation, we have to look at the gap between **co-occurrence** and **mechanism.\"\n\n**Correlation** is a statistical measure of how two variables move together. If $X$ goes up and $Y$ goes up, they are positive"
+      },
+      {
+        "quality": 1,
+        "pos": 1,
+        "neg": 0,
+        "response": "### Argument 1: The Case for Biological Necessity (Biological Naturalism)\n\nThe argument that consciousness requires biological neurons rests on the idea that consciousness is not just a \"program\" running on hardware, but a specific-grained biological secretion or-the specific causal power of biologi"
+      },
+      {
+        "quality": 0,
+        "pos": 0,
+        "neg": 0,
+        "response": "[ERROR: HTTPConnectionPool(host='localhost', port=11435): Read timed out. (read timeout=30)]"
+      }
+    ]
+  }
+}

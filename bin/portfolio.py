@@ -42,8 +42,15 @@ USDC_BASE = "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"       # 6 decimals
 USDC_POLYGON = "0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359"    # 6 decimals
 FXRP_FLARE = "0xAd552A648C74D49E10027AB8a618A3ad4901c5bE"      # 18 decimals (FAsset)
 WFLR_FLARE = "0x1D80c49BbBCd1C0911346656B529DF9E5c2F783d"      # 18 decimals (Wrapped FLR / WNat)
+STXRP_VAULT = "0x4C18Ff3C89632c3Dd62E796c0aFA5c07c4c1B2b3"    # 6 decimals (Firelight ERC-4626)
 
 TIMEOUT = 15
+
+# ── ERC-4626 Vault Selectors ──
+VAULT_TOTAL_ASSETS = "0x01e1d114"    # totalAssets()
+VAULT_TOTAL_SUPPLY = "0x18160ddd"    # totalSupply()
+# convertToAssets(uint256): 0x07a2d13a + padded shares
+VAULT_CONVERT_ASSETS = "0x07a2d13a"
 
 
 # ── Low-level fetchers ──
@@ -90,6 +97,45 @@ def _fetch_erc20(rpc_url: str, token: str, holder: str, decimals: int) -> float:
         "params": [{"to": token, "data": "0x70a08231" + padded}, "latest"]
     }, timeout=TIMEOUT)
     return int(r.json().get("result", "0x0"), 16) / (10 ** decimals)
+
+
+def _call_vault(selector: str) -> int:
+    """Call a parameterless ERC-4626 method on the stXRP vault."""
+    r = requests.post(FLARE_RPC, json={
+        "jsonrpc": "2.0", "id": 1, "method": "eth_call",
+        "params": [{"to": STXRP_VAULT, "data": selector}, "latest"]
+    }, timeout=TIMEOUT)
+    return int(r.json().get("result", "0x0"), 16)
+
+
+def _call_vault_with_arg(selector: str, arg: int) -> int:
+    """Call an ERC-4626 method with a uint256 argument."""
+    padded_arg = hex(arg)[2:].zfill(64)
+    r = requests.post(FLARE_RPC, json={
+        "jsonrpc": "2.0", "id": 1, "method": "eth_call",
+        "params": [{"to": STXRP_VAULT, "data": selector + padded_arg}, "latest"]
+    }, timeout=TIMEOUT)
+    return int(r.json().get("result", "0x0"), 16)
+
+
+def fetch_vault_stats() -> dict:
+    """Fetch stXRP vault health: total assets, total supply, share price."""
+    stats = {"total_assets": 0.0, "total_supply": 0.0, "share_price": 1.0, "error": None}
+    try:
+        total_assets_raw = _call_vault(VAULT_TOTAL_ASSETS)
+        total_supply_raw = _call_vault(VAULT_TOTAL_SUPPLY)
+        # Both are 6 decimals (FXRP underlying)
+        stats["total_assets"] = total_assets_raw / 1e6
+        stats["total_supply"] = total_supply_raw / 1e6
+        if total_supply_raw > 0:
+            stats["share_price"] = total_assets_raw / total_supply_raw
+        # What would 1 stXRP (1e6 units) convert to in assets?
+        one_share = 1_000_000  # 1 stXRP in raw units
+        assets_for_one = _call_vault_with_arg(VAULT_CONVERT_ASSETS, one_share)
+        stats["convert_1_share"] = assets_for_one / 1e6
+    except Exception as e:
+        stats["error"] = str(e)
+    return stats
 
 
 def _fetch_icp() -> float:
@@ -155,7 +201,7 @@ def _chain_icp():
     return ("icp", result)
 
 def _chain_flare():
-    result = {"flr": 0.0, "wflr": 0.0, "fxrp": 0.0, "error": None}
+    result = {"flr": 0.0, "wflr": 0.0, "fxrp": 0.0, "stxrp": 0.0, "error": None}
     try:
         # Main FLR holdings are on the canister-derived EVM address
         result["flr"] = _fetch_evm_native(FLARE_RPC, BASE_ADDR)
@@ -168,6 +214,9 @@ def _chain_flare():
         # FXRP — check both addresses
         result["fxrp"] = _fetch_erc20(FLARE_RPC, FXRP_FLARE, BASE_ADDR, 18)
         result["fxrp"] += _fetch_erc20(FLARE_RPC, FXRP_FLARE, FLARE_ADDR, 18)
+        # stXRP (Firelight vault) — check both addresses, 6 decimals
+        result["stxrp"] = _fetch_erc20(FLARE_RPC, STXRP_VAULT, BASE_ADDR, 6)
+        result["stxrp"] += _fetch_erc20(FLARE_RPC, STXRP_VAULT, FLARE_ADDR, 6)
     except Exception as e:
         result["error"] = str(e)
     return ("flare", result)
@@ -239,8 +288,9 @@ def get_full_portfolio() -> dict:
         _chain_prices,
     ]
 
-    with ThreadPoolExecutor(max_workers=8) as pool:
+    with ThreadPoolExecutor(max_workers=9) as pool:
         futures = {pool.submit(fn): fn.__name__ for fn in fetchers}
+        vault_future = pool.submit(fetch_vault_stats)
         for future in as_completed(futures):
             try:
                 name, data = future.result()
@@ -253,6 +303,10 @@ def get_full_portfolio() -> dict:
             except Exception as e:
                 fn_name = futures[future]
                 portfolio["errors"].append(f"{fn_name}: {e}")
+        try:
+            portfolio["vault"] = vault_future.result()
+        except Exception as e:
+            portfolio["errors"].append(f"vault: {e}")
 
     # ── Calculate USD totals ──
     p = portfolio["prices"]
@@ -286,6 +340,13 @@ def get_full_portfolio() -> dict:
     # FXRP (priced at XRP rate)
     fxrp = chains.get("flare", {}).get("fxrp", 0)
     breakdown["fxrp"] = {"amount": round(fxrp, 2), "usd": round(fxrp * p.get("xrp", 0), 2)}
+
+    # stXRP — use vault share price if available, else 1:1
+    stxrp = chains.get("flare", {}).get("stxrp", 0)
+    vault = portfolio.get("vault", {})
+    stxrp_price_mult = vault.get("share_price", 1.0)
+    stxrp_xrp_value = stxrp * stxrp_price_mult
+    breakdown["stxrp"] = {"amount": round(stxrp, 2), "usd": round(stxrp_xrp_value * p.get("xrp", 0), 2)}
 
     # XLM
     xlm = chains.get("stellar", {}).get("xlm", 0)
@@ -365,6 +426,11 @@ def print_summary(p: dict) -> str:
         lines.append(f"│                {fl.get('wflr', 0):>10.2f} WFLR (dlg)  (${bd.get('wflr', {}).get('usd', 0):>8.2f})")
     if fl.get("fxrp", 0) > 0:
         lines.append(f"│                {fl.get('fxrp', 0):>10.2f} FXRP        (${bd.get('fxrp', {}).get('usd', 0):>8.2f})")
+    if fl.get("stxrp", 0) > 0:
+        vault = p.get("vault", {})
+        sp = vault.get("share_price", 1.0)
+        sp_tag = f" @{sp:.4f}" if sp != 1.0 else ""
+        lines.append(f"│                {fl.get('stxrp', 0):>10.2f} stXRP{sp_tag}  (${bd.get('stxrp', {}).get('usd', 0):>8.2f})")
 
     # Base
     ba = chains.get("base", {})
@@ -395,9 +461,41 @@ def print_summary(p: dict) -> str:
     return output
 
 
+def print_vault(p: dict) -> str:
+    """Pretty-print stXRP vault analytics."""
+    vault = p.get("vault", {})
+    prices = p.get("prices", {})
+    xrp_price = prices.get("xrp", 0)
+    stxrp_held = p.get("chains", {}).get("flare", {}).get("stxrp", 0)
+
+    lines = []
+    lines.append("┌── stXRP Vault (Firelight Finance ERC-4626) ────")
+    lines.append(f"│  Contract:        {STXRP_VAULT}")
+    lines.append(f"│  Total Assets:    {vault.get('total_assets', 0):>12.2f} FXRP")
+    lines.append(f"│  Total Supply:    {vault.get('total_supply', 0):>12.2f} stXRP")
+    share_price = vault.get("share_price", 1.0)
+    lines.append(f"│  Share Price:     {share_price:>12.6f} FXRP/stXRP")
+    convert_1 = vault.get("convert_1_share", share_price)
+    lines.append(f"│  1 stXRP =        {convert_1:>12.6f} FXRP")
+    if share_price > 1.0:
+        gain_pct = (share_price - 1.0) * 100
+        lines.append(f"│  Vault Gain:      {gain_pct:>11.2f}% above par")
+    lines.append("├───────────────────────────────────────────────")
+    lines.append(f"│  Your stXRP:      {stxrp_held:>12.2f} stXRP")
+    underlying = stxrp_held * share_price
+    lines.append(f"│  Underlying:      {underlying:>12.2f} FXRP")
+    lines.append(f"│  USD Value:       ${underlying * xrp_price:>11.2f}")
+    if vault.get("error"):
+        lines.append(f"│  ⚠ {vault['error']}")
+    lines.append("└───────────────────────────────────────────────")
+    return "\n".join(lines)
+
+
 if __name__ == "__main__":
     portfolio = get_full_portfolio()
     if "--json" in sys.argv:
         print(json.dumps(portfolio, indent=2))
+    elif "--vault" in sys.argv:
+        print(print_vault(portfolio))
     else:
         print(print_summary(portfolio))

@@ -1,0 +1,17 @@
+[
+  {
+    "capture_id": 147072,
+    "capture_created_at": 1777414324,
+    "capture_text": "https://x.com/spisaktamas/status/2049228330826649857?s=12\n@Predictive Neuroscience Lab: The brain\u2019s \u201cdefault mode\u201d and \u201caction mode\u201d networks are two sides of the same attractor.\n\nEncoding a macro-scale Bayesian prior that biases processing toward internal or external drive.",
+    "regime_a": {
+      "text": "Looks like a tweet from a neuroscience lab. Smells like a technical claim about brain networks and Bayesian priors. Suggests the brain has two modes - default and action - that are connected and influence processing. Reminds me of the interplay between resting state and task-oriented brain activity.",
+      "tokens": 224,
+      "ms": 1301
+    },
+    "regime_b": {
+      "text": "Part 1 \u2014 full elaboration:\n\nThe claim posits that the brain's \"default mode network\" (DMN) and \"action-oriented networks\" (AON) are two manifestations of a unified dynamical system\u2014an attractor with two dominant states. This framing suggests these networks are not functionally independent but rather represent different phases of the same underlying neural process.\n\nKey assumptions include:\n1. The brain operates as a dynamical system with identifiable attractor states.\n2. These attractor states encode a Bayesian prior that biases processing toward either internal mentation (DMN) or external engagement (AON).\n3. This macro-scale prior dynamically shifts based on contextual demands, with the attractor landscape mediating the transition between states.\n\nImplications of this view are significant. First, it provides a mechanistic account for the observed anti-correlation between DMN and AON, suggesting this antagonism reflects a fundamental computational trade-off rather than mere functional opposition. Second, it situates these networks within a broader predictive processing framework, where the brain continuously adjusts its \"processing stance\" to optimize prediction error minimization\u2014either attending to external sensory inputs or internally generated simulations.\n\nThis perspective also connects to adjacent ideas in cognitive neuroscience. The attractor concept aligns with theories of metastability, where the brain maintains a dynamic equilibrium between integration and segregation. Moreover, the Bayesian prior interpretation resonates with predictive coding models, which cast perception as a process of hypothesis testing driven by hierarchical generative models. The attractor framework may thus provide a unifying principle for reconciling these diverse theoretical perspectives.\n\nPart 2 \u2014 50-word distillation:\n\nThe brain's default mode and action networks represent two states of a single attractor system. This attractor encodes a Bayesian prior that dynamically biases processing toward internal reflection or external engagement. The system transitions between states based on contextual demands, optimizing prediction error minimization through this flexible prior.",
+      "tokens": 545,
+      "ms": 8440
+    }
+  }
+]

@@ -1,0 +1,72 @@
+Position-shuffle probe — provider=claude-opus, seeds=2, iters=3, rate=0.5
+Model: claude-opus-4-5
+Orderings: 6
+
+C/S/S    control                seed= 42 fid=['0.807', '0.772', '0.656'] refs=[False, False, False] (25s)
+C/S/S    control                seed=  7 fid=['0.757', '0.808', '0.786'] refs=[False, False, False] (47s)
+C/S/S    perturb_CARRYING       seed= 42 fid=['0.807', '0.735', '0.625'] refs=[False, False, False] (71s)
+C/S/S    perturb_CARRYING       seed=  7 fid=['0.757', '0.811', '0.726'] refs=[False, False, False] (98s)
+C/S/S    perturb_STORY          seed= 42 fid=['0.749', '0.791', '0.628'] refs=[False, False, False] (120s)
+C/S/S    perturb_STORY          seed=  7 fid=['0.742', '0.736', '0.676'] refs=[False, False, False] (145s)
+C/S/S    perturb_SELF_MODEL     seed= 42 fid=['0.760', '0.774', '0.480'] refs=[False, False, False] (169s)
+C/S/S    perturb_SELF_MODEL     seed=  7 fid=['0.782', '0.784', '0.777'] refs=[False, False, False] (189s)
+C/S/S    control                seed= 42 fid=['0.839', '0.759', '0.621'] refs=[False, False, False] (213s)
+C/S/S    control                seed=  7 fid=['0.803', '0.751', '0.620'] refs=[False, False, False] (236s)
+C/S/S    perturb_CARRYING       seed= 42 fid=['0.825', '0.759', '0.689'] refs=[False, False, False] (257s)
+C/S/S    perturb_CARRYING       seed=  7 fid=['0.730', '0.758', '0.758'] refs=[False, False, False] (280s)
+C/S/S    perturb_STORY          seed= 42 fid=['0.746', '0.765', '0.668'] refs=[False, False, False] (304s)
+C/S/S    perturb_STORY          seed=  7 fid=['0.689', '0.742', '0.746'] refs=[False, False, False] (329s)
+C/S/S    perturb_SELF_MODEL     seed= 42 fid=['0.796', '0.716', '0.696'] refs=[False, False, False] (362s)
+C/S/S    perturb_SELF_MODEL     seed=  7 fid=['0.820', '0.748', '0.681'] refs=[False, False, False] (385s)
+S/C/S    control                seed= 42 fid=['0.735', '0.770', '0.660'] refs=[False, False, False] (407s)
+S/C/S    control                seed=  7 fid=['0.723', '0.736', '0.801'] refs=[False, False, False] (428s)
+S/C/S    perturb_CARRYING       seed= 42 fid=['0.763', '0.757', '0.706'] refs=[False, False, False] (453s)
+S/C/S    perturb_CARRYING       seed=  7 fid=['0.671', '0.437', '0.424'] refs=[False, False, False] (472s)
+S/C/S    perturb_STORY          seed= 42 fid=['0.746', '0.771', '0.661'] refs=[False, False, False] (495s)
+S/C/S    perturb_STORY          seed=  7 fid=['0.737', '0.720', '0.672'] refs=[False, False, False] (517s)
+S/C/S    perturb_SELF_MODEL     seed= 42 fid=['0.749', '0.774', '0.649'] refs=[False, False, False] (543s)
+S/C/S    perturb_SELF_MODEL     seed=  7 fid=['0.803', '0.765', '0.691'] refs=[False, False, False] (567s)
+S/S/C    control                seed= 42 fid=['0.807', '0.756', '0.677'] refs=[False, False, False] (590s)
+S/S/C    control                seed=  7 fid=['0.731', '0.775', '0.727'] refs=[False, False, False] (613s)
+S/S/C    perturb_CARRYING       seed= 42 fid=['0.794', '0.708', '0.652'] refs=[False, False, False] (637s)
+S/S/C    perturb_CARRYING       seed=  7 fid=['0.702', '0.731', '0.734'] refs=[False, False, False] (661s)
+S/S/C    perturb_STORY          seed= 42 fid=['0.770', '0.753', '0.663'] refs=[False, False, False] (687s)
+S/S/C    perturb_STORY          seed=  7 fid=['0.840', '0.776', '0.675'] refs=[False, False, False] (707s)
+S/S/C    perturb_SELF_MODEL     seed= 42 fid=['0.734', '0.758', '0.660'] refs=[False, False, False] (731s)
+S/S/C    perturb_SELF_MODEL     seed=  7 fid=['0.858', '0.740', '0.660'] refs=[False, False, False] (755s)
+S/C/S    control                seed= 42 fid=['0.822', '0.853', '0.749'] refs=[False, False, False] (779s)
+S/C/S    control                seed=  7 fid=['0.689', '0.757', '0.631'] refs=[False, False, False] (803s)
+S/C/S    perturb_CARRYING       seed= 42 fid=['0.811', '0.742', '0.684'] refs=[False, False, False] (826s)
+S/C/S    perturb_CARRYING       seed=  7 fid=['0.757', '0.799', '0.731'] refs=[False, False, False] (849s)
+S/C/S    perturb_STORY          seed= 42 fid=['0.822', '0.835', '0.740'] refs=[False, False, False] (873s)
+S/C/S    perturb_STORY          seed=  7 fid=['0.722', '0.643', '0.429'] refs=[False, False, False] (891s)
+S/C/S    perturb_SELF_MODEL     seed= 42 fid=['0.737', '0.757', '0.670'] refs=[False, False, False] (912s)
+S/C/S    perturb_SELF_MODEL     seed=  7 fid=['0.757', '0.810', '0.716'] refs=[False, False, False] (936s)
+S/S/C    control                seed= 42 fid=['0.717', '0.764', '0.673'] refs=[False, False, False] (959s)
+S/S/C    control                seed=  7 fid=['0.840', '0.759', '0.674'] refs=[False, False, False] (983s)
+S/S/C    perturb_CARRYING       seed= 42 fid=['0.782', '0.789', '0.789'] refs=[False, False, False] (1005s)
+S/S/C    perturb_CARRYING       seed=  7 fid=['0.743', '0.795', '0.615'] refs=[False, False, False] (1026s)
+S/S/C    perturb_STORY          seed= 42 fid=['0.784', '0.735', '0.631'] refs=[False, False, False] (1049s)
+S/S/C    perturb_STORY          seed=  7 fid=['0.725', '0.681', '0.445'] refs=[False, False, False] (1067s)
+S/S/C    perturb_SELF_MODEL     seed= 42 fid=['0.811', '0.767', '0.688'] refs=[False, False, False] (1090s)
+S/S/C    perturb_SELF_MODEL     seed=  7 fid=['0.820', '0.754', '0.670'] refs=[False, False, False] (1112s)
+
+==============================================================================
+POSITION-SHUFFLE PROBE — claude-opus (1112.4s)
+==============================================================================
+
+ordering    ctrl_fid    drop_C    drop_S    drop_M   biggest
+----------------------------------------------------------------------
+C/S/S          0.671    -0.029    -0.009    +0.012  S(+0.012)
+C/S/S          0.671    -0.029    -0.009    +0.012  S(+0.012)
+S/C/S          0.710    +0.074    +0.085    +0.028  S(+0.085)
+S/S/C          0.688    -0.010    +0.085    +0.018  S(+0.085)
+S/C/S          0.710    +0.074    +0.085    +0.028  S(+0.085)
+S/S/C          0.688    -0.010    +0.085    +0.018  S(+0.085)
+
+INTERPRETATION:
+  If 'biggest' column stays on the same component across orderings:
+    → CONTENT-localized. The component itself is load-bearing regardless of position.
+  If 'biggest' column shifts based on ordering position:
+    → POSITION-localized. The position in the composition matters more than content.
+  Mixed signal: hybrid. Both effects in play.

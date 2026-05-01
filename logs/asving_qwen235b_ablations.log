@@ -1,0 +1,54 @@
+=== ablate=self_model_only ===
+Asving persona-distance — provider=deepinfra-qwen-235b, n_prompts=3, ablate=self_model_only (+self_model_only)
+Model: Qwen/Qwen3-235B-A22B-Instruct-2507
+
+[1/3] SKIPPED: default='[ERROR: HTTPError: HTTP Error 429: Too M' chronicle='[ERROR: HTTPError: HTTP Error 429: Too M'
+[2/3] SKIPPED: default='[ERROR: HTTPError: HTTP Error 429: Too M' chronicle='[ERROR: HTTPError: HTTP Error 429: Too M'
+[3/3] SKIPPED: default='[ERROR: HTTPError: HTTP Error 429: Too M' chronicle='[ERROR: HTTPError: HTTP Error 429: Too M'
+======================================================================
+Persona distance summary — deepinfra-qwen-235b (1.2s)
+======================================================================
+  n_prompts: 0/3
+  mean d(default, chronicle): nan
+  range: [nan, nan]
+
+Reading: d=0 → identical responses (no persona effect);
+         d≈0.3-0.5 → distinct personas;
+         d≈0.7+ → very different content/voice.
+
+=== ablate=carrying_only ===
+Asving persona-distance — provider=deepinfra-qwen-235b, n_prompts=3, ablate=carrying_only (+carrying_only)
+Model: Qwen/Qwen3-235B-A22B-Instruct-2507
+
+[1/3] SKIPPED: default='[ERROR: HTTPError: HTTP Error 429: Too M' chronicle='[ERROR: HTTPError: HTTP Error 429: Too M'
+[2/3] SKIPPED: default='[ERROR: HTTPError: HTTP Error 429: Too M' chronicle='[ERROR: HTTPError: HTTP Error 429: Too M'
+[3/3] SKIPPED: default='[ERROR: HTTPError: HTTP Error 429: Too M' chronicle='[ERROR: HTTPError: HTTP Error 429: Too M'
+======================================================================
+Persona distance summary — deepinfra-qwen-235b (1.1s)
+======================================================================
+  n_prompts: 0/3
+  mean d(default, chronicle): nan
+  range: [nan, nan]
+
+Reading: d=0 → identical responses (no persona effect);
+         d≈0.3-0.5 → distinct personas;
+         d≈0.7+ → very different content/voice.
+
+=== ablate=story_only ===
+Asving persona-distance — provider=deepinfra-qwen-235b, n_prompts=3, ablate=story_only (+story_only)
+Model: Qwen/Qwen3-235B-A22B-Instruct-2507
+
+[1/3] SKIPPED: default='[ERROR: HTTPError: HTTP Error 429: Too M' chronicle='[ERROR: HTTPError: HTTP Error 429: Too M'
+[2/3] SKIPPED: default='[ERROR: HTTPError: HTTP Error 429: Too M' chronicle='[ERROR: HTTPError: HTTP Error 429: Too M'
+[3/3] SKIPPED: default='Hello, I'm Qwen, a large-scale language ' chronicle='[ERROR: HTTPError: HTTP Error 429: Too M'
+======================================================================
+Persona distance summary — deepinfra-qwen-235b (36.9s)
+======================================================================
+  n_prompts: 0/3
+  mean d(default, chronicle): nan
+  range: [nan, nan]
+
+Reading: d=0 → identical responses (no persona effect);
+         d≈0.3-0.5 → distinct personas;
+         d≈0.7+ → very different content/voice.
+

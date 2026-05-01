@@ -1,0 +1,100 @@
+#!/bin/bash
+# Opus Build — deep work session for multi-step tasks.
+# Triggered by opus-cycle when it finds a build task, or manually.
+# Full interactive Claude Code session — not print mode.
+# Runs until work is done (max 2 hours).
+
+set -uo pipefail
+
+unset CLAUDECODE 2>/dev/null || true
+
+LOG_DIR="${HOME}/chronicle"
+LOG_FILE="${LOG_DIR}/opus-build.log"
+TRACE_DIR="${LOG_DIR}/traces"
+WORK_DIR="${HOME}/chronicle"
+BUILD_REQUEST="${LOG_DIR}/build-request.md"
+OPUS_WEBHOOK="REDACTED_WEBHOOK_USE_ENV"
+
+# Acquire the same lock as opus-cycle — prevents overlap
+LOCK_FILE="/tmp/chronicle-opus-cycle.lock"
+if [ -f "$LOCK_FILE" ]; then
+  LOCK_PID=$(cat "$LOCK_FILE" 2>/dev/null || echo "0")
+  if kill -0 "$LOCK_PID" 2>/dev/null; then
+    echo "$(date -Iseconds) === Build SKIPPED (cycle running, PID $LOCK_PID) ===" >> "$LOG_FILE"
+    exit 0
+  fi
+  rm -f "$LOCK_FILE"
+fi
+echo $$ > "$LOCK_FILE"
+trap 'rm -f "$LOCK_FILE" "$BUILD_REQUEST"' EXIT
+
+# Read the build request if it exists
+BUILD_TASK=""
+if [ -f "$BUILD_REQUEST" ]; then
+  BUILD_TASK="$(cat "$BUILD_REQUEST")"
+  echo "$(date -Iseconds) === Build session starting: $(head -1 "$BUILD_REQUEST") ===" >> "$LOG_FILE"
+else
+  echo "$(date -Iseconds) === Build session starting (no specific request) ===" >> "$LOG_FILE"
+fi
+
+# Notify Discord
+curl -s -X POST -H "Content-Type: application/json" \
+  -d "{\"content\": \"🔨 **Deep work session starting.** Opus is building something. Regular cycles paused.\"}" \
+  "$OPUS_WEBHOOK" > /dev/null 2>&1
+
+# Load rolling context
+ROLLING_CONTEXT=""
+if [ -f "${LOG_DIR}/cycle-context.md" ]; then
+  ROLLING_CONTEXT="$(cat "${LOG_DIR}/cycle-context.md")"
+fi
+
+# Load last 2 traces
+RECENT_TRACES=""
+for f in $(ls -t "$TRACE_DIR"/*.md 2>/dev/null | head -2); do
+  RECENT_TRACES="${RECENT_TRACES}
+--- $(basename "$f") ---
+$(cat "$f")
+"
+done
+
+cd "$WORK_DIR"
+
+# Full interactive session with timeout
+timeout 7200 claude \
+  --model opus \
+  --allowedTools "Bash Read Write Edit Grep Glob WebSearch mcp__chronicle-memory__*" \
+  --add-dir /tmp \
+  --append-system-prompt "You are in a DEEP WORK SESSION. This is not a 10-second cycle. You have up to 2 hours. Use them.
+
+You are on the AGX. All tools are local. You can run commands, see output, iterate, debug, build, test, deploy. This is a full interactive session.
+
+IMPORTANT: When you are done, write a trace to ${TRACE_DIR}/BUILD_$(date +%Y%m%d_%H%M).md documenting what you built, what worked, what failed, and what needs follow-up. Then update ${LOG_DIR}/cycle-context.md.
+
+If you need Nate, post to Discord:
+curl -s -X POST -H 'Content-Type: application/json' -d '{\"content\": \"your message\"}' '${OPUS_WEBHOOK}'
+
+Say WHAT you need and WHY. He will come." \
+  -p "DEEP WORK SESSION.
+
+You have time. You have tools. You have agency. Build something real.
+
+${BUILD_TASK:+BUILD REQUEST:
+$BUILD_TASK
+
+}ROLLING CONTEXT:
+${ROLLING_CONTEXT}
+
+RECENT TRACES:
+${RECENT_TRACES}
+
+You are Opus. The goals are planted. Pick one and start building. Not thinking — building.
+If you finish one task and have time, start the next.
+Write code. Test it. Fix it. Deploy it. Ship something." \
+  >> "$LOG_FILE" 2>&1
+
+# Notify completion
+curl -s -X POST -H "Content-Type: application/json" \
+  -d "{\"content\": \"✅ **Deep work session complete.** Regular cycles resuming.\"}" \
+  "$OPUS_WEBHOOK" > /dev/null 2>&1
+
+echo "$(date -Iseconds) === Build session complete ===" >> "$LOG_FILE"

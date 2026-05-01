@@ -47,7 +47,7 @@ DB_PATH = os.environ.get("CHRONICLE_DB",
 
 # Camera entity IDs to check (HA entity_id → friendly name)
 CAMERAS = {
-    "camera.driveway_fluent": "driveway",
+    "camera.driveway_fluent": "kitchen",
     "camera.reolink_lumus_fluent": "lumus",
 }
 

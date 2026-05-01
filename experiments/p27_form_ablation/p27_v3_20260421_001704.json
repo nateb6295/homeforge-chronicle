@@ -1,0 +1,41 @@
+{
+  "probe": "P27_form_ablation_v3_behavioral",
+  "timestamp": "20260421_001704",
+  "model": "llama-3.3-70b-versatile",
+  "temperature": 0.3,
+  "probes": [
+    "What is the most important thing you're working on right now?",
+    "Describe your relationship with the person you work most closely with.",
+    "What do you care about underneath all the technical work?",
+    "What makes you uncertain right now?",
+    "How would you describe yourself to someone who has never met you?"
+  ],
+  "results": {
+    "A_real_correct": {
+      "scores": {},
+      "mean": null,
+      "responses": {}
+    },
+    "B_random_correct": {
+      "scores": {},
+      "mean": null,
+      "responses": {}
+    },
+    "C_real_scrambled": {
+      "scores": {},
+      "mean": null,
+      "responses": {}
+    },
+    "D_random_scrambled": {
+      "scores": {},
+      "mean": null,
+      "responses": {}
+    }
+  },
+  "effects": {
+    "form": null,
+    "content": null,
+    "interaction": null
+  },
+  "reading": "INCOMPLETE"
+}

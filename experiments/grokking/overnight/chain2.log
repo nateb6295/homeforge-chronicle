@@ -1,0 +1,84 @@
+=== chain2 start Sun Apr 12 08:16:38 PM PDT 2026 ===
+pid 152950 finished Sun Apr 12 08:42:38 PM PDT 2026
+pid 152951 finished Sun Apr 12 08:42:38 PM PDT 2026
+pid 153203 finished Sun Apr 12 08:43:38 PM PDT 2026
+=== 2-layer addition training Sun Apr 12 08:43:38 PM PDT 2026 ===
+device: cuda  task: 2-layer add mod 97
+[  2000] train=0.615 val=0.057  t=67.1s
+[  4000] train=1.000 val=1.000  t=122.1s
+[  6000] train=1.000 val=1.000  t=178.3s
+[  8000] train=1.000 val=1.000  t=234.5s
+[ 10000] train=1.000 val=1.000  t=290.0s
+[ 12000] train=1.000 val=1.000  t=345.6s
+[ 14000] train=1.000 val=1.000  t=400.9s
+[ 16000] train=1.000 val=1.000  t=456.0s
+[ 18000] train=1.000 val=1.000  t=512.2s
+[ 20000] train=1.000 val=1.000  t=567.9s
+[ 22000] train=1.000 val=0.999  t=623.6s
+[ 24000] train=1.000 val=1.000  t=680.4s
+[ 26000] train=1.000 val=1.000  t=739.5s
+[ 28000] train=1.000 val=1.000  t=794.7s
+[ 30000] train=1.000 val=1.000  t=851.2s
+[ 32000] train=1.000 val=1.000  t=907.2s
+[ 34000] train=1.000 val=1.000  t=966.5s
+[ 36000] train=1.000 val=1.000  t=1045.3s
+[ 38000] train=1.000 val=1.000  t=1100.4s
+[ 40000] train=1.000 val=1.000  t=1154.8s
+[ 42000] train=1.000 val=1.000  t=1210.9s
+[ 44000] train=1.000 val=1.000  t=1270.7s
+[ 46000] train=1.000 val=1.000  t=1326.3s
+[ 48000] train=0.206 val=0.196  t=1382.9s
+[ 50000] train=1.000 val=1.000  t=1438.6s
+done. /home/nate-agx/chronicle/experiments/grokking/runs/v2_2layer_seed0
+=== cross-seed sub anatomy Sun Apr 12 09:07:42 PM PDT 2026 ===
+device: cuda
+
+=== step 2000 (223713 params, top-0.1% = 223 params) ===
+tensor                             size top-0.1%_count  %_of_top   %_of_tensor_params
+attn.out_proj.weight              16384             64     20.9%                0.39%
+tok_emb.weight                    12544             53     26.4%                0.42%
+pos_emb.weight                      384             53     26.4%               13.80%
+attn.out_proj.bias                  128             53     26.4%               41.41%
+  hero param: tok_emb.weight[12527] |grad|=7.3854e+00 (0.09% of total gradient energy)
+
+=== step 10000 (223713 params, top-0.1% = 223 params) ===
+tensor                             size top-0.1%_count  %_of_top   %_of_tensor_params
+attn.out_proj.bias                  128             74     33.3%               57.81%
+tok_emb.weight                    12544             74     33.3%                0.59%
+pos_emb.weight                      384             74     33.3%               19.27%
+attn.in_proj_bias                   384              1      0.2%                0.26%
+  hero param: attn.out_proj.bias[59] |grad|=4.4931e-01 (0.46% of total gradient energy)
+
+=== step 20000 (223713 params, top-0.1% = 223 params) ===
+tensor                             size top-0.1%_count  %_of_top   %_of_tensor_params
+tok_emb.weight                    12544             75     33.4%                0.60%
+pos_emb.weight                      384             75     33.4%               19.53%
+attn.out_proj.bias                  128             73     33.2%               57.03%
+  hero param: tok_emb.weight[12447] |grad|=6.2860e-01 (0.77% of total gradient energy)
+
+computing concentration...
+  add (seed 0)       top0.1%=0.474 max/μ=1402
+  sub (seed 0)       top0.1%=0.269 max/μ=1128
+  mul (seed 0)       top0.1%=0.203 max/μ=619
+  mul (seed 1)       top0.1%=0.264 max/μ=1072
+  mul (seed 2)       top0.1%=0.479 max/μ=1449
+wrote /home/nate-agx/chronicle/experiments/grokking/figures/fig1_concentration.png
+wrote /home/nate-agx/chronicle/experiments/grokking/figures/fig2_anatomy.png
+wrote /home/nate-agx/chronicle/experiments/grokking/figures/fig3_ablation_grid.png
+wrote /home/nate-agx/chronicle/experiments/grokking/figures/fig4_fourier_row97.png
+done.
+=== sort anatomy (non-modular) Sun Apr 12 09:07:55 PM PDT 2026 ===
+=== sort (max(a,b)) anatomy, step 50k ===
+loss=0.0420
+top-0.1% share of L1: 0.264
+max/mean: 653
+MLP L1 share: 0.085
+  attn.out_proj.weight                     L1_share=0.212  max=2.68e-02
+  attn.in_proj_weight                      L1_share=0.192  max=3.54e-02
+  tok_emb.weight                           L1_share=0.191  max=5.92e-01
+  pos_emb.weight                           L1_share=0.154  max=5.92e-01
+  attn.out_proj.bias                       L1_share=0.100  max=5.97e-01
+  mlp.2.weight                             L1_share=0.038  max=1.34e-03
+  attn.in_proj_bias                        L1_share=0.029  max=2.96e-01
+  mlp.0.weight                             L1_share=0.022  max=8.12e-04
+=== chain2 complete Sun Apr 12 09:07:58 PM PDT 2026 ===

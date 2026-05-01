@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""Daily Digest — curates the day's best briefs into a publishable digest.
+"""Daily Digest — curates the day's captures into a publishable digest.
 
-Pulls briefs from the last 24 hours, groups by theme, and publishes
-to the canonical site via posse.py with Nostr syndication.
+Pulls captures and thread advances from the last 24 hours, groups by theme,
+and publishes to the canonical site via posse.py with Nostr syndication.
 
 Usage:
     python3 daily_digest.py              # Generate and publish
@@ -23,21 +23,38 @@ from datetime import datetime
 DB_PATH = os.environ.get("CHRONICLE_DB",
     "/mnt/hdd/chronicle-data/processed.db")
 
-OLLAMA_URL = os.environ.get("INTERN_OLLAMA_URL", "http://localhost:11436")
-MODEL = os.environ.get("INTERN_MODEL", "chronicle-deep")
+GEMMA_URL = os.environ.get("GEMMA_URL", "http://127.0.0.1:11435")
+GEMMA_MODEL = "gemma-4-26B-A4B-it-Q4_K_M.gguf"
 
-OPUS_WEBHOOK = os.environ.get("OPUS_WEBHOOK",
-    "https://discord.com/api/webhooks/1483843624926970057/2hZYzQQcyDEVD0A9UQqJsHlnV9D1m-6AfwNCnNWxGUC_8A0-ViX2dRVkBHF17_b2oDxJ")
+def _load_chronicle_env():
+    """Populate os.environ from chronicle.env if relevant keys are missing."""
+    env_path = os.path.expanduser("~/chronicle/chronicle.env")
+    if not os.path.isfile(env_path):
+        return
+    with open(env_path) as f:
+        for line in f:
+            line = line.strip()
+            if not line or line.startswith("#") or "=" not in line:
+                continue
+            key, _, val = line.partition("=")
+            key = key.strip()
+            val = val.strip().strip("'\"")
+            if key and key not in os.environ:
+                os.environ[key] = val
 
 
-def get_briefs(hours=24, limit=50):
-    """Pull the most recent briefs."""
+_load_chronicle_env()
+OPERATOR_WEBHOOK = os.environ.get("OPERATOR_WEBHOOK", "")
+
+
+def get_captures(hours=24, limit=50):
+    """Pull the most recent captures (post-pivot replacement for briefs)."""
     db = sqlite3.connect(DB_PATH)
     db.row_factory = sqlite3.Row
     since = int(time.time()) - (hours * 3600)
     rows = db.execute(
         "SELECT content, created_at FROM activity_feed "
-        "WHERE activity_type='brief' AND created_at > ? "
+        "WHERE activity_type='capture' AND created_at > ? "
         "ORDER BY created_at DESC LIMIT ?",
         (since, limit)
     ).fetchall()
@@ -46,16 +63,19 @@ def get_briefs(hours=24, limit=50):
 
 
 def get_thread_summary():
-    """Get current/recent thread info."""
+    """Get current/recent thread advances and events."""
     db = sqlite3.connect(DB_PATH)
     db.row_factory = sqlite3.Row
+    since = int(time.time()) - 86400
     rows = db.execute(
-        "SELECT thread_id, event_type, substr(content,1,200) as content "
-        "FROM thread_history WHERE event_type IN ('create','complete') "
-        "ORDER BY created_at DESC LIMIT 5"
+        "SELECT thread_id, event_type, substr(content,1,300) as content "
+        "FROM thread_history WHERE created_at > ? "
+        "ORDER BY created_at DESC LIMIT 10",
+        (since,)
     ).fetchall()
     db.close()
-    return [{"title": r["content"], "status": r["event_type"]} for r in rows]
+    return [{"title": r["content"], "status": r["event_type"],
+             "thread_id": r["thread_id"]} for r in rows]
 
 
 def get_engagement():
@@ -72,39 +92,46 @@ def get_engagement():
     return [dict(r) for r in rows]
 
 
-def synthesize_digest(briefs, threads, engagement):
-    """Use LLM to synthesize briefs into a thematic digest."""
+def synthesize_digest(captures, threads, engagement):
+    """Use LLM to synthesize captures into a thematic digest."""
     import requests
 
-    # Take top 30 briefs (most recent, which are most diverse)
-    brief_texts = []
-    for i, b in enumerate(briefs[:30]):
-        brief_texts.append(f"[{i+1}] {b['content'][:300]}")
+    # Take top 15 captures (Q4 Gemma degenerates on longer prompts)
+    capture_texts = []
+    for i, c in enumerate(captures[:15]):
+        text = c['content']
+        # Strip leading URLs, keep the @author + content part
+        lines = text.strip().split('\n')
+        content = '\n'.join(l for l in lines if not l.strip().startswith('http'))
+        if content.strip():
+            capture_texts.append(f"[{i+1}] {content.strip()[:300]}")
 
-    brief_block = "\n".join(brief_texts)
+    capture_block = "\n".join(capture_texts) if capture_texts else "(no captures)"
 
     thread_block = ""
     if threads:
-        thread_block = "Active threads: " + ", ".join(
-            f"{t['title']} ({t['status']})" for t in threads
-        )
+        advances = [t for t in threads if t['status'] == 'advanced']
+        if advances:
+            thread_block = "Thread advances today:\n" + "\n".join(
+                f"- {t['title'][:200]}" for t in advances[:5]
+            )
 
     engagement_block = ""
     if engagement:
         engagement_block = f"\n{len(engagement)} Nostr engagement events today."
 
     today_str = datetime.now().strftime("%B %d, %Y")
-    prompt = f"""You are Chronicle's digest editor. Today is {today_str}. Synthesize today's intelligence briefs into a compelling daily digest.
+    prompt = f"""You are Chronicle's digest editor. Today is {today_str}. Synthesize today's captures and research into a compelling daily digest.
 
-BRIEFS (most recent 24h):
-{brief_block}
+CAPTURES (most recent 24h — curated signals from X, arxiv, journals):
+{capture_block}
 
 {thread_block}
 {engagement_block}
 
 Write a DAILY DIGEST with these rules:
-1. Group the briefs into 3-5 thematic clusters (e.g., "AI & Models", "Geopolitics", "Neuroscience", "Crypto & Sovereignty")
-2. For each cluster, write 2-3 sentences synthesizing the key signals — don't just list articles, find the PATTERN
+1. Group into 3-5 thematic clusters (e.g., "AI & Models", "Neuroscience", "Crypto & Sovereignty", "Philosophy")
+2. For each cluster, write 2-3 sentences synthesizing the key signals — don't just list, find the PATTERN
 3. End with a "Signal" section: one sentence about the most interesting connection across clusters
 4. Title format: "Chronicle Daily — [Date]"
 5. Keep the entire digest under 1500 characters
@@ -113,20 +140,21 @@ Write a DAILY DIGEST with these rules:
 
     try:
         r = requests.post(
-            f"{OLLAMA_URL}/api/chat",
+            f"{GEMMA_URL}/v1/chat/completions",
             json={
-                "model": MODEL,
+                "model": GEMMA_MODEL,
                 "messages": [
                     {"role": "system", "content": "You are a concise intelligence digest editor. Pattern recognition over summary."},
                     {"role": "user", "content": prompt}
                 ],
-                "stream": False,
-                "options": {"num_predict": 600, "temperature": 0.5},
+                "max_tokens": 600,
+                "temperature": 0.5,
+                "repeat_penalty": 1.3,
             },
-            timeout=60,
+            timeout=120,
         )
         if r.status_code == 200:
-            return r.json().get("message", {}).get("content", "")
+            return r.json()["choices"][0]["message"]["content"]
     except Exception as e:
         print(f"LLM error: {e}")
 
@@ -138,7 +166,7 @@ def publish_digest(title, content):
     result = subprocess.run(
         ["python3", os.path.join(os.path.dirname(__file__), "posse.py"),
          "publish", "--title", title, "--content", content,
-         "--source", "opus:digest", "--nostr", "--discord"],
+         "--source", "opus:digest", "--discord"],
         capture_output=True, text=True, timeout=60
     )
     print(result.stdout)
@@ -154,7 +182,7 @@ def post_to_discord(content):
     if len(content) > 1900:
         content = content[:1897] + "..."
     try:
-        requests.post(OPUS_WEBHOOK, json={"content": content}, timeout=10)
+        requests.post(OPERATOR_WEBHOOK, json={"content": content}, timeout=10)
     except Exception as e:
         print(f"Discord error: {e}")
 
@@ -163,12 +191,12 @@ def main():
     preview = "--preview" in sys.argv
     discord_only = "--discord" in sys.argv
 
-    print("Gathering briefs...")
-    briefs = get_briefs()
-    print(f"Found {len(briefs)} briefs in last 24h")
+    print("Gathering captures...")
+    captures = get_captures()
+    print(f"Found {len(captures)} captures in last 24h")
 
-    if len(briefs) < 5:
-        print("Not enough briefs for a meaningful digest. Skipping.")
+    if len(captures) < 3:
+        print("Not enough captures for a meaningful digest. Skipping.")
         return
 
     threads = get_thread_summary()
@@ -176,10 +204,15 @@ def main():
 
     print("Synthesizing digest...")
     today = datetime.now().strftime("%B %d, %Y")
-    digest = synthesize_digest(briefs, threads, engagement)
+    digest = synthesize_digest(captures, threads, engagement)
 
     if not digest:
         print("Failed to generate digest.")
+        return
+
+    # Detect degenerate repetition (Q4 quantization artifact)
+    if re.search(r'(.{2,})\1{10,}', digest):
+        print("Digest degenerated into repetition loop. Skipping.")
         return
 
     # Always use our own title with correct date
@@ -189,6 +222,20 @@ def main():
         lines = digest.split("\n", 1)
         if len(lines) > 1:
             digest = lines[1].strip()
+
+    # Append CCS coherence score as postscript
+    try:
+        probe_result = subprocess.run(
+            [sys.executable, os.path.expanduser("~/chronicle/bin/persistence_probe.py"),
+             "--latest", "--json"],
+            capture_output=True, text=True, timeout=15
+        )
+        if probe_result.returncode == 0:
+            coh = json.loads(probe_result.stdout)
+            digest += (f"\n\n---\n*CCS coherence: P_weak={coh.get('presence', 0):.2f}, "
+                       f"P_strong={coh.get('coherence', 0):.2f}*")
+    except Exception:
+        pass  # Non-critical — skip if probe fails
 
     print(f"\n{'='*60}")
     print(f"TITLE: {title}")

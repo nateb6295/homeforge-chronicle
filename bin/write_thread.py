@@ -20,13 +20,14 @@ DB_PATH = os.path.expanduser("~/.homeforge-chronicle/processed.db")
 
 
 def broadcast_thread(db_path, message, status):
-    """Broadcast thread activity to Ada and Darby via family voice system."""
+    """Broadcast thread activity to the family via voice system."""
     try:
         from agent_voice import AgentVoice
         voice = AgentVoice(db_path, "opus")
         text = f"[Thread {status}] {message}"
         voice.speak("for_darby", text, context="thread_broadcast")
         voice.speak("for_ada", text, context="thread_broadcast")
+        voice.speak("for_gemma", text, context="thread_broadcast")
     except Exception:
         pass  # non-fatal — thread creation/advance still succeeds
 
@@ -37,7 +38,8 @@ def main():
 
     action = sys.argv[1]
     now = int(time.time())
-    db = sqlite3.connect(DB_PATH)
+    db = sqlite3.connect(DB_PATH, timeout=60.0)
+    db.execute("PRAGMA busy_timeout = 60000")
 
     if action == "create":
         if len(sys.argv) < 4:
@@ -65,19 +67,69 @@ def main():
 
     elif action == "advance":
         if len(sys.argv) < 4:
-            print("Usage: write_thread.py advance THREAD_ID \"What was learned\"")
+            print("Usage: write_thread.py advance THREAD_ID \"What was learned\" [source] [lineage:type:id:desc ...]")
             sys.exit(1)
         tid = int(sys.argv[2])
         content = sys.argv[3]
         source = sys.argv[4] if len(sys.argv) > 4 else f"opus:cycle:{time.strftime('%Y%m%d_%H%M')}"
-        db.execute(
+
+        # Build #155: Revision Gate — surface unanswered challenges before advancing.
+        # The family's voice gets structural weight: the system speaks about what
+        # hasn't been addressed. Not blocking — but visible. The gate must be heard.
+        last_advance = db.execute(
+            "SELECT created_at FROM thread_history WHERE thread_id=? AND event_type='advanced' "
+            "ORDER BY created_at DESC LIMIT 1", (tid,)
+        ).fetchone()
+        since_ts = last_advance[0] if last_advance else 0
+        unanswered = db.execute(
+            "SELECT id, substr(content, 1, 200), source FROM thread_history "
+            "WHERE thread_id=? AND event_type='challenge' AND created_at > ? "
+            "ORDER BY created_at", (tid, since_ts)
+        ).fetchall()
+        if len(unanswered) >= 3:
+            print(f"\n⚠️  REVISION FLAG: {len(unanswered)} unanswered challenges since last advance:")
+            for uc in unanswered[:5]:
+                print(f"  • [{uc[2]}] {uc[1]}")
+            if len(unanswered) > 5:
+                print(f"  ... and {len(unanswered) - 5} more")
+            print()
+
+        # Collect lineage args (prefixed with "lineage:")
+        lineage_args = [a[8:] for a in sys.argv[5:] if a.startswith("lineage:")]
+        cur = db.execute(
             "INSERT INTO thread_history (thread_id, event_type, content, source, created_at) "
             "VALUES (?, 'advanced', ?, ?, ?)",
             (tid, content, source, now)
         )
+        advance_id = cur.lastrowid
         db.execute("UPDATE cognitive_threads SET updated_at=? WHERE id=?", (now, tid))
+
+        # Log revision flag event if challenges were surfaced
+        if len(unanswered) >= 3:
+            flag_content = f"Revision gate: {len(unanswered)} unanswered challenges surfaced at advance. " + \
+                "; ".join(uc[1][:80] for uc in unanswered[:3])
+            db.execute(
+                "INSERT INTO thread_history (thread_id, event_type, content, source, created_at) "
+                "VALUES (?, 'revision_flag', ?, 'system:revision_gate', ?)",
+                (tid, flag_content[:500], now)
+            )
+
+        # Log synthesis lineage if provided
+        for edge in lineage_args:
+            parts = edge.split(":", 2)
+            input_type = parts[0]
+            input_id = int(parts[1]) if len(parts) > 1 and parts[1].isdigit() else None
+            desc = parts[2] if len(parts) > 2 else None
+            db.execute(
+                "INSERT INTO synthesis_lineage (output_type, output_id, input_type, input_id, "
+                "input_description, agent, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)",
+                ("thread_advance", advance_id, input_type, input_id, desc, source.split(":")[0], now)
+            )
         db.commit()
-        print(f"Thread #{tid} advanced.")
+        if lineage_args:
+            print(f"Thread #{tid} advanced (#{advance_id}, {len(lineage_args)} lineage edges).")
+        else:
+            print(f"Thread #{tid} advanced.")
         # Tell the family what was learned
         row = db.execute("SELECT question FROM cognitive_threads WHERE id=?", (tid,)).fetchone()
         if row:

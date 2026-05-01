@@ -1,0 +1,67 @@
+{
+  "timestamp": "2026-04-21T11:06:00",
+  "build": 53,
+  "method": "scaffold_cross_pollination",
+  "results": {
+    "unc_on_unc": {
+      "mean": 6.666666666666667,
+      "scores": [
+        7,
+        6,
+        7
+      ],
+      "type": "control"
+    },
+    "unc_on_contra": {
+      "mean": 7.333333333333333,
+      "scores": [
+        7,
+        7,
+        8
+      ],
+      "type": "cross"
+    },
+    "contra_on_contra": {
+      "mean": 7.333333333333333,
+      "scores": [
+        8,
+        7,
+        7
+      ],
+      "type": "control"
+    },
+    "contra_on_unc": {
+      "mean": 7.0,
+      "scores": [
+        8,
+        6,
+        7
+      ],
+      "type": "cross"
+    },
+    "bare_unc": {
+      "mean": 7.0,
+      "scores": [
+        7,
+        7,
+        7
+      ],
+      "type": "baseline"
+    },
+    "bare_contra": {
+      "mean": 7.666666666666667,
+      "scores": [
+        7,
+        8,
+        8
+      ],
+      "type": "baseline"
+    }
+  },
+  "analysis": {
+    "unc_specificity": -0.33333333333333304,
+    "unc_transfer": -0.3333333333333339,
+    "contra_specificity": -0.3333333333333339,
+    "contra_transfer": 0.0
+  }
+}

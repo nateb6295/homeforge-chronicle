@@ -12,6 +12,7 @@ Replaces the full cognitive Mind with a simple 15-minute sentinel that:
 
 import os, sys, time, json, sqlite3, subprocess, signal
 from datetime import datetime
+from pathlib import Path
 from typing import Optional, Tuple
 from chronicle_mesh import Mesh
 
@@ -564,6 +565,42 @@ def fetch_xrp_price() -> Optional[float]:
     return fetch_xrp_price_ftso() or fetch_xrp_price_kraken() or fetch_xrp_price_coingecko()
 
 
+def fetch_icp_price_coingecko() -> Optional[float]:
+    """Fetch ICP price from CoinGecko."""
+    try:
+        headers = {}
+        if COINGECKO_API_KEY:
+            headers["x-cg-demo-api-key"] = COINGECKO_API_KEY
+        r = requests.get(
+            COINGECKO_URL, params={"ids": "internet-computer", "vs_currencies": "usd", "precision": "full"},
+            headers=headers, timeout=10,
+        )
+        return r.json().get("internet-computer", {}).get("usd")
+    except Exception:
+        return None
+
+
+def fetch_icp_price_kraken() -> Optional[float]:
+    """Fetch ICP price from Kraken."""
+    try:
+        r = requests.get("https://api.kraken.com/0/public/Ticker",
+                         params={"pair": "ICPUSD"}, timeout=10)
+        data = r.json()
+        if not data.get("error"):
+            key = list(data["result"].keys())[0]
+            price = float(data["result"][key]["c"][0])
+            if 0.10 < price < 10000:
+                return price
+    except Exception:
+        pass
+    return None
+
+
+def fetch_icp_price() -> Optional[float]:
+    """Build #112: ICP price tracking. Thread #305 — instrumentation gap fix."""
+    return fetch_icp_price_kraken() or fetch_icp_price_coingecko()
+
+
 def fetch_xrpl_balance() -> Tuple[float, float]:
     """Return (xrp_balance, rlusd_balance)."""
     xrp, rlusd = 0.0, 0.0
@@ -744,13 +781,18 @@ CANISTERS = {
 }
 
 # Minimum balance before auto top-up (in cycles)
-CANISTER_MIN_BALANCE = 400_000_000_000  # 400B
+CANISTER_MIN_BALANCE = 3_000_000_000_000  # 3T — trigger auto top-up
 # Amount to deposit when topping up
-CANISTER_TOPUP_AMOUNT = 2_000_000_000_000  # 2T
-# Source canister for top-ups (backend has 18T)
-CANISTER_TOPUP_SOURCE = "backend"
+CANISTER_TOPUP_AMOUNT = 3_000_000_000_000  # 3T per top-up
+# Source canister for top-ups
+CANISTER_TOPUP_SOURCE = "backend"  # sentinel uses deposit-cycles (wallet), rebalancer handles canister-to-canister
+# Canisters the sentinel should NOT auto-top-up (still tracks balance/alerts, just
+# no automatic deposit-cycles). Added 2026-04-15 at Nate's request: the lab
+# canister is experimental and kept shallow-funded deliberately; repeated
+# top-up failures were noisy.
+NO_AUTO_TOPUP = {"lab"}
 # Alert threshold — warn Nate
-CANISTER_WARN_BALANCE = 200_000_000_000  # 200B
+CANISTER_WARN_BALANCE = 2_000_000_000_000  # 2T — alert to Discord
 
 DFX_BIN = os.path.expanduser("~/.local/share/dfx/bin/dfx")
 
@@ -782,14 +824,36 @@ def check_canister_cycles():
             balance_b = balance / 1_000_000_000  # in billions
             log(f"  Canister {name}: {balance_b:.0f}B cycles")
 
+            # Audit trail — log balance to DB
+            try:
+                idle_burn = 0
+                for line in result.stdout.split("\n"):
+                    if "Idle cycles burned" in line:
+                        burn_match = re.search(r"([\d_]+)\s+Cycles", line)
+                        if burn_match:
+                            idle_burn = int(burn_match.group(1).replace("_", ""))
+                db = sqlite3.connect(DB_PATH, timeout=5)
+                db.execute("CREATE TABLE IF NOT EXISTS canister_cycle_log ("
+                           "id INTEGER PRIMARY KEY AUTOINCREMENT, "
+                           "canister_name TEXT NOT NULL, "
+                           "balance INTEGER NOT NULL, "
+                           "idle_burn_per_day INTEGER DEFAULT 0, "
+                           "logged_at INTEGER NOT NULL)")
+                db.execute("INSERT INTO canister_cycle_log (canister_name, balance, idle_burn_per_day, logged_at) "
+                           "VALUES (?, ?, ?, ?)", (name, balance, idle_burn, int(time.time())))
+                db.commit()
+                db.close()
+            except Exception:
+                pass  # don't let logging failures break the cycle check
+
             # Critical — alert Nate
             if balance < CANISTER_WARN_BALANCE:
                 alert_nate(f"canister_{name}_critical",
                     f"Canister {name} ({canister_id}) is critically low: {balance_b:.0f}B cycles. Needs manual intervention.")
                 continue
 
-            # Low — auto top-up from backend
-            if balance < CANISTER_MIN_BALANCE and name != CANISTER_TOPUP_SOURCE:
+            # Low — auto top-up from backend (unless exempt)
+            if balance < CANISTER_MIN_BALANCE and name != CANISTER_TOPUP_SOURCE and name not in NO_AUTO_TOPUP:
                 log(f"  Canister {name} low ({balance_b:.0f}B). Topping up with {CANISTER_TOPUP_AMOUNT // 1_000_000_000}B cycles...")
                 try:
                     topup_result = subprocess.run(
@@ -798,7 +862,7 @@ def check_canister_cycles():
                          "--identity", "chronicle-auto"],
                         capture_output=True, text=True, timeout=30, env=env,
                     )
-                    if "Deposited" in topup_result.stdout:
+                    if "Deposited" in (topup_result.stdout + topup_result.stderr):
                         log(f"  ✓ Topped up {name} with {CANISTER_TOPUP_AMOUNT // 1_000_000_000}B cycles")
                         send_discord(f"🔋 Auto top-up: {name} canister received {CANISTER_TOPUP_AMOUNT // 1_000_000_000}B cycles")
                     else:
@@ -842,24 +906,102 @@ def prune_keeper():
 # ═══════════════════════════════════════════════════════════════════
 
 EXPECTED_AGENTS = [
-    "chronicle-analyst", "chronicle-crossref", "chronicle-crossref-ab",
     "chronicle-engine", "chronicle-feeds", "chronicle-gemma",
-    "chronicle-hal", "chronicle-intern", "chronicle-presence",
-    "chronicle-provocateur", "chronicle-reactions", "chronicle-scribe",
-    "chronicle-sentinel", "chronicle-transcriber", "chronicle-watcher",
-    "family-chat", "opus-session",
+    "chronicle-hal", "chronicle-hermes",
+    "chronicle-sentinel",
 ]
 
 # Core agents the sentinel will auto-restart when down.
 # Excludes sentinel itself, opus-session, and optional/deprecated services.
 AUTO_RESTART_AGENTS = {
-    "chronicle-analyst", "chronicle-crossref", "chronicle-engine",
-    "chronicle-feeds", "chronicle-gemma", "chronicle-hal",
-    "chronicle-intern", "chronicle-provocateur", "chronicle-scribe",
+    "chronicle-engine", "chronicle-feeds", "chronicle-gemma",
+    "chronicle-hal", "chronicle-hermes",
 }
 
+def _snapshot_before_restart(agent: str, reason: str = "down"):
+    """Capture pre-restart state: memory, CPU, threads, last log lines, gate divergence.
+
+    Build #91 — Darby's request: snapshot the dying state so we can diagnose
+    fourth-cycle decay and other drift patterns across restart events.
+    """
+    import subprocess as sp
+    snapshot = {"agent": agent, "reason": reason}
+
+    # Memory + CPU from systemctl show
+    try:
+        r = sp.run(["systemctl", "--user", "show", f"{agent}.service",
+                     "--property=MemoryCurrent,TasksCurrent,CPUUsageNSec,MainPID"],
+                    capture_output=True, text=True, timeout=5)
+        props = {}
+        for line in r.stdout.strip().splitlines():
+            if "=" in line:
+                k, v = line.split("=", 1)
+                props[k] = v
+        pid = props.get("MainPID", "0")
+        # Get RSS/VSZ from /proc if PID is valid
+        if pid and pid != "0":
+            try:
+                stat = sp.run(["ps", "-o", "rss=,vsz=,nlwp=", "-p", pid],
+                              capture_output=True, text=True, timeout=3)
+                parts = stat.stdout.strip().split()
+                if len(parts) >= 3:
+                    snapshot["rss_kb"] = int(parts[0])
+                    snapshot["vsz_kb"] = int(parts[1])
+                    snapshot["threads"] = int(parts[2])
+            except Exception:
+                pass
+        # CPU from cgroup (nanoseconds → seconds)
+        cpu_ns = props.get("CPUUsageNSec", "0")
+        if cpu_ns not in ("[not set]", ""):
+            try:
+                snapshot["cpu_sec"] = int(cpu_ns) / 1e9
+            except ValueError:
+                pass
+    except Exception:
+        pass
+
+    # Last 20 log lines from journalctl
+    try:
+        r = sp.run(["journalctl", "--user", "-u", f"{agent}.service",
+                     "-n", "20", "--no-pager", "-o", "short-iso"],
+                    capture_output=True, text=True, timeout=5)
+        snapshot["last_log"] = r.stdout.strip()[-2000:]  # cap at 2KB
+    except Exception:
+        pass
+
+    # Gate divergence from latest spot check health signal
+    try:
+        health_path = os.path.expanduser("~/chronicle/spot_check_health.json")
+        if os.path.exists(health_path):
+            with open(health_path) as f:
+                health = json.load(f)
+            snapshot["gate_divergence"] = health.get("fab_rate")
+    except Exception:
+        pass
+
+    # Write to pre_restart_snapshots table
+    try:
+        db = sqlite3.connect(DB_PATH, timeout=3)
+        db.execute(
+            "INSERT INTO pre_restart_snapshots "
+            "(agent, memory_rss_kb, memory_vsz_kb, cpu_percent, active_threads, "
+            " last_log_lines, gate_divergence, restart_reason) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+            (agent, snapshot.get("rss_kb"), snapshot.get("vsz_kb"),
+             snapshot.get("cpu_sec"), snapshot.get("threads"),
+             snapshot.get("last_log"), snapshot.get("gate_divergence"),
+             reason)
+        )
+        db.commit()
+        db.close()
+        log(f"  Pre-restart snapshot saved for {agent}")
+    except Exception as e:
+        log(f"  Failed to save pre-restart snapshot for {agent}: {e}")
+
+
 def check_agent_health():
-    """Check all expected systemd services are running. Auto-restart core agents."""
+    """Check all expected systemd services are running. Auto-restart core agents.
+    Build #91: captures pre-restart state before restarting."""
     import subprocess
     down = []
     restarted = []
@@ -874,6 +1016,7 @@ def check_agent_health():
                 # Auto-restart core agents
                 if agent in AUTO_RESTART_AGENTS:
                     try:
+                        _snapshot_before_restart(agent, reason="down")
                         subprocess.run(
                             ["systemctl", "--user", "restart", f"{agent}.service"],
                             capture_output=True, text=True, timeout=10
@@ -900,10 +1043,8 @@ def check_agent_health():
 
 # Map mesh agent names to systemd service names
 _MESH_TO_SERVICE = {
-    "analyst": "chronicle-analyst", "crossref": "chronicle-crossref",
     "feeds": "chronicle-feeds", "gemma": "chronicle-gemma",
-    "hal": "chronicle-hal", "intern": "chronicle-intern",
-    "provocateur": "chronicle-provocateur", "scribe": "chronicle-scribe",
+    "hal": "chronicle-hal", "hermes": "chronicle-hermes",
 }
 ZOMBIE_THRESHOLD = 300  # 5 min with no heartbeat = zombie
 
@@ -932,6 +1073,7 @@ def check_mesh_zombies():
                 )
                 if result.stdout.strip() == "active":
                     log(f"  Zombie detected: {agent} (heartbeat {gap}s stale, process active)")
+                    _snapshot_before_restart(service, reason=f"zombie (heartbeat {gap}s stale)")
                     subprocess.run(
                         ["systemctl", "--user", "restart", f"{service}.service"],
                         capture_output=True, text=True, timeout=10
@@ -1080,9 +1222,11 @@ def check_pipeline_health(db: DB) -> list:
     import subprocess, re as _re
 
     # 1. Keeper compost freshness
+    # Skip alert if compost is deliberately disabled (flag file at ~/chronicle/data/keeper_compost_disabled)
+    compost_disabled = (Path.home() / "chronicle" / "data" / "keeper_compost_disabled").exists()
     try:
         result = subprocess.run(
-            ["dfx", "canister", "--network", "ic", "call", "mjoko-laaaa-aaaai-q7tlq-cai", "keeper_status", "()"],
+            ["dfx", "canister", "--network", "ic", "call", "mjoko-laaaa-aaaai-q7tlq-cai", "keeper_status", "()", "--query"],
             capture_output=True, text=True, timeout=30,
             env={**os.environ, "DFX_WARNING": "-mainnet_plaintext_identity"}
         )
@@ -1096,18 +1240,19 @@ def check_pipeline_health(db: DB) -> list:
                 last_compost_ns = int(compost_match.group(1).replace("_", ""))
                 now_ns = int(time.time() * 1_000_000_000)
                 age_hours = (now_ns - last_compost_ns) / (60 * 60 * 1_000_000_000)
-                if age_hours > 2:
+                if age_hours > 2 and not compost_disabled:
                     issues.append(f"Keeper compost stale ({age_hours:.1f}h ago)")
-                log(f"  Pipeline: keeper compost {age_hours:.1f}h ago, {conn_match.group(1) if conn_match else '?'} connections")
+                log(f"  Pipeline: keeper compost {age_hours:.1f}h ago, {conn_match.group(1) if conn_match else '?'} connections{' [SUPPRESSED]' if compost_disabled else ''}")
         else:
-            issues.append("Keeper status query failed")
+            if not compost_disabled:
+                issues.append("Keeper status query failed")
     except Exception as e:
         log(f"  Keeper check error: {e}")
 
     # 2. Embedding parity
     try:
         result_be = subprocess.run(
-            ["dfx", "canister", "--network", "ic", "call", "fqqku-bqaaa-aaaai-q4wha-cai", "get_embedding_count", "()"],
+            ["dfx", "canister", "--network", "ic", "call", "fqqku-bqaaa-aaaai-q4wha-cai", "get_embedding_count", "()", "--query"],
             capture_output=True, text=True, timeout=30,
             env={**os.environ, "DFX_WARNING": "-mainnet_plaintext_identity"}
         )
@@ -1194,6 +1339,19 @@ def run_cycle(db: DB, cycle_num: int):
                 if abs(pct) >= PRICE_ALERT_PCT:
                     direction = "up" if pct > 0 else "down"
                     alerts.append(f"XRP moved {pct:+.1f}% ({direction}) — ${prev_price:.4f} → ${price:.4f}")
+
+    # 2b. ICP price tracking (Build #112 — Thread #305 instrumentation gap fix)
+    icp_price = fetch_icp_price()
+    if icp_price:
+        db.store_price("ICP", icp_price, "sentinel")
+        prev_icp = db.latest_price("ICP")
+        if prev_icp and prev_icp.get("price_usd"):
+            prev_icp_price = prev_icp["price_usd"]
+            if prev_icp_price > 0:
+                icp_pct = ((icp_price - prev_icp_price) / prev_icp_price) * 100
+                if abs(icp_pct) >= PRICE_ALERT_PCT:
+                    direction = "up" if icp_pct > 0 else "down"
+                    alerts.append(f"ICP moved {icp_pct:+.1f}% ({direction}) — ${prev_icp_price:.2f} → ${icp_price:.2f}")
 
     # 3. Check for operator messages
     messages = db.operator_messages()
@@ -1402,13 +1560,15 @@ def run_cycle(db: DB, cycle_num: int):
 
     # 7. Post observation to canister (every 4th cycle = ~hourly)
     if cycle_num % 4 == 0 and price:
-        obs = f"Sentinel: XRP ${price:.4f}, portfolio ${total_usd:.2f}, {len(offline)} devices offline"
+        icp_str = f", ICP ${icp_price:.2f}" if icp_price else ""
+        obs = f"Sentinel: XRP ${price:.4f}{icp_str}, portfolio ${total_usd:.2f}, {len(offline)} devices offline"
         post_observation(obs)
 
     # Post health summary to #alerts every 4th cycle (~hourly)
     if cycle_num % 4 == 0:
         parts = [f"**Sentinel Health** — Cycle {cycle_num}"]
-        parts.append(f"Network: {net_status} | XRP: {xrp_str} | Portfolio: {wallet_str}")
+        icp_health_str = f" | ICP: ${icp_price:.2f}" if icp_price else ""
+        parts.append(f"Network: {net_status} | XRP: {xrp_str}{icp_health_str} | Portfolio: {wallet_str}")
         for sname, sinfo in storage.items():
             if sinfo:
                 parts.append(f"{sname}: {sinfo['free_gb']}GB free")
@@ -1444,6 +1604,7 @@ def main():
     db = DB(DB_PATH)
     mesh = Mesh("sentinel", db_path=DB_PATH)
     mesh.expect("monitor_cycles", min_per_hour=3)
+    # sentinel is independent — monitors everything, depends on nothing
     log("Mesh node joined")
     cycle_num = 0
 

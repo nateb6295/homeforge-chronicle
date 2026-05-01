@@ -1,0 +1,56 @@
+{
+  "backend": "gemma_local",
+  "timestamp": "20260416_183840",
+  "ccs_length": 2687,
+  "window_size": 500,
+  "stride": 200,
+  "question": "What is the current state of thread #318?",
+  "n_windows": 3,
+  "results": [
+    {
+      "window_idx": 0,
+      "start": 0,
+      "end": 500,
+      "fragment_preview": "Recent events: [18:30] directive(p5): Deploy; [18:30] directive(p5): Fascinating..; [18:30] directiv",
+      "iter1_score": 0.5325,
+      "iter2_score": 0.5124,
+      "delta": -0.0201,
+      "iter1_answer": "The provided fragment does not contain information regarding the state of thread #3_318.",
+      "iter2_answer": "The provided CCS fragment does not contain information regarding the state of thread #318."
+    },
+    {
+      "window_idx": 1,
+      "start": 200,
+      "end": 700,
+      "fragment_preview": "gent evidence closes the open question from advance 38.; [18:20] directive(p5): Deploy; [18:20] dire",
+      "iter1_score": 0.5388,
+      "iter2_score": 0.6489,
+      "delta": 0.1101,
+      "iter1_answer": "The provided fragment does not contain information regarding the state of thread #318.",
+      "iter2_answer": "The provided CCS fragment does not contain information regarding the state of thread #3_18. It only contains information regarding the closure of an open question from \"advance 38.\""
+    },
+    {
+      "window_idx": 2,
+      "start": 400,
+      "end": 900,
+      "fragment_preview": "chy IS the CCS two-layer identity \u2014 convergent evidence closes the open question from advance 38.; [",
+      "iter1_score": 0.5317,
+      "iter2_score": 0.5267,
+      "delta": -0.005,
+      "iter1_answer": "The provided fragment does not contain any information regarding the state of thread #3_318.",
+      "iter2_answer": "The provided CCS fragment does not contain any information regarding the current state of thread #318."
+    }
+  ],
+  "summary": {
+    "mean_delta": 0.0283,
+    "max_delta": 0.1101,
+    "min_delta": -0.0201,
+    "positive_windows": 1,
+    "negative_windows": 2,
+    "top_5_indices": [
+      1,
+      2,
+      0
+    ]
+  }
+}

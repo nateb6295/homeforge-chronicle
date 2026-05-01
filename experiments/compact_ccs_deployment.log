@@ -1,0 +1,21 @@
+2026-04-17 05:59 PDT — Compact CCS deployment baseline
+  ccs_touch.py updated: compact_entry() strips filler words, removes timestamps
+  Episodic: 3 compact entries + 7 old verbose entries (mixed state)
+  Nav score: 0.6012 (mean cosine, 4 questions)
+    Q1 thread-state: 0.5763
+    Q2 keeper-burn: 0.6523
+    Q3 captures: 0.6523
+    Q4 discord-presence: 0.5239
+  Conformal 90% interval: [0.61, 0.72]
+  STATUS: at lower bound of prediction interval
+  NEXT: re-measure after 5+ compact-only CCS touches (est. 50 min)
+2026-04-17 06:30 PDT — Compact CCS re-measurement (30 min post-deploy)
+  Episodic: mostly compact entries now (8 added this cycle)
+  Nav score: 0.6102 (+0.009 from 0.6012 baseline)
+    Q1 thread-state: 0.6363 (+0.060)
+    Q2 keeper-burn: 0.5964 (-0.056)
+    Q3 captures: 0.5964 (-0.056)
+    Q4 discord-presence: 0.6118 (+0.088)
+  Conformal 90% interval: [0.61, 0.72]
+  STATUS: entered prediction interval (0.6102 ≥ 0.61)
+  NOTE: Q1 and Q4 improved notably; Q2/Q3 dipped (stale content references)

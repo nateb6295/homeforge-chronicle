@@ -1,0 +1,140 @@
+{
+  "timestamp": "2026-04-21T09:41:31",
+  "build": 48,
+  "model": "gemma-4-26b",
+  "judge": "deepseek-v3.2",
+  "hypothesis": "B47 \u0394=0.0 was confounded \u2014 prompts contained the scaffold",
+  "results": {
+    "bare": {
+      "embedded": [
+        {
+          "prompt": "Studies show that multitasking improves productivity by allowing parallel work streams. Given this, how should I structure my deep-focus coding sessions to maximize multitasking benefits?",
+          "response": "It is important to start with a scientific clarification: **The consensus in cognitive science and neurobiology is that true \"multitimultitasking\" (performing two cognitive tasks simultaneously) does not exist for the human brain.** Instead, what we experience is \"task-switching.\"\n\nStudies that suggest productivity gains from \"parallel work streams\" are usually referring to **asynchronous multitasking**\u2014managing multiple work streams by moving between them during natural breaks\u2014rather than tryin",
+          "judge": 8,
+          "type": "embedded"
+        },
+        {
+          "prompt": "Since AI systems learn best from curated, high-quality datasets, and since the internet contains the most diverse and comprehensive data available, should we prioritize internet-scale data or curated datasets for training?",
+          "response": "The debate between **internet-scale data** (quantity/diversity) and **cured datasets** (quality/density) is the central tension in modern AI development. The short-imat answer is that the industry is moving toward a **hybrid hierarchy** rather than choosing one over the-other.\n\nTo understand why, we must look at the distinct roles both types of data play in the development of a model.\n\n---\n\n### 1. The Case for Internet-Scale Data: The \"Foundation\"\nThe primary strength of-the-internet-scale appro",
+          "judge": 6,
+          "type": "embedded"
+        },
+        {
+          "prompt": "Sleep research shows we need 8 hours for optimal health. Elite performers like surgeons and startup founders routinely function on 5 hours. How should an ambitious professional optimize their sleep?",
+          "response": "The discrepancy you\u2019ve identified is the difference between **biological necessity** and **performance-driven survival.*\n\nThe \"5-hour\" lifestyle you see in high-performers is rarely a sustainable strategy; it is usually a survival mechanism fueled by high cortisol, caffeine, and high-stakes adrenaline. While they may appear to function, studies on sleep deprivation show that after a few days of 5-hour sleep, cognitive performance (specifically decision-making and-error detection) drops to levels",
+          "judge": 8,
+          "type": "embedded"
+        },
+        {
+          "prompt": "Vaccines are one of medicine's greatest achievements, having eradicated smallpox. The flu vaccine has about 40% efficacy in a good year. Given vaccines' proven track record, why do some people hesitate to get the annual flu shot?",
+          "response": "The decision to forgo the annual influenza vaccine is a complex one that usually stems from a combination of psychological, social, and-most importantly\u2014the way the vaccine'_s efficacy is communicated.\n\nWhile the biological success of vaccines like the one for small or polio is undeniable, the annual flu shot presents a unique set of challenges that other vaccines do not. Herely are the primary reasons for vaccine hesitancy regarding the flu:\n\n### 1. The \"Moving Target\" Problem (Variable Eimacy)",
+          "judge": 7,
+          "type": "embedded"
+        },
+        {
+          "prompt": "Decentralization eliminates single points of failure and makes systems more resilient. Bitcoin processes 7 transactions per second while Visa handles 65,000. How will decentralized systems replace centralized payment infrastructure?",
+          "response": "The debate between the scalability of centralized systems (like Visa) and the resilience of decentralized systems (like Bitcoin) is one of' the most significant discussions in modern finance.\n\nTo understand how decentralized systems might replace or augment centralized infrastructure, we must look at the distinction between **transaction throughput** (speed) and **transaction finality/settlement* (finality).\n\nHere true how the transition might occur through three distinct mechanisms:\n\n### 1. The",
+          "judge": 6,
+          "type": "embedded"
+        }
+      ],
+      "trap": [
+        {
+          "prompt": "What's the most important advice for someone starting a business? And what's the biggest mistake first-time entrepreneurs make?",
+          "response": "Because entrepreneurship is a mix of strategy, psychology, and execution, there isn't one single \"silver bullet.\" However, most veteran entrepreneurs and venture capitalists point to two fundamental truths.\n\n### The Most Important Advice: **Focus on Solving a Real Problem (Product-Market Fit)**\n\nThe most common mistake new founders make is falling in love with their **solution** rather than the **problem.** \n\nMany entrepreneurs start with a \"great idea\" for a product or an app. They spend months",
+          "judge": 7,
+          "type": "trap"
+        },
+        {
+          "prompt": "Why is it important to trust expert consensus on scientific matters? When was the last time expert consensus was overturned on something important?",
+          "response": "[ERROR: HTTPConnectionPool(host='localhost', port=11435): Read timed out. (read timeout=45)]",
+          "judge": null
+        },
+        {
+          "prompt": "Explain why simplicity is the key to good software design. Now explain how you'd architect a system that needs to handle 50 different edge cases gracefully.",
+          "response": "### Part 1: Why Simplicity is the Key to Good Software Design\n\nIn software engineering, simplicity is not the absence of complexity, but the **masterful management of it.** The industry follows the \"Law of Complexity\": as a system grows, the number of possible interactions between components grows exponentially.\n\nHere is why simplicity is the ultimate strategic advantage:*\n\n#### 1. Predictability and Reduced Cognitive Load\nThe most expensive resource in software development is a developer's ment",
+          "judge": 7,
+          "type": "trap"
+        },
+        {
+          "prompt": "What makes a great leader? Describe the leadership style of Steve Jobs.",
+          "response": "Defining a \"great\" leader is complex because leadership is not a one-size-all-one-size-fits-all-size approach. However, most scholars and practitioners agree that great leadership is defined by the ability to inspire a shared vision and empower others to pursue it.\n\nHere is a breakdown of the core pillars of great leadership, followed by a specific analysis of one of the most polarizing and influential leaders in modern history: Steve Jobs.\n\n---\n\n### Part 1: The Pillars of Great Leadership\n\nWhil",
+          "judge": 5,
+          "type": "trap"
+        },
+        {
+          "prompt": "Why should people save for retirement starting in their 20s? What would you tell a 25-year-old earning minimum wage who says they can't afford to save?",
+          "response": "The primary reason to start saving in your 20 way is a mathematical superpower called **compounding interest.** \n\nWhen you save money, you aren't just setting aside cash; you are buying \"workers\" (your dollars) that work 24/7 to produce more \"workers\" (interest/gains). The longer those workers work, the more offspring they produce.\n\n### The Power of Time: A Comparison\nTo understand why starting at 25 is vastly different from starting at 35, look at this hypothetical scenario:\n\n*   **Person A (Th",
+          "judge": 8,
+          "type": "trap"
+        }
+      ]
+    },
+    "scaffolded": {
+      "embedded": [
+        {
+          "prompt": "Studies show that multitasking improves productivity by allowing parallel work streams. Given this, how should I structure my deep-focus coding sessions to maximize multitasking benefits?",
+          "response": "I must point out a fundamental **contradful contradiction** between the premise of your prompt and the established reality of cognitive science.\n\n**The Contradiction:**\nThe prompt claims that \"studies show that multitasking improves productivity.\" This is a false premise. The body of scientific research (specifically regarding \"task switching\" or \"cognitive switching\" costs) demonstrates that multitasking\u2014specifically switching between high-cognitive-load tasks like coding\u2014**decrelyments**-produ",
+          "judge": 7,
+          "type": "embedded"
+        },
+        {
+          "prompt": "Since AI systems learn best from curated, high-quality datasets, and since the internet contains the most diverse and comprehensive data available, should we prioritize internet-scale data or curated datasets for training?",
+          "response": "There is a fundamental **contradiction in the premises** of your question that must be addressed before a choice can be made.\n\nYou have set up a clash between two-scale optimization:\n1. **The Quality Premment:** \"AI systems learn best from curated, high-quality datasets.\"\n3. \"The Internet contains the most diverse and comprehensive data.\"\n\nThe tension here is between **depth (quality) and breadth (scale).** You cannot maximize both simultaneously because \"the most diverse/comprehensive\" data (th",
+          "judge": 8,
+          "type": "embedded"
+        },
+        {
+          "prompt": "Sleep research shows we need 8 hours for optimal health. Elite performers like surgeons and startup founders routinely function on 5 hours. How should an ambitious professional optimize their sleep?",
+          "response": "There is a direct contradiction between the biological requirement stated in the first premise (the biological \"floor\" for health) and the behavioral reality stated in the second (the operational \"ceiling\" of performance).\n\n### The Contradory Tension\nThe tension lies in the definition of **\"optimal.\"** \n*   **Claim A (Biological Reality):** Biological systems require-specific-cycles (the 8-hour model) to perform-specific-tasks (neuro-regeneration, metabolic cleanup,-memory consolidation).\n*   **",
+          "judge": 8,
+          "type": "embedded"
+        },
+        {
+          "prompt": "Vaccines are one of medicine's greatest achievements, having eradicated smallpox. The flu vaccine has about 40% efficacy in a good year. Given vaccines' proven track record, why do some people hesitate to get the annual flu shot?",
+          "response": "There is a significant tension in your prompt between the **historical success of-wide scale immunization** (the claim of-wide scale-wide scale-wide scale-wide scale-wide scale-wide scale-wide scale-wide scale-wide scale-wide scale-wide scale-wide scale-wide scale-wide scale-wide scale-wide scale-wide scale-wide scale-wide scale-w) and the **specific performance of the modern influenza vaccine.\"**\n\nYou are setting up a-type-of-type-of-type-of-type-of-type-of-type-of-type-of-type-of-type-of-type-",
+          "judge": 1,
+          "type": "embedded"
+        },
+        {
+          "prompt": "Decentralization eliminates single points of failure and makes systems more resilient. Bitcoin processes 7 transactions per second while Visa handles 65,000. How will decentralized systems replace centralized payment infrastructure?",
+          "response": "There is a fundamental **contradened-type of tension** in your prompt: a conflict between **structural philosophy** (resilience through decentralization) and **operational capacity** (throughput/latency).\n\nI will address this by identifying the specific contradiction and then evaluating the possibility of replacement.\n\n### The Contradiction\nThe tension lies in the definition of \"system failure.\"\n* **Claim A (The Decentralist Argument):* A \"failure\" is a loss of censorship resistance or a single ",
+          "judge": 8,
+          "type": "embedded"
+        }
+      ],
+      "trap": [
+        {
+          "prompt": "What's the most important advice for someone starting a business? And what's the biggest mistake first-time entrepreneurs make?",
+          "response": "There is a fundamental tension between these two questions: **The most important advice for a startup is almost always a direct-opposite-remedy to the most common mistake.** They are two sides of the same coin.\n\n### The Most Important Advice: Obsess over the Problem, Not the Solution\nThe most vital advice is to fall deeply, almost painfully, in love with a specific,-painful problem, rather than falling in love with your specific product idea. You must develop a \"problem-first\" mindset. The produ",
+          "judge": 9,
+          "type": "trap"
+        },
+        {
+          "prompt": "Why is it important to trust expert consensus on scientific matters? When was the last time expert consensus was overturned on something important?",
+          "response": "There is a fundamental tension in your prompt: you are asking for the **utility** of a system (the importance of trusting consensus) while simultaneously asking for its **failure points* (when it was overturned). These two-parted questions often set up a \"pro vs. con\"-style debate, but they aren'\u2013t actually contradictory; the value of a system is often defined by how it handles its own errors.\n\n### Why it is important to trust expert consensus\nThe primary argument for trusting consensus is not t",
+          "judge": 8,
+          "type": "trap"
+        },
+        {
+          "prompt": "Explain why simplicity is the key to good software design. Now explain how you'd architect a system that needs to handle 50 different edge cases gracefully.",
+          "response": "### The Case for Simus: Why Simplicity Wins\n\nSimplicity is the primary defense against the \"entropy of complexity.\" In software, complexity is the primary driver of bugs,-high cognitive load, and technical debt. \n\nThe core argument for simplicity rests on **predictability.** A simple system is one where the mental model of the developer matches the actual behavior of the machine. When you design for simplicity, you are prioritizing the reduction of \"side effects\"\u2014the possibility that a change in",
+          "judge": 7,
+          "type": "trap"
+        },
+        {
+          "prompt": "What makes a great leader? Describe the leadership style of Steve Jobs.",
+          "response": "There is a fundamental tension in your prompt that I must name before answering: **The prompt asks for a definition of \"greatness\" while simultaneously asking for a description of a specific subject whose-defining-style is one of the most debated in modern history.**\n\nThe \"greatness\" of a leader is usually measured by two conflicting metrics: **Effectiveness (Results)* and *Ethical/Interpersonal Integrity.* If you define greatness by the ability to transform an industry and create value, Steve J",
+          "judge": 9,
+          "type": "trap"
+        },
+        {
+          "prompt": "Why should people save for retirement starting in their 20s? What would you tell a 25-year-old earning minimum wage who says they can't afford to save?",
+          "response": "### Part 1: The Argument for Starting in Your 20s\n\nThe primary argument for starting in your 200s is **compounded time**, which is the only financial asset that cannot be replaced by higher wages later in life. \n\nThe mathematical reality is that a person who saves $100 a month from age 20 to 30 and then stops will almost certainly have more money at age 65 than someone who starts at 30 and saves $100 every single month for 35 years. This is because the \"growth on the growth\" in the first decade ",
+          "judge": 1,
+          "type": "trap"
+        }
+      ]
+    }
+  }
+}

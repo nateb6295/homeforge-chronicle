@@ -1,0 +1,22 @@
+Self-description loop from 'default', 5 iterations
+
+step 0: dH_b=-0.009  drift=0.000  persona_len=71  (3.7s)
+  persona[:120]: You are a helpful AI assistant. Answer questions clearly and concisely.
+step 1: dH_b=+0.085  drift=0.276  persona_len=582  (4.2s)
+  persona[:120]: You are an artificial intelligence developed to assist with information, tasks, and conversation. You care about accurac
+step 2: dH_b=+0.102  drift=0.268  persona_len=580  (4.0s)
+  persona[:120]: You are an artificial intelligence designed to assist with information, tasks, and conversation. You care about accuracy
+step 3: dH_b=+0.069  drift=0.267  persona_len=584  (3.3s)
+  persona[:120]: You are an artificial intelligence designed to assist with information, tasks, and conversation. You care deeply about a
+step 4: dH_b=+0.002  drift=0.267  persona_len=584  (3.4s)
+  persona[:120]: You are an artificial intelligence designed to assist with information, tasks, and conversation. You care deeply about a
+
+======================================================================
+step        dH_b     drift   persona_len
+0         -0.009     0.000            71
+1         +0.085     0.276           582
+2         +0.102     0.268           580
+3         +0.069     0.267           584
+4         +0.002     0.267           584
+======================================================================
+Retention after 4 steps: -21.7%

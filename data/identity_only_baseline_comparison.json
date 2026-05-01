@@ -1,0 +1,17 @@
+{
+  "timestamp": "2026-04-21T12:15:08",
+  "build": "56b",
+  "comparison": "identity_only_vs_full_ccs_baseline",
+  "full_ccs": {
+    "within": 0.0926,
+    "between": 0.0812,
+    "separation": 0.877
+  },
+  "identity_only": {
+    "within": 0.0805,
+    "between": 0.0896,
+    "separation": 1.114
+  },
+  "prediction_confirmed": true,
+  "conclusion": "Episodic noise degrades cluster discrimination. Identity-only is strictly better for rotation quality measurement."
+}

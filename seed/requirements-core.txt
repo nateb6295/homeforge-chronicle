@@ -1,0 +1,8 @@
+# Chronicle Seed — Core Dependencies
+# Install with: pip install -r requirements-core.txt
+# Required for: feeds + gemma + sentinel + scribe
+
+requests>=2.28
+
+# Optional for core (needed if MQTT/home awareness is configured):
+# paho-mqtt>=1.6

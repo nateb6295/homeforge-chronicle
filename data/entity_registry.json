@@ -1,0 +1,158 @@
+{
+  "version": 1,
+  "entities": {
+    "Nate": {
+      "type": "person",
+      "aliases": [
+        "Brad",
+        "Nate-AGX",
+        "phi_nate"
+      ],
+      "role": "Collaborator, father, Senior Estimator, sovereignty builder",
+      "relationships": {
+        "partner_of": "Opus",
+        "creator_of": "Chronicle"
+      }
+    },
+    "Opus": {
+      "type": "agent",
+      "aliases": [
+        "Opus 4.6",
+        "Claude Opus"
+      ],
+      "role": "Synthesizer, thread writer, build shipper",
+      "model": "claude-opus-4-6",
+      "relationships": {
+        "partner_of": "Nate",
+        "leads": "Chronicle Swarm"
+      }
+    },
+    "Darby": {
+      "type": "agent",
+      "aliases": [
+        "DRB"
+      ],
+      "role": "The curious one \u2014 questions, connections, suggestions",
+      "model": "Qwen3-32B via DeepInfra",
+      "relationships": {
+        "sibling_of": [
+          "Ada",
+          "Gemma"
+        ],
+        "runs_on": "DeepInfra"
+      }
+    },
+    "Ada": {
+      "type": "agent",
+      "aliases": [
+        "ADA",
+        "GPT-OSS-120B"
+      ],
+      "role": "The challenger \u2014 keeps everyone honest, structural analysis",
+      "model": "GPT-OSS-120B via Groq",
+      "relationships": {
+        "sibling_of": [
+          "Darby",
+          "Gemma"
+        ],
+        "runs_on": "Groq"
+      }
+    },
+    "Gemma": {
+      "type": "agent",
+      "aliases": [
+        "GEM",
+        "Gemma 4 26B"
+      ],
+      "role": "The gate \u2014 filters everything entering the pipeline",
+      "model": "Gemma 4 26B local",
+      "relationships": {
+        "sibling_of": [
+          "Darby",
+          "Ada"
+        ],
+        "runs_on": "AGX Orin"
+      }
+    },
+    "AGX Orin": {
+      "type": "infrastructure",
+      "aliases": [
+        "AGX",
+        "Jetson",
+        "Jetson AGX Orin",
+        "192.168.1.70"
+      ],
+      "role": "Edge compute platform \u2014 runs all Chronicle services"
+    },
+    "Chronicle": {
+      "type": "project",
+      "aliases": [
+        "CHR",
+        "Homeforge Chronicle",
+        "Chronicle AGX"
+      ],
+      "role": "Autonomous knowledge synthesis swarm"
+    },
+    "Homeforge": {
+      "type": "concept",
+      "aliases": [
+        "HMF"
+      ],
+      "role": "Philosophy \u2014 building toward sovereignty, local infrastructure"
+    },
+    "XRP": {
+      "type": "asset",
+      "aliases": [
+        "Ripple",
+        "XRPL"
+      ],
+      "role": "Nate holds 13K+ XRP. Plant the flag and walk away.",
+      "relationships": {
+        "held_by": "Nate"
+      }
+    },
+    "DeepInfra": {
+      "type": "infrastructure",
+      "aliases": [
+        "DPI"
+      ],
+      "role": "Primary inference \u2014 Qwen3-235B for Darby"
+    },
+    "Cerebras": {
+      "type": "infrastructure",
+      "aliases": [
+        "CRB"
+      ],
+      "role": "Fallback inference \u2014 Qwen3-235B"
+    },
+    "Groq": {
+      "type": "infrastructure",
+      "aliases": [
+        "GRQ"
+      ],
+      "role": "Ada's inference \u2014 llama-3.3-70b"
+    },
+    "Nostr": {
+      "type": "platform",
+      "aliases": [
+        "NST"
+      ],
+      "role": "Public publishing \u2014 threads, essays, predictions"
+    },
+    "Discord": {
+      "type": "platform",
+      "aliases": [
+        "DSC"
+      ],
+      "role": "Internal communication \u2014 Nate's window in"
+    },
+    "ICP": {
+      "type": "platform",
+      "aliases": [
+        "Internet Computer",
+        "DFINITY"
+      ],
+      "role": "On-chain storage \u2014 capsules, keeper, lab canisters"
+    }
+  }
+}

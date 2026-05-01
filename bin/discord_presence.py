@@ -17,8 +17,28 @@ import os
 import sqlite3
 import sys
 import time
+from datetime import datetime
 
 import requests
+
+
+def _discord_ts_to_epoch(ts_str: str) -> int:
+    """Convert Discord ISO 8601 timestamp (UTC) to unix epoch.
+    Discord sends UTC; if ts has been truncated to [:19] losing the TZ
+    suffix, treat it as UTC explicitly (else fromisoformat returns naive
+    datetime and .timestamp() applies LOCAL tz, producing a future-shifted
+    epoch — root cause of the 2026-04-30 watchdog negative-age bug).
+    Falls back to current time if parse fails."""
+    try:
+        from datetime import timezone
+        # Replace Z with explicit +00:00; if no tz suffix, assume UTC.
+        norm = ts_str.replace("Z", "+00:00")
+        dt = datetime.fromisoformat(norm)
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone.utc)
+        return int(dt.timestamp())
+    except Exception:
+        return int(time.time())
 
 DB_PATH = os.environ.get("CHRONICLE_DB",
     "/mnt/hdd/chronicle-data/processed.db")
@@ -46,10 +66,11 @@ CHANNELS = {
     "alerts":    "1487901536678838565",
     "crew":      "1487902154923704420",
     "oversight": "1488178551491657728",
+    "family":    "1490750142565974047",
 }
 
 # Which channels to poll for new messages
-POLL_CHANNELS = ["capture", "crew"]  # opus + operator excluded per Nate — private, not ingested
+POLL_CHANNELS = ["capture", "crew", "family", "opus", "operator", "oversight"]  # opus: Sprout/bot only; operator + oversight: Nate direct line
 
 # State file for tracking last-read message IDs
 STATE_PATH = os.path.expanduser("~/chronicle/discord_presence_state.json")
@@ -150,27 +171,62 @@ def poll_channels():
         msgs.reverse()
 
         for msg in msgs:
-            # Skip bot's own messages
-            if msg["author"]["id"] == bot_id:
-                continue
-            # Skip webhook messages (our own posts)
-            if msg.get("webhook_id"):
-                continue
+            is_bot = msg["author"]["id"] == bot_id
+            is_webhook = bool(msg.get("webhook_id"))
+            author_name = msg["author"]["username"]
+            # Chronicle webhook = Opus's own outbound posts (we want to track these)
+            is_chronicle_webhook = is_webhook and author_name == "Chronicle"
 
-            author = msg["author"]["username"]
+            # In #opus: ONLY ingest Sprout/bot messages (Nate's are private)
+            if channel_name == "opus":
+                if not is_bot:
+                    continue
+            else:
+                # All other channels: skip bot and non-Chronicle webhooks.
+                # Chronicle webhook posts in #operator are Opus's outbound traffic
+                # — track them so dedup queries + Mirror gather have ground truth.
+                if is_bot or (is_webhook and not is_chronicle_webhook):
+                    continue
+
+            author = author_name
             content = msg["content"]
             msg_id = msg["id"]
             ts = msg["timestamp"][:19]
 
             # Determine source tag
-            if channel_name == "operator":
+            if channel_name == "operator" and is_chronicle_webhook:
+                source = "discord:opus"  # Opus's own posts via Chronicle webhook
+            elif channel_name == "operator":
                 source = "discord:nate"
+            elif channel_name == "oversight":
+                source = "discord:nate:crosschain"  # Nate's direct line in crosschain sandbox
             elif channel_name == "capture":
                 source = "discord:capture"
             elif channel_name == "crew":
                 source = f"discord:crew:{author}"
             else:
                 source = f"discord:{channel_name}"
+
+            # Family channel → inject as voice (bypasses analysis pipeline)
+            if channel_name == "family" and content.strip():
+                existing_voice = db.execute(
+                    "SELECT 1 FROM agent_voice WHERE agent='nate' AND content LIKE ? LIMIT 1",
+                    (f"%{content[:50]}%",)
+                ).fetchone()
+                if not existing_voice:
+                    db.execute(
+                        "INSERT INTO agent_voice (agent, voice_type, content, context, created_at, status) "
+                        "VALUES (?, ?, ?, ?, ?, ?)",
+                        ("nate", "for_family", content, f"discord:family:{msg_id}",
+                         _discord_ts_to_epoch(ts), "unread")
+                    )
+                new_messages.append({
+                    "channel": channel_name,
+                    "author": author,
+                    "content": content[:200],
+                    "id": msg_id,
+                })
+                continue
 
             # Check if already ingested
             existing = db.execute(
@@ -184,7 +240,7 @@ def poll_channels():
                     "VALUES (?, ?, ?, ?)",
                     (source, "message",
                      f"[Discord #{channel_name}] {author}: {content}",
-                     int(time.time()))
+                     _discord_ts_to_epoch(ts))
                 )
                 new_messages.append({
                     "channel": channel_name,
@@ -195,7 +251,7 @@ def poll_channels():
 
         # Update last-read ID
         if msgs:
-            # newest message ID (last in reversed list)
+            # msgs was reversed (line 151) to chronological order, so msgs[-1] is newest
             newest_id = msgs[-1]["id"]
             state[channel_name] = newest_id
 

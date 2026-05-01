@@ -1,0 +1,99 @@
+{
+  "probe": "B73_mass_dosage",
+  "timestamp": "2026-04-22T09:02:14.342968",
+  "hypothesis": "h_eff measures effective mass, not independence; more traces = less degradation monotonically",
+  "predictions": {
+    "monotonic_decrease": "more episodic traces \u2192 less degradation",
+    "log_curve": "if dilution (H1), dose-response is logarithmic",
+    "linear_curve": "if active anchoring (H3), dose-response is linear"
+  },
+  "dose_levels": {
+    "0": {
+      "ctrl": 2.0839,
+      "corr": 1.2964,
+      "pct_lost": 37.78972119583472
+    },
+    "2": {
+      "ctrl": 1.7668,
+      "corr": 1.2733,
+      "pct_lost": 27.931854199683038
+    },
+    "4": {
+      "ctrl": 1.6358,
+      "corr": 1.3448,
+      "pct_lost": 17.789460814280467
+    },
+    "6": {
+      "ctrl": 1.7219,
+      "corr": 1.0497,
+      "pct_lost": 39.03827167663627
+    }
+  },
+  "monotonic": false,
+  "results": {
+    "dose_0": {
+      "control": {
+        "separation": 2.0839,
+        "silhouette": 0.5201,
+        "within_a": 0.1978,
+        "within_b": 0.3076,
+        "between": 0.5265
+      },
+      "corrupt": {
+        "separation": 1.2964,
+        "silhouette": 0.2287,
+        "within_a": 0.2904,
+        "within_b": 0.2951,
+        "between": 0.3795
+      }
+    },
+    "dose_2": {
+      "control": {
+        "separation": 1.7668,
+        "silhouette": 0.434,
+        "within_a": 0.1797,
+        "within_b": 0.3863,
+        "between": 0.5001
+      },
+      "corrupt": {
+        "separation": 1.2733,
+        "silhouette": 0.2147,
+        "within_a": 0.2458,
+        "within_b": 0.3551,
+        "between": 0.3826
+      }
+    },
+    "dose_4": {
+      "control": {
+        "separation": 1.6358,
+        "silhouette": 0.3887,
+        "within_a": 0.2182,
+        "within_b": 0.4069,
+        "between": 0.5113
+      },
+      "corrupt": {
+        "separation": 1.3448,
+        "silhouette": 0.2564,
+        "within_a": 0.2442,
+        "within_b": 0.3028,
+        "between": 0.3678
+      }
+    },
+    "dose_6": {
+      "control": {
+        "separation": 1.7219,
+        "silhouette": 0.4192,
+        "within_a": 0.1988,
+        "within_b": 0.35,
+        "between": 0.4725
+      },
+      "corrupt": {
+        "separation": 1.0497,
+        "silhouette": 0.0473,
+        "within_a": 0.2822,
+        "within_b": 0.3473,
+        "between": 0.3304
+      }
+    }
+  }
+}

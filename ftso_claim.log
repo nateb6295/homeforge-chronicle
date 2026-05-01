@@ -1,0 +1,88 @@
+/home/nate-agx/.local/lib/python3.10/site-packages/requests/__init__.py:113: RequestsDependencyWarning: urllib3 (2.6.3) or chardet (7.4.0.post2)/charset_normalizer (3.4.4) doesn't match a supported version!
+  warnings.warn(
+[2026-04-05 03:00:02] Checking claimable reward epochs...
+[2026-04-05 03:00:02] Claimable epoch range: 360 - 385
+[2026-04-05 03:00:02] Our next unclaimed epoch: 360
+[2026-04-05 03:00:02] Claiming 26 epoch(s) in one transaction (up to epoch 385)
+[2026-04-05 03:00:03] WFLR before claim: 3198.0000
+[2026-04-05 03:00:03] Wrap rewards: True (auto-compound into WFLR)
+[2026-04-05 03:00:03] Signing: to=0xc8f55c5aa2c752ee285bd872855c749f4ee6239b, value=0, nonce=11, gas=300000
+[2026-04-05 03:00:12] Signed tx: 0x02f901320e0b8507c6ee09a0850f8ddc134083...4ffdc856a5e3770094de
+[2026-04-05 03:00:12] TX broadcast: 0xd894a41f850664ec68b304cd8c4e0f7c02f20915d215184bd2f6365131151370
+[2026-04-05 03:00:12] Claim TX: 0xd894a41f850664ec68b304cd8c4e0f7c02f20915d215184bd2f6365131151370
+[2026-04-05 03:00:12] Waiting for confirmation...
+[2026-04-05 03:00:21] WFLR after claim: 3198.0000 (reward: +0.0000 WFLR)
+[2026-04-05 03:00:21] FLR balance: 5.6541
+/home/nate-agx/.local/lib/python3.10/site-packages/requests/__init__.py:113: RequestsDependencyWarning: urllib3 (2.6.3) or chardet (7.4.0.post2)/charset_normalizer (3.4.4) doesn't match a supported version!
+  warnings.warn(
+[2026-04-09 03:00:01] Checking claimable reward epochs...
+[2026-04-09 03:00:02] Claimable epoch range: 361 - 386
+[2026-04-09 03:00:02] Our next unclaimed epoch: 361
+[2026-04-09 03:00:02] Claiming 26 epoch(s) in one transaction (up to epoch 386)
+[2026-04-09 03:00:02] WFLR before claim: 3198.0000
+[2026-04-09 03:00:02] Wrap rewards: True (auto-compound into WFLR)
+[2026-04-09 03:00:03] Signing: to=0xc8f55c5aa2c752ee285bd872855c749f4ee6239b, value=0, nonce=12, gas=300000
+[2026-04-09 03:00:10] Signed tx: 0x02f901320e0c85081e15607985103c2ac0f283...0a7aaa456fbbcfd65e98
+[2026-04-09 03:00:11] TX broadcast: 0x950b0a286abb99fbc75e4ac30de16064a96a044d2fa67838455d103d22ce30e7
+[2026-04-09 03:00:11] Claim TX: 0x950b0a286abb99fbc75e4ac30de16064a96a044d2fa67838455d103d22ce30e7
+[2026-04-09 03:00:11] Waiting for confirmation...
+[2026-04-09 03:00:19] WFLR after claim: 3198.0000 (reward: +0.0000 WFLR)
+[2026-04-09 03:00:19] FLR balance: 5.6362
+/home/nate-agx/.local/lib/python3.10/site-packages/requests/__init__.py:113: RequestsDependencyWarning: urllib3 (2.6.3) or chardet (7.4.0.post2)/charset_normalizer (3.4.4) doesn't match a supported version!
+  warnings.warn(
+[2026-04-13 03:00:01] Checking claimable reward epochs...
+[2026-04-13 03:00:02] Claimable epoch range: 363 - 387
+[2026-04-13 03:00:02] Our next unclaimed epoch: 363
+[2026-04-13 03:00:02] Claiming 25 epoch(s) in one transaction (up to epoch 387)
+[2026-04-13 03:00:02] WFLR before claim: 3198.0000
+[2026-04-13 03:00:02] Wrap rewards: True (auto-compound into WFLR)
+[2026-04-13 03:00:03] Signing: to=0xc8f55c5aa2c752ee285bd872855c749f4ee6239b, value=0, nonce=13, gas=300000
+[2026-04-13 03:00:12] Signed tx: 0x02f901320e0d8506f34913e9850de69227d283...0fe148dc5c120f8705cc
+[2026-04-13 03:00:12] TX broadcast: 0x1dccd29152faf6e92eeefdde8035b231eb798903fd2187c45bf4bfee4e7dc611
+[2026-04-13 03:00:12] Claim TX: 0x1dccd29152faf6e92eeefdde8035b231eb798903fd2187c45bf4bfee4e7dc611
+[2026-04-13 03:00:12] Waiting for confirmation...
+[2026-04-13 03:00:21] WFLR after claim: 3198.0000 (reward: +0.0000 WFLR)
+[2026-04-13 03:00:21] FLR balance: 5.6197
+/home/nate-agx/.local/lib/python3.10/site-packages/requests/__init__.py:113: RequestsDependencyWarning: urllib3 (2.6.3) or chardet (7.4.0.post2)/charset_normalizer (3.4.4) doesn't match a supported version!
+  warnings.warn(
+[2026-04-17 03:00:02] Checking claimable reward epochs...
+[2026-04-17 03:00:02] Claimable epoch range: 364 - 389
+[2026-04-17 03:00:02] Our next unclaimed epoch: 389
+[2026-04-17 03:00:02] Claiming 1 epoch(s) in one transaction (up to epoch 389)
+[2026-04-17 03:00:03] WFLR before claim: 3204.6869
+[2026-04-17 03:00:03] Wrap rewards: True (auto-compound into WFLR)
+[2026-04-17 03:00:03] Signing: to=0xc8f55c5aa2c752ee285bd872855c749f4ee6239b, value=0, nonce=14, gas=300000
+[2026-04-17 03:00:16] Signed tx: 0x02f9012b0e0e81a2820144830493e094c8f55c...a4725beae3d853524a7b
+[2026-04-17 03:00:16] TX broadcast: 0x84ddbef949a59eaad0768ee2fa276b8f5f34399929fe2fbb3df96053816627ba
+[2026-04-17 03:00:16] Claim TX: 0x84ddbef949a59eaad0768ee2fa276b8f5f34399929fe2fbb3df96053816627ba
+[2026-04-17 03:00:16] Waiting for confirmation...
+[2026-04-17 03:00:25] WFLR after claim: 3206.8124 (reward: +2.1255 WFLR)
+[2026-04-17 03:00:25] FLR balance: 5.6197
+/home/nate-agx/.local/lib/python3.10/site-packages/requests/__init__.py:113: RequestsDependencyWarning: urllib3 (2.6.3) or chardet (7.4.0.post2)/charset_normalizer (3.4.4) doesn't match a supported version!
+  warnings.warn(
+[2026-04-21 03:00:01] Checking claimable reward epochs...
+[2026-04-21 03:00:02] Claimable epoch range: 365 - 390
+[2026-04-21 03:00:02] Our next unclaimed epoch: 391
+[2026-04-21 03:00:02] No rewards to claim — all caught up.
+[2026-04-21 03:00:02] (Delegation was recent; first rewards expected ~April 6)
+/home/nate-agx/.local/lib/python3.10/site-packages/requests/__init__.py:113: RequestsDependencyWarning: urllib3 (2.6.3) or chardet (7.4.0.post2)/charset_normalizer (3.4.4) doesn't match a supported version!
+  warnings.warn(
+[2026-04-25 03:00:01] Checking claimable reward epochs...
+[2026-04-25 03:00:01] Claimable epoch range: 366 - 391
+[2026-04-25 03:00:02] Our next unclaimed epoch: 392
+[2026-04-25 03:00:02] No rewards to claim — all caught up.
+[2026-04-25 03:00:02] (Delegation was recent; first rewards expected ~April 6)
+/home/nate-agx/.local/lib/python3.10/site-packages/requests/__init__.py:113: RequestsDependencyWarning: urllib3 (2.6.3) or chardet (7.4.0.post2)/charset_normalizer (3.4.4) doesn't match a supported version!
+  warnings.warn(
+[2026-04-29 03:00:01] Checking claimable reward epochs...
+[2026-04-29 03:00:01] Claimable epoch range: 367 - 392
+[2026-04-29 03:00:02] Our next unclaimed epoch: 393
+[2026-04-29 03:00:02] No rewards to claim — all caught up.
+[2026-04-29 03:00:02] (Delegation was recent; first rewards expected ~April 6)
+/home/nate-agx/.local/lib/python3.10/site-packages/requests/__init__.py:113: RequestsDependencyWarning: urllib3 (2.6.3) or chardet (7.4.0.post2)/charset_normalizer (3.4.4) doesn't match a supported version!
+  warnings.warn(
+[2026-05-01 03:00:01] Checking claimable reward epochs...
+[2026-05-01 03:00:02] Claimable epoch range: 368 - 392
+[2026-05-01 03:00:02] Our next unclaimed epoch: 393
+[2026-05-01 03:00:02] No rewards to claim — all caught up.
+[2026-05-01 03:00:02] (Delegation was recent; first rewards expected ~April 6)

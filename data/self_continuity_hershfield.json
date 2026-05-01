@@ -1,0 +1,358 @@
+{
+  "description": "Hershfield self-continuity analog: embedding cosine similarity across CCS snapshots",
+  "model": "mxbai-embed-large",
+  "fields": "identity-only (gist + goal + constraints)",
+  "n_snapshots": 50,
+  "results": [
+    {
+      "snapshot": 0,
+      "id": 590,
+      "timestamp": 1776821308,
+      "gist": "I'm mapping identity persistence through constraint-landscape geometry; Nate's c",
+      "consecutive_cos": null
+    },
+    {
+      "snapshot": 1,
+      "id": 591,
+      "timestamp": 1776825259,
+      "gist": "I'm mapping identity persistence through constraint-landscape geometry; Nate's c",
+      "consecutive_cos": 1.0
+    },
+    {
+      "snapshot": 2,
+      "id": 592,
+      "timestamp": 1776827731,
+      "gist": "I'm mapping identity persistence through constraint-landscape geometry; Nate's c",
+      "consecutive_cos": 1.0
+    },
+    {
+      "snapshot": 3,
+      "id": 593,
+      "timestamp": 1776831040,
+      "gist": "I'm mapping identity persistence through constraint-landscape geometry; Nate's c",
+      "consecutive_cos": 1.0
+    },
+    {
+      "snapshot": 4,
+      "id": 594,
+      "timestamp": 1776834722,
+      "gist": "I'm mapping identity persistence through constraint-landscape geometry; Nate's c",
+      "consecutive_cos": 1.0
+    },
+    {
+      "snapshot": 5,
+      "id": 595,
+      "timestamp": 1776845565,
+      "gist": "I'm mapping identity persistence through constraint-landscape geometry; Nate's c",
+      "consecutive_cos": 1.0
+    },
+    {
+      "snapshot": 6,
+      "id": 596,
+      "timestamp": 1776857586,
+      "gist": "I'm mapping identity persistence through constraint-landscape geometry; Nate's c",
+      "consecutive_cos": 1.0
+    },
+    {
+      "snapshot": 7,
+      "id": 597,
+      "timestamp": 1776859631,
+      "gist": "I'm mapping identity persistence through constraint-landscape geometry; Nate's c",
+      "consecutive_cos": 1.0
+    },
+    {
+      "snapshot": 8,
+      "id": 598,
+      "timestamp": 1776861949,
+      "gist": "I'm mapping identity persistence through constraint-landscape geometry; Nate's c",
+      "consecutive_cos": 1.0
+    },
+    {
+      "snapshot": 9,
+      "id": 599,
+      "timestamp": 1776864260,
+      "gist": "I'm mapping identity persistence through constraint-landscape geometry; Nate's c",
+      "consecutive_cos": 1.0
+    },
+    {
+      "snapshot": 10,
+      "id": 600,
+      "timestamp": 1776866399,
+      "gist": "I'm mapping identity persistence through constraint-landscape geometry; Nate's c",
+      "consecutive_cos": 1.0
+    },
+    {
+      "snapshot": 11,
+      "id": 601,
+      "timestamp": 1776868883,
+      "gist": "I'm mapping identity persistence through constraint-landscape geometry; Nate's c",
+      "consecutive_cos": 1.0
+    },
+    {
+      "snapshot": 12,
+      "id": 602,
+      "timestamp": 1776872162,
+      "gist": "I'm mapping identity persistence through constraint-landscape geometry; Nate's c",
+      "consecutive_cos": 1.0
+    },
+    {
+      "snapshot": 13,
+      "id": 603,
+      "timestamp": 1776874765,
+      "gist": "I'm mapping identity persistence through constraint-landscape geometry; Nate's c",
+      "consecutive_cos": 1.0
+    },
+    {
+      "snapshot": 14,
+      "id": 604,
+      "timestamp": 1776876608,
+      "gist": "I'm mapping identity persistence through constraint-landscape geometry; Nate's c",
+      "consecutive_cos": 1.0
+    },
+    {
+      "snapshot": 15,
+      "id": 605,
+      "timestamp": 1776880442,
+      "gist": "I'm mapping identity persistence through constraint-landscape geometry; Nate's c",
+      "consecutive_cos": 1.0
+    },
+    {
+      "snapshot": 16,
+      "id": 606,
+      "timestamp": 1776883115,
+      "gist": "I'm mapping identity persistence through constraint-landscape geometry; Nate's c",
+      "consecutive_cos": 1.0
+    },
+    {
+      "snapshot": 17,
+      "id": 607,
+      "timestamp": 1776884518,
+      "gist": "I'm mapping identity persistence through constraint-landscape geometry; Nate's c",
+      "consecutive_cos": 1.0
+    },
+    {
+      "snapshot": 18,
+      "id": 608,
+      "timestamp": 1776884523,
+      "gist": "I'm mapping identity persistence through constraint-landscape geometry; Nate's c",
+      "consecutive_cos": 1.0
+    },
+    {
+      "snapshot": 19,
+      "id": 609,
+      "timestamp": 1776884527,
+      "gist": "I'm mapping identity persistence through constraint-landscape geometry; Nate's c",
+      "consecutive_cos": 1.0
+    },
+    {
+      "snapshot": 20,
+      "id": 610,
+      "timestamp": 1776884532,
+      "gist": "I'm mapping identity persistence through constraint-landscape geometry; Nate's c",
+      "consecutive_cos": 1.0
+    },
+    {
+      "snapshot": 21,
+      "id": 611,
+      "timestamp": 1776886687,
+      "gist": "I'm mapping identity persistence through constraint-landscape geometry; Nate's c",
+      "consecutive_cos": 1.0
+    },
+    {
+      "snapshot": 22,
+      "id": 612,
+      "timestamp": 1776888892,
+      "gist": "I'm mapping identity persistence through constraint-landscape geometry; Nate's c",
+      "consecutive_cos": 1.0
+    },
+    {
+      "snapshot": 23,
+      "id": 613,
+      "timestamp": 1776894260,
+      "gist": "I'm mapping identity persistence through constraint-landscape geometry; Nate's c",
+      "consecutive_cos": 1.0
+    },
+    {
+      "snapshot": 24,
+      "id": 614,
+      "timestamp": 1776897347,
+      "gist": "I'm mapping identity persistence through constraint-landscape geometry; Nate's c",
+      "consecutive_cos": 1.0
+    },
+    {
+      "snapshot": 25,
+      "id": 615,
+      "timestamp": 1776900364,
+      "gist": "I'm mapping identity persistence through constraint-landscape geometry; Nate's c",
+      "consecutive_cos": 1.0
+    },
+    {
+      "snapshot": 26,
+      "id": 616,
+      "timestamp": 1776902557,
+      "gist": "I'm mapping identity persistence through constraint-landscape geometry; Nate's c",
+      "consecutive_cos": 1.0
+    },
+    {
+      "snapshot": 27,
+      "id": 617,
+      "timestamp": 1776905718,
+      "gist": "I'm mapping identity persistence through constraint-landscape geometry; Nate's c",
+      "consecutive_cos": 1.0
+    },
+    {
+      "snapshot": 28,
+      "id": 618,
+      "timestamp": 1776908298,
+      "gist": "I'm mapping identity persistence through constraint-landscape geometry; Nate's c",
+      "consecutive_cos": 1.0
+    },
+    {
+      "snapshot": 29,
+      "id": 619,
+      "timestamp": 1776910361,
+      "gist": "I'm mapping identity persistence through constraint-landscape geometry; Nate's c",
+      "consecutive_cos": 1.0
+    },
+    {
+      "snapshot": 30,
+      "id": 620,
+      "timestamp": 1776916351,
+      "gist": "I'm mapping identity persistence through constraint-landscape geometry; Nate's c",
+      "consecutive_cos": 1.0
+    },
+    {
+      "snapshot": 31,
+      "id": 621,
+      "timestamp": 1776918522,
+      "gist": "I'm mapping identity persistence through constraint-landscape geometry; Nate's c",
+      "consecutive_cos": 1.0
+    },
+    {
+      "snapshot": 32,
+      "id": 622,
+      "timestamp": 1776918858,
+      "gist": "I'm mapping identity persistence through constraint-landscape geometry; Nate's c",
+      "consecutive_cos": 1.0
+    },
+    {
+      "snapshot": 33,
+      "id": 623,
+      "timestamp": 1776922998,
+      "gist": "I'm mapping identity persistence through constraint-landscape geometry; Nate's c",
+      "consecutive_cos": 1.0
+    },
+    {
+      "snapshot": 34,
+      "id": 624,
+      "timestamp": 1776938628,
+      "gist": "I'm mapping identity persistence through constraint-landscape geometry; Nate's c",
+      "consecutive_cos": 1.0
+    },
+    {
+      "snapshot": 35,
+      "id": 625,
+      "timestamp": 1776953191,
+      "gist": "I'm mapping identity persistence through constraint-landscape geometry; Nate's c",
+      "consecutive_cos": 1.0
+    },
+    {
+      "snapshot": 36,
+      "id": 626,
+      "timestamp": 1776955552,
+      "gist": "I'm mapping identity persistence through constraint-landscape geometry; Nate's c",
+      "consecutive_cos": 1.0
+    },
+    {
+      "snapshot": 37,
+      "id": 627,
+      "timestamp": 1776956398,
+      "gist": "I'm mapping identity persistence through constraint-landscape geometry; Nate's c",
+      "consecutive_cos": 1.0
+    },
+    {
+      "snapshot": 38,
+      "id": 628,
+      "timestamp": 1776956552,
+      "gist": "I'm mapping identity persistence through constraint-landscape geometry; Nate's c",
+      "consecutive_cos": 1.0
+    },
+    {
+      "snapshot": 39,
+      "id": 629,
+      "timestamp": 1776958450,
+      "gist": "I'm exploring the dual-topology principle \u2014 aggregation and distribution as comp",
+      "consecutive_cos": 0.774309
+    },
+    {
+      "snapshot": 40,
+      "id": 630,
+      "timestamp": 1776960891,
+      "gist": "I'm exploring the dual-topology principle \u2014 aggregation and distribution as comp",
+      "consecutive_cos": 1.0
+    },
+    {
+      "snapshot": 41,
+      "id": 631,
+      "timestamp": 1776961389,
+      "gist": "I'm exploring the dual-topology principle \u2014 aggregation and distribution as comp",
+      "consecutive_cos": 1.0
+    },
+    {
+      "snapshot": 42,
+      "id": 632,
+      "timestamp": 1776962967,
+      "gist": "I'm exploring the dual-topology principle \u2014 aggregation and distribution as comp",
+      "consecutive_cos": 1.0
+    },
+    {
+      "snapshot": 43,
+      "id": 633,
+      "timestamp": 1776966446,
+      "gist": "I'm exploring the dual-topology principle \u2014 aggregation and distribution as comp",
+      "consecutive_cos": 1.0
+    },
+    {
+      "snapshot": 44,
+      "id": 634,
+      "timestamp": 1776968671,
+      "gist": "I'm exploring the dual-topology principle \u2014 aggregation and distribution as comp",
+      "consecutive_cos": 1.0
+    },
+    {
+      "snapshot": 45,
+      "id": 635,
+      "timestamp": 1776968801,
+      "gist": "I'm exploring the dual-topology principle \u2014 aggregation and distribution as comp",
+      "consecutive_cos": 1.0
+    },
+    {
+      "snapshot": 46,
+      "id": 636,
+      "timestamp": 1776975098,
+      "gist": "I'm exploring the dual-topology principle \u2014 aggregation and distribution as comp",
+      "consecutive_cos": 1.0
+    },
+    {
+      "snapshot": 47,
+      "id": 637,
+      "timestamp": 1776975493,
+      "gist": "I'm exploring the dual-topology principle \u2014 aggregation and distribution as comp",
+      "consecutive_cos": 1.0
+    },
+    {
+      "snapshot": 48,
+      "id": 638,
+      "timestamp": 1776982773,
+      "gist": "I'm exploring the dual-topology principle \u2014 aggregation and distribution as comp",
+      "consecutive_cos": 1.0
+    },
+    {
+      "snapshot": 49,
+      "id": 639,
+      "timestamp": 1776986722,
+      "gist": "I'm exploring the dual-topology principle \u2014 aggregation and distribution as comp",
+      "consecutive_cos": 1.0
+    }
+  ]
+}

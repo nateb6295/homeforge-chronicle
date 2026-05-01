@@ -1,0 +1,179 @@
+{
+  "backend": "groq_llama",
+  "timestamp": "20260416_184341",
+  "ccs_length": 2680,
+  "window_size": 500,
+  "stride": 200,
+  "question": "What is the current state of thread #318?",
+  "n_windows": 14,
+  "results": [
+    {
+      "window_idx": 0,
+      "start": 0,
+      "end": 500,
+      "fragment_preview": "Recent events: [18:40] directive(p5): Deploy; [18:40] directive(p5): Fascinating..; [18:40] directiv",
+      "iter1_score": 0.6041,
+      "iter2_score": 0.6375,
+      "delta": 0.0333,
+      "iter1_answer": "The fragment doesn't contain relevant information about the current state of thread #318.",
+      "iter2_answer": "The CCS fragment does not provide any information about the current state of thread #318. The events listed in the fragment appear to be related to directives, captures, and discussions about MTL's ab"
+    },
+    {
+      "window_idx": 1,
+      "start": 200,
+      "end": 700,
+      "fragment_preview": "gent evidence closes the open question from advance 38.; [18:40] capture: Nate capture; [18:30] dire",
+      "iter1_score": 0.5969,
+      "iter2_score": 0.7066,
+      "delta": 0.1097,
+      "iter1_answer": "The fragment doesn't contain relevant information to determine the current state of thread #318.",
+      "iter2_answer": "The CCS fragment does not provide any information about thread #318. The entities and directives mentioned, such as Nate, Hermes, and Deploy, do not appear to be related to thread #318. The convergent"
+    },
+    {
+      "window_idx": 2,
+      "start": 400,
+      "end": 900,
+      "fragment_preview": "18:30] MTL's abstraction hierarchy IS the CCS two-layer identity \u2014 convergent evidence closes the op",
+      "iter1_score": 0.6041,
+      "iter2_score": 0.6407,
+      "delta": 0.0366,
+      "iter1_answer": "The fragment doesn't contain relevant information about the current state of thread #318.",
+      "iter2_answer": "The CCS fragment does not provide any information about the current state of thread #318, and there is no mention of it in the key entities or open questions. The prior scratch answer remains accurate"
+    },
+    {
+      "window_idx": 3,
+      "start": 600,
+      "end": 1100,
+      "fragment_preview": "), mcp (0.8), XRPL (0.7), feedback_drift_recognition.md (0.65), ghost_service_audit (0.6), discord_p",
+      "iter1_score": 0.554,
+      "iter2_score": 0.6753,
+      "delta": 0.1213,
+      "iter1_answer": "The fragment doesn't contain relevant information about thread #318.",
+      "iter2_answer": "The current state of thread #318 remains unknown as the provided CCS fragment does not contain any relevant information about it. The fragment appears to be related to AI system diagnostics, mentionin"
+    },
+    {
+      "window_idx": 4,
+      "start": 800,
+      "end": 1300,
+      "fragment_preview": "content\u2011ordered, specific CCS', 'magnitude': 0.62, 'resolution_path': 'Run 100 validation prompts an",
+      "iter1_score": 0.6115,
+      "iter2_score": 0.6192,
+      "delta": 0.0078,
+      "iter1_answer": "The fragment doesn't contain relevant information to answer the question about the current state of thread #318. The information provided is related to the reliability of XRPL API integration, the eff",
+      "iter2_answer": "The CCS fragment does not provide any information about the current state of thread #318. The fragment discusses various system metrics and reliability tests, such as the reliability of XRPL API integ"
+    },
+    {
+      "window_idx": 5,
+      "start": 1000,
+      "end": 1500,
+      "fragment_preview": "tegration under current network conditions', 'magnitude': 0.51, 'resolution_path': 'Execute xrpl_too",
+      "iter1_score": 0.6041,
+      "iter2_score": 0.6404,
+      "delta": 0.0363,
+      "iter1_answer": "The fragment doesn't contain relevant information about the current state of thread #318.",
+      "iter2_answer": "The CCS fragment does not provide any information about the current state of thread #318. The fragment appears to be related to network conditions, service health metrics, and bug-fix deployments, but"
+    },
+    {
+      "window_idx": 6,
+      "start": 1200,
+      "end": 1700,
+      "fragment_preview": "escription': 'Effect of recent bug\u2011fix deployments on overall service health metrics', 'magnitude': ",
+      "iter1_score": 0.6041,
+      "iter2_score": 0.6577,
+      "delta": 0.0535,
+      "iter1_answer": "The fragment doesn't contain relevant information about the current state of thread #318.",
+      "iter2_answer": "The CCS fragment still doesn't contain relevant information about the current state of thread #318. The provided information focuses on the effect of recent bug-fix deployments, observing specific log"
+    },
+    {
+      "window_idx": 7,
+      "start": 1400,
+      "end": 1900,
+      "fragment_preview": "y for 30\\u202fmin; verify no new error spikes.'}\n\nCurrent focus: Finalize a content\u2011ordered, specifi",
+      "iter1_score": 0.6041,
+      "iter2_score": 0.6317,
+      "delta": 0.0276,
+      "iter1_answer": "The fragment doesn't contain relevant information about the current state of thread #318.",
+      "iter2_answer": "The CCS fragment does not provide any information about the current state of thread #318, and there is no new information that would change or refine the prior answer. The current focus and goals ment"
+    },
+    {
+      "window_idx": 8,
+      "start": 1600,
+      "end": 2100,
+      "fragment_preview": "bug fixes, and continue the ghost\u2011service audit while preserving rotation safety.\n\nGoal: Maintain ro",
+      "iter1_score": 0.6041,
+      "iter2_score": 0.6308,
+      "delta": 0.0267,
+      "iter1_answer": "The fragment doesn't contain relevant information about the current state of thread #318.",
+      "iter2_answer": "The CCS fragment does not provide any information about the current state of thread #318, and there is no mention of it whatsoever. The goals and constraints outlined in the fragment pertain to mainta"
+    },
+    {
+      "window_idx": 9,
+      "start": 1800,
+      "end": 2300,
+      "fragment_preview": "CS for cross\u2011backend coherence, integrating XRPL APIs, completing the ghost\u2011service audit, and prese",
+      "iter1_score": 0.6041,
+      "iter2_score": 0.6537,
+      "delta": 0.0496,
+      "iter1_answer": "The fragment doesn't contain relevant information about the current state of thread #318.",
+      "iter2_answer": "The CCS fragment does not provide any information about the current state of thread #318. The fragment appears to be focused on system constraints, directives, and maintenance protocols, but it does n"
+    },
+    {
+      "window_idx": 10,
+      "start": 2000,
+      "end": 2500,
+      "fragment_preview": "r safety; Support contemplative development over pure optimization; Maintain sovereign infrastructur",
+      "iter1_score": 0.6041,
+      "iter2_score": 0.6776,
+      "delta": 0.0735,
+      "iter1_answer": "The fragment doesn't contain relevant information about the current state of thread #318.",
+      "iter2_answer": "The current state of thread #318 remains unknown, as the provided CCS fragment does not contain any relevant information about it. The fragment appears to focus on directives and protocols for AI syst"
+    },
+    {
+      "window_idx": 11,
+      "start": 2200,
+      "end": 2680,
+      "fragment_preview": " redeploy untested changes without prior metric observation; Do not breach rotation safety protocols",
+      "iter1_score": 0.6041,
+      "iter2_score": 0.6498,
+      "delta": 0.0457,
+      "iter1_answer": "The fragment doesn't contain relevant information about the current state of thread #318.",
+      "iter2_answer": "The CCS fragment does not provide any information about the current state of thread #318. The commands listed appear to be related to generating a new CCS, interacting with the XRP Ledger, and auditin"
+    },
+    {
+      "window_idx": 12,
+      "start": 2400,
+      "end": 2680,
+      "fragment_preview": "py --mode content_ordered --output artifacts/ccs_v2.json; xrpl_toolkit/api_call.sh --action list_acc",
+      "iter1_score": 0.5969,
+      "iter2_score": 0.6599,
+      "delta": 0.063,
+      "iter1_answer": "The fragment doesn't contain relevant information to determine the current state of thread #318.",
+      "iter2_answer": "The fragment doesn't contain relevant information to determine the current state of thread #318. The commands in the CCS fragment appear to be related to executing scripts, making API calls, and loggi"
+    },
+    {
+      "window_idx": 13,
+      "start": 2600,
+      "end": 2680,
+      "fragment_preview": "xt && tail -n 100 logs/cache_metrics.log && grep hit_rate logs/cache_metrics.log",
+      "iter1_score": 0.5587,
+      "iter2_score": 0.6246,
+      "delta": 0.0658,
+      "iter1_answer": "There is no information in the provided CCS fragment about the current state of thread #318.",
+      "iter2_answer": "There is still no information in the provided CCS fragment about the current state of thread #318. The CCS fragment appears to be related to logging and cache metrics, specifically checking the last 1"
+    }
+  ],
+  "summary": {
+    "mean_delta": 0.0536,
+    "max_delta": 0.1213,
+    "min_delta": 0.0078,
+    "positive_windows": 14,
+    "negative_windows": 0,
+    "top_5_indices": [
+      3,
+      1,
+      10,
+      13,
+      12
+    ]
+  }
+}

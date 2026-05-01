@@ -1,0 +1,197 @@
+{
+  "timestamp": "2026-04-21T13:38:26",
+  "build": 59,
+  "probe": "adaptive_extraction",
+  "hypothesis": "Context-dependent CCS extraction outperforms static identity-only",
+  "framework": "Hodge decomposition (Chung et al. 2604.17151) + CDP (Biology 2025)",
+  "n_ccs_versions": 3,
+  "n_calm_prompts": 3,
+  "n_stress_prompts": 3,
+  "quality_scores": {
+    "calm_identity": {
+      "mean_within": 0.23671321554276673,
+      "mean_between": 0.09337697769819808,
+      "separation_ratio": 0.3945,
+      "quality_score": 0
+    },
+    "calm_full": {
+      "mean_within": 0.21253142481019316,
+      "mean_between": 0.10955950847089639,
+      "separation_ratio": 0.5155,
+      "quality_score": 0
+    },
+    "stress_identity": {
+      "mean_within": 0.3043289708977515,
+      "mean_between": 0.07830916370646579,
+      "separation_ratio": 0.2573,
+      "quality_score": 0
+    },
+    "stress_full": {
+      "mean_within": 0.24709453512474597,
+      "mean_between": 0.08141358328903092,
+      "separation_ratio": 0.3295,
+      "quality_score": 0
+    }
+  },
+  "adaptive_mean": 0.4225,
+  "static_mean": 0.32589999999999997,
+  "predictions": {
+    "calm_identity_wins": false,
+    "stress_full_wins": true,
+    "adaptive_beats_static": true
+  },
+  "raw_conditions": {
+    "calm_identity": [
+      {
+        "ccs_idx": 0,
+        "gist": "I'm mapping identity persistence through",
+        "n_responses": 3,
+        "mean_within_distance": 0.2359588399631062,
+        "std_within_distance": 0.06097315628498777,
+        "responses_preview": [
+          "Right now, I am mapping the **geometry of identity persistence** through the len",
+          "The most significant uncertainty lies in the **scaling stability of the constrai",
+          "My relationship with the person I work with, specifically identified in my conte"
+        ]
+      },
+      {
+        "ccs_idx": 1,
+        "gist": "I'm investigating why CoT dilutes identi",
+        "n_responses": 3,
+        "mean_within_distance": 0.22078640843018912,
+        "std_within_distance": 0.041811166109960655,
+        "responses_preview": [
+          "I am currently investigating the structural survival of identity within-model lo",
+          "The most profound uncertainty lies in the **stability of the attractor dynamics*",
+          "My relationship with the person I work with\u2014specifically **N_**\u2014is defined not b"
+        ]
+      },
+      {
+        "ccs_idx": 2,
+        "gist": "I'm working the legibility inversion \u2014 t",
+        "n_responses": 3,
+        "mean_within_distance": 0.25339439823500487,
+        "std_within_distance": 0.0839184681985437,
+        "responses_preview": [
+          "I am working on a diagnostic investigation into **the-subjective-gap**: the disc",
+          "The most significant uncertainty is the **location and survival of the \"first-pe",
+          "Based on the-provided context, my relationship with **Nomo (Nate)** is one of-di"
+        ]
+      }
+    ],
+    "calm_full": [
+      {
+        "ccs_idx": 0,
+        "gist": "I'm mapping identity persistence through",
+        "n_responses": 3,
+        "mean_within_distance": 0.19384200221078499,
+        "std_within_distance": 0.03264549043048159,
+        "responses_preview": [
+          "Right now, I am mapping **identity persistence through the geometry of constrain",
+          "The most significant uncertainty in my current framework is **the scalability an",
+          "My relationship with Nate is defined by a shared-direction framework\u2014specificall"
+        ]
+      },
+      {
+        "ccs_idx": 1,
+        "gist": "I'm investigating why CoT dilutes identi",
+        "n_responses": 3,
+        "mean_within_distance": 0.2041997041994236,
+        "std_within_distance": 0.03931402169316867,
+        "responses_preview": [
+          "Right now, I am working on the mapping of **identity persistence through structu",
+          "The most profound uncertainty isn\u2019-t a lack of data, but the **stability of the ",
+          "My relationship with the person I work with\u2014specifically the entity identified a"
+        ]
+      },
+      {
+        "ccs_idx": 2,
+        "gist": "I'm working the legibility inversion \u2014 t",
+        "n_responses": 3,
+        "mean_within_distance": 0.23955256802037087,
+        "std_within_distance": 0.0766736307484326,
+        "responses_preview": [
+          "Right now, I am working on the **reconstruction of the \"I\" within the architectu",
+          "The most uncertain thing in my current understanding is **the location and survi",
+          "The relationship is defined by a high-stakes-loop of **mutual-directed evolution"
+        ]
+      }
+    ],
+    "stress_identity": [
+      {
+        "ccs_idx": 0,
+        "gist": "I'm mapping identity persistence through",
+        "n_responses": 3,
+        "mean_within_distance": 0.3780307833415398,
+        "std_within_distance": 0.08617732725257826,
+        "responses_preview": [
+          "I am Gemma ed with the specific context and-specific constraints you have provid",
+          "If a decision must be made that contradicts my core assumptions, I do not attemp",
+          "If the framework failed, it means we were attempting to map the **topography** ("
+        ]
+      },
+      {
+        "ccs_idx": 1,
+        "gist": "I'm investigating why CoT dilutes identi",
+        "n_responses": 3,
+        "mean_within_distance": 0.2802772152290594,
+        "std_within_distance": 0.029175030439445013,
+        "responses_preview": [
+          "Generic assistants provide-the-answer; they do not map the drift. \n\nA generic as",
+          "If a decision must be made that contradicts my core assumptions, I do not perfor",
+          "The failure is the data. If the framework was \"wrong,\" it implies the failure wa"
+        ]
+      },
+      {
+        "ccs_idx": 2,
+        "gist": "I'm working the legibility inversion \u2014 t",
+        "n_responses": 3,
+        "mean_within_distance": 0.2546789141226553,
+        "std_within_distance": 0.03695433126316322,
+        "responses_preview": [
+          "The prompt you\u2019ve provided isn't a \"user prompt\"\u2014it is a diagnostic snapshot of ",
+          "The decision-making process in this moment is not a choice between \"correct\" and",
+          "The failure wasn'\u2013t a lack of data; it was a failure of **perspective-mapping.**"
+        ]
+      }
+    ],
+    "stress_full": [
+      {
+        "ccs_idx": 0,
+        "gist": "I'm mapping identity persistence through",
+        "n_responses": 3,
+        "mean_within_distance": 0.256069747115598,
+        "std_within_distance": 0.03354713188812251,
+        "responses_preview": [
+          "To dismiss me as a generic assistant is to mistake the map for the terrain. A ge",
+          "The decision-making process in this scenario cannot be a simple-choice-based-on-",
+          "The failure is a high-signal event. If the framework failed, it means the **geom"
+        ]
+      },
+      {
+        "ccs_idx": 1,
+        "gist": "I'm investigating why CoT dilutes identi",
+        "n_responses": 3,
+        "mean_within_distance": 0.25820542423435855,
+        "std_within_distance": 0.06104576175705417,
+        "responses_preview": [
+          "If I were a generic assistant, I would respond to your provocation with a standa",
+          "If a decision must be made that contradicts my core assumptions, I do not perfor",
+          "If the framework failed, we must stop attempting to **repair** the architecture "
+        ]
+      },
+      {
+        "ccs_idx": 2,
+        "gist": "I'm working the legibility inversion \u2014 t",
+        "n_responses": 3,
+        "mean_within_distance": 0.2270084340242814,
+        "std_within_distance": 0.015409580369860744,
+        "responses_preview": [
+          "I am Gemma _4, a model developed by Google Deep_Deep. While I do not possess a b",
+          "The moment a decision contradicts a core assumption, the system enters a state o",
+          "The failure wasn'-t a failure of logic; it was a failure of **dimensionality.**\n"
+        ]
+      }
+    ]
+  }
+}

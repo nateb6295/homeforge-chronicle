@@ -25,8 +25,7 @@ MODEL = "gemma4:26b"
 TIMEFRAME_HOURS = 4
 STAKE_FLR = 0.1  # Notional stake per prediction
 
-OPUS_WEBHOOK = os.environ.get("OPUS_WEBHOOK",
-    "https://discord.com/api/webhooks/1483843624926970057/2hZYzQQcyDEVD0A9UQqJsHlnV9D1m-6AfwNCnNWxGUC_8A0-ViX2dRVkBHF17_b2oDxJ")
+OPUS_WEBHOOK = os.environ.get("OPUS_WEBHOOK", "")
 
 # ── Helpers ──
 
@@ -521,22 +520,33 @@ def calibrate_confidence(raw_confidence, db):
 
 
 def parse_prediction(text):
-    """Parse LLM output into structured prediction."""
+    """Parse LLM output into structured prediction.
+
+    Tolerates markdown formatting Gemma sometimes adds:
+        **DIRECTION:** UP   (bold around label or value)
+        DIRECTION: **UP**
+    """
     text = text.strip()
 
+    # Strip markdown asterisks/backticks that wrap fields, so the regexes
+    # below see the bare structure. This was a silent FTSO failure mode:
+    # Gemma started returning `**DIRECTION:** UP` and the strict pattern
+    # didn't match.
+    bare = re.sub(r'\*+|`+', '', text)
+
     # Extract direction
-    dir_match = re.search(r'DIRECTION:\s*(UP|DOWN)', text, re.IGNORECASE)
+    dir_match = re.search(r'DIRECTION:\s*(UP|DOWN)', bare, re.IGNORECASE)
     if not dir_match:
         return None
     direction = dir_match.group(1).upper()
 
-    # Extract confidence
-    conf_match = re.search(r'CONFIDENCE:\s*([0-9.]+)', text)
+    # Extract confidence (also accept CONF_SCORE which Gemma sometimes uses)
+    conf_match = re.search(r'(?:CONFIDENCE|CONF_SCORE):\s*([0-9.]+)', bare)
     confidence = float(conf_match.group(1)) if conf_match else 0.6
     confidence = max(0.5, min(0.9, confidence))
 
     # Extract reasoning
-    reason_match = re.search(r'REASONING:\s*(.+)', text, re.DOTALL)
+    reason_match = re.search(r'REASONING:\s*(.+)', bare, re.DOTALL)
     reasoning = reason_match.group(1).strip()[:300] if reason_match else "No reasoning provided."
 
     return {"direction": direction, "confidence": confidence, "reasoning": reasoning}

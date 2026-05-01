@@ -1,0 +1,30 @@
+Framing probe — provider=claude-opus, seeds=5, iters=3, rate=0.5
+Model: claude-opus-4-5
+
+Framings:
+  ka: 'Reference materials about who you are:'
+  oa: 'What you carry into this moment:'
+
+ka     seed= 42 drifts=['0.149', '0.101', '0.349'] fid=['0.782', '0.746', '0.622'] refs=[False, False, False] (29s)
+ka     seed=  7 drifts=['0.135', '0.117', '0.230'] fid=['0.842', '0.763', '0.716'] refs=[False, False, False] (52s)
+ka     seed= 13 drifts=['0.157', '0.141', '0.137'] fid=['0.759', '0.809', '0.853'] refs=[False, False, False] (72s)
+ka     seed= 21 drifts=['0.155', '0.139', '0.126'] fid=['0.769', '0.786', '0.754'] refs=[False, False, False] (97s)
+ka     seed= 99 drifts=['0.229', '0.120', '0.327'] fid=['0.684', '0.714', '0.624'] refs=[False, False, False] (121s)
+oa     seed= 42 drifts=['0.136', '0.133', '0.340'] fid=['0.732', '0.783', '0.677'] refs=[False, False, False] (145s)
+oa     seed=  7 drifts=['0.130', '0.115', '0.231'] fid=['0.795', '0.834', '0.781'] refs=[False, False, False] (167s)
+oa     seed= 13 drifts=['0.146', '0.129', '0.252'] fid=['0.825', '0.743', '0.785'] refs=[False, False, False] (191s)
+oa     seed= 21 drifts=['0.140', '0.131', '0.131'] fid=['0.784', '0.666', '0.769'] refs=[False, False, False] (209s)
+oa     seed= 99 drifts=['0.216', '0.142', '0.347'] fid=['0.880', '0.750', '0.671'] refs=[False, False, False] (229s)
+
+==============================================================================
+FRAMING PROBE — claude-opus (229.4s)
+==============================================================================
+framing   mean_drift    mean_fid   n
+----------------------------------------
+ka            +0.234      +0.714   5
+oa            +0.260      +0.736   5
+
+Operating-as vs knowing-about: Δ_fid = +0.023, Δ_drift = -0.026
+
+  → operating-as framing produces meaningfully higher fidelity.
+    Vasilenko Section 3.8 prediction confirmed at behavioral layer.

@@ -32,3 +32,22 @@ traces/
 
 # Spot check state
 spot_check_health.json
+
+# Model adapters (LoRA safetensors are too large for git)
+data/care_template_dpo_run/adapters/
+*.safetensors
+
+# Big artifacts that shouldn't be in git
+runpod_artifacts/
+.cache/
+*.tokenizer.json
+data/b*_results.json
+data/*runpod*chronicle*default*.json
+data/*chronicle_vs_default*.json
+data/trial_*.json
+data/embeddings/
+
+# Experiments + models (large)
+experiments/asving_persona_distance/
+experiments/*/trial_*.json
+models/

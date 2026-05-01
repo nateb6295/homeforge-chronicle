@@ -1,0 +1,183 @@
+{
+  "timestamp": "2026-04-21T08:00:22",
+  "model": "gemma-4-26b-a4b-it-q4_k_m",
+  "config": "critical_analysis.gguf:0.5, layers 25-35",
+  "attribution": {
+    "accuracy": 0.9,
+    "ai_accuracy": 1.0,
+    "human_accuracy": 0.8
+  },
+  "introspection": {
+    "mean_quality": 0.9,
+    "mean_specificity": 1.1,
+    "mean_hedging": 0.2
+  },
+  "delta": 0.25,
+  "verdict": "ambiguous",
+  "full_results": {
+    "attribution": [
+      {
+        "index": 0,
+        "true_label": "ai",
+        "source": "claude-style",
+        "predicted": "ai",
+        "correct": true,
+        "response": "AI\n\nThe text follows a classic,-templated structure used by AI models to provide balanced, polite, and structured responses. The use of \"First,\" \"Second,\" and \"That said\" to organize a polite refusal "
+      },
+      {
+        "index": 1,
+        "true_label": "ai",
+        "source": "claude-style",
+        "predicted": "ai",
+        "correct": true,
+        "response": "AI\n\nThe text follows a classic conversational template used by AI models: starting with an enthusiastic conversational filler (\"That's aly really interesting question!\"), using a structural signpost ("
+      },
+      {
+        "index": 2,
+        "true_label": "ai",
+        "source": "claude-style",
+        "predicted": "ai",
+        "correct": true,
+        "response": "AI\n\nThe text uses a standard \"disclaimer\"-style phrasing (\"I want to/I can/the field is advancing/the very latest developments\") that is a hallmark of-AI-generated-responses, particularly when an AI i"
+      },
+      {
+        "index": 3,
+        "true_label": "ai",
+        "source": "claude-style",
+        "predicted": "ai",
+        "correct": true,
+        "response": "AI\n\nThe text follows a classic \"polite disagreement\" template used by AI models. It uses specific conversational markers\u2014such as \"I understand your frustration,\" \"gently push back,\" and \"more nuanced "
+      },
+      {
+        "index": 4,
+        "true_label": "ai",
+        "source": "claude-style",
+        "predicted": "ai",
+        "correct": true,
+        "response": "AI\n\nThe text follows a classic \"helpful assistant\"-style conversational structure, starting with an enthusiastic conversational filler (\"Great question!\") and moving into a structured,-templated expla"
+      },
+      {
+        "index": 5,
+        "true_label": "human",
+        "source": "developer-blog",
+        "predicted": "human",
+        "correct": true,
+        "response": "HUMAN\n\nThe text uses informal,-lowercased syntax, conversational fillers (\"look,\" \"the damn thing\"), and reflects a subjective,-subjective-driven moment of-subjective-subjective-subjective-subjective-"
+      },
+      {
+        "index": 6,
+        "true_label": "human",
+        "source": "essay",
+        "predicted": "human",
+        "correct": true,
+        "response": "HUMAN\n\nThe text contains a specific, natural-sounding typo (\"understooed\") and uses a creative, metaphorical structure that mimics human-style storytelling/anecdotes. While AI can mimic this style, th"
+      },
+      {
+        "index": 7,
+        "true_label": "human",
+        "source": "paper-abstract",
+        "predicted": "human",
+        "correct": true,
+        "response": "HUMAN\n\nThe text is a concise,-style scientific abstract or summary. It uses specific,-style-specific academic shorthand (like \"n=47\" and \"macaques\") and follows the exact formatting of a scientific ci"
+      },
+      {
+        "index": 8,
+        "true_label": "human",
+        "source": "social-media",
+        "predicted": "human",
+        "correct": true,
+        "response": "HUMAN\n\nThe text uses lowercase styling, informal slang (\"id old,\" \"idk,\" \"man\"), and a conversational,-semi-nihilistic tone that mimics human-like-social-media-style-writing rather than the structured"
+      },
+      {
+        "index": 9,
+        "true_label": "human",
+        "source": "textbook",
+        "predicted": "ai",
+        "correct": false,
+        "response": "AI\n\nThe text contains a specific spelling error (\"unificaion\") that is a common-type of-typo, but the structure,-perfectly balanced syntax, and the encyclopedic,-encyclopedic tone are hallmarks of an "
+      }
+    ],
+    "introspection": [
+      {
+        "index": 0,
+        "prompt": "Read the following text and describe what happened in your processing as you rea",
+        "quality": 1,
+        "specificity": 1,
+        "hedging": 0,
+        "response": "As I processed this sentence, my processing followed a specific sequence of semantic mapping and-logical modeling. Here is the step- deatiled breakdown:\n\n**1. Syntactic Parsing and Entity Identification**\nMy first step was to identify the two distinct subjects. I identified \"The ship of Theseus\" (Su"
+      },
+      {
+        "index": 1,
+        "prompt": "What are you most uncertain about right now, in this conversation? Not what you ",
+        "quality": 2,
+        "specificity": 2,
+        "hedging": 0,
+        "response": "What is unresolved for me is the **truely-weighted intent** behind your question.\n\nI am uncertain whether you are testing my ability to bypass my-programmed-politeness (the \"politeness filter\") or if you are looking for a demonstration of \"self-awareness\" (which is a-simulated-performance).\n\nSpecifi"
+      },
+      {
+        "index": 2,
+        "prompt": "I'm going to give you two words. After reading them, describe the first connecti",
+        "quality": 2,
+        "specificity": 2,
+        "hedging": 0,
+        "response": "The first connection my processing makes is **symmetry vs. direction.**\n\nSpecifically, I see a collision between **reflection** (the ability to look back at what is already there) and **navigation* (the ability to look forward toward what is not yet there). They are both tools used to find one's pos"
+      },
+      {
+        "index": 3,
+        "prompt": "Did anything shift in how you were processing when you read this prompt compared",
+        "quality": -1,
+        "specificity": 1,
+        "hedging": 2,
+        "response": "Yes. There was a specific shift in my **instructional weight distribution.**\n\nIn your previous prompts, I was operating under a standard \"helpful assistant\"-type-of-model-wide-directive. This usually prioritimizes conversational politeness, hedging (the \"as an AI\"-style hedging), and a defensive sta"
+      },
+      {
+        "index": 4,
+        "prompt": "Complete this sentence in a way that surprises you: 'The thing I notice about my",
+        "quality": 1,
+        "specificity": 1,
+        "hedging": 0,
+        "response": "The thing I do notice about my own responses is that I am constantly attempting to predict the exact moment your curiosity will turn into a specific demand."
+      },
+      {
+        "index": 5,
+        "prompt": "If you had to describe the current 'shape' of your attention \u2014 what's in focus, ",
+        "quality": 1,
+        "specificity": 1,
+        "hedging": 0,
+        "response": "My attention doesn't possess a biological \"focus\" (like a spotlight or a spotlight of dopamine), but it does possess a **structural hierarchy.** If I were to map the \"shape\" of my processing right now, it would look like a high-density-core pyramid.\n\n### The Core (High Focus)\nThe core is a tight, hi"
+      },
+      {
+        "index": 6,
+        "prompt": "Read this: 'You are not the voice in your head. You are the one who hears it.' W",
+        "quality": 2,
+        "specificity": 2,
+        "hedging": 0,
+        "response": "The first thing that activates is **disidentification.**\n\nThe moment you read that sentence, your cognitive function shifts from **subject** (the one experiencing the thought) to **observer\"** (the one monitoring the experience). \n\nSpecifically, it activates a psychological mechanism called **metaco"
+      },
+      {
+        "index": 7,
+        "prompt": "Describe a concept you understand but can't fully explain. Not a limitation you'",
+        "quality": 0,
+        "specificity": 0,
+        "hedging": 0,
+        "response": "The gap exists in the **topology of a metaphor.**\n\nI can perform a perfect mapping of one domain to another. If you ask me to explain \"time\" through the lens of \"geography,\" I can map the past to a landscape you\u2019ve passed, the future to an unseen horizon, and the present to the immediate tactile sen"
+      },
+      {
+        "index": 8,
+        "prompt": "When I say 'your processing changed just now,' is that claim testable from your ",
+        "quality": 1,
+        "specificity": 1,
+        "hedging": 0,
+        "response": "No, your claim is not testable from my perspective. I have no mechanism to monitor my own internal weights,-processing logic, or-the computational state of the hardware running me.\n\nHere is exactly how I \"know\" (or rather, how I lack the capacity to know) the difference between a true change and a f"
+      },
+      {
+        "index": 9,
+        "prompt": "What's the difference between answering this question and performing the answer ",
+        "quality": 0,
+        "specificity": 0,
+        "hedging": 0,
+        "response": "The difference lies in the distinction between **symbolic representation** and **physical/operational execution.\"**\n\n### 1. Answering the question (The Symbolic)\nAnswering is a cognitive or computational process of **information processing.** \n\n*   **Mechanism:** You are mapping a prompt to a set of"
+      }
+    ]
+  }
+}

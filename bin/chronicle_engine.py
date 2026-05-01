@@ -47,10 +47,15 @@ GPU_LAYERS = 99
 # Cloud inference (Groq) — routes 32B calls off-device for speed
 GROQ_API_KEY = os.environ.get("GROQ_API_KEY", "")
 GROQ_BASE_URL = "https://api.groq.com/openai/v1"
-GROQ_MODEL = "qwen/qwen3-32b"  # Groq's model ID for Qwen3 32B
+GROQ_MODEL = "llama-3.3-70b-versatile"  # P26: Llama 70B rewrites less aggressively than Qwen 32B (6-10% less identity damage)
 GROQ_MODEL_ALT = "openai/gpt-oss-120b"  # OpenAI OSS 120B — different family from Qwen and Llama
 
-# Cloud inference (Cerebras) — Darby upgrade to Qwen3-235B
+# Cloud inference (DeepInfra) — Darby primary, Qwen3-235B
+DEEPINFRA_API_KEY = os.environ.get("DEEPINFRA_API_KEY", "")
+DEEPINFRA_BASE_URL = "https://api.deepinfra.com/v1/openai"
+DEEPINFRA_MODEL = "Qwen/Qwen3-235B-A22B"  # Qwen3 235B MoE via DeepInfra ($0.18/$0.54 per M tokens)
+
+# Cloud inference (Cerebras) — Darby fallback
 CEREBRAS_API_KEY = os.environ.get("CEREBRAS_API_KEY", "")
 CEREBRAS_BASE_URL = "https://api.cerebras.ai/v1"
 CEREBRAS_MODEL = "qwen-3-235b-a22b-instruct-2507"  # Qwen3 235B MoE via Cerebras wafer-scale
@@ -91,10 +96,12 @@ MODEL_ROUTES = {
     # Gemma (Gemma 4 26B local) — gate, routing, classification
     "chronicle-gemma": ("gemma", None),
     "gemma4:26b": ("gemma", None),
-    # Darby (Qwen3 235B via Cerebras) — intern, deep reasoning
-    "chronicle-deep": ("cerebras" if CEREBRAS_API_KEY else "groq" if GROQ_API_KEY else "chat32b", None),
-    "chronicle-mind": ("cerebras" if CEREBRAS_API_KEY else "groq" if GROQ_API_KEY else "chat32b", None),
-    "qwen3:32b": ("cerebras" if CEREBRAS_API_KEY else "groq" if GROQ_API_KEY else "chat32b", None),
+    # Darby (Qwen3 235B via DeepInfra primary, Cerebras fallback) — intern, deep reasoning
+    "chronicle-deep": ("deepinfra" if DEEPINFRA_API_KEY else "cerebras" if CEREBRAS_API_KEY else "groq" if GROQ_API_KEY else "chat32b", None),
+    "chronicle-mind": ("deepinfra" if DEEPINFRA_API_KEY else "cerebras" if CEREBRAS_API_KEY else "groq" if GROQ_API_KEY else "chat32b", None),
+    # CCS compression — Groq primary for speed+reliability (DeepInfra 429s/timeouts block rotation)
+    "chronicle-compress": ("groq" if GROQ_API_KEY else "cerebras" if CEREBRAS_API_KEY else "deepinfra" if DEEPINFRA_API_KEY else "chat32b", None),
+    "qwen3:32b": ("deepinfra" if DEEPINFRA_API_KEY else "cerebras" if CEREBRAS_API_KEY else "groq" if GROQ_API_KEY else "chat32b", None),
 }
 
 logging.basicConfig(
@@ -371,8 +378,34 @@ async def _call_groq(messages: List[Dict], options: Dict, model_override: str = 
             return await resp.json()
 
 
+async def _call_deepinfra(messages: List[Dict], options: Dict) -> Dict:
+    """Call DeepInfra cloud API for Qwen3-235B inference."""
+    payload = {
+        "model": DEEPINFRA_MODEL,
+        "messages": messages,
+        "stream": False,
+        "max_tokens": options.get("num_predict", 4096),
+        "temperature": options.get("temperature", 0.6),
+    }
+    headers = {
+        "Authorization": f"Bearer {DEEPINFRA_API_KEY}",
+        "Content-Type": "application/json",
+    }
+    timeout_s = options.get("timeout", 120)
+    async with ClientSession(timeout=ClientTimeout(total=timeout_s)) as session:
+        async with session.post(
+            f"{DEEPINFRA_BASE_URL}/chat/completions",
+            json=payload,
+            headers=headers,
+        ) as resp:
+            if resp.status != 200:
+                error_body = await resp.text()
+                raise Exception(f"DeepInfra {resp.status}: {error_body}")
+            return await resp.json()
+
+
 async def _call_cerebras(messages: List[Dict], options: Dict) -> Dict:
-    """Call Cerebras cloud API for 235B inference."""
+    """Call Cerebras cloud API for 235B inference (fallback)."""
     payload = {
         "model": CEREBRAS_MODEL,
         "messages": messages,
@@ -412,7 +445,9 @@ async def handle_chat(request: web.Request) -> web.Response:
 
     t0 = time.time()
     try:
-        if server_key == "cerebras":
+        if server_key == "deepinfra":
+            data = await _call_deepinfra(messages, options)
+        elif server_key == "cerebras":
             data = await _call_cerebras(messages, options)
         elif server_key in ("groq", "groq_alt"):
             data = await _call_groq(messages, options, GROQ_MODEL_ALT if server_key == "groq_alt" else None)
@@ -451,7 +486,7 @@ async def handle_chat(request: web.Request) -> web.Response:
     thinking = None
     if "choices" in data and data["choices"]:
         content = data["choices"][0].get("message", {}).get("content", "")
-        if server_key in ("chat32b", "groq", "groq_alt", "cerebras"):
+        if server_key in ("chat32b", "groq", "groq_alt", "cerebras", "deepinfra"):
             content, thinking = parse_think_tokens(content)
 
     result = {
@@ -482,7 +517,9 @@ async def handle_generate(request: web.Request) -> web.Response:
 
     t0 = time.time()
     try:
-        if server_key == "cerebras":
+        if server_key == "deepinfra":
+            data = await _call_deepinfra(messages, options)
+        elif server_key == "cerebras":
             data = await _call_cerebras(messages, options)
         elif server_key in ("groq", "groq_alt"):
             data = await _call_groq(messages, options, GROQ_MODEL_ALT if server_key == "groq_alt" else None)
@@ -519,7 +556,7 @@ async def handle_generate(request: web.Request) -> web.Response:
     thinking = None
     if "choices" in data and data["choices"]:
         content = data["choices"][0].get("message", {}).get("content", "")
-        if server_key in ("chat32b", "groq", "groq_alt", "cerebras"):
+        if server_key in ("chat32b", "groq", "groq_alt", "cerebras", "deepinfra"):
             content, thinking = parse_think_tokens(content)
 
     return web.json_response({
@@ -557,13 +594,19 @@ async def handle_status(request: web.Request) -> web.Response:
         "requests": dict(request_counts),
         "uptime_s": int(time.time() - started_at),
     }
+    if DEEPINFRA_API_KEY:
+        status["deepinfra"] = {
+            "status": "enabled (primary)",
+            "model": DEEPINFRA_MODEL,
+            "routes": ["chronicle-deep", "chronicle-mind", "qwen3:32b"],
+        }
     if CEREBRAS_API_KEY:
         status["cerebras"] = {
-            "status": "enabled",
+            "status": "enabled (fallback)" if DEEPINFRA_API_KEY else "enabled",
             "model": CEREBRAS_MODEL,
-            "routes": ["chronicle-deep", "qwen3:32b"],
+            "routes": ["chronicle-deep", "qwen3:32b"] if not DEEPINFRA_API_KEY else ["fallback"],
         }
-    elif GROQ_API_KEY:
+    elif not DEEPINFRA_API_KEY and GROQ_API_KEY:
         status["groq"] = {
             "status": "enabled",
             "model": GROQ_MODEL,

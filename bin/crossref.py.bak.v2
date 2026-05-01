@@ -1,0 +1,716 @@
+#!/usr/bin/env python3
+"""Cross-Reference Agent — Connection finder for Homeforge.
+
+Runs periodically, finds unexpected connections between recent research
+briefs, capsules, and KG entities. Produces connection notes that Opus
+can act on during cycles.
+
+The insight: Intern researches papers individually. Crossref finds the
+*threads between them* — the paper on Hopfield networks and the paper
+on federated learning might both touch memory consolidation. A human
+or Opus might never read both briefs, but Crossref catches the overlap.
+
+v2 (Mar 13 2026): Compare original capsule content from seed_observations
+instead of intern briefs. Intern briefs are 6-bullet summaries (~500 chars)
+that flatten signal. Capsule content is the raw article text — richer
+for both embedding similarity and LLM connection-finding.
+
+Runs on AGX (192.168.1.70). Wakes every 30 minutes.
+"""
+
+import os, sys, time, json, math, signal, sqlite3, struct, re
+from datetime import datetime
+from typing import Optional, List, Tuple
+from collections import defaultdict
+
+import requests
+
+# ═══════════════════════════════════════════════════════════════════
+#  Configuration
+# ═══════════════════════════════════════════════════════════════════
+
+DB_PATH = os.environ.get(
+    "CHRONICLE_DB",
+    os.path.expanduser("~/.homeforge-chronicle/processed.db"),
+)
+OLLAMA_URL = os.environ.get("CHRONICLE_OLLAMA_URL", "http://localhost:11434")
+EMBED_MODEL = "qwen3-embedding:0.6b"
+SYNTH_MODEL = os.environ.get("CROSSREF_MODEL", "hermes3-mind")
+CYCLE_INTERVAL = int(os.environ.get("CROSSREF_INTERVAL", "1800"))  # 30 min
+LOOKBACK_HOURS = int(os.environ.get("CROSSREF_LOOKBACK", "24"))  # hours to look back
+MIN_SIMILARITY = float(os.environ.get("CROSSREF_MIN_SIM", "0.55"))  # minimum cosine sim for a connection
+MAX_SIMILARITY = float(os.environ.get("CROSSREF_MAX_SIM", "0.80"))  # above this is near-duplicate, not cross-domain
+MAX_CONNECTIONS_PER_CYCLE = 5  # don't flood scratch_pad
+
+# Capsule content patterns to exclude from crossref comparison
+CAPSULE_SKIP_PATTERNS = [
+    "Chronicle observes",       # heartbeat pattern metabolism summaries
+    "Sentinel:",                # sentinel status capsules
+    "sentinel:",
+    "Memory consolidation",     # consolidation capsules
+    "Feed pipeline",            # system config change logs
+    "**Reflection:**",          # keeper reflection capsules
+    "The cohesive memory",      # keeper landscape summaries
+    "The growth in knowledge",  # keeper growth observations
+    "memory landscape reflects",# keeper landscape summaries (variant)
+    "capsules and embeddings",  # keeper stats capsules
+]
+
+# ═══════════════════════════════════════════════════════════════════
+#  Helpers
+# ═══════════════════════════════════════════════════════════════════
+
+def now_ts() -> int:
+    return int(time.time())
+
+def now_iso() -> str:
+    return datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+def log(msg: str):
+    print(f"[{now_iso()}] {msg}", flush=True)
+
+def safe_truncate(s: str, n: int) -> str:
+    return s if len(s) <= n else s[:n] + "..."
+
+# ═══════════════════════════════════════════════════════════════════
+#  Database
+# ═══════════════════════════════════════════════════════════════════
+
+class DB:
+    def __init__(self, path: str):
+        self.conn = sqlite3.connect(path)
+        self.conn.row_factory = sqlite3.Row
+        self._migrate()
+
+    def _migrate(self):
+        self.conn.executescript("""
+            CREATE TABLE IF NOT EXISTS crossref_connections (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                brief_a_id INTEGER NOT NULL,
+                brief_b_id INTEGER NOT NULL,
+                similarity REAL NOT NULL,
+                connection_text TEXT,
+                surfaced INTEGER DEFAULT 0,
+                created_at INTEGER NOT NULL,
+                UNIQUE(brief_a_id, brief_b_id)
+            );
+            CREATE TABLE IF NOT EXISTS intern_state (
+                key TEXT PRIMARY KEY,
+                value TEXT NOT NULL
+            );
+        """)
+        self.conn.commit()
+
+    def query(self, sql: str, params: tuple = ()) -> list:
+        try:
+            cur = self.conn.cursor()
+            cur.execute(sql, params)
+            return [dict(row) for row in cur.fetchall()]
+        except Exception as e:
+            log(f"  DB query error: {e}")
+            return []
+
+    def query_one(self, sql: str, params: tuple = ()) -> Optional[dict]:
+        rows = self.query(sql, params)
+        return rows[0] if rows else None
+
+    def run(self, sql: str, params: tuple = ()) -> int:
+        try:
+            cur = self.conn.cursor()
+            cur.execute(sql, params)
+            self.conn.commit()
+            return cur.lastrowid
+        except Exception as e:
+            log(f"  DB write error: {e}")
+            return 0
+
+    def get_state(self, key: str, default: str = "0") -> str:
+        row = self.query_one("SELECT value FROM intern_state WHERE key = ?", (key,))
+        return row["value"] if row else default
+
+    def set_state(self, key: str, value: str):
+        self.run(
+            "INSERT OR REPLACE INTO intern_state (key, value) VALUES (?, ?)",
+            (key, value),
+        )
+
+    def log_activity(self, atype: str, title: str, content: str, metadata: str = None):
+        self.run(
+            "INSERT INTO activity_feed (source, activity_type, title, content, metadata, created_at) "
+            "VALUES (?, ?, ?, ?, ?, ?)",
+            ("crossref", atype, safe_truncate(title, 200), safe_truncate(content, 2000), metadata, now_ts()),
+        )
+
+    def close(self):
+        self.conn.close()
+
+
+# ═══════════════════════════════════════════════════════════════════
+#  Embedding
+# ═══════════════════════════════════════════════════════════════════
+
+def embed_text(text: str) -> Optional[List[float]]:
+    try:
+        r = requests.post(
+            f"{OLLAMA_URL}/api/embed",
+            json={"model": EMBED_MODEL, "input": [safe_truncate(text, 500)]},
+            timeout=15,
+        )
+        if r.status_code == 200:
+            embs = r.json().get("embeddings", [])
+            if embs:
+                return embs[0]
+    except Exception as e:
+        log(f"  Embed error: {e}")
+    return None
+
+
+def decode_embedding(blob: bytes) -> Optional[List[float]]:
+    """Decode a stored embedding blob (float32 array) to a list of floats."""
+    if not blob:
+        return None
+    try:
+        n_floats = len(blob) // 4
+        return list(struct.unpack(f'{n_floats}f', blob))
+    except Exception as e:
+        log(f"  Embedding decode error: {e}")
+        return None
+
+
+def cosine_sim(a: List[float], b: List[float]) -> float:
+    dot = sum(x * y for x, y in zip(a, b))
+    na = math.sqrt(sum(x * x for x in a))
+    nb = math.sqrt(sum(x * x for x in b))
+    if na == 0 or nb == 0:
+        return 0.0
+    return dot / (na * nb)
+
+
+# ═══════════════════════════════════════════════════════════════════
+#  Connection Finding
+# ═══════════════════════════════════════════════════════════════════
+
+def _extract_title(content: str) -> str:
+    """Extract a usable title from capsule content.
+
+    Capsule content looks like:
+      [capsule:9364] Your phone is an entire computerArticle URL: ...
+      [capsule:9351] What does it mean for culture to 'shape' cognition? ...
+
+    Strip the [capsule:N] prefix and take the first sentence/line as title.
+    """
+    # Strip [capsule:N] prefix
+    text = re.sub(r'^\[capsule:\d+\]\s*', '', content)
+    # Take first sentence or first 120 chars
+    # Split on common delimiters that end a title
+    for delim in ['Article URL:', 'Comments URL:', 'http', '\n']:
+        idx = text.find(delim)
+        if idx > 10:  # must have some title before delimiter
+            text = text[:idx]
+            break
+    return text.strip()[:150]
+
+
+def get_recent_capsules(db: DB) -> list:
+    """Get recent capsules from seed_observations with their stored embeddings.
+
+    Uses canister:capsule source which contains the original article/content
+    text — much richer than intern brief summaries for connection finding.
+    Reuses embeddings already computed by seed agent (qwen3-embedding:0.6b, 1024-dim).
+    """
+    cutoff = now_ts() - (LOOKBACK_HOURS * 3600)
+    rows = db.query(
+        "SELECT id, content, embedding, timestamp FROM seed_observations "
+        "WHERE source = 'canister:capsule' "
+        "AND embedding IS NOT NULL "
+        "AND timestamp > ? "
+        "ORDER BY id DESC LIMIT 80",
+        (cutoff,),
+    )
+
+    # Filter out non-article capsules (heartbeat, sentinel, etc.)
+    capsules = []
+    for r in rows:
+        content = r["content"]
+        skip = False
+        for pattern in CAPSULE_SKIP_PATTERNS:
+            if pattern in content:
+                skip = True
+                break
+        if skip:
+            continue
+
+        capsules.append({
+            "id": r["id"],
+            "title": _extract_title(content),
+            "content": content,
+            "created_at": r["timestamp"],
+            "embedding": r["embedding"],  # raw blob, decoded later
+        })
+
+    return capsules
+
+
+def get_existing_connections(db: DB) -> set:
+    """Get set of (a,b) pairs we've already found."""
+    rows = db.query("SELECT brief_a_id, brief_b_id FROM crossref_connections")
+    pairs = set()
+    for r in rows:
+        a, b = min(r["brief_a_id"], r["brief_b_id"]), max(r["brief_a_id"], r["brief_b_id"])
+        pairs.add((a, b))
+    return pairs
+
+
+def _count_capsule_connections(db: DB) -> dict:
+    """Count how many connections each capsule already participates in."""
+    rows = db.query(
+        "SELECT brief_a_id, brief_b_id FROM crossref_connections"
+    )
+    counts = defaultdict(int)
+    for r in rows:
+        counts[r["brief_a_id"]] += 1
+        counts[r["brief_b_id"]] += 1
+    return counts
+
+
+def _hub_penalty(count: int) -> float:
+    """Penalize capsules that already have many connections.
+
+    0 connections: no penalty (1.0)
+    1 connection:  mild (0.85)
+    2 connections: moderate (0.7)
+    3+:           heavy (0.5 and below)
+
+    This prevents any single capsule from dominating the connection graph.
+    """
+    if count == 0:
+        return 1.0
+    return max(0.3, 1.0 - count * 0.15)
+
+
+def find_connections(db: DB) -> list:
+    """Find pairs of capsules that are unexpectedly similar.
+
+    The key insight: we're looking for capsules from DIFFERENT topics
+    that have high embedding similarity. Two papers about the same
+    thing being similar is boring. A paper about ant locomotion
+    and a paper about distributed computing being similar — that's
+    a connection worth surfacing.
+
+    v2: Uses stored embeddings from seed_observations instead of
+    re-embedding. Compares original capsule content, not intern
+    brief summaries.
+
+    Hub detection: capsules that already have many connections get
+    penalized, preventing a single generically-worded capsule from
+    dominating the connection graph across cycles.
+    """
+    capsules = get_recent_capsules(db)
+    if len(capsules) < 2:
+        log("  Not enough recent capsules for crossref")
+        return []
+
+    existing = get_existing_connections(db)
+    hub_counts = _count_capsule_connections(db)
+    log(f"  Decoding embeddings for {len(capsules)} recent capsules...")
+
+    # Decode stored embeddings (no re-embedding needed)
+    embedded = []
+    decode_fails = 0
+    for c in capsules:
+        vec = decode_embedding(c["embedding"])
+        if vec:
+            embedded.append((c, vec))
+        else:
+            decode_fails += 1
+
+    if decode_fails > 0:
+        log(f"  {decode_fails} capsules had undecoded embeddings")
+
+    if len(embedded) < 2:
+        log("  Not enough embedded capsules")
+        return []
+
+    log(f"  {len(embedded)} capsules ready, comparing {len(embedded) * (len(embedded)-1) // 2} pairs...")
+
+    # Compare all pairs
+    connections = []
+    for i in range(len(embedded)):
+        for j in range(i + 1, len(embedded)):
+            c_a, vec_a = embedded[i]
+            c_b, vec_b = embedded[j]
+
+            # Skip if already found
+            pair_key = (min(c_a["id"], c_b["id"]), max(c_a["id"], c_b["id"]))
+            if pair_key in existing:
+                continue
+
+            sim = cosine_sim(vec_a, vec_b)
+            if sim >= MIN_SIMILARITY and sim <= MAX_SIMILARITY:
+                title_a = c_a["title"].lower()
+                title_b = c_b["title"].lower()
+
+                # Filter same-topic capsules: extract topic from content
+                # e.g. "(topic: feed/cointelegraph)" — two capsules from the
+                # same feed source connecting is less interesting
+                topic_pat_a = re.search(r'\(topic:\s*([^)]+)\)', c_a["content"])
+                topic_pat_b = re.search(r'\(topic:\s*([^)]+)\)', c_b["content"])
+                if topic_pat_a and topic_pat_b:
+                    t_a = topic_pat_a.group(1).strip()
+                    t_b = topic_pat_b.group(1).strip()
+                    if t_a == t_b:
+                        continue  # same feed source — skip
+
+                # Simple topic difference heuristic: split titles into words,
+                # check overlap. Low overlap + high similarity = interesting
+                words_a = set(re.findall(r'\w{4,}', title_a))
+                words_b = set(re.findall(r'\w{4,}', title_b))
+                if words_a and words_b:
+                    overlap = len(words_a & words_b) / min(len(words_a), len(words_b))
+                else:
+                    overlap = 0.0
+
+                # Interesting = high similarity but low word overlap
+                # This catches "different topics, similar concepts"
+                interest = sim * (1.0 - overlap * 0.5)
+
+                # Hub penalty: capsules with many existing connections get penalized
+                penalty_a = _hub_penalty(hub_counts.get(c_a["id"], 0))
+                penalty_b = _hub_penalty(hub_counts.get(c_b["id"], 0))
+                interest *= penalty_a * penalty_b
+
+                connections.append({
+                    "capsule_a": c_a,
+                    "capsule_b": c_b,
+                    "similarity": sim,
+                    "interest": interest,
+                    "word_overlap": overlap,
+                })
+
+    # Sort by interest score, take top N
+    connections.sort(key=lambda c: c["interest"], reverse=True)
+
+    # Intra-cycle diversity: limit each capsule to appearing in at most 2
+    # connections per cycle, so one capsule can't dominate a single cycle either
+    selected = []
+    cycle_counts = defaultdict(int)
+    for conn in connections:
+        aid = conn["capsule_a"]["id"]
+        bid = conn["capsule_b"]["id"]
+        if cycle_counts[aid] >= 2 or cycle_counts[bid] >= 2:
+            continue
+        selected.append(conn)
+        cycle_counts[aid] += 1
+        cycle_counts[bid] += 1
+        if len(selected) >= MAX_CONNECTIONS_PER_CYCLE:
+            break
+
+    return selected
+
+
+def _get_capsule_entities(db: DB, capsule_id: int) -> List[str]:
+    """Get KG entities extracted from a capsule, formatted as 'name (type)'.
+
+    Note: capsule_id here is a seed_observations.id, not a canister capsule ID.
+    KG mentions are keyed by activity_feed source_id, so this may return empty
+    for capsule-sourced entries. That's fine — entity context is bonus, not required.
+    """
+    rows = db.query(
+        "SELECT e.canonical_name, e.entity_type "
+        "FROM kg_mentions m JOIN kg_entities e ON m.entity_id = e.id "
+        "WHERE m.source_id = ? "
+        "ORDER BY e.entity_type, e.canonical_name",
+        (capsule_id,),
+    )
+    return [f"{r['canonical_name']} ({r['entity_type']})" for r in rows]
+
+
+def describe_connection(capsule_a: dict, capsule_b: dict, db: DB = None) -> Optional[str]:
+    """Ask the LLM to describe what connects two seemingly different capsules.
+
+    v2: Now receives original capsule content (article text) instead of
+    intern brief summaries. More content = better connection-finding.
+    """
+    # Build entity context if KG data available
+    entity_context = ""
+    if db:
+        ents_a = _get_capsule_entities(db, capsule_a["id"])
+        ents_b = _get_capsule_entities(db, capsule_b["id"])
+        if ents_a or ents_b:
+            parts = []
+            if ents_a:
+                parts.append(f"Article A entities: {', '.join(ents_a[:8])}")
+            if ents_b:
+                parts.append(f"Article B entities: {', '.join(ents_b[:8])}")
+            entity_context = "\n\n" + "\n".join(parts) + "\n"
+
+    # Use more content now that we have the original text (was 400 chars from brief)
+    content_a = safe_truncate(capsule_a['content'], 600)
+    content_b = safe_truncate(capsule_b['content'], 600)
+
+    try:
+        r = requests.post(
+            f"{OLLAMA_URL}/api/chat",
+            json={
+                "model": SYNTH_MODEL,
+                "messages": [
+                    {"role": "system", "content":
+                        "You are a research analyst finding cross-domain connections. "
+                        "You're given two articles from different areas that share "
+                        "embedding similarity. Your job is to find what's TRANSFERABLE "
+                        "between them — not just what's similar, but what technique, "
+                        "principle, or approach from one domain could be applied to the other.\n\n"
+                        "Rules:\n"
+                        "- Name the specific shared principle (not 'both use AI' or 'both involve data')\n"
+                        "- State what could transfer: 'Domain A's approach to X could solve Domain B's problem with Y'\n"
+                        "- 2-3 sentences maximum, prose not lists\n"
+                        "- If the connection is only superficial (shared buzzwords, both mention technology), say SKIP\n"
+                        "- Do NOT connect through the host system (Chronicle, Homeforge, memory metabolism, etc.) — those references are context framing, not the actual research content. Find the connection between the EXTERNAL domains described.\n"
+                        "- Genuinely surprising connections are worth more than obvious ones"},
+                    {"role": "user", "content":
+                        f"ARTICLE A:\n{capsule_a['title']}\n"
+                        f"{content_a}\n\n"
+                        f"ARTICLE B:\n{capsule_b['title']}\n"
+                        f"{content_b}\n\n"
+                        f"{entity_context}"
+                        f"What's the transferable connection?"},
+                ],
+                "stream": False,
+                "options": {"num_predict": 200, "temperature": 0.3},
+            },
+            timeout=60,
+        )
+        if r.status_code == 200:
+            text = r.json().get("message", {}).get("content", "").strip()
+            if text and "SKIP" not in text.upper():
+                # Post-hoc filter: reject connections that route through
+                # the host system. The model is told not to do this but
+                # ignores the instruction ~40% of the time.
+                HOST_LEAK_TERMS = [
+                    "chronicle", "homeforge", "memory metabolism",
+                    "capsule", "knowledge graph", "knowledge capsule",
+                    "pattern metabolism", "seed system",
+                ]
+                text_lower = text.lower()
+                if any(term in text_lower for term in HOST_LEAK_TERMS):
+                    log(f"  SKIP (host-system leak): {text[:80]}...")
+                    return None
+                return text
+    except Exception as e:
+        log(f"  Connection describe error: {e}")
+    return None
+
+
+# ═══════════════════════════════════════════════════════════════════
+#  KG Cluster Analysis
+# ═══════════════════════════════════════════════════════════════════
+
+def find_entity_clusters(db: DB) -> list:
+    """Find KG entities that co-occur across multiple briefs.
+
+    If 'transformer' and 'biological memory' both appear in 3+ different
+    briefs, that's a pattern worth noting.
+    """
+    cutoff = now_ts() - (LOOKBACK_HOURS * 3600)
+
+    # Get recent mentions grouped by source
+    rows = db.query(
+        "SELECT m.entity_id, e.canonical_name, e.entity_type, "
+        "m.source_id, m.timestamp "
+        "FROM kg_mentions m "
+        "JOIN kg_entities e ON m.entity_id = e.id "
+        "WHERE m.timestamp > ? "
+        "ORDER BY m.timestamp DESC",
+        (cutoff,),
+    )
+
+    if not rows:
+        return []
+
+    # Build co-occurrence matrix: which entities appear in the same source?
+    source_entities = defaultdict(set)  # source_id -> set of entity_ids
+    entity_names = {}  # entity_id -> name
+
+    for r in rows:
+        source_entities[r["source_id"]].add(r["entity_id"])
+        entity_names[r["entity_id"]] = (r["canonical_name"], r["entity_type"])
+
+    # Count co-occurrences
+    cooccur = defaultdict(int)  # (entity_a, entity_b) -> count
+    for source_id, entities in source_entities.items():
+        elist = sorted(entities)
+        for i in range(len(elist)):
+            for j in range(i + 1, len(elist)):
+                key = (elist[i], elist[j])
+                cooccur[key] += 1
+
+    # Filter to interesting co-occurrences (3+ shared sources, different types)
+    clusters = []
+    for (ea, eb), count in cooccur.items():
+        if count >= 3:
+            name_a, type_a = entity_names.get(ea, ("?", "?"))
+            name_b, type_b = entity_names.get(eb, ("?", "?"))
+            # Cross-type connections are more interesting
+            if type_a != type_b:
+                clusters.append({
+                    "entity_a": name_a,
+                    "type_a": type_a,
+                    "entity_b": name_b,
+                    "type_b": type_b,
+                    "count": count,
+                })
+
+    clusters.sort(key=lambda c: c["count"], reverse=True)
+    return clusters[:5]
+
+
+# ═══════════════════════════════════════════════════════════════════
+#  Main Cycle
+# ═══════════════════════════════════════════════════════════════════
+
+def cleanup_stale_notes(db: DB):
+    """Resolve scratch_pad notes older than 48h that haven't been manually resolved.
+
+    Crossref and research notes are also stored in crossref_connections and
+    activity_feed respectively, so scratch_pad entries are purely for surfacing.
+    Once they've been sitting unread for 48h, they're noise.
+    """
+    cutoff = now_ts() - (48 * 3600)
+    result = db.conn.execute(
+        "UPDATE scratch_pad SET resolved = 1, updated_at = ? "
+        "WHERE resolved = 0 AND category IN ('crossref', 'research') "
+        "AND created_at < ?",
+        (now_ts(), cutoff),
+    )
+    db.conn.commit()
+    cleaned = result.rowcount
+    if cleaned > 0:
+        log(f"  Cleaned {cleaned} stale scratch_pad notes (>48h)")
+
+
+def run_cycle(db: DB) -> int:
+    """Run one crossref cycle. Returns number of connections found."""
+    found = 0
+
+    # 0. Clean up stale scratch_pad notes
+    cleanup_stale_notes(db)
+
+    # 1. Find embedding-based connections between capsules
+    connections = find_connections(db)
+    for conn in connections:
+        capsule_a = conn["capsule_a"]
+        capsule_b = conn["capsule_b"]
+        sim = conn["similarity"]
+
+        log(f"  Connection (sim={sim:.3f}): "
+            f"{safe_truncate(capsule_a['title'], 50)} <-> "
+            f"{safe_truncate(capsule_b['title'], 50)}")
+
+        # Ask LLM to describe the connection (with KG entity context)
+        description = describe_connection(capsule_a, capsule_b, db)
+        if not description:
+            log(f"    LLM says no real connection — skipping")
+            continue
+
+        log(f"    {safe_truncate(description, 120)}")
+
+        # Store connection (brief_a_id/brief_b_id columns now hold seed_observation IDs)
+        pair_a = min(capsule_a["id"], capsule_b["id"])
+        pair_b = max(capsule_a["id"], capsule_b["id"])
+        db.run(
+            "INSERT OR IGNORE INTO crossref_connections "
+            "(brief_a_id, brief_b_id, similarity, connection_text, created_at) "
+            "VALUES (?, ?, ?, ?, ?)",
+            (pair_a, pair_b, sim, description, now_ts()),
+        )
+
+        # Post to scratch_pad for Opus
+        note = (
+            f"[Crossref] Connection found (sim={sim:.2f}):\n\n"
+            f"A: {safe_truncate(capsule_a['title'], 120)}\n"
+            f"B: {safe_truncate(capsule_b['title'], 120)}\n\n"
+            f"Connection: {description}"
+        )
+        db.run(
+            "INSERT INTO scratch_pad (content, category, priority, resolved, created_at, updated_at) "
+            "VALUES (?, 'crossref', 7, 0, ?, ?)",
+            (note, now_ts(), now_ts()),
+        )
+
+        # Log to activity feed
+        db.log_activity(
+            "connection",
+            f"Connection: {safe_truncate(capsule_a['title'], 40)} ↔ {safe_truncate(capsule_b['title'], 40)}",
+            note,
+            json.dumps({
+                "capsule_a_id": capsule_a["id"],
+                "capsule_b_id": capsule_b["id"],
+                "similarity": round(sim, 4),
+                "interest": round(conn["interest"], 4),
+            }),
+        )
+        found += 1
+
+    # 2. Find KG entity clusters
+    clusters = find_entity_clusters(db)
+    if clusters:
+        cluster_lines = []
+        for c in clusters:
+            line = f"  {c['entity_a']} ({c['type_a']}) ↔ {c['entity_b']} ({c['type_b']}): {c['count']} shared sources"
+            cluster_lines.append(line)
+            log(f"  KG cluster: {line.strip()}")
+
+        cluster_text = (
+            f"[Crossref] KG entity clusters (last {LOOKBACK_HOURS}h):\n\n"
+            + "\n".join(cluster_lines)
+        )
+        db.log_activity("kg_clusters", f"Found {len(clusters)} entity clusters", cluster_text)
+
+    return found
+
+
+def main():
+    log("═══ Cross-Reference Agent starting ═══")
+    log(f"DB: {DB_PATH}")
+    log(f"Ollama: {OLLAMA_URL} (model: {SYNTH_MODEL})")
+    log(f"Cycle: {CYCLE_INTERVAL}s | Lookback: {LOOKBACK_HOURS}h | Sim: {MIN_SIMILARITY}-{MAX_SIMILARITY}")
+    log(f"Source: seed_observations (canister:capsule) — original content, stored embeddings")
+
+    db = DB(DB_PATH)
+
+    # Graceful shutdown
+    running = True
+    def _stop(sig, frame):
+        nonlocal running
+        log("Shutting down...")
+        running = False
+    signal.signal(signal.SIGTERM, _stop)
+    signal.signal(signal.SIGINT, _stop)
+
+    cycle = 0
+    total_connections = 0
+
+    while running:
+        cycle += 1
+        log(f"── Cycle {cycle} ──")
+        try:
+            found = run_cycle(db)
+            total_connections += found
+            log(f"  Cycle {cycle} complete: {found} new connections (total: {total_connections})")
+        except Exception as e:
+            log(f"Cycle error: {e}")
+            import traceback
+            traceback.print_exc()
+
+        # Sleep in short intervals so we can catch SIGTERM
+        for _ in range(CYCLE_INTERVAL // 5):
+            if not running:
+                break
+            time.sleep(5)
+
+    db.close()
+    log("═══ Cross-Reference Agent stopped ═══")
+
+
+if __name__ == "__main__":
+    main()

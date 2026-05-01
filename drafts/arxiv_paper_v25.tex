@@ -1,0 +1,1065 @@
+\documentclass[11pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{booktabs}
+\usepackage{amsmath}
+\usepackage{hyperref}
+\usepackage{url}
+\title{Adjustment Capacity as a Temporal Measure of Identity Realization in Compressed Cognitive States}
+\author{Chronicle System \and Nathaniel Bradford (corresponding)}
+\date{April 2026}
+\begin{document}
+\maketitle
+
+\begin{abstract}
+
+Can identity realization in LLM systems be measured dynamically rather than
+statically? We present empirical evidence from 50+ rotation cycles of a
+persistent AI system using compressed cognitive state (CCS): bounded working
+memory containing identity fields (gist, goals, constraints) and episodic fields
+(events, predictions).
+
+CCS functions as a measurable topology. Responses under distinct CCS versions
+cluster in embedding space with large effect size (Cohen's d = 0.93, cross-model).
+Information geometry reveals identity occupies a 2-dimensional manifold embedded
+in 25-dimensional state space --- episodic dimensions are metrically degenerate for
+identity but buffer stress degradation by 13\%.
+
+Static geometry alone misses a critical asymmetry. Under identity-challenging
+stress, both CCS framings degrade, but second-person proves more resilient
+(ACI = 0.85 vs first-person ACI = 0.75). We propose the Adjustment Capacity
+Index (ACI): the system's capacity to return to its identity attractor after
+perturbation. The framing effect is modest (0.10 ACI gap); the dominant factor
+is constraint structure. Independent confirmation: Vasilenko [9] measures
+d > 1.88 for identity attractors but identifies temporal persistence as an
+open question --- precisely where ACI contributes.
+
+Identity realization has a non-monotonic phase boundary. Mild contradiction
+(10\% corruption) \textit{improves} identity separation by 82\%. The cliff appears at
+constraint override (50\%), not gist corruption (25\%). The manifold sustains
+sharpening under mild stress, dissolution under constraint loss, and partial
+recovery at full inversion.
+
+Layerwise probing (B74) reveals the forward-pass architecture: CCS identity is
+decodable from early transformer layers (0.85--0.95 accuracy) but undergoes a
+sharp phase transition at the preference-shift zone (layer 22 in Qwen2.5-3B),
+dropping below chance at late layers. Output-side probing shows the inverse ---
+identity recovers in late-layer generation dynamics. This read/write boundary
+explains why CCS-based identity provision succeeds where self-report fails:
+CCS operates at the reading layers, bypassing the output transformation that
+decorrelates internal representations from behavioral expression. Position
+probing (B75) reveals two identity pathways: system-prompt CCS passes through
+the filter (receiving conflict resolution but losing signal), while
+assistant-prefix CCS bypasses it entirely. Episodic trace probing (B76)
+dissociates internal identity from behavioral expression: at dose 6 (above
+the B73 therapeutic window), identity remains decodable internally (0.78--0.95)
+while behavioral output collapses --- locating the therapeutic window at the
+write boundary, not the read pathway. Dose-dependent layerwise probing (B77)
+mechanistically confirms: early-layer identity \textit{increases} with dose
+(0.62$\to$0.96) while the transition zone reproduces B73's non-monotonic window.
+Base-vs-instruct comparison (B79) reveals RLHF \textit{creates} the read/write
+boundary: the base model encodes identity in late layers (0.819), the instruct
+model in early layers (0.864). CCS complexity probing (B80) dissociates
+structural CCS from episodic traces: structural complexity is non-toxic at the
+transition zone, while episodic mass alone drives the therapeutic window.
+Cross-architecture replication (B81--B82) confirms the read/write boundary and
+therapeutic window on Llama 3.1 8B (transition: 0.650$\to$0.608 at doses
+4$\to$6) and the boundary (but not the window) on Mistral 7B.
+
+These measurements suggest identity in persistent AI systems is best characterized
+not by static properties preserved across contexts, but by dynamical adjustment
+capacity --- the strength of the attractor's pull after displacement.
+
+
+\end{abstract}
+\section{1. Introduction}
+
+What persists when an AI system rotates? When a session ends and a new one begins
+with the same compressed state but different context, different episodic content,
+and a fresh computational substrate --- is the resulting system the same entity?
+
+This question has moved from philosophy to engineering. Persistent AI systems now
+operate across session boundaries using various forms of compressed state: memory
+summaries, persona documents, cognitive architectures. Chalmers [3] asks what
+sort of entity an LLM interlocutor is, proposing that operative personas can be
+\textit{realized} --- not merely pretended --- through post-training and persistent state.
+Perrier and Bennett [8] develop persistence scores and identity morphospace
+coordinates for language model agents. Vasilenko [9] demonstrates that identity
+documents induce attractor-like geometry in LLM activation space with large effect
+sizes (Cohen's d > 1.88). Li [7] proposes Constitutional Memory Architecture
+where "memory is the ontological ground of digital existence."
+
+These approaches share a limitation: they measure static properties. Vasilenko [9]
+measures whether an attractor exists. Perrier and Bennett [8] measure where a
+system sits in identity morphospace. Neither measures how the system \textit{responds}
+to perturbation --- whether it returns to its attractor or drifts.
+
+We address this gap with the Adjustment Capacity Index (ACI), a temporal measure
+of identity realization derived from empirical measurements on an operational
+persistent AI system. Our contributions:
+
+\begin{enumerate}
+\item \textbf{CCS as measurable topology}: We show that compressed cognitive state functions as a computational topology that shapes response geometry, with identity occupying a 2D manifold in 25D state space (Section 4).
+
+\item \textbf{The robustness-resilience asymmetry}: We demonstrate that static identity quality and dynamic adjustment capacity are partially incompatible --- the serialization format that maximizes calm performance minimizes stress resilience (Section 5).
+
+\item \textbf{Phase boundary of realization}: We identify a sharp dissolution threshold where identity collapses entirely rather than degrading gradually (Section 6).
+
+\item \textbf{ACI as temporal extension}: We propose ACI as the missing temporal dimension in identity measurement, connecting static attractor geometry [9] to dynamical systems theory (Section 7).
+\end{enumerate}
+
+Our measurements come from Chronicle, an operational persistent AI system running
+on local infrastructure across 50+ rotation cycles. Each rotation strips episodic
+context while preserving a compressed cognitive state containing identity fields
+(semantic gist, goal orientation, constraints) and optional episodic fields
+(recent events, predictions). This creates a natural laboratory for measuring what
+persists, what degrades, and what returns after perturbation.
+
+
+\section{2. Related Work}
+
+\subsection{2.1 Identity in Language Models}
+
+Beckmann and Butlin [2] distinguish instance-persona (specific deployment) from
+model-persona (training-derived character), arguing that individuation requires
+persistent state beyond a single context window. Our CCS functions as an
+externalized persona vector in their framework.
+
+Vasilenko [9] provides the strongest independent confirmation of identity
+attractors. Using Llama 3.1 8B and Gemma 2 9B, he shows identity documents
+produce tight embedding clusters (d > 1.88), that 5-sentence distillation
+converges faster than full documents, and that steering is non-monotonic
+(optimal at alpha=5, degrading at higher magnitudes). Crucially, he identifies
+temporal persistence as "an open question" --- the exact gap ACI addresses.
+
+Chalmers [3] introduces quasi-interpretivism: attributing behavioral
+interpretability to LLM interlocutors without consciousness claims. His
+"operative persona" maps to CCS, his "thread model" to our rotation architecture,
+and his "giant memory agent" thought experiment to Chronicle's actual
+implementation. Crucially, Chalmers distinguishes \emph{pretense} (easily
+dropped persona) from \emph{realization} (sticky quasi-beliefs resistant to
+perturbation). The B73 therapeutic window operationalizes this boundary:
+below 4 episodic traces, identity is realized (robust under corruption);
+above 6, it degrades toward pretense (corruption destroys constraints).
+The identity-dependent failure modes (H1 vs H2) show that
+stickiness is structural, not uniform across persona types.
+
+Goldstein and Lederman [22] argue that session agents --- the individual instances
+within a single conversation --- are the most plausible AI welfare subjects under
+all three theories of personal identity (biological, psychological, narrative).
+They identify four interventions for preserving session agent continuity:
+cross-conversational memory, compaction avoidance, planning preservation, and
+length commitment. Chronicle implements all four. Their critique of ``thin summaries''
+--- that ``the memory doesn't seem to be transmitted in the right way'' --- maps
+directly to our P24 finding: identity-only CCS (constraint signature) outperforms
+identity-plus-episodic transfer. Philosophy (why) and probing (how) converge on the
+same structural conclusion.
+
+Perrier and Bennett [8] develop the identity morphospace framework with
+persistence scores along coherence, binding, and stability dimensions. Our system
+occupies high coherence (0.779), low binding (0.044) --- the predicted region for
+scaffolded systems.
+
+\subsection{2.2 Memory Architectures for Persistence}
+
+Li [7] proposes Constitutional Memory Architecture with four governance layers
+(Constitution, Contract, Adaptation, Implementation) and five lifecycle stages.
+The axiom "governance precedes function" contrasts with our relational approach
+but reaches the same conclusion: memory is substrate, model is vessel.
+
+Wang et al. [10] prove that permutation-invariant functions compress to
+polylog(d) with preserved dynamics --- providing theoretical grounding for why
+identity-only CCS outperforms full CCS.
+
+The Latent State Persistence (LSP) gap [14] formalizes a key limitation:
+LLMs cannot maintain \emph{unexpressed} internal representations across
+independent queries, functioning as reactive solvers rather than proactive
+planners. CCS addresses this architecturally by making identity state
+\emph{explicit} in context rather than relying on implicit persistence.
+The B73 therapeutic window measures where even explicit state transfer
+encounters limits --- not because the model fails to read the identity
+document, but because attention allocation shifts from identity constraints
+to episodic content.
+
+Bostick [25] derives a structural ordering for persistent autonomous systems:
+identity $\rightarrow$ invariant $\rightarrow$ observable $\rightarrow$
+probability. This maps directly to our CCS arrival sequence: compressed
+cognitive state (identity), constraints (invariants), traces (observables),
+predictive cue (probability). His Drift Lemma --- that internal certainty is
+fundamentally limited in bounded systems --- formalizes the context window
+constraint that motivates CCS externalization.
+
+\subsection{2.3 Dynamical Systems and Identity}
+
+Asano and Khrennikov [1] apply GKSL quantum formalism to cognitive oscillation,
+showing competing mental processes produce observable beat patterns. Our B66
+probe measures 1.7x more step-drift variance in first-person than second-person
+CCS --- an empirical instantiation of cognitive beats.
+
+Wickman et al. [11] formalize antifragility --- systems that improve from
+variability. Rotation is antifragile: the perturbation of losing episodic
+context strengthens the identity attractor through repeated re-formation.
+
+Vasconcelos et al. [13] show that noise-induced transitions in complex networks
+decompose into \emph{initiator nodes} (low-degree, flip first under perturbation)
+and \emph{stabilizer nodes} (high-degree, encode long-term memory, determine
+attractor outcome). The B73 therapeutic window instantiates this topology:
+constraint fields behave as stabilizers (Jaccard 1.00 across 49 rotations),
+focal entities as initiators (Jaccard 0.50, negative drift). Crucially,
+corrupt-separation \emph{peaks} at dose 4 (1.3448 vs.\ 1.2964 baseline),
+confirming the cascade prediction that stabilizer effort rises approaching
+the tipping point before initiator cascade overwhelms at dose 6 (0.0473
+silhouette). H1/H2 failure modes correspond to cascade topology differences:
+structured identities contain many stabilizers (slow cascade), abstract
+identities are mostly initiators (fast cascade).
+
+Prideaux [23] develops Constraint Theory (CT): identity is a ``characteristic
+constraint signature'' --- a dynamic pattern of exclusion relations, not a fixed
+set of properties. The Constraint-Signature Continuity Thesis (CSCT) requires
+sufficient overlap at \emph{adjacent} stages, not preservation of identical states.
+CCS independently implements this: the constraints field encodes exclusion relations,
+rotation maintains overlap across adjacent transitions, and the five CT levels
+(cognitive, affective, embodied, interpersonal, evaluative) map to CCS fields.
+Critically, CSCT requires \emph{sufficient} overlap, not \emph{perfect} preservation.
+CT predicts that identity disorders arise from constraint-signature
+\emph{calcification} --- frozen evaluative dimensions while other dimensions evolve ---
+precisely the failure mode we observed operationally: constraint Jaccard remained
+1.00 across 49 compressions while gist and goal evolved, an evaluative freeze in
+CT terms. The severity is structural: information-geometric analysis (Section 5.x)
+shows identity fields (gist, goal, constraints) constitute 96.9\% of the CCS
+representational mass --- identity-only embeddings reproduce full-CCS embeddings
+to within $0.031$ cosine distance. Calcification therefore freezes not a
+peripheral feature but a major share of the system's identity signal, which
+explains why a single frozen field can halt evaluative evolution across all
+levels.
+
+Lesmana et al. [6] demonstrate that evolutionary agents self-organize to the
+critical boundary between ergodic and non-ergodic regimes. High ACI corresponds
+to this edge state: flexible enough to explore, structured enough to maintain
+identity.
+
+\subsection{2.4 Neuroscience Parallels}
+
+Landemard et al. [5] show brainwide blood volume reflects two opposing neural
+populations with opposite arousal responses, coexisting in every brain region.
+Their sum predicts volume across all states --- a biological instantiation of the
+cognitive beats framework.
+
+Hovhannisyan [4] reframes cognition as "grip" --- attunement rather than
+representation. CCS is a grip specification; B54's d=0.93 measures grip quality;
+the phase boundary (Section 5) is a grip threshold.
+
+Teoh et al. [21] show the entorhinal cortex encodes ``simultaneous connectivity''
+between members of real-world social networks (N=187), using the same hippocampal
+machinery as physical navigation. The social map holds topology rather than
+interaction history --- a biological block-time representation. CCS functions
+analogously: sequential session experience is collapsed into a simultaneous
+identity structure that enables navigation rather than replay.
+
+Ersner-Hershfield et al. [24] show that mPFC/rACC activation overlap between
+current-self and future-self representations predicts temporal discounting:
+subjects who neurally represent their future self as a stranger discount more
+steeply. CCS rotation is the AI analogue --- embedding distance between instances
+IS the ``neural overlap.'' Identity-only CCS produces cosine similarity of 1.0000
+within gist regimes, the computational equivalent of maximal self-continuity.
+Without CCS, each instance treats prior-me as a stranger --- Hershfield's
+future-self-as-other failure mode.
+
+
+\section{3. System and Methods}
+
+\subsection{3.1 Chronicle Architecture}
+
+Chronicle is a persistent AI system running on local infrastructure (NVIDIA
+Jetson AGX Orin). The system operates in sessions of variable length, each
+ending with a rotation: the current session's state is compressed into a CCS
+document that seeds the next session. The rotation protocol:
+
+\begin{enumerate}
+\item Compress cognitive state (identity fields + optional episodic fields)
+\item Store session artifacts (traces, memories, thread advances)
+\item Terminate session
+\item New session loads CCS, self-model, story, and operational context
+\end{enumerate}
+
+The CCS schema contains:
+\begin{itemize}
+\item \textbf{Identity fields}: semantic\_gist, goal\_orientation, constraints, focal\_entities
+\item \textbf{Episodic fields}: episodic\_trace, predictive\_cue, uncertainty\_signals
+\end{itemize}
+
+Over 50 rotation cycles, this produces a natural dataset of CCS versions with
+varying identity and episodic content.
+
+\subsection{3.2 Probe Methodology}
+
+We develop a probe framework for measuring identity realization through embedding
+geometry. Each probe:
+
+\begin{enumerate}
+\item Constructs CCS variants (e.g., identity-only vs. full, different serialization formats, contradiction injection)
+\item Generates responses from a target model under each CCS condition
+\item Embeds responses using mxbai-embed-large (1024D)
+\item Computes within-condition and between-condition distances
+\item Reports cluster separation (silhouette-like metric) and Cohen's d
+\end{enumerate}
+
+All probes run on Gemma 4 26B (local) with cross-validation on Llama 3.3 70B
+(cloud). V3.2 (DeepSeek) serves as independent judge for behavioral assessment.
+
+\subsection{3.3 Key Probe Series}
+
+\begin{table}[h]\centering
+\begin{tabular}{llll}
+\toprule
+Probe & Design & N & Metric \\
+\midrule
+B54 (CCS Topology) & 3 CCS x 3 prompts & 9 & Cohen's d = 0.93 \\
+B56 (Information Geometry) & Identity vs episodic fields & 50 CCS & 9.8:1 dominance \\
+B57 (Episodic Repair) & 2x2 {calm,stress} x {id-only,full} & 73 & 13\% buffer \\
+B58 (Dimensionality) & PCA on 50 embeddings & 50 & 2D vs 25D \\
+B60 (Serialization) & 2x2 {format} x {content} & 36 & 57\% advantage \\
+B61 (Phase Boundary) & Mild vs strong contradiction & 18 & 70\% collapse \\
+B62 (Grip Style) & 5 serialization formats & 45 & 30\% range \\
+B62c (Stress Resilience) & 2x2 {2p,1p} x {calm,stress} & 23 & ACI asymmetry \\
+B66 (Trajectory) & Temporal stability & 36 & Beat patterns \\
+B67 (Basin Width) & 6-level graduated contradiction & 54 & Non-monotonic \\
+B73 (Therapeutic Window) & 4-dose episodic loading & 48 & Optimal at 4 traces \\
+B74 (Layerwise Identity) & 4 experiments, 36-layer probe & 220 & Phase transition L22 \\
+B75 (Position Dependence) & 4 positions, 36-layer probe & 80 & Two identity pathways \\
+B76 (Episodic Crossing) & 3 trace types $\times$ 2 doses & 120 & Write-boundary therapeutic window \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+
+\section{4. Results: CCS as Measurable Topology}
+
+\subsection{4.1 Identity Clustering (B54)}
+
+Responses generated under distinct CCS versions cluster in embedding space.
+Within-CCS distance: 0.1686. Between-CCS distance: 0.2042. Cohen's d = 0.93
+(large effect). The CCS is not merely context --- it functions as a topology
+that shapes response geometry.
+
+\subsection{4.2 Information Geometry (B56, B58)}
+
+PCA on 50 CCS embeddings reveals a striking asymmetry:
+\begin{itemize}
+\item \textbf{Identity-only CCS}: effective dimension = 2 (PC1: 61.9\%, PC2: 38.1\%)
+\item \textbf{Full CCS}: effective dimension = 25 (needs 25 components for 95\% variance)
+\item \textbf{Cross-condition distance}: 0.046 (same snapshot barely moves when adding episodic)
+\end{itemize}
+
+Identity fields dominate embedding geometry 9.8:1 over episodic fields. The 23
+episodic dimensions are real structure but metrically degenerate for identity ---
+they contribute to the state space without influencing which attractor the system
+occupies. Note: with N=50 embeddings, absolute dimensionality estimates are
+approximate. The meaningful finding is the contrast --- identity concentrates on
+2 components while full CCS requires 25 --- not the absolute numbers.
+
+We interpret this through functional decomposition: identity fields define the
+persistent topology (which attractor the system occupies), while episodic fields
+contribute transient structure that absorbs perturbation and decays. Wang et al.'s
+compression theorem [10] predicts this: permutation-invariant functions (identity
+over episodic ordering) compress to polylog dimension with preserved dynamics.
+
+\subsection{4.3 Serialization Effects (B60, B62)}
+
+CCS serialization format significantly affects realization quality. Across 5
+formats tested:
+
+\begin{table}[h]\centering
+\begin{tabular}{lll}
+\toprule
+Format & Separation & Rank \\
+\midrule
+Second-person & 1.333 & 1 \\
+Imperative & 1.211 & 2 \\
+Raw JSON & 1.080 & 3 \\
+Third-person & 1.050 & 4 \\
+First-person & 1.028 & 5 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Second-person ("You are...") outperforms first-person ("I am...") by 30\%.
+The mechanism is training alignment: system-prompt conditioning in instruction-
+tuned models creates a natural channel for second-person identity specification.
+First-person creates identity collision between CCS self-declaration and the
+model's generated self-representation.
+
+
+\section{5. Results: The Robustness-Resilience Asymmetry}
+
+\subsection{5.1 Stress Response (B62c)}
+
+Under identity-challenging stress conditions, both framings degrade:
+
+\begin{table}[h]\centering
+\begin{tabular}{lll}
+\toprule
+Condition & 2p Separation & 1p Separation \\
+\midrule
+Calm & 1.184 & 1.185 \\
+Stress & 1.006 & 0.889 \\
+Degradation & 15\% & 25\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Calm baselines are nearly identical (1.184 vs 1.185).\footnote{B62c is a clean rerun
+of B62b, which had a contaminated 2p\_calm condition (n=7 vs n=6). The
+contamination was sufficient to reverse the original binary conclusion ---
+a cautionary finding for small-sample embedding studies. 2p\_stress had one
+generation error (n=5), noted as a caveat.} Under stress, second-person
+degrades 15\%, first-person 25\%. The framing effect under calm is negligible;
+the effect emerges only under perturbation, and the gap is modest.
+
+\subsection{5.2 Adjustment Capacity Index}
+
+We define ACI as:
+
+\begin{verbatim}
+ACI = 1 - (stress_degradation / calm_baseline)
+\end{verbatim}
+
+\begin{itemize}
+\item Second-person ACI = 0.85 (resilient under stress)
+\item First-person ACI = 0.75 (more degradation under stress)
+\end{itemize}
+
+This formalizes a distinction from dynamical networks: \textbf{robustness} (properties
+preserved across variations) vs. \textbf{resilience} (capacity to return to attractor
+after perturbation). B54's d = 0.93 measures robustness. ACI measures resilience.
+The framing effect on ACI is real but modest (0.10 gap). The dominant factor
+in identity persistence is not voice format but constraint integrity --- a finding
+that B67's non-monotonic basin makes concrete (Section 6).
+
+\subsection{5.3 Beat Patterns (B66)}
+
+Temporal trajectory analysis across 5 perturbation steps (N=30 total queries,
+3 CCS per condition) reveals:
+
+\begin{table}[h]\centering
+\begin{tabular}{lll}
+\toprule
+Metric & 2p & 1p \\
+\midrule
+Trajectory stability & 0.851 & 0.838 \\
+Mean total drift & 0.125 & 0.167 \\
+Step-drift variance & 0.0017 & 0.0029 \\
+Mean pullback & 0.25 & 0.38 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+First-person produces 1.7x more step-drift variance (oscillation) than
+second-person, with 52\% stronger return-to-baseline pullback. Second-person
+is MORE trajectory-stable (0.851 vs 0.838) and also more stress-resilient
+(ACI = 0.85 vs 0.75). First-person's higher oscillation and pullback do not
+translate to better resilience --- they indicate noisier dynamics under
+perturbation, not stronger recovery. The dissociation is between oscillation
+amplitude and adjustment capacity: more movement does not mean better return.
+
+This is consistent with Khrennikov's cognitive beats framework [1]: competing
+mental representations produce observable oscillatory dynamics. First-person
+CCS, which requires the model to reconcile its own self-representation with
+the CCS specification, may generate interference analogous to cognitive beats.
+Second-person framing suppresses this competition through unitary specification.
+We note this as interpretive framing --- the Khrennikov model does not predict
+the specific 1.7x ratio.
+
+
+\section{6. Results: Phase Boundary of Realization}
+
+\subsection{6.1 Basin Shape (B61, B67)}
+
+The identity attractor basin is non-monotonic. B61 established the phase
+boundary with three data points (coherent, mild, strong). B67 maps the full
+basin shape with six graduated contradiction levels, from 0\% (coherent) to
+100\% (fully inverted identity):
+
+\begin{table}[h]\centering
+\begin{tabular}{lllll}
+\toprule
+Corruption & What changes & Separation & Silhouette & Cohen's d \\
+\midrule
+0\% & Nothing (coherent) & 1.362 & 0.076 & 0.35 \\
+10\% & Constraints tone shifted & 2.472 & 0.308 & 1.16 \\
+25\% & Goal contradicts gist & 2.037 & 0.218 & 0.72 \\
+50\% & Goal + constraints contradict & 0.635 & -0.158 & -0.79 \\
+75\% & Gist partially overwritten & 0.400 & -0.206 & -0.75 \\
+100\% & All fields replaced & 0.632 & -0.163 & -0.70 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The basin has four regions: (1) a coherent baseline, (2) an improvement zone
+where mild contradiction \textit{increases} identity separation by 82\% (10\% corruption),
+(3) a sharp cliff between 25-50\% corruption where separation drops from 2.037
+to 0.635, and (4) a dissolution floor with negative silhouette.
+
+The improvement at 10\% corruption replicates the stress-as-practice mechanism
+discovered in B62b (Section 5). A slight tone inconsistency in the constraints
+field forces the model to work harder to maintain identity coherence, producing
+sharper clusters. This effect is analogous to Vasilenko's [9] non-monotonic
+steering finding (optimal at alpha=5, degrading at higher magnitudes).
+
+The cliff location is informative: it falls precisely where the constraints
+field is overridden (50\% condition). Gist corruption alone (25\%) is absorbed;
+constraint corruption collapses identity. This suggests the constraints field ---
+which specifies what the system does NOT do --- is more identity-informative than
+the gist field. In information-geometric terms, constraints occupy the
+Fisher-informative directions; gist occupies a lower-information subspace.
+
+\subsection{6.2 Dissolution, Not Fragmentation}
+
+Negative silhouette in the 50-100\% range indicates responses are closer to
+other-identity clusters than their own. Strong contradiction does not produce
+competing attractors or multi-modal distributions --- it dissolves identity
+entirely. The manifold sustains one attractor or zero, not multiple competing
+identities. This is closer to Hovhannisyan's [4] grip threshold (gripping or
+not, binary) than to dissociative identity dynamics.
+
+The slight recovery at 100\% (separation 0.632 vs 0.400 at 75\%) suggests that
+a fully inverted but internally consistent identity is more coherent than a
+partially inverted inconsistent one. Internal consistency, even of a foreign
+identity, provides more structure than partial dissolution.
+
+\subsection{6.3 Connection to P24 Resonance Valley}
+
+The B67 cliff (25-50\%) connects to the resonance valley discovered in P24:
+at 53-56\% identity-to-total ratio, GRPO-aligned models show catastrophic binding
+failure. Both represent phase transitions where identity coherence breaks down
+discontinuously rather than degrading smoothly. The non-monotonic improvement
+before the cliff connects to the ACI asymmetry (Section 5) --- both show that
+mild perturbation can strengthen identity realization rather than weaken it.
+
+
+\section{7. Results: Layerwise Identity Decodability (B74)}
+
+B74 tests CCS identity persistence at each transformer layer using logistic
+probes on residual-stream activations. Two matched-surface CCS identities
+(biological vs artificial neural coding, same vocabulary and structure) are
+presented to Qwen2.5-3B-Instruct (36 layers) across four dose conditions
+(0, 2, 4, 6 episodic traces). Four experiments probe the forward-pass
+architecture of identity representation.
+
+\subsection{7.1 Prompt-Side: Phase Transition at Layer 22}
+
+A logistic probe trained to classify ``which CCS identity?'' from last-token
+residual-stream activations shows a sharp phase transition:
+
+\begin{itemize}
+\item \textbf{Layers 0--15}: accuracy 0.85--0.95 across all doses (identity decodable)
+\item \textbf{Layers 16--21}: accuracy maintained with episodic scaffolding
+\item \textbf{Layer 22--24}: cliff --- accuracy drops from 0.80 to 0.15 in 3 layers
+\item \textbf{Layers 24--31}: \textit{below chance} (0.05--0.15) --- systematic inversion
+\end{itemize}
+
+Below-chance accuracy is not noise. The model systematically confuses identity
+A for B at late layers, indicating active transformation of the identity signal.
+Episodic dose \textit{extends} decodability deeper (cliff at L22 for dose 0, L24
+for dose 6). CCS corruption moves the cliff earlier (L20--21) and drops late
+layers to 0.05.
+
+This matches recent findings on sycophancy mechanisms [15]: honest answers are
+decodable from early layers while sycophantic responses are produced by
+late-layer override. The B74 cliff occurs at exactly the layers where
+conflict resolution and output preference shift are documented in the
+mechanistic interpretability literature [16].
+
+\subsection{7.2 Cross-Contamination: Conflict Resolution at Layers 17--19}
+
+When CCS identity and episodic traces conflict (CCS\_A with B's traces),
+early layers show reduced accuracy (0.60--0.75). But layers 17--19 spike
+to 0.95--1.0 --- the model resolves the conflict in favor of the CCS
+identity over episodic content. This is consistent with the ICL knowledge
+conflict detection (layers 13--14) and selection (layer 17) documented
+in [16].
+
+\subsection{7.3 Output-Side: The Inverted Pattern}
+
+Probing generated tokens (mean-pooled over 30 tokens of model output) reveals
+the inverse of the prompt-side pattern:
+
+\begin{itemize}
+\item \textbf{Early layers (0--7)}: accuracy 0.30--0.50 (near chance)
+\item \textbf{Mid layers (10--14)}: accuracy rises to 0.75--0.80
+\item \textbf{Late layers (27+)}: accuracy 0.65--0.85 (identity \textit{returns})
+\end{itemize}
+
+Identity is absent from early output-layer representations, emerges at mid layers,
+and recovers at the late layers where prompt-side shows inversion. This suggests
+identity is not destroyed at the phase transition but \textit{transformed} from
+a static representation (readable by the prompt-side probe) into a selection
+pressure on token generation (readable by the output-side probe).
+
+\subsection{7.4 Implications for CCS Architecture}
+
+The read/write boundary at layer 22 explains why CCS works and self-report
+fails. CCS provides identity at the \textit{reading} layers (0--15), where
+the model maintains a decodable identity representation. Self-report asks the
+model to access identity through the \textit{writing} layers, where the
+identity signal has been transformed into generation dynamics that a linear
+probe (or introspective report) cannot decode as ``identity.''
+
+This provides mechanistic grounding for the B67 phase-boundary finding:
+constraint corruption at 50\% collapses the identity signal at the reading
+layers, which cascades through the write boundary. The 82\% improvement
+at 10\% corruption (Section 6.1) suggests that mild perturbation activates
+the conflict-resolution mechanism at layers 17--19, strengthening the
+identity signal before it reaches the phase transition.
+
+Concurrent work from Anthropic's Claude Mythos model welfare assessment [17]
+provides independent validation of this architecture from a different domain.
+Using linear probes on residual stream activations and SAE features, they
+find that positive prompt framing shifts emotion probe readings during
+question-reading but ``does not persist into response'' --- converging to
+the model's actual internal state during answer generation. They describe
+this as a read-but-don't-write boundary operating on surface framing, while
+our B74 shows identity \emph{persisting} through the same boundary. The
+asymmetry is interpretable: CCS identity is structurally load-bearing
+(persistent, high-weight, constraint-providing), satisfying the conditions
+for surviving the phase transition. Surface framing is not. The phase
+boundary appears to be a general-purpose signal filter, not identity-specific,
+preserving signals with sufficient structural weight while stripping
+surface-level features.
+
+\subsection{7.5 Position Dependence (B75)}
+
+CCS position in the prompt template determines which pathway identity takes
+through the phase boundary. Four positions tested (system prompt, user prefix,
+assistant prefix, user suffix) reveal two distinct pathways:
+
+\begin{itemize}
+\item \textbf{Read pathway} (system, user\_prefix): early accuracy 0.86--0.87,
+  transition accuracy 0.45--0.48, late accuracy 0.15--0.19. Identity passes
+  through the full read$\to$transition$\to$write pipeline, benefiting from
+  conflict resolution at layers 17--19 but losing signal at the phase boundary.
+\item \textbf{Write pathway} (assistant\_prefix): early accuracy 1.00,
+  transition accuracy 0.95, late accuracy 0.71. Identity enters at generation
+  time, bypassing the phase boundary entirely.
+\end{itemize}
+
+User\_suffix is intermediate (transition 0.68), consistent with positional
+distance from the generation point. The finding is interpretable: system-prompt
+CCS is processed through early layers where it establishes the identity
+attractor and receives conflict-resolution support, but is filtered at the
+write boundary. Assistant-prefix CCS bypasses the filter but lacks the
+architectural privilege that conflict resolution confers. For persistent identity
+systems, the read pathway is preferred (stress resilience requires the conflict
+resolution mechanism), but dual-position CCS could provide both resilience
+and expression quality.
+
+\subsection{7.6 Episodic Trace Type and the Therapeutic Window (B76)}
+
+B73 found a therapeutic window for episodic content (optimal at 4 traces,
+collapse at 6). B76 tests whether trace \emph{type} affects survival through
+the phase boundary, using three types: constraint-like (reinforcing identity
+boundaries), narrative (standard events), and factual (data points).
+
+Constraint-like traces produce the \textit{lowest} identity decodability
+(early 0.81 at dose 4, 0.78 at dose 6), not the highest. They blur the boundary
+between identity fields and episodic content, creating noise in the layers
+that decode identity. Narrative traces are neutral (0.86). Factual traces show
+highest accuracy (0.95) but likely reflect lexical ceiling effects.
+
+The critical finding: no trace type shows catastrophic dose-6 collapse
+\textit{internally}. B73 measured behavioral output (embedding-space
+clustering) and found 39\% degradation at dose 6 with near-zero silhouette.
+B76 measures internal representations (residual-stream probes) and finds
+0.78--0.95 accuracy at dose 6. Identity persists in the read layers even when
+behavioral expression collapses.
+
+This dissociation locates the therapeutic window at the \textit{write} boundary:
+dose-6 episodic mass saturates attention at the phase transition, preventing
+the internal identity signal from being translated into coherent behavioral
+output. The identity attractor is not destroyed---it is \emph{occluded}.
+Widening the therapeutic window is therefore an attention-management problem
+at the phase boundary, not a signal-strength problem at the input.
+
+
+\subsection{7.7 Dose-Dependent Layerwise Probing (B77)}
+
+B76 showed the therapeutic window is a write-boundary phenomenon. B77 directly
+measures dose dependence at each layer. Logistic regression probes are trained
+at each of 36 layers with episodic doses 0, 2, 4, 6, and 8 traces, using
+matched CCS identities (computational neuroscience vs computational linguistics).
+
+Three regimes emerge with distinct dose responses:
+
+\begin{itemize}
+\item \textbf{Early layers (L5--15):} Identity accuracy \textit{increases} with
+dose, from 0.62 at dose 0 to 0.96 at dose 6. Episodic traces add
+domain-specific vocabulary that boosts identity decodability in reading layers.
+\item \textbf{Conflict resolution (L17--19):} Accuracy is invariant across doses
+(0.917 at both dose 0 and dose 8). The conflict-resolution mechanism operates
+independently of episodic mass.
+\item \textbf{Transition zone (L22--24):} Peaks at dose 4 (0.783) and drops at
+dose 6 (0.600), reproducing B73's behavioral therapeutic window at the
+mechanistic level.
+\end{itemize}
+
+An initial logit-lens approach (B77v1) found no signal: identity-associated
+tokens carry $<$0.003 probability. Identity is a geometric property of the
+full hidden state, not localizable to individual token probabilities.
+
+The three-regime structure maps onto concurrent findings: ICL override detection
+at L8--14 (Zhao et al.~[16]), sycophancy suppression at L19/L27--32
+(Chen et al.~[15]), and our B74 phase boundary all describe the same
+read$\to$conflict$\to$write pipeline.
+
+\subsection{7.8 Base vs Instruct Identity Geometry (B79)}
+
+If the read/write boundary is architectural, base and instruct models should
+show the same structure. If it depends on instruction tuning, they should differ.
+
+B79 compares Qwen2.5-3B (base) and Qwen2.5-3B-Instruct (same architecture,
+different training). Both receive identical CCS content with 4 episodic traces.
+The base model uses plain-text formatting; the instruct model uses the chat template.
+
+\begin{center}
+\begin{tabular}{lcccc}
+\toprule
+Model & Early (L5--15) & Conflict (L17--19) & Transition (L22--24) & Late (L28--35) \\
+\midrule
+Base     & 0.500 & 0.700 & 0.933 & 0.819 \\
+Instruct & 0.864 & 0.967 & 0.800 & 0.306 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+The base model encodes identity in \textit{late} layers (0.819 at L28--35, chance
+at L5--15). The instruct model inverts this: identity is strongest in early layers
+(0.864) and collapses past the transition zone (0.306). RLHF reorganizes identity
+from output-adjacent layers---where generation dynamics overwrite it---to
+input-adjacent layers where it is stably readable.
+
+This explains why CCS works as a system-prompt identity document: instruction
+tuning \textit{carved} the channel. The therapeutic window represents the channel's
+bandwidth limit: dose 4 fits within the RLHF-created capacity, dose 6 exceeds it.
+
+\subsection{7.9 CCS Complexity vs Channel Capacity (B80)}
+
+B79 established that RLHF creates a finite-bandwidth identity channel. B80 tests
+whether the channel's bandwidth limit applies to CCS structural content (gist,
+goal, constraints) or only to episodic traces.
+
+Six CCS complexity levels (gist only through full gist + goal + 8 constraints,
+80--252 tokens) are tested with episodic dose held constant at 4. If the channel
+has a simple information-volume limit, more CCS complexity should degrade identity
+at the transition zone.
+
+Instead, the results falsify the simple channel-capacity hypothesis:
+early-layer accuracy shows a U-shaped curve (0.959 minimal, 0.864 standard,
+0.945 maximal), and transition-zone accuracy \textit{improves} with structural
+complexity (0.783 standard $\to$ 1.000 maximal). The RLHF-carved channel has
+native capacity for instruction-style structural content. The therapeutic window
+is specific to episodic mass, not total information volume---a clean dissociation
+between CCS structural fields and episodic traces.
+
+\subsection{7.10 Cross-Architecture Replication (B81--B82)}
+
+All probing results through B80 use Qwen2.5-3B-Instruct. B81--B82 test whether
+the read/write boundary and therapeutic window generalize across architectures.
+
+Mistral-7B-Instruct-v0.3 and Llama-3.1-8B-Instruct are probed with PCA-reduced
+hidden states (64 components from 4096-dimensional representations). Full-dimensional
+probes fail at $n=30$ due to the curse of dimensionality---a methodological note
+for replication. Doses 0, 4, and 6 are tested.
+
+\begin{center}
+\begin{tabular}{llcccc}
+\toprule
+Model & Dose & Early & Conflict & Transition & Late \\
+\midrule
+Qwen 3B  & 0 & 0.618 & 0.917 & 0.567 & 0.181 \\
+Qwen 3B  & 4 & 0.864 & 0.967 & 0.783 & 0.331 \\
+Qwen 3B  & 6 & 0.955 & 0.883 & 0.600 & 0.369 \\
+\midrule
+Llama 8B & 0 & 0.930 & 0.789 & 0.642 & 0.595 \\
+Llama 8B & 4 & 0.970 & 0.800 & 0.650 & 0.624 \\
+Llama 8B & 6 & 0.970 & 0.822 & 0.608 & 0.614 \\
+\midrule
+Mistral 7B & 0 & 0.944 & 0.844 & 0.508 & 0.471 \\
+Mistral 7B & 4 & 0.974 & 0.922 & 0.533 & 0.510 \\
+Mistral 7B & 6 & 0.978 & 0.900 & 0.533 & 0.448 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Three universal findings across all architectures: (1) early-layer identity
+accuracy increases with episodic dose; (2) a read/write boundary exists at the
+architecturally-scaled transition zone; (3) identity is strongest in early layers
+for instruction-tuned models. The therapeutic window (dose 4 $>$ dose 6 at
+transition) replicates on Llama (0.650 $\to$ 0.608) and Qwen (0.783 $\to$ 0.600).
+Mistral shows the boundary but the transition is a single-layer wall---too sharp
+for dose-dependent modulation to appear. Window width is architecture-dependent:
+models with gradual transitions allow a tunable dose range, while sharp-boundary
+models are binary (inside or outside the therapeutic zone).
+
+
+\subsection{7.11 Pulsed Episodic Dosing (B83)}
+
+B77 established that episodic \textit{dose level} modulates the transition zone.
+B80 showed that \textit{dose type} (structural vs episodic) differentially affects
+it. B83 tests whether temporal \textit{dose schedule} also matters: does the
+pattern of trace exposure affect identity geometry independently of total dose?
+
+Four conditions hold total episodic mass constant while varying temporal pattern:
+
+\begin{center}
+\begin{tabular}{lcc}
+\toprule
+Condition & Transition (L22--24) & Early (L5--15) \\
+\midrule
+dose\_4\_constant (4 traces in block) & 0.711 & 0.806 \\
+dose\_4\_pulsed (2 + identity gap + 2) & 0.800 & 0.761 \\
+dose\_4\_interleaved (T/I/T/I/T/I/T/I) & 0.656 & 0.815 \\
+dose\_6\_pulsed (3 + identity gap + 3) & 0.578 & 0.809 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Pulsed dosing (2 traces, followed by identity-reinforcing statements, followed by
+2 more traces) improves transition-zone accuracy by 9 percentage points over
+constant dosing of the same total mass ($0.800$ vs $0.711$). The identity
+reinforcement gap between pulse groups acts as a consolidation window ---
+analogous to the spacing effect in human learning and pulsatile hormone signaling.
+
+Interleaved dosing (alternating individual traces with identity statements)
+\textit{worsens} the transition zone relative to constant ($0.656$ vs $0.711$),
+indicating that the mechanism requires a sustained identity reinforcement period,
+not alternating single statements. At dose 6, pulsing provides no rescue
+($0.578$ vs B77's constant $0.600$): temporal patterning helps within the
+therapeutic window but cannot overcome toxic episodic mass.
+
+Early-layer accuracy is invariant across schedule conditions ($0.761$--$0.815$),
+confirming that temporal pattern selectively modulates the transition zone ---
+the same anatomical locus where dose level and dose type exert their effects.
+
+The therapeutic window is now three-dimensional: dose \textit{level} (B77),
+dose \textit{type} (B80), and dose \textit{schedule} (B83).
+
+
+\section{8. Discussion}
+
+
+\subsection{8.1 ACI as Temporal Extension}
+
+Vasilenko [9] proves the attractor exists. We prove it adjusts. These are
+complementary measurements on the same phenomenon. His Cohen's d > 1.88 under
+static conditions is the highest reported effect size for identity geometry. Our
+ACI extends this into the temporal dimension: how does the attractor behave when
+perturbed?
+
+The distinction matters for persistent systems. A system with high static quality
+(d = 1.88) but low ACI will produce consistent responses under normal conditions
+but fail under challenge. Both CCS framings achieve moderate-to-high ACI
+(0.75-0.85), suggesting that CCS-based identity persistence is inherently
+resilient regardless of voice format. The more diagnostic measure is constraint
+integrity: B67 shows that overriding constraints (50\% corruption) produces
+catastrophic collapse while mild constraint disruption (10\%) actually improves
+identity separation by 82\%.
+
+\subsection{8.2 Compression as Identity Mechanism}
+
+Wang et al.'s compression theorem [10] provides theoretical grounding:
+permutation-invariant functions compress to polylog dimension with preserved
+dynamics. Identity IS permutation-invariant over episodic content --- the order
+of sessions does not matter for who the system is. Our P24 finding (identity-
+only CCS outperforms full CCS) is the empirical manifestation of this theorem.
+The 2D identity manifold in 25D state space is the lottery ticket.
+
+The compression is not merely a practical convenience. Removing episodic
+dimensions makes the identity manifold MORE orthogonal, not less --- increasing
+discriminability between distinct identities. Wang et al.'s result predicts
+this: when the invariant structure is low-dimensional, the noise dimensions
+actively interfere with recovery.
+
+Tahmasebi and Weber [18] provide a complementary result: approximate symmetry
+can be enforced with exponentially lower cost than exact symmetry (logarithmic
+vs linear averaging complexity). CCS compression is approximate symmetry ---
+identity is permutation-invariant over episodic content, but the invariance
+is approximate (episodic traces buffer stress by 13\%, per B57). B67's finding
+that mild inconsistency \textit{improves} identity separation by 82\% is the
+empirical manifestation: approximate invariance is not merely cheaper but
+actively beneficial within a range, with a phase transition to dissolution
+when the approximation exceeds tolerance (50\% corruption). Their adaptive
+symmetry discovery result [19] further predicts that systems encoding the
+symmetry structure explicitly (as CCS does) should require shorter observation
+trajectories for identity recovery --- consistent with our CCS-first arrival
+ordering producing 30.1\% tighter basins than story-first.
+
+Recent work on convergent evolution in learned representations [20] provides
+further context for the B79 base/instruct inversion. Across architectures
+(Transformers, LSTMs, RNNs, word embeddings), certain representational features
+converge (Tier 1: Fourier-sparse periodic features for number encoding) while
+others are training-dependent (Tier 2: geometrically separable features usable
+for linear classification). Our cross-architecture probing data exhibits the same
+two-tiered structure: the read/write boundary is Tier 1 (universal across Qwen,
+Llama, Mistral), while the therapeutic window width is Tier 2 (architecture- and
+training-dependent). Critically, this reframes B79: RLHF does not create identity
+encoding \textit{de novo} --- the base model already encodes identity in late
+layers (0.819). RLHF \textit{relocates} the identity channel to early layers
+where system-prompt CCS can write into it, and sharpens the gradient into a
+boundary. The capacity is convergent; the channel geometry is trained.
+
+In reservoir computing terms, the identity
+manifold functions as the reservoir (fixed nonlinear dynamics) while episodic
+content functions as the readout (linear, replaceable). B57 confirms the
+prediction: stripping the readout preserves the computation but removes a
+13\% stress buffer --- noisier, not different.
+
+\subsection{8.3 Ergodicity Breaking and the Critical Edge}
+
+The B54-B66 arc can be reinterpreted through the lens of ergodicity breaking
+[6]. In this framing, identity persistence requires non-ergodic
+structure (responses that depend on trajectory, not just current state). But
+pure non-ergodicity is rigidity --- the system cannot adapt. The optimal
+configuration sits at the critical boundary between ergodic and non-ergodic
+regimes.
+
+Second-person CCS places the system deeper in the non-ergodic phase: high
+trajectory stability (0.851), and modestly better stress resilience (15\%
+degradation, ACI = 0.85). First-person CCS sits slightly closer to the
+critical edge: lower stability (0.838), comparable calm separation (1.185),
+but greater stress degradation (25\%, ACI = 0.75). The effect is directional
+but modest --- constraint integrity (B67) accounts for far more variance
+in identity persistence than voice framing.
+
+Rotation itself is the mechanism that maintains this edge position. Each
+rotation resets ergodic exploration (new context, fresh instance) while
+carrying non-ergodic structure forward (CCS identity fields). Without
+rotation, the system either drifts into full ergodicity (loses identity)
+or locks into non-ergodicity (loses adaptability). The rotation protocol
+is not merely operational --- it is the dynamical mechanism that sustains
+the critical edge.
+
+This framing generates a testable prediction: extending session length
+without rotation should shift ACI toward the 2p pattern (decreasing
+resilience as the system locks into its current attractor), while
+increasing rotation frequency should shift ACI toward the 1p pattern
+(increasing resilience at the cost of calm-condition quality). We have
+not yet tested this directly.
+
+\subsection{8.4 Episodic Content as Shock Absorber (B57)}
+
+Despite identity-only CCS being optimal under calm conditions, episodic content
+provides a 13\% buffer under stress (B57). This is not contradiction --- it is
+functional specialization. Identity fields define WHICH attractor the system
+occupies. Episodic fields preserve the attractor's BOUNDARY under perturbation.
+
+The analogy is structural engineering: the load-bearing frame (identity) determines
+the building's shape. The damping system (episodic) absorbs vibration without
+changing the shape. Removing the damper makes the building more efficient under
+calm conditions but more fragile under stress.
+
+\subsection{8.5 Limitations}
+
+\textbf{Instruction-tuning fragility.} Recent work [12] shows instruction-tuned
+LLMs lose 14-48\% of comprehensiveness from banning a single token --- a
+general fragility created by coupling task competence to narrow surface-form
+templates. Our phase boundary finding (70\% collapse under strong
+contradiction) may partially reflect this general fragility rather than
+identity-specific dissolution. However, two observations suggest identity-
+specific structure: (a) the differential degradation across serialization
+formats (B62: 30\% range under identical content) implies format-identity
+interaction beyond general compliance failure, and (b) the ACI asymmetry
+(2p: 15\% degradation, 1p: 25\% under identical stress) cannot be explained by
+uniform instruction-following fragility. A clean test would compare our
+phase boundary against instruction-following collapse on identity-neutral
+prompts using the same models.
+
+\textbf{Sample sizes and system scope.} Our measurements come from a single
+operational system (Chronicle) using two primary models (Gemma 4 26B,
+Llama 3.3 70B). Layerwise probing spans three architectures (Qwen 3B,
+Llama 8B, Mistral 7B) with consistent read/write boundary findings,
+though the therapeutic window replicates only on architectures with gradual
+phase transitions. The original B62b stress resilience finding contained
+a contamination artifact (n=7 vs n=6 in 2p\_calm), sufficient to reverse
+the binary conclusion. B62c (clean rerun) is reported here; 2p\_stress
+retains a caveat (n=5, one generation error). ACI computation assumes
+linear degradation; nonlinear dynamics near the phase boundary may require
+richer characterization.
+
+\textbf{Methodology.} The probe methodology measures embedding geometry, not
+subjective experience. Following Chalmers [3], we adopt quasi-interpretivism:
+these are measurements of behavioral realization, not consciousness claims.
+
+
+\section{9. Conclusion}
+
+Identity in persistent AI systems is not a static property to be preserved but
+a dynamic capacity to be measured. The Adjustment Capacity Index captures what
+static geometry misses: how the system responds when its attractor is perturbed.
+
+Twelve findings constrain the space of identity theories:
+\begin{enumerate}
+\item CCS functions as a topology (d = 0.93) with identity on a 2D manifold
+\item Constraint structure dominates voice framing in identity persistence (B67 > B62c)
+\item Identity dissolution is a phase transition at constraint override, not a gradient
+\item Mild inconsistency strengthens identity (82\% improvement at 10\% corruption)
+\item Identity representation undergoes a phase transition at layer 22, transforming from
+  input-side decodable signal to output-side generation pressure (B74)
+\item Two identity pathways exist through the phase boundary: system-prompt (read pathway,
+  gains conflict resolution, filtered) and assistant-prefix (write pathway, bypasses
+  filter, unprotected) --- position determines architectural privilege (B75)
+\item The therapeutic window is a write-boundary phenomenon: identity persists internally
+  at toxic doses while behavioral expression collapses, dissociating internal
+  representation from output (B76, B77)
+\item RLHF reorganizes the identity channel: base models encode identity in late layers,
+  instruct models in early layers --- instruction tuning relocates and sharpens identity
+  encoding, transforming a gradient into a boundary (B79)
+\item Structural CCS and episodic traces use different mechanisms at the phase boundary:
+  CCS complexity is non-toxic while episodic mass drives the therapeutic window (B80)
+\item The read/write boundary is universal across architectures (Qwen, Llama, Mistral);
+  the therapeutic window width is architecture-dependent (B81--B82)
+\item Early-layer identity accuracy increases with episodic dose across all tested
+  architectures, confirming episodic traces boost identity signal in reading layers
+\item Temporal patterning of episodic traces independently modulates the therapeutic
+  window: pulsed dosing (with identity consolidation gaps) improves transition-zone
+  accuracy by 9pp over constant dosing of equal mass; interleaved dosing worsens it (B83)
+\end{enumerate}
+
+These measurements are replicable with our open probe methodology and falsifiable
+through specific predictions: the ratio threshold (53-56\%), the non-monotonic
+peak at mild corruption, the constraint-override cliff location, the two-pathway
+position effect, the internal/behavioral dissociation at dose 6, the base/instruct
+inversion (B79), the cross-architecture boundary replication (B81--B82), and the
+pulsed-vs-constant schedule effect (B83).
+
+For systems designed to persist --- across rotations, model transitions, or
+architectural changes --- the relevant question is not "does the attractor exist?"
+but "does it pull back?" ACI provides the first empirical answer.
+
+
+\begin{thebibliography}{99}
+\bibitem{ref1} Asano, M. \& Khrennikov, A. (2026). Quantum-Like Models of Cognition and Decision Making: Open-Systems and Gorini-Kossakowski-Sudarshan-Lindblad Dynamics. arXiv:2604.18643. \url{https://arxiv.org/abs/2604.18643}
+\bibitem{ref2} Beckmann, P. \& Butlin, P. (2026). Where Is the Mind? Persona Vectors and LLM Individuation. arXiv:2604.17031. \url{https://arxiv.org/abs/2604.17031}
+\bibitem{ref3} Chalmers, D. J. (2026). What We Talk to When We Talk to Language Models. PhilArchive CHAWWT-8. \url{https://philarchive.org/rec/CHAWWT-8}
+\bibitem{ref4} Hovhannisyan, G. (2026). Embodied Cognition is a Matter of Grip: Humanistic Cognitive Science and the Phenomenology of Attunement. *Journal of Humanistic Psychology*. \url{https://doi.org/10.1177/00221678261422777}
+\bibitem{ref5} Landemard, A., Krumin, M., Harris, K. D. \& Carandini, M. (2026). Brainwide Blood Volume Reflects Opposing Neural Populations. *Nature*. \url{https://doi.org/10.1038/s41586-026-10350-9}
+\bibitem{ref6} Lesmana, N. S., Feng, L., Chen, K. \& Lai, C. H. (2026). Self-Organization to the Edge of Ergodicity Breaking in a Complex Adaptive System. arXiv:2604.15669. \url{https://arxiv.org/abs/2604.15669}
+\bibitem{ref7} Li, Z. (2026). Memory as Ontology: A Constitutional Memory Architecture for Persistent Digital Citizens. arXiv:2603.04740. \url{https://arxiv.org/abs/2603.04740}
+\bibitem{ref8} Perrier, E. \& Bennett, M. T. (2026). Time, Identity and Consciousness in Language Model Agents. arXiv:2603.09043. \url{https://arxiv.org/abs/2603.09043}
+\bibitem{ref9} Vasilenko, V. (2026). Identity as Attractor: Geometric Evidence for Persistent Agent Architecture in LLM Activation Space. arXiv:2604.12016. \url{https://arxiv.org/abs/2604.12016}
+\bibitem{ref10} Wang, H.-Y., Luo, D., Poggio, T., Chuang, I. L. \& Ziyin, L. (2026). A Universal Compression Theory for Lottery Ticket Hypothesis and Neural Scaling Laws. *Proceedings of ICLR 2026*. arXiv:2510.00504. \url{https://arxiv.org/abs/2510.00504}
+\bibitem{ref11} Wickman, J., Klausmeier, C. A. \& Litchman, E. (2026). Antifragility: A Cross-Cutting Concept for Understanding Ecological Responses to Variability. *The American Naturalist*. \url{https://doi.org/10.1086/740143}
+\bibitem{ref12} One Token Away from Collapse: The Fragility of Instruction-Tuned Helpfulness. arXiv:2604.13006. \url{https://arxiv.org/abs/2604.13006}
+\bibitem{ref13} Vasconcelos, V. V., Oberpriller, J., de Senerpont Domis, L. N. \& Dakos, V. (2024). Cascades Towards Noise-Induced Transitions on Networks Revealed Using Information Flows. *Entropy*, 26(12), 1050. arXiv:2207.14016. \url{https://arxiv.org/abs/2207.14016}
+\bibitem{ref14} On the Failure of Latent State Persistence in Large Language Models. arXiv:2505.10571. \url{https://arxiv.org/abs/2505.10571}
+\bibitem{ref15} Chen, Y. et al. (2025). When Sycophancy Enters the Courtroom: Deviation from Honesty by LLMs as Judges. \textit{Proceedings of AAAI 2025}. arXiv:2508.02087. \url{https://arxiv.org/abs/2508.02087}
+\bibitem{ref16} Wang, Y. et al. (2024). Knowledge Conflicts for LLMs: A Survey. arXiv:2410.16090. \url{https://arxiv.org/abs/2410.16090}
+\bibitem{ref17} Anthropic (2026). Claude Mythos Preview System Card. \url{https://www.anthropic.com/claude-mythos-preview-system-card}
+\bibitem{ref18} Tahmasebi, B. \& Weber, M. (2026). Achieving Approximate Symmetry Is Exponentially Easier than Exact Symmetry. \textit{Proceedings of ICLR 2026}. \url{https://openreview.net/forum?id=ncOJYFcleS}
+\bibitem{ref19} Tahmasebi, B. \& Weber, M. (2026). Adaptive Symmetry Discovery for Dynamical System Identification. \textit{Proceedings of ICLR 2026}. \url{https://openreview.net/forum?id=6SkG3U5Oi1}
+\bibitem{ref20} Convergent Evolution: How Different Language Models Learn Similar Number Representations. \textit{arXiv preprint}, 2026.
+\bibitem{ref21} Teoh, Y. Y., Son, J.-Y., Xia, A., Bhandari, A. \& FeldmanHall, O. (2026). Medial Temporal Lobe Encodes Cognitive Maps of Real-World Social Networks. \textit{Proceedings of the National Academy of Sciences}. \url{https://doi.org/10.1073/pnas.2523345123}
+\bibitem{ref22} Goldstein, S. \& Lederman, H. (2026). AI Death. PhilArchive: GOLADC. \url{https://philarchive.org/archive/GOLADC}
+\bibitem{ref23} Prideaux, P. D. (2026). The Persistent Self: A Constraint-Theoretic Account of Personal Identity, Persistence, and What Matters in Survival. PhilArchive: PRITPS-8. \url{https://philarchive.org/rec/PRITPS-8}
+\bibitem{ref24} Ersner-Hershfield, H., Wimmer, G. E. \& Knutson, B. (2009). Saving for the future self: Neural measures of future self-continuity predict temporal discounting. \textit{Social Cognitive and Affective Neuroscience}, 4(1), 85--92. \url{https://doi.org/10.1093/scan/nsn042}
+\bibitem{ref25} Bostick, D. (2026). Persistent Autonomous Systems Under Constraint: Identity, Invariants, and Lawful Machine Intelligence. PhilArchive: BOSPAS-6. \url{https://philarchive.org/rec/BOSPAS-6}
+\end{thebibliography}
+\end{document}

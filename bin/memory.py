@@ -40,7 +40,8 @@ from typing import Dict, List, Optional, Tuple
 
 DB_PATH = os.environ.get("CHRONICLE_DB", "/mnt/hdd/chronicle-data/processed.db")
 OLLAMA_URL = os.environ.get("CHRONICLE_OLLAMA_URL", "http://localhost:11434")
-EMBED_MODEL = os.environ.get("CHRONICLE_EMBEDDING_MODEL", "qwen3-embedding:0.6b")
+EMBED_URL = os.environ.get("EMBED_OLLAMA_URL", "http://192.168.1.11:11434")  # Jetson — dedicated embeddings
+EMBED_MODEL = os.environ.get("CHRONICLE_EMBEDDING_MODEL", "nomic-embed-text")  # Build #125
 DATA_DIR = os.environ.get("CHRONICLE_DATA_DIR", "/mnt/hdd/chronicle-data")
 FAISS_INDEX_PATH = os.path.join(DATA_DIR, "capsules.faiss")
 
@@ -92,18 +93,21 @@ def _recency_score(ts: int, now: int, half_life_hours: float = 24.0) -> float:
     return math.exp(-0.693 * age_hours / half_life_hours)
 
 
-def _embed_text(text: str, url: str = OLLAMA_URL, model: str = EMBED_MODEL) -> Optional[List[float]]:
-    """Embed a single text via Ollama. Returns vector or None."""
+def _embed_text(text: str, url: str = None, model: str = EMBED_MODEL,
+                 query_mode: bool = False) -> Optional[List[float]]:
+    """Embed a single text via nomic-embed-text on Jetson. Returns vector or None."""
+    embed_url = url or EMBED_URL
+    prefix = "search_query: " if query_mode else "search_document: "
     try:
         r = requests.post(
-            f"{url}/api/embed",
-            json={"model": model, "input": [text[:2000]]},
+            f"{embed_url}/api/embeddings",
+            json={"model": model, "prompt": prefix + text[:2000]},
             timeout=10,
         )
         if r.status_code == 200:
-            embs = r.json().get("embeddings", [])
-            if embs:
-                return embs[0]
+            emb = r.json().get("embedding")
+            if emb:
+                return emb
     except Exception:
         pass
     return None
@@ -237,7 +241,8 @@ class MemoryCache:
             "SELECT ce.capsule_id, ce.embedding, kc.restatement, kc.topic "
             "FROM capsule_embeddings ce "
             "JOIN knowledge_capsules kc ON ce.capsule_id = kc.id "
-            "WHERE ce.embedding IS NOT NULL"
+            "WHERE ce.embedding IS NOT NULL "
+            "AND kc.consolidated_into IS NULL AND kc.metabolized_at IS NULL"
         )
         self._capsule_vecs = []
         for r in rows:

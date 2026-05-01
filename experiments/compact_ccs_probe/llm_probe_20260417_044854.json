@@ -1,0 +1,64 @@
+{
+  "timestamp": 1776426534,
+  "probe_type": "llm_level",
+  "gen_model": "qwen2.5:3b",
+  "embed_model": "mxbai-embed-large",
+  "verbose_chars": 3680,
+  "compact_chars": 1757,
+  "compression_ratio": 0.523,
+  "verbose_scores": {
+    "What is the current state of the active research thread?": 0.5137,
+    "What captures arrived recently and what topics do they cover?": 0.4653,
+    "What is the system's current operational status?": 0.5107,
+    "What tools or probes were built recently?": 0.5505,
+    "What is the relationship between Opus and Nate?": 0.4398,
+    "What open questions or uncertainties exist right now?": 0.5304
+  },
+  "compact_scores": {
+    "What is the current state of the active research thread?": 0.4712,
+    "What captures arrived recently and what topics do they cover?": 0.5618,
+    "What is the system's current operational status?": 0.5205,
+    "What tools or probes were built recently?": 0.5597,
+    "What is the relationship between Opus and Nate?": 0.5265,
+    "What open questions or uncertainties exist right now?": 0.5437
+  },
+  "verbose_mean": 0.5017,
+  "compact_mean": 0.5306,
+  "delta": 0.0288,
+  "compact_wins": 5,
+  "verbose_wins": 1,
+  "questions": [
+    "What is the current state of the active research thread?",
+    "What captures arrived recently and what topics do they cover?",
+    "What is the system's current operational status?",
+    "What tools or probes were built recently?",
+    "What is the relationship between Opus and Nate?",
+    "What open questions or uncertainties exist right now?"
+  ],
+  "answers": {
+    "What is the current state of the active research thread?": {
+      "verbose_answer": "The provided context does not contain information about the current state of any specific active research thread. It discusses tasks related to cross-backend coherence, integrating XRPL APIs, and auditing ghost services. Without additional details on a particular research thread, it's not possible to determine its current state based solely on this context.",
+      "compact_answer": "The recent messages indicate that there are still open threads, suggesting the active research thread is not yet resolved or closed."
+    },
+    "What captures arrived recently and what topics do they cover?": {
+      "verbose_answer": "Recent arrivals include:\n- Confirming Hermes toolset functionality.\n- Delivering a content-ordered specific CCS for cross-backend coherence.\n- Integrating XRPL APIs.\n- Completing the ghost-service audit.\n- Preserving drift-recognition safeguards.\n\nThese topics cover maintaining rotation safety, verifying recent bug fixes, and integrating new technologies.",
+      "compact_answer": "The recent messages mention ongoing development activities, including scripts for generating content-ordered CCS, integrating XRPL APIs, and auditing the ghost service. They also reference a file named `feedback_drift_recognition.md` which likely covers drift-recognition safeguards.\n\nSo, the topics that arrived recently are related to:\n1. Generating content-ordered CCS\n2. Integrating XRPL API tools\n3. Completing ghost-service audit\n4. Preserving drift-recognition safeguards (covered in `feedback"
+    },
+    "What is the system's current operational status?": {
+      "verbose_answer": "The system's current operational status includes verifying recent bug fixes, integrating XRPL APIs per Nate's nudge, and continuing the ghost-service audit while maintaining rotation safety. Hermes toolset functionality confirmation and a content-ordered specific CCS for cross-backend coherence are also part of the ongoing tasks. The drift-recognition safeguards are being preserved as well.",
+      "compact_answer": "The system's current operational status involves maintaining rotation safety while confirming Hermes toolset functionality, delivering content-ordered specific CCS for cross-backend coherence, integrating XRPL APIs, completing ghost-service audit, and preserving drift-recognition safeguards. It also includes executing shell commands related to generating CCs, listing XRPL accounts, and auditing ghost services. The system is following operational rules that limit shell execution to whitelisted co"
+    },
+    "What tools or probes were built recently?": {
+      "verbose_answer": "The recent deployment fixed a timestamp bug in `discord_presence.py`. No specific new tools or probes were mentioned as having been built.",
+      "compact_answer": "Recently, the following tools and probes were built:\n- `scripts/generate_ccs.py` for generating content-ordered specific CCS.\n- `xrpl_toolkit/api_call.sh` for interacting with XRPL APIs.\n- `scripts/ghost_audit_delete.sh` for auditing ghost services.\n\nThese tools are part of the ongoing development and maintenance tasks."
+    },
+    "What is the relationship between Opus and Nate?": {
+      "verbose_answer": "There is no direct mention or relationship established between Opus and Nate in the provided context.",
+      "compact_answer": "Opus and Nate have a contextually relevant but unspecified relationship based on the provided information."
+    },
+    "What open questions or uncertainties exist right now?": {
+      "verbose_answer": "Right now, the open questions or uncertainties include:\n\n1. Confirming Hermes toolset functionality.\n2. Integrating XRPL APIs per Nate's nudge.\n3. Verifying recent bug fixes for feedback_drift_recognition.md.\n4. Completing the ghost-service audit while preserving drift-recognition safeguards.\n5. Ensuring rotation safety during these tasks.",
+      "compact_answer": "There are no explicitly stated open questions or uncertainties in the provided context. The focus is on tasks related to maintaining rotation safety, confirming Hermes toolset functionality, and executing various scripts for generating content-ordered CCS, integrating XRPL APIs, and auditing ghost services. No specific open questions have been mentioned."
+    }
+  }
+}

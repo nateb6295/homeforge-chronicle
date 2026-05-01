@@ -1,0 +1,40 @@
+window_start,window_end,masked_text,a1_len,a2_len,shift_norm,attribution,elapsed_s
+-1,-1,(baseline),149,720,13.18286077103442,0.0,29.74
+0,64,Recent events: [14:50] directive(p5): [short-affirmative]; [14:5,148,139,6.4631,13.9754,16.35
+32,96,(p5): [short-affirmative]; [14:50] directive(p5): [translation-r,134,1261,12.6306,8.0192,42.18
+64,128,0] directive(p5): [translation-request]; [14:50] directive(p5): ,135,700,13.5216,11.1865,28.99
+96,160,equest]; [14:50] directive(p5): [availability-update]; [14:50] [,127,184,8.9642,12.6942,15.93
+128,192,[availability-update]; [14:50] [thread-advance-header]: [substra,143,184,8.9886,11.7211,17.08
+160,224,"thread-advance-header]: [substrate-divergence claim, revision ti",131,192,10.1239,15.0406,16.24
+192,256,"te-divergence claim, revision tier]; [14:50] [thread-advance-hea",143,168,7.7548,11.556,16.7
+224,288,er]; [14:50] [thread-advance-header]: [substrate-divergence clai,153,166,7.8927,12.0124,17.95
+256,320,"der]: [substrate-divergence claim, initial tier]; [14:40] direct",131,206,11.2722,15.6478,16.41
+288,352,"m, initial tier]; [14:40] directive(p5): [availability-update]; ",127,215,10.5068,13.7929,24.67
+320,384,ive(p5): [availability-update]; [14:40] directive(p5): [affirmat,142,203,8.818,13.3168,16.98
+352,416,[14:40] directive(p5): [affirmative-directive]; [14:40] directiv,127,173,8.1323,12.566,15.87
+384,448,ive-directive]; [14:40] directive(p5): [observational-directive],134,636,12.7445,9.7086,27.18
+416,480,e(p5): [observational-directive]; [14:40] [thread-advance-header,141,266,11.7393,12.3804,18.79
+448,512,"; [14:40] [thread-advance-header]: [substrate-divergence claim, ",153,180,6.7521,13.2317,17.18
+480,544,"]: [substrate-divergence claim, revision tier]; [14:40] [thread-",153,169,7.4987,11.343,17.33
+512,576,revision tier]; [14:40] [thread-advance-header]: [substrate-dive,153,163,6.9375,11.4622,16.85
+544,608,"advance-header]: [substrate-divergence claim, initial tier]\n\nKey",139,426,11.1271,11.727,23.84
+576,640,"rgence claim, initial tier]\n\nKey entities: Nate (0.93), Hermes (",115,101,9.5329,12.7901,13.79
+608,672," entities: Nate (0.93), Hermes (0.88), mcp (0.75), feedback_drif",165,254,8.3476,13.7033,18.91
+640,704,"0.88), mcp (0.75), feedback_drift_recognition.md (0.7), referenc",134,561,12.7157,8.5669,26.23
+672,736,"t_recognition.md (0.7), reference_cache_posture.md (0.68), ghost",132,636,13.7597,9.1383,27.24
+704,768,"e_cache_posture.md (0.68), ghost_service_audit (0.65), thread_31",90,89,6.2894,13.4501,11.24
+736,800,"_service_audit (0.65), thread_318 (0.6)\n\nOpen questions: {'descr",90,91,4.1349,13.0547,11.2
+768,832,8 (0.6)\n\nOpen questions: {'description': '[agent-observability c,314,548,7.0751,13.2511,31.6
+800,864,"iption': '[agent-observability concern, cross-layer]', 'magnitud",133,184,7.9814,12.7457,16.47
+832,896,"oncern, cross-layer]', 'magnitude': 0.62, 'resolution_path': '[r",132,174,9.1398,15.0431,15.72
+864,928,"e': 0.62, 'resolution_path': '[request-external-data + compare-p",141,293,10.5797,12.0247,18.26
+896,960,equest-external-data + compare-path]'}; {'description': '[patter,131,268,12.178,13.2929,17.08
+928,992,ath]'}; {'description': '[pattern-matching reliability under act,147,770,11.5086,6.6819,32.18
+960,1024,"n-matching reliability under active-feedback regime]', 'magnitud",133,234,8.8093,11.0967,17.7
+992,1056,"ive-feedback regime]', 'magnitude': 0.45, 'resolution_path': '[c",135,588,12.4374,7.5361,26.42
+1024,1088,"e': 0.45, 'resolution_path': '[controlled-suite + frequentist-me",133,230,9.1034,11.2647,17.35
+1056,1120,ontrolled-suite + frequentist-measurement]'}; {'description': '[,152,243,8.0441,11.9561,18.4
+1088,1152,asurement]'}; {'description': '[rotation-pressure impact on dept,142,256,8.4869,11.7779,17.89
+1120,1184,"rotation-pressure impact on depth-cost trade-off]', 'magnitude':",160,253,7.7676,13.6776,18.59
+1152,1216,"h-cost trade-off]', 'magnitude': 0.4, 'resolution_path': '[longi",127,172,9.5011,13.6818,15.26
+1184,1248," 0.4, 'resolution_path': '[longitudinal-metric-log + cadence-adj",160,233,6.5691,13.0578,18.46

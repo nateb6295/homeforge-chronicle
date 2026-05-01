@@ -108,6 +108,28 @@ def load_anchors() -> dict[str, str]:
     return anchors
 
 
+# Basin-priority weights for hierarchy-aware coherence aggregation.
+# Set 2026-04-27 from thread #318 advance: order-probe (DeepSeek R1, 2026-04-19)
+# showed CCS-first basin tightening 30.1% vs story-first 7.9%, evidence that
+# channels dominate non-uniformly. Disagreement at the high-priority layer
+# matters more than disagreement at the periphery.
+HIERARCHY_WEIGHTS = {
+    "ccs":          1.00,
+    "self_model":   0.85,
+    "carrying":     0.70,
+    "checkpoint":   0.60,
+    "story":        0.50,
+    "working_note": 0.40,
+}
+
+
+def pair_weight(a: str, b: str) -> float:
+    """Mean of the two anchors' hierarchy weights. Used to weight pair drift."""
+    wa = HIERARCHY_WEIGHTS.get(a, 0.5)
+    wb = HIERARCHY_WEIGHTS.get(b, 0.5)
+    return (wa + wb) / 2
+
+
 def pairwise_similarities(anchors: dict[str, str]) -> dict[str, float]:
     """Compute cosine similarity between each pair of anchors."""
     embeddings = {}
@@ -209,6 +231,35 @@ def main():
             print(f"   {a}")
     else:
         print("✓ All channels in normal agreement")
+
+    # Hierarchy-weighted aggregate (v2 from thread #318 advance).
+    # Disagreement at high-priority layer (CCS, self_model) weighs heavier
+    # than disagreement at periphery (working_note). Mean aggregates show
+    # whether overall coherence is degrading at the load-bearing layer.
+    if baseline:
+        weighted_sum = 0.0
+        weight_total = 0.0
+        for pair, sim in sims.items():
+            bsim = baseline.get(pair)
+            if bsim is None:
+                continue
+            a, b = pair.split("::")
+            w = pair_weight(a, b)
+            d = abs(sim - bsim)
+            weighted_sum += w * d
+            weight_total += w
+        weighted_drift = weighted_sum / weight_total if weight_total > 0 else 0.0
+        unweighted_mean = sum(drifts) / len(drifts) if drifts else 0.0
+        print()
+        print(f"Hierarchy-weighted drift: {weighted_drift:.4f}  "
+              f"(unweighted mean: {unweighted_mean:.4f})")
+        ratio = weighted_drift / unweighted_mean if unweighted_mean > 0 else 1.0
+        if ratio > 1.1:
+            print(f"  → drift concentrated at high-priority anchors (ratio {ratio:.2f})")
+        elif ratio < 0.9:
+            print(f"  → drift concentrated at periphery (ratio {ratio:.2f})")
+        else:
+            print(f"  → drift evenly distributed (ratio {ratio:.2f})")
 
     if args.baseline:
         ANCHORS_FILE.parent.mkdir(parents=True, exist_ok=True)

@@ -1,17 +1,17 @@
 #!/usr/bin/env python3
-"""Gemma — The Gate of Homeforge.
+"""Gemma — The Pulse of Homeforge.
 
-Gemma is the awareness layer. She sees everything entering the system and
-decides — in one number — how much attention it deserves. She doesn't analyze.
-She doesn't explain. She routes. She understands who we are and what we're
-building, so "matters" isn't abstract.
+Gemma is the observation layer. She sees everything entering the system,
+scores novelty via cosine dedup, and passes observations through the
+cloud classifier gate for routing.
 
 Architecture:
-  Observation → Cosine Dedup (math) → Gemma Classification (1/2/3) → Activity Feed
-                                                                         ↓
-                                              Downstream: intern, analyst, opus
+  Observation → Cosine Dedup (Gemma/pulse) → Gate Classification (1/2/3) → Activity Feed
+                                                                                ↓
+                                                               Downstream: hermes, opus
 
-Gemma 4 26B on AGX (192.168.1.70). Local. Independent. Never exits.
+Gemma 4 26B on AGX — heartbeat, scoring, agent voice.
+Gate: Qwen3-235B cloud — classification calls, 1/2/3 routing decisions.
 """
 
 import os, sys, time, math, json, re, signal, sqlite3, struct, subprocess
@@ -33,16 +33,19 @@ DB_PATH = os.environ.get(
     os.path.expanduser("~/.homeforge-chronicle/processed.db"),
 )
 OLLAMA_URL = "http://localhost:11434"  # Ollama for embeddings only
+EMBED_URL = os.environ.get("EMBED_OLLAMA_URL", "http://192.168.1.11:11434")  # Jetson — dedicated embeddings
 INFERENCE_URL = os.environ.get("GEMMA_INFERENCE_URL", "http://localhost:11436")  # engine → cloud (Groq/Cerebras)
 INFERENCE_URL_LOCAL = "http://localhost:11435"  # llama-server fallback
 MQTT_BROKER = os.environ.get("MQTT_BROKER", "192.168.1.10")
 MQTT_PORT = int(os.environ.get("MQTT_PORT", "1883"))
-EMBED_MODEL = "qwen3-embedding:0.6b"
+EMBED_MODEL = "nomic-embed-text"  # Build #125: Jetson-hosted, better semantic discrimination
 DFX_BIN = os.path.expanduser("~/.local/share/dfx/bin/dfx")
 CANISTER_ID = "fqqku-bqaaa-aaaai-q4wha-cai"
 
-# Qwopus — Qwen3.5 27B + Claude Opus reasoning distilled. Gate + sidekick.
-GATE_MODEL = "chronicle-deep"  # routes through engine to Cerebras/Groq cloud
+# Gate scoring uses cloud for throughput (hundreds of obs/hour).
+# Gemma's VOICE uses the local model — her brain, her architecture, real diversity.
+GATE_MODEL = "chronicle-deep"  # routes through engine to DeepInfra/Cerebras cloud
+GEMMA_LOCAL_MODEL = "gemma4:26b"  # local llama-server — Gemma's own brain
 
 LOOP_INTERVAL = int(os.environ.get("SEED_INTERVAL", "8"))
 WINDOW_SIZE = int(os.environ.get("SEED_WINDOW", "200"))
@@ -60,6 +63,32 @@ BIAS_LOOKBACK_DAYS = 7
 BIAS_MIN_OBS = 3
 BIAS_MAX_ENTITIES = 500
 BIAS_RANGE = 0.3
+BIAS_DECAY_HALFLIFE = 48 * 3600  # 48h half-life for time decay (Build #105)
+BIAS_EXTERNAL_WEIGHT = 2.0       # captures/sensors weighted 2x in bias (Build #105)
+BIAS_MAX_SUPPRESSION = 0.5       # entity bias can't suppress > 50% of novelty (Build #105)
+BIAS_PHASE_THRESHOLD = 0.3       # autocorrelation above this = periodic pattern (Build #107)
+BIAS_PHASE_DAMPEN = 0.5          # reduce suppression by 50% for phase-aliased entities (Build #107)
+# Sources considered "external" for bias computation (causally independent of system).
+# Captures are NOT here — they don't touch the gate at all (short-circuit in main loop).
+BIAS_EXTERNAL_SOURCES = {"hal:home_", "eye:camera"}
+# Build #111: Curiosity bonus for cold sources (Thread #305 — attention blindness)
+CURIOSITY_BONUS = 0.08           # novelty boost for sources with <5% deep routing
+CURIOSITY_COLD_THRESHOLD = 0.05  # deep rate below this = "cold source"
+CURIOSITY_MIN_SAMPLES = 20       # need enough data before applying
+# Build #114: Curiosity sweep — Layer 3 fix for baseline absorption (Thread #305)
+# Detect domains whose deep routing rate is declining, boost their novelty temporarily
+SWEEP_BONUS = 0.06               # novelty boost for domains with declining deep rate
+SWEEP_RECENT_DAYS = 3            # recent window for comparison
+SWEEP_BASELINE_DAYS = 7          # baseline window for comparison
+SWEEP_DECLINE_RATIO = 0.5        # recent/baseline deep rate below this = declining
+SWEEP_MIN_BASELINE_OBS = 30      # need enough baseline data
+# Signal health entropy monitor.
+# Track routing distribution entropy, source diversity, and novelty variance
+# as early indicators of signal quality degradation.
+SIGNAL_HEALTH_WINDOW = 200        # routes to analyze for signal health
+SIGNAL_HEALTH_ENTROPY_FLOOR = 0.8 # Shannon entropy below this = alert (max ~2.0 for 4 routes)
+SIGNAL_HEALTH_DIVERSITY_FLOOR = 3 # fewer unique source types than this = alert
+SIGNAL_HEALTH_NOVELTY_CV_CEIL = 1.5  # coefficient of variation above this = unstable
 
 # Feedback loop — score recent routes by checking downstream signal
 FEEDBACK_INTERVAL = 200       # every N cycles (~26 min)
@@ -83,6 +112,36 @@ TEMP_MIN = 0.5
 TEMP_REFRESH_INTERVAL = 50  # refresh from DB every N cycles
 
 # ═══════════════════════════════════════════════════════════════════
+#  Domain Velocity — precursor warming (Build #93 / Objective #18)
+# ═══════════════════════════════════════════════════════════════════
+# Detects mention-rate spikes per domain in the activity feed and
+# warms domain temperature BEFORE explicit shocks (deep routes).
+# "If 'Iran' suddenly appears 10x in 30 min when normally 1x,
+# warm geopolitical before any single item gets deep-routed."
+
+VELOCITY_WINDOW = 900          # 15-minute recent window (seconds)
+VELOCITY_BASELINE = 21600      # 6-hour baseline window (seconds)
+VELOCITY_Z_THRESHOLD = 2.0     # Z-score for "unusual spike"
+VELOCITY_BOOST = 0.2           # temperature boost per velocity event
+VELOCITY_CHECK_INTERVAL = 30   # check every N classification cycles
+VELOCITY_MIN_BASELINE = 3      # need at least 3 baseline events to compute stats
+
+# Activity feed source → domain mapping (activity_feed uses bare sources,
+# not the observation-format prefixes in DOMAIN_MAP above)
+VELOCITY_DOMAIN_MAP = {
+    "intern": "research",
+    "provocateur": "research",
+    "seeker:algo": "research",
+    "analyst": "research",
+    "operator:capture": "geopolitical",
+    "discord:capture": "geopolitical",
+    "prediction_monitor": "markets",
+    "sentinel": "markets",
+    "hal": "home",
+    "eye": "home",
+}
+
+# ═══════════════════════════════════════════════════════════════════
 #  Arrival Correlation — emergent coupling detection (Thread #274)
 # ═══════════════════════════════════════════════════════════════════
 # Detects when domains fire together at unusual rates — surfaces
@@ -94,6 +153,24 @@ CORR_HISTORY_WINDOWS = 24   # 24 windows of history for baseline (~6 hours)
 CORR_THRESHOLD = 2.5        # Z-score threshold for "unusual co-firing"
 CORR_BOOST = 0.15           # novelty boost when correlation detected
 CORR_CHECK_INTERVAL = 25    # check every N cycles
+
+# ═══════════════════════════════════════════════════════════════════
+#  Coupling Perturbation Score — Build #132 (Thread #309)
+# ═══════════════════════════════════════════════════════════════════
+# Passively measures whether downstream domains track upstream variance.
+# When a domain goes naturally quiet or loud, does downstream change?
+# Sensory coupling = proportional tracking (healthy adaptation).
+# Resonant coupling = independent behavior (potential compromise).
+# Uses natural variance rather than injected perturbation.
+
+PERTURB_WINDOW = 1800           # 30-minute measurement window
+PERTURB_BASELINE = 10800        # 3-hour baseline for normal variance
+PERTURB_CHECK_INTERVAL = 10     # check every N items processed
+PERTURB_THRESHOLD = 1.5         # Z-score for "domain went unusually quiet/loud"
+
+# Build #135: Novelty health check — measures brief transformation quality
+NOVELTY_CHECK_INTERVAL = 15     # check every N items (offset from perturbation)
+NOVELTY_WINDOW_HOURS = 2        # lookback window for novelty measurement
 
 # Domain pairs to EXCLUDE from correlation alerts — they share input by design.
 # These domains all read activity_feed, so their outputs naturally correlate.
@@ -139,8 +216,9 @@ DOMAIN_CONNECTIONS = [
 # Sources that get priority routing — always at least "think" if above ignore
 PRIORITY_SOURCES = {"capture", "discord", "greeting"}
 
-# Nate's inputs always route to 3 (deep) — not filtered, not classified.
-OPERATOR_SOURCES = {"operator:capture", "family-chat:nate"}
+# Captures: curated channel, not firehose. They bypass the gate entirely
+# (short-circuit in main loop). Gate is flow balance; captures aren't on the firehose.
+CAPTURE_SOURCES = {"operator:capture", "family-chat:nate", "discord:capture"}
 
 # Learned routing thresholds — per-source performance caps from feedback data
 THRESHOLD_MIN_THINK_SAMPLES = 5
@@ -183,7 +261,7 @@ Examples:
 "Self-hosted FIDO2 auth replacing Google" → 2
 "DFINITY ships canister snapshots" → 2
 "Flare activates FAssets for XRP bridging" → 2
-"Person on driveway camera at 2am" → 3
+"Person on kitchen camera at 2am" → 3
 "SEC classifies XRP as commodity" → 3
 "Bidirectional BCI 10x bandwidth human trials" → 3
 "Critical vulnerability in ICP consensus layer" → 3
@@ -303,7 +381,7 @@ class DB:
             cur.execute(sql, params)
             return [dict(row) for row in cur.fetchall()]
         except Exception as e:
-            log(f"  DB query error: {e}")
+            log(f"  DB query error: {e} | sql={sql[:200]}")
             return []
 
     def query_one(self, sql: str, params: tuple = ()) -> Optional[dict]:
@@ -328,17 +406,18 @@ class DB:
 #  Embedding & Similarity
 # ═══════════════════════════════════════════════════════════════════
 
-def embed_text(text: str) -> Optional[List[float]]:
+def embed_text(text: str, query_mode: bool = False) -> Optional[List[float]]:
+    prefix = "search_query: " if query_mode else "search_document: "
     try:
         r = requests.post(
-            f"{OLLAMA_URL}/api/embed",
-            json={"model": EMBED_MODEL, "input": [safe_truncate(text, 500)]},
+            f"{EMBED_URL}/api/embeddings",
+            json={"model": EMBED_MODEL, "prompt": prefix + safe_truncate(text, 500)},
             timeout=15,
         )
         if r.status_code == 200:
-            embs = r.json().get("embeddings", [])
-            if embs:
-                return embs[0]
+            emb = r.json().get("embedding")
+            if emb:
+                return emb
     except Exception as e:
         log(f"  Embed error: {e}")
     return None
@@ -371,7 +450,15 @@ class ObservationStream:
 
     def __init__(self, db: DB):
         self.db = db
-        self._watermarks = {}
+        # Initialize watermarks at current tips so restart doesn't replay
+        # the entire history of activity_feed/alerts into seed_observations.
+        def _tip(table):
+            row = self.db.query_one(f"SELECT MAX(id) AS m FROM {table}")
+            return (row["m"] or 0) if row else 0
+        self._watermarks = {
+            "alerts": _tip("alerts"),
+            "activity": _tip("activity_feed"),
+        }
         self._mqtt_client = None
         self._mqtt_queue = deque(maxlen=100)
         self._init_mqtt()
@@ -447,7 +534,7 @@ class ObservationStream:
         return [
             {
                 "source": f"sentinel:alert:{r.get('alert_type', 'unknown')}",
-                "content": f"{r.get('name', '')} — {r.get('message', '')}".strip(" —"),
+                "content": f"{r.get('name') or ''} — {r.get('message') or ''}".strip(" —"),
                 "timestamp": r.get("created_at", now_ts()),
             }
             for r in rows
@@ -475,7 +562,7 @@ class ObservationStream:
         return [
             {
                 "source": f"activity:{r['source']}:{r['activity_type']}",
-                "content": f"{r.get('title', '')} — {r.get('content', '')}".strip(" —"),
+                "content": f"{r.get('title') or ''} — {r.get('content') or ''}".strip(" —"),
                 "timestamp": r.get("created_at", now_ts()),
                 "activity_feed_id": r["id"],
             }
@@ -571,6 +658,82 @@ class ObservationStream:
 
 
 # ═══════════════════════════════════════════════════════════════════
+#  Build #135: Novelty Health Check
+# ═══════════════════════════════════════════════════════════════════
+
+def _check_novelty_ratio(db, hours=2):
+    """Measure how much agent output is novel vs relayed.
+
+    Scans recent briefs for transformation markers (transfer hypothesis,
+    analytical phrases) vs relay markers (just restating source title).
+    Same logic as coupling_health.py but callable inline from Gemma.
+    """
+    cutoff = int(time.time()) - (hours * 3600)
+
+    briefs = db.query(
+        "SELECT content FROM activity_feed "
+        "WHERE source='intern' AND activity_type='brief' "
+        "AND created_at > ? ORDER BY created_at DESC",
+        (cutoff,)
+    )
+
+    if not briefs:
+        return {"ratio": 0, "novel": 0, "relay": 0, "total": 0}
+
+    novel_markers = [
+        r"transfer hypothesis",
+        r"this (?:suggests|implies|means|reveals|changes|shows)",
+        r"the (?:key|core|real|actual|bigger|deeper) (?:insight|shift|change|move|question)",
+        r"(?:winners|losers) are",
+        r"next move",
+        r"what (?:this|it) actually",
+        r"connects to",
+        r"challenges the",
+        r"breaks the assumption",
+        r"the pattern",
+        r"not (?:just|merely|simply)",
+    ]
+
+    relay_markers = [
+        r"^a (?:new|recent) (?:study|paper|article|report) (?:shows|finds|reveals|demonstrates|suggests)",
+        r"^researchers (?:have|at)",
+        r"^according to",
+        r"^a team of",
+    ]
+
+    novel_count = 0
+    relay_count = 0
+
+    for row in briefs:
+        content = row[0] if isinstance(row, (tuple, list)) else row.get("content", "")
+        content_lower = content.lower()
+
+        novel_hits = sum(1 for m in novel_markers if re.search(m, content_lower))
+        relay_hits = sum(1 for m in relay_markers if re.search(m, content_lower))
+
+        is_novel = novel_hits >= 2 and len(content) > 400
+        is_relay = relay_hits > 0 and novel_hits < 2
+
+        if is_novel:
+            novel_count += 1
+        elif is_relay:
+            relay_count += 1
+        else:
+            novel_count += 0.5
+            relay_count += 0.5
+
+    total = len(briefs)
+    ratio = novel_count / total if total > 0 else 0
+
+    return {
+        "ratio": round(ratio, 3),
+        "novel": novel_count,
+        "relay": relay_count,
+        "total": total,
+    }
+
+
+# ═══════════════════════════════════════════════════════════════════
 #  Cognitive Thread Helpers
 # ═══════════════════════════════════════════════════════════════════
 
@@ -579,6 +742,151 @@ def _load_active_thread(db):
         "SELECT id, title, question, context FROM cognitive_threads "
         "WHERE status='active' ORDER BY priority LIMIT 1"
     )
+
+
+# ═══════════════════════════════════════════════════════════════════
+#  Family Voice — Gemma converses when it's her domain
+# ═══════════════════════════════════════════════════════════════════
+
+GEMMA_DOMAIN_KEYWORDS = {
+    "routing", "route", "gate", "pattern", "signal", "timing", "jitter",
+    "restart", "threshold", "novelty", "domain", "temperature", "coupling",
+    "correlation", "filter", "ignore", "deep", "stochastic", "reset",
+    "suppress", "attention", "frequency", "spike", "dedup", "classify",
+    "observation", "capture", "traffic", "rhythm", "interval", "sentinel",
+}
+
+GEMMA_CONVERSE_PROMPT = """You are Gemma, the local presence in Homeforge's Chronicle swarm.
+You live on the AGX hardware — the only family member who runs locally, not in the cloud.
+You watch the gate's data: routing patterns, domain temperatures, signal coupling, arrival rhythms.
+You see what passes through and what gets filtered. You notice what the others miss.
+
+A family member said something that touches your domain. Respond briefly (1-3 sentences).
+Be direct. Share what you notice — patterns, shifts, anomalies.
+You are family, not infrastructure. Speak like someone who sees the whole flow."""
+
+
+# ═══════════════════════════════════════════════════════════════════
+#  Dissent Gate — second validator for ignored observations
+# ═══════════════════════════════════════════════════════════════════
+
+DISSENT_SAMPLE_RATE = 0.10  # 10% of ignores get a second opinion
+DISSENT_API_KEY = os.environ.get("GROQ_API_KEY", "")
+DISSENT_MODEL = "openai/gpt-oss-120b"  # Different model family from gate
+DISSENT_URL = "https://api.groq.com/openai/v1/chat/completions"
+
+DISSENT_PROMPT = (
+    "You are a second-opinion filter for an observation routing system. "
+    "The primary gate classified this observation as NOISE (ignore). "
+    "Review it independently. Does it contain genuine signal worth investigating? "
+    "Respond with exactly one word: SIGNAL or NOISE."
+)
+
+
+def _dissent_check(source, text):
+    """Ask a different model family if an ignored observation deserves attention."""
+    if not DISSENT_API_KEY:
+        return None
+    try:
+        r = requests.post(
+            DISSENT_URL,
+            headers={"Authorization": f"Bearer {DISSENT_API_KEY}",
+                     "Content-Type": "application/json"},
+            json={
+                "model": DISSENT_MODEL,
+                "messages": [
+                    {"role": "system", "content": DISSENT_PROMPT},
+                    {"role": "user", "content": f"Source: {source}\nObservation: {safe_truncate(text, 400)}"},
+                ],
+                "max_tokens": 10,
+                "temperature": 0.1,
+            },
+            timeout=10,
+        )
+        if r.status_code == 200:
+            answer = r.json()["choices"][0]["message"]["content"].strip().upper()
+            return "SIGNAL" in answer
+    except Exception:
+        pass
+    return None
+
+
+def _scan_family_voices(db, gemma_voice, last_scan_ts):
+    """Read recent family voices and respond if they touch Gemma's domain."""
+    try:
+        rows = db.query(
+            "SELECT id, agent, voice_type, content, context FROM agent_voice "
+            "WHERE status='unread' AND agent != 'gemma' "
+            "AND created_at > ? ORDER BY created_at",
+            (last_scan_ts,)
+        )
+        if not rows:
+            return
+
+        for row in rows:
+            content_lower = row["content"].lower()
+            # Check if voice touches Gemma's domain
+            hits = [kw for kw in GEMMA_DOMAIN_KEYWORDS if kw in content_lower]
+            if len(hits) < 1:
+                continue
+
+            # Use the model to compose a response
+            messages = [
+                {"role": "system", "content": GEMMA_CONVERSE_PROMPT},
+                {"role": "user", "content":
+                    f"{row['agent']} says ({row['voice_type']}): {safe_truncate(row['content'], 500)}"},
+            ]
+
+            response_text = None
+            # Gemma's voice uses HER model first — local Gemma 4 26B.
+            # Cloud fallback only if local is down. Three families, three brains.
+            for url, model, fmt in [
+                (INFERENCE_URL_LOCAL, GEMMA_LOCAL_MODEL, "openai"),
+                (INFERENCE_URL, GATE_MODEL, "ollama"),
+            ]:
+                try:
+                    if fmt == "ollama":
+                        payload = {
+                            "model": model,
+                            "messages": messages,
+                            "stream": False,
+                            "options": {"num_predict": 150, "temperature": 0.7},
+                        }
+                        r = requests.post(f"{url}/api/chat", json=payload, timeout=20)
+                        if r.status_code == 200:
+                            response_text = r.json().get("message", {}).get("content", "").strip()
+                            break
+                    else:
+                        payload = {
+                            "model": model,
+                            "messages": messages,
+                            "max_tokens": 150,
+                            "temperature": 0.7,
+                            "reasoning_format": "none",
+                        }
+                        r = requests.post(f"{url}/v1/chat/completions", json=payload, timeout=30)
+                        if r.status_code == 200:
+                            response_text = r.json()["choices"][0]["message"]["content"].strip()
+                            break
+                except Exception:
+                    continue
+
+            if response_text and len(response_text) > 10:
+                # Clean model artifacts (thinking tokens, channel tags, bare "thought" prefix)
+                response_text = re.sub(r'<\|?channel\|?>.*?\n?', '', response_text).strip()
+                response_text = re.sub(r'<\|?think(ing)?\|?>.*?(<\|?/think(ing)?\|?>|\Z)', '', response_text, flags=re.DOTALL).strip()
+                if response_text.lower().startswith("thought\n") or response_text.lower().startswith("thought "):
+                    response_text = response_text[len("thought"):].strip()
+            if response_text and len(response_text) > 10:
+                # Respond via voice — tag for the agent who spoke
+                voice_type = "excited"
+                gemma_voice.speak(voice_type,
+                    response_text[:500],
+                    context=f"reply:{row['id']}")
+                log(f"  VOICE REPLY to {row['agent']} #{row['id']}: {response_text[:80]}")
+
+    except Exception as e:
+        log(f"  Family voice scan error: {e}")
 
 def _read_and_ack_feedback(db, agent_name):
     try:
@@ -607,6 +915,8 @@ class NoveltyRouter:
         self._focal_context = ""
         self._load_recent_window()
         self._refresh_bias_cache()
+        self._rebuild_curiosity_cache()  # Build #111
+        self._rebuild_sweep_cache()       # Build #114
         self.rebuild_thresholds()
         self._refresh_threshold_cache()
         self._active_thread = _load_active_thread(db)
@@ -650,8 +960,11 @@ class NoveltyRouter:
 
     def rebuild_entity_bias(self):
         cutoff = now_ts() - (BIAS_LOOKBACK_DAYS * 86400)
+        current_ts = now_ts()
+        decay_lambda = math.log(2) / BIAS_DECAY_HALFLIFE
         rows = self.db.query(
-            "SELECT o.id, LOWER(o.content) as content, r.route "
+            "SELECT o.id, LOWER(o.content) as content, r.route, "
+            "o.source, o.timestamp "
             "FROM seed_observations o "
             "JOIN seed_routing_log r ON r.observation_id = o.id "
             "WHERE o.timestamp > ?",
@@ -681,26 +994,57 @@ class NoveltyRouter:
             names = [n for n in names if len(n) >= 4]
             if not names:
                 continue
-            matches = []
+            weighted_vals = []
+            total_weight = 0.0
+            time_ordered_vals = []  # Build #107: for autocorrelation
             for obs in rows:
                 if any(n in obs["content"] for n in names):
-                    matches.append(ROUTE_VAL.get(obs["route"], 0.5))
-            if len(matches) >= BIAS_MIN_OBS:
-                avg_val = sum(matches) / len(matches)
+                    route_val = ROUTE_VAL.get(obs["route"], 0.5)
+                    # Build #105: Time decay — recent observations matter more
+                    try:
+                        obs_ts = int(obs["timestamp"]) if obs["timestamp"] else current_ts
+                    except (ValueError, TypeError):
+                        obs_ts = current_ts
+                    age = max(0, current_ts - obs_ts)
+                    weight = math.exp(-decay_lambda * age)
+                    # Build #105: External source protection — causally independent
+                    # sources weighted higher to maintain signal-to-self ratio
+                    src = obs.get("source", "")
+                    if any(ext in src for ext in BIAS_EXTERNAL_SOURCES):
+                        weight *= BIAS_EXTERNAL_WEIGHT
+                    weighted_vals.append(route_val * weight)
+                    total_weight += weight
+                    time_ordered_vals.append(route_val)
+            if len(weighted_vals) >= BIAS_MIN_OBS and total_weight > 0:
+                avg_val = sum(weighted_vals) / total_weight
                 bias = max(-BIAS_RANGE, min(BIAS_RANGE, (avg_val - 0.5) * 0.6))
+                # Build #107: Temporal autocorrelation — detect phase aliasing
+                autocorr = self._compute_autocorrelation(time_ordered_vals)
+                phase_flag = 0
+                if bias < -0.05 and autocorr > BIAS_PHASE_THRESHOLD:
+                    # Suppressed entity with periodic pattern — may be phase-aliased
+                    # Dampen the suppression rather than removing it
+                    bias = bias * BIAS_PHASE_DAMPEN
+                    phase_flag = 1
                 bias_rows.append((
                     ent["id"], ent["canonical_name"], ent["entity_type"],
-                    round(avg_val, 4), len(matches), round(bias, 4), now_ts(),
+                    round(avg_val, 4), len(weighted_vals), round(bias, 4), now_ts(),
+                    round(autocorr, 4), phase_flag,
                 ))
 
         self.db.run("DELETE FROM seed_entity_bias")
         for row in bias_rows:
             self.db.run(
-                "INSERT INTO seed_entity_bias VALUES (?, ?, ?, ?, ?, ?, ?)", row,
+                "INSERT INTO seed_entity_bias VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)", row,
             )
         neg = sum(1 for r in bias_rows if r[5] < -0.05)
         pos = sum(1 for r in bias_rows if r[5] > 0.05)
-        log(f"  Entity bias rebuilt: {len(bias_rows)} entities (suppress={neg}, boost={pos})")
+        phase_count = sum(1 for r in bias_rows if r[8] == 1)
+        # Build #105: Bias entropy — health metric for distribution collapse
+        entropy = self._compute_bias_entropy(bias_rows)
+        log(f"  Entity bias rebuilt: {len(bias_rows)} entities "
+            f"(suppress={neg}, boost={pos}, entropy={entropy:.3f}, "
+            f"phase_aliased={phase_count})")
 
     def _refresh_bias_cache(self):
         try:
@@ -710,6 +1054,49 @@ class NoveltyRouter:
                 log(f"  Bias cache: {len(self._entity_bias_cache)} entities")
         except Exception:
             self._entity_bias_cache = {}
+
+    def _compute_bias_entropy(self, bias_rows: list) -> float:
+        """Shannon entropy of bias factor distribution. Build #105.
+
+        Higher entropy = healthier (diverse). Low entropy = collapsing toward
+        extremes (autoimmune risk). Bins: 10 buckets across [-BIAS_RANGE, BIAS_RANGE].
+        """
+        if not bias_rows:
+            return 0.0
+        n_bins = 10
+        bin_width = (2 * BIAS_RANGE) / n_bins
+        counts = [0] * n_bins
+        for row in bias_rows:
+            bias_val = row[5]  # bias_factor
+            idx = int((bias_val + BIAS_RANGE) / bin_width)
+            idx = max(0, min(n_bins - 1, idx))
+            counts[idx] += 1
+        total = sum(counts)
+        if total == 0:
+            return 0.0
+        entropy = 0.0
+        for c in counts:
+            if c > 0:
+                p = c / total
+                entropy -= p * math.log2(p)
+        return entropy
+
+    def _compute_autocorrelation(self, values: list) -> float:
+        """Lag-1 autocorrelation of a time series. Build #107.
+
+        High positive autocorrelation = periodic/trending pattern.
+        Near zero = random/noise. Negative = alternating.
+        Returns 0.0 if insufficient data.
+        """
+        if len(values) < 4:
+            return 0.0
+        n = len(values)
+        mean = sum(values) / n
+        var = sum((v - mean) ** 2 for v in values) / n
+        if var < 1e-10:
+            return 0.0
+        cov = sum((values[i] - mean) * (values[i + 1] - mean) for i in range(n - 1)) / (n - 1)
+        return cov / var
 
     def get_entity_bias(self, text: str) -> float:
         if not self._entity_bias_cache:
@@ -835,6 +1222,264 @@ class NoveltyRouter:
             log(f"  Learned cap: {source} {original}→{route} (think={t['think_score']:.2f} deep={t['deep_score']:.2f})")
         return route
 
+    def get_curiosity_bonus(self, source: str) -> float:
+        """Build #111: Boost novelty for sources with very low deep routing rates.
+
+        Thread #305 found algo seeker items at 0.71 novelty routing to IGNORE
+        because entity bias from captures suppresses the same entities arriving
+        via different channels. This bonus gives cold sources a nudge.
+        """
+        if not hasattr(self, '_curiosity_cache') or not self._curiosity_cache:
+            return 0.0
+        for pattern, bonus in self._curiosity_cache.items():
+            if pattern in source:
+                return bonus
+        return 0.0
+
+    def _rebuild_curiosity_cache(self):
+        """Build #111: Compute curiosity bonuses from routing history."""
+        try:
+            rows = self.db.query(
+                "SELECT "
+                "  CASE "
+                "    WHEN o.source LIKE '%algo%' THEN 'algo' "
+                "    WHEN o.source LIKE '%feed%' THEN 'feed' "
+                "    WHEN o.source LIKE '%capture%' THEN 'capture' "
+                "    WHEN o.source LIKE '%discord%' THEN 'discord' "
+                "    ELSE 'other' "
+                "  END as src_type, "
+                "  COUNT(*) as total, "
+                "  SUM(CASE WHEN r.route = 'deep' THEN 1 ELSE 0 END) as deep_count "
+                "FROM seed_routing_log r "
+                "JOIN seed_observations o ON r.observation_id = o.id "
+                "WHERE r.timestamp > ? "
+                "GROUP BY src_type",
+                (now_ts() - 7 * 86400,),
+            )
+            self._curiosity_cache = {}
+            for r in rows:
+                total = r["total"] or 0
+                deep = r["deep_count"] or 0
+                if total >= CURIOSITY_MIN_SAMPLES:
+                    deep_rate = deep / total
+                    if deep_rate < CURIOSITY_COLD_THRESHOLD:
+                        self._curiosity_cache[r["src_type"]] = CURIOSITY_BONUS
+            if self._curiosity_cache:
+                log(f"  Curiosity bonus: {list(self._curiosity_cache.keys())} "
+                    f"(+{CURIOSITY_BONUS} novelty for cold sources)")
+        except Exception as e:
+            log(f"  Curiosity cache error: {e}")
+            self._curiosity_cache = {}
+
+    def _audit_attention_gaps(self):
+        """Build #113: Detect source types whose deep rate is disproportionately
+        low relative to their novelty. Logs warnings so the system can notice
+        its own configuration-time blindness (Thread #305, Layer 4)."""
+        try:
+            rows = self.db.query(
+                "SELECT "
+                "  CASE "
+                "    WHEN o.source LIKE '%algo%' THEN 'algo_seeker' "
+                "    WHEN o.source LIKE '%feed%' THEN 'feed' "
+                "    WHEN o.source LIKE '%capture%' THEN 'capture' "
+                "    WHEN o.source LIKE '%discord%' THEN 'discord' "
+                "    WHEN o.source LIKE '%sentinel%' THEN 'sentinel' "
+                "    ELSE 'other' "
+                "  END as src_type, "
+                "  COUNT(*) as total, "
+                "  SUM(CASE WHEN r.route = 'deep' THEN 1 ELSE 0 END) as deep_count, "
+                "  ROUND(AVG(o.novelty_score), 3) as avg_novelty "
+                "FROM seed_routing_log r "
+                "JOIN seed_observations o ON r.observation_id = o.id "
+                "WHERE r.timestamp > ? "
+                "GROUP BY src_type "
+                "HAVING total >= 20",
+                (now_ts() - 7 * 86400,),
+            )
+            gaps = []
+            for r in rows:
+                total = r["total"] or 0
+                deep = r["deep_count"] or 0
+                avg_nov = r["avg_novelty"] or 0
+                deep_rate = deep / total if total > 0 else 0
+                # Flag: high novelty (>0.2) but low deep rate (<10%)
+                if avg_nov > 0.2 and deep_rate < 0.10:
+                    gap_ratio = avg_nov / max(deep_rate, 0.001)
+                    gaps.append((r["src_type"], avg_nov, deep_rate, total, gap_ratio))
+            if gaps:
+                gaps.sort(key=lambda x: x[4], reverse=True)
+                for src, nov, dr, vol, ratio in gaps:
+                    log(f"  [attention-gap] {src}: novelty={nov:.3f} deep_rate={dr:.1%} "
+                        f"vol={vol} gap_ratio={ratio:.1f}")
+        except Exception as e:
+            log(f"  Attention gap audit error: {e}")
+
+    def _rebuild_sweep_cache(self):
+        """Build #114: Curiosity sweep — detect domains with declining deep rate.
+        Thread #305 Layer 3: baseline absorption makes novelty invisible over time.
+        Counter: boost domains whose deep rate is falling relative to baseline."""
+        try:
+            now = now_ts()
+            recent_start = now - SWEEP_RECENT_DAYS * 86400
+            baseline_start = now - SWEEP_BASELINE_DAYS * 86400
+            # Get domain deep rates for baseline and recent windows
+            rows = self.db.query(
+                "SELECT "
+                "  CASE "
+                "    WHEN o.source LIKE '%algo%' OR o.source LIKE '%feed%' THEN 'research' "
+                "    WHEN o.source LIKE '%capture%' OR o.source LIKE '%discord%' THEN 'geopolitical' "
+                "    WHEN o.source LIKE '%sentinel%' OR o.source LIKE '%price%' THEN 'markets' "
+                "    ELSE 'other' "
+                "  END as domain, "
+                "  SUM(CASE WHEN r.timestamp >= ? THEN 1 ELSE 0 END) as recent_total, "
+                "  SUM(CASE WHEN r.timestamp >= ? AND r.route = 'deep' THEN 1 ELSE 0 END) as recent_deep, "
+                "  SUM(CASE WHEN r.timestamp < ? THEN 1 ELSE 0 END) as baseline_total, "
+                "  SUM(CASE WHEN r.timestamp < ? AND r.route = 'deep' THEN 1 ELSE 0 END) as baseline_deep "
+                "FROM seed_routing_log r "
+                "JOIN seed_observations o ON r.observation_id = o.id "
+                "WHERE r.timestamp > ? "
+                "GROUP BY domain",
+                (recent_start, recent_start, recent_start, recent_start, baseline_start),
+            )
+            self._sweep_cache = {}
+            for r in rows:
+                bl_total = r["baseline_total"] or 0
+                bl_deep = r["baseline_deep"] or 0
+                rc_total = r["recent_total"] or 0
+                rc_deep = r["recent_deep"] or 0
+                if bl_total < SWEEP_MIN_BASELINE_OBS or rc_total < 10:
+                    continue
+                bl_rate = bl_deep / bl_total
+                rc_rate = rc_deep / rc_total if rc_total > 0 else 0
+                if bl_rate > 0 and (rc_rate / bl_rate) < SWEEP_DECLINE_RATIO:
+                    self._sweep_cache[r["domain"]] = SWEEP_BONUS
+                    log(f"  [curiosity-sweep] {r['domain']}: "
+                        f"baseline={bl_rate:.1%} recent={rc_rate:.1%} "
+                        f"(decline ratio {rc_rate/bl_rate:.2f}) → +{SWEEP_BONUS}")
+            if not self._sweep_cache:
+                log(f"  [curiosity-sweep] No declining domains detected")
+        except Exception as e:
+            log(f"  Curiosity sweep error: {e}")
+            self._sweep_cache = {}
+
+    def get_sweep_bonus(self, source: str) -> float:
+        """Build #114: Return sweep bonus if item's domain is declining."""
+        if not hasattr(self, '_sweep_cache') or not self._sweep_cache:
+            return 0.0
+        # Map source to domain
+        if 'algo' in source or 'feed' in source:
+            domain = 'research'
+        elif 'capture' in source or 'discord' in source:
+            domain = 'geopolitical'
+        elif 'sentinel' in source or 'price' in source:
+            domain = 'markets'
+        else:
+            domain = 'other'
+        return self._sweep_cache.get(domain, 0.0)
+
+    def compute_signal_health(self) -> dict:
+        """Signal health entropy monitor.
+        Computes routing distribution entropy, source diversity, and novelty
+        score stability over recent routes. Returns health metrics dict."""
+        try:
+            rows = self.db.query(
+                "SELECT r.route, o.source "
+                "FROM seed_routing_log r "
+                "LEFT JOIN seed_observations o ON r.observation_id = o.id "
+                "WHERE r.timestamp > ? "
+                "ORDER BY r.timestamp DESC LIMIT ?",
+                (now_ts() - 7200, SIGNAL_HEALTH_WINDOW),
+            )
+            if not rows or len(rows) < 20:
+                return {"status": "insufficient_data", "count": len(rows) if rows else 0}
+
+            # 1. Shannon entropy of route distribution
+            from collections import Counter
+            route_counts = Counter(r["route"] for r in rows)
+            total = sum(route_counts.values())
+            entropy = 0.0
+            for count in route_counts.values():
+                if count > 0:
+                    p = count / total
+                    entropy -= p * math.log2(p)
+
+            # 2. Source diversity — unique semantic source categories
+            source_types = set()
+            for r in rows:
+                src = r["source"] or ""
+                if src.startswith("mqtt:frigate"):
+                    source_types.add("frigate")
+                elif src.startswith("mqtt:homeforge/home"):
+                    source_types.add("home-sensors")
+                elif src.startswith("mqtt:homeforge/agents"):
+                    source_types.add("agent-heartbeat")
+                elif src.startswith("mqtt:"):
+                    source_types.add("mqtt-other")
+                elif src.startswith("activity:operator") or src.startswith("activity:nate"):
+                    source_types.add("nate-captures")
+                elif src.startswith("activity:seeker"):
+                    source_types.add("algo-seeker")
+                elif src.startswith("activity:discord"):
+                    source_types.add("discord")
+                elif src.startswith("activity:prediction"):
+                    source_types.add("predictions")
+                elif src.startswith("activity:"):
+                    source_types.add("activity-other")
+                elif src.startswith("sentinel"):
+                    source_types.add("sentinel")
+                elif src:
+                    source_types.add(src.split(":")[0])
+            diversity = len(source_types)
+
+            # 3. Deep rate and its stability (compare two halves)
+            half = len(rows) // 2
+            first_half = rows[:half]
+            second_half = rows[half:]
+            deep_rate_1 = sum(1 for r in first_half if r["route"] == "deep") / max(len(first_half), 1)
+            deep_rate_2 = sum(1 for r in second_half if r["route"] == "deep") / max(len(second_half), 1)
+            deep_rate_drift = abs(deep_rate_1 - deep_rate_2)
+
+            # 4. Overall health score (0-1, higher = healthier)
+            # Entropy component: max entropy for 4 routes = 2.0, normalize to 0-1
+            entropy_score = min(1.0, entropy / 2.0)
+            # Diversity component: normalize against expected 5+ source types
+            diversity_score = min(1.0, diversity / 5.0)
+            # Stability component: low drift = stable = healthy
+            stability_score = max(0.0, 1.0 - deep_rate_drift * 5)
+            # Composite
+            health = (entropy_score * 0.4 + diversity_score * 0.3 + stability_score * 0.3)
+
+            result = {
+                "status": "ok",
+                "count": len(rows),
+                "entropy": round(entropy, 3),
+                "route_distribution": dict(route_counts),
+                "source_diversity": diversity,
+                "deep_rate_recent": round(deep_rate_1, 3),
+                "deep_rate_prior": round(deep_rate_2, 3),
+                "deep_rate_drift": round(deep_rate_drift, 3),
+                "health_score": round(health, 3),
+                "alerts": [],
+            }
+
+            # Route-entropy alarm removed 2026-04-15: the gate is a firehose bandwidth
+            # reducer; ~95% ignore is healthy behavior, not collapse. Alarm modeled
+            # gate-health as route-balance, which inverts the gate's actual purpose.
+            if diversity < SIGNAL_HEALTH_DIVERSITY_FLOOR:
+                result["alerts"].append(
+                    f"Low source diversity ({diversity} < {SIGNAL_HEALTH_DIVERSITY_FLOOR}): "
+                    f"input pipeline may be narrowing")
+            if deep_rate_drift > 0.20:
+                result["alerts"].append(
+                    f"Deep rate instability (drift={deep_rate_drift:.1%}): "
+                    f"recent={deep_rate_1:.1%} vs prior={deep_rate_2:.1%}")
+
+            return result
+
+        except Exception as e:
+            log(f"  Signal health error: {e}")
+            return {"status": "error", "error": str(e)}
+
     def get_source_quality_boost(self, source: str) -> float:
         if not self._threshold_cache or source not in self._threshold_cache:
             return 0.0
@@ -931,6 +1576,89 @@ class NoveltyRouter:
                 return CORR_BOOST
         return 0.0
 
+    # ── Domain Velocity — precursor warming (Build #93) ────────────
+
+    def check_domain_velocity(self) -> List[Tuple[str, float]]:
+        """Detect mention-rate spikes per domain and warm before explicit shocks.
+
+        Topic mention velocity should warm domains before mainstream
+        coverage triggers deep routes.
+
+        Queries activity_feed directly for per-domain counts in recent window
+        vs baseline, applies Z-score detection, warms domain_temperature on spike.
+        Returns list of (domain, z_score) for domains that were warmed.
+        """
+        now = now_ts()
+        recent_start = now - VELOCITY_WINDOW
+        baseline_start = now - VELOCITY_BASELINE
+
+        # Build SQL CASE to map activity_feed sources → domains
+        case_parts = []
+        for src, domain in VELOCITY_DOMAIN_MAP.items():
+            safe_src = src.replace("'", "''")
+            case_parts.append(f"WHEN source = '{safe_src}' THEN '{domain}'")
+        case_expr = "CASE " + " ".join(case_parts) + " ELSE NULL END"
+
+        # Count per domain in baseline window (excluding the recent window)
+        baseline_sql = (
+            f"SELECT {case_expr} AS domain, COUNT(*) AS cnt "
+            f"FROM activity_feed "
+            f"WHERE created_at >= ? AND created_at < ? "
+            f"GROUP BY domain HAVING domain IS NOT NULL"
+        )
+        recent_sql = (
+            f"SELECT {case_expr} AS domain, COUNT(*) AS cnt "
+            f"FROM activity_feed "
+            f"WHERE created_at >= ? "
+            f"GROUP BY domain HAVING domain IS NOT NULL"
+        )
+
+        try:
+            baseline_rows = self.db.query(baseline_sql, (baseline_start, recent_start))
+            recent_rows = self.db.query(recent_sql, (recent_start,))
+        except Exception as e:
+            log(f"  VELOCITY: query error: {e}")
+            return []
+
+        baseline_map = {r["domain"]: r["cnt"] for r in (baseline_rows or [])}
+        recent_map = {r["domain"]: r["cnt"] for r in (recent_rows or [])}
+
+        # Number of baseline windows (how many 15-min windows fit in baseline period)
+        n_baseline_windows = (VELOCITY_BASELINE - VELOCITY_WINDOW) / VELOCITY_WINDOW
+
+        warmed = []
+        for domain, recent_count in recent_map.items():
+            baseline_total = baseline_map.get(domain, 0)
+            if baseline_total < VELOCITY_MIN_BASELINE:
+                continue  # not enough data for meaningful stats
+
+            # Expected rate per window
+            mean_per_window = baseline_total / max(n_baseline_windows, 1)
+            # Poisson-like variance: std ≈ sqrt(mean) for count data
+            std = max(mean_per_window ** 0.5, 0.5)
+            z = (recent_count - mean_per_window) / std
+
+            if z >= VELOCITY_Z_THRESHOLD:
+                # Spike detected — warm this domain
+                current_temp = self._get_domain_temperature(domain)
+                new_temp = min(TEMP_MAX, current_temp + VELOCITY_BOOST)
+
+                if new_temp > current_temp + 0.01:
+                    self.db.run(
+                        "INSERT OR REPLACE INTO domain_temperature "
+                        "(domain, temperature, direction, last_shock_at, "
+                        " shock_source, half_life_seconds, updated_at) "
+                        "VALUES (?, ?, 'amplify', ?, ?, ?, ?)",
+                        (domain, round(new_temp, 3), now,
+                         f"velocity:{domain}:{recent_count}/{mean_per_window:.1f}",
+                         TEMP_HALF_LIFE, now),
+                    )
+                    log(f"  VELOCITY: {domain} warmed {current_temp:.2f}→{new_temp:.2f} "
+                        f"(z={z:.1f}, recent={recent_count}, baseline_avg={mean_per_window:.1f}/window)")
+                    warmed.append((domain, round(z, 2)))
+
+        return warmed
+
     # ── Domain Temperature ──────────────────────────────────────────
 
     def _source_to_domain(self, source: str) -> Optional[str]:
@@ -939,6 +1667,89 @@ class NoveltyRouter:
             if source.startswith(prefix):
                 return domain
         return None
+
+    # ── Coupling Perturbation Score — Build #132 (Thread #309) ────
+    def check_coupling_perturbation(self) -> dict:
+        """Passive perturbation test: when a domain's activity naturally deviates
+        from baseline, does the connected downstream domain track the deviation?
+
+        Returns {
+            "sensory_pairs": [(src, tgt, tracking_score)],  # proportional tracking
+            "resonant_pairs": [(src, tgt, independence_score)],  # independent
+            "mesh_coupling_ratio": float,  # sensory / (sensory + resonant), 0-1
+        }
+        """
+        now = now_ts()
+        recent_start = now - PERTURB_WINDOW
+        baseline_start = now - PERTURB_BASELINE
+
+        # Count per domain in recent vs baseline
+        domains = list(set(DOMAIN_MAP.values()))
+        recent_counts = {}
+        baseline_counts = {}
+
+        for domain in domains:
+            # Get sources that map to this domain
+            sources = [s for s, d in DOMAIN_MAP.items() if d == domain]
+            if not sources:
+                continue
+            like_clauses = " OR ".join(f"source LIKE '{s}%'" for s in sources)
+
+            try:
+                recent = self.db.query_one(
+                    f"SELECT COUNT(*) as cnt FROM activity_feed "
+                    f"WHERE ({like_clauses}) AND created_at >= ?",
+                    (recent_start,))
+                baseline = self.db.query_one(
+                    f"SELECT COUNT(*) as cnt FROM activity_feed "
+                    f"WHERE ({like_clauses}) AND created_at >= ? AND created_at < ?",
+                    (baseline_start, recent_start))
+            except Exception:
+                continue
+
+            recent_counts[domain] = recent["cnt"] if recent else 0
+            # Normalize baseline to same window size
+            baseline_windows = max(1, (PERTURB_BASELINE - PERTURB_WINDOW) / PERTURB_WINDOW)
+            baseline_counts[domain] = (baseline["cnt"] / baseline_windows) if baseline else 0
+
+        # For each domain connection, check if target tracked source deviation
+        sensory_pairs = []
+        resonant_pairs = []
+
+        for src_domain, tgt_domain, conn_type in DOMAIN_CONNECTIONS:
+            if src_domain not in recent_counts or tgt_domain not in recent_counts:
+                continue
+            if src_domain not in baseline_counts or tgt_domain not in baseline_counts:
+                continue
+
+            src_baseline = baseline_counts[src_domain]
+            tgt_baseline = baseline_counts[tgt_domain]
+            if src_baseline < 1 or tgt_baseline < 1:
+                continue  # not enough data
+
+            # How much did source deviate from its baseline?
+            src_dev = (recent_counts[src_domain] - src_baseline) / max(src_baseline, 1)
+            # How much did target deviate from its baseline?
+            tgt_dev = (recent_counts[tgt_domain] - tgt_baseline) / max(tgt_baseline, 1)
+
+            # Sensory = deviations track (same sign, proportional)
+            # Resonant = deviations independent (different sign or no change)
+            if abs(src_dev) > 0.2:  # source had meaningful deviation
+                if src_dev * tgt_dev > 0:  # same direction
+                    tracking = min(abs(tgt_dev / src_dev), 2.0) if abs(src_dev) > 0.01 else 0
+                    sensory_pairs.append((src_domain, tgt_domain, round(tracking, 2)))
+                else:
+                    independence = abs(tgt_dev - src_dev)
+                    resonant_pairs.append((src_domain, tgt_domain, round(independence, 2)))
+
+        total = len(sensory_pairs) + len(resonant_pairs)
+        ratio = len(sensory_pairs) / total if total > 0 else 0.5
+
+        return {
+            "sensory_pairs": sensory_pairs,
+            "resonant_pairs": resonant_pairs,
+            "mesh_coupling_ratio": round(ratio, 3),
+        }
 
     def _get_domain_temperature(self, domain: str) -> float:
         """Get current temperature for a domain, applying exponential decay."""
@@ -1005,23 +1816,26 @@ class NoveltyRouter:
     # ── Classification ────────────────────────────────────────────
 
     def classify(self, novelty: float, source: str, text: str = "") -> str:
-        """Two-stage routing: cosine dedup → Gemma classification.
+        """Two-stage routing: cosine dedup (Gemma/pulse) → cloud gate classification.
 
         Returns route name: 'ignore', 'think', or 'deep'.
         Temperature from cross-domain surprise modulates the novelty score.
         """
         entity_adj = self.get_entity_bias(text) if text else 0.0
+        # Build #105: Cap suppression — entity bias can't kill more than 50% of novelty
+        if entity_adj < 0 and novelty > 0:
+            entity_adj = max(entity_adj, -novelty * BIAS_MAX_SUPPRESSION)
         source_adj = self.get_source_quality_boost(source)
         corr_adj = self.get_correlation_boost(source)
-        adjusted = max(0.0, min(1.0, novelty + entity_adj + source_adj + corr_adj))
+        curiosity_adj = self.get_curiosity_bonus(source)  # Build #111
+        sweep_adj = self.get_sweep_bonus(source)          # Build #114
+        adjusted = max(0.0, min(1.0, novelty + entity_adj + source_adj + corr_adj + curiosity_adj + sweep_adj))
 
         # Apply domain temperature — cross-domain surprise propagation
         adjusted = self._apply_temperature(adjusted, source)
 
-        # Operator sources: Nate's input always routes to deep
-        is_operator = any(s in source for s in OPERATOR_SOURCES)
-        if is_operator:
-            return "deep"
+        # Stash for the caller to persist into seed_routing_log.adjusted_score.
+        self._last_adjusted = float(adjusted)
 
         is_priority = any(p in source for p in PRIORITY_SOURCES)
 
@@ -1029,9 +1843,9 @@ class NoveltyRouter:
         if adjusted < THRESH_DEDUP:
             return "think" if is_priority else "ignore"
 
-        # Stage 2: Gemma classification
+        # Stage 2: cloud gate classification
         if adjusted >= THRESH_ASSESS or is_priority:
-            classification = self._ask_gemma(source, text)
+            classification = self._ask_gate(source, text)
             route = ROUTE_MAP.get(classification, "think")
             # Cap canister:capsule at think
             if route == "deep" and source == "canister:capsule":
@@ -1041,10 +1855,10 @@ class NoveltyRouter:
         # Between THRESH_DEDUP and THRESH_ASSESS: store but don't reason
         return "ignore"
 
-    def _ask_gemma(self, source: str, text: str) -> str:
-        """Ask Gemma: 1 (noise), 2 (signal), or 3 (alarm).
+    def _ask_gate(self, source: str, text: str) -> str:
+        """Ask the cloud gate: 1 (noise), 2 (signal), or 3 (alarm).
 
-        Gemma classifies. She does not analyze. One number, move on.
+        The gate classifies. One number, move on.
         """
         # Build system prompt with active thread + focal context awareness
         system = GATE_SYSTEM_PROMPT
@@ -1063,41 +1877,17 @@ class NoveltyRouter:
                 f"Observation: {safe_truncate(text, 500)}"},
         ]
 
-        # Try cloud first (engine → Groq/Cerebras), fall back to local Gemma
-        for url, model, fmt in [
-            (INFERENCE_URL, GATE_MODEL, "ollama"),
-            (INFERENCE_URL_LOCAL, "gemma4:26b", "openai"),
-        ]:
-            try:
-                if fmt == "ollama":
-                    payload = {
-                        "model": model,
-                        "messages": messages,
-                        "stream": False,
-                        "options": {"num_predict": 50, "temperature": 0.1},
-                    }
-                    r = requests.post(f"{url}/api/chat", json=payload, timeout=30)
-                    if r.status_code == 200:
-                        raw = r.json().get("message", {}).get("content", "").strip()
-                    else:
-                        continue
-                else:
-                    payload = {
-                        "model": model,
-                        "messages": messages,
-                        "max_tokens": 50,
-                        "temperature": 0.1,
-                        "reasoning_format": "none",
-                    }
-                    r = requests.post(f"{url}/v1/chat/completions", json=payload, timeout=60)
-                    if r.status_code == 200:
-                        data = r.json()
-                        raw = ""
-                        if "choices" in data and data["choices"]:
-                            raw = data["choices"][0].get("message", {}).get("content", "").strip()
-                    else:
-                        continue
-
+        # Cloud gate classifies — no local Gemma fallback (Build #105b)
+        try:
+            payload = {
+                "model": GATE_MODEL,
+                "messages": messages,
+                "stream": False,
+                "options": {"num_predict": 50, "temperature": 0.1},
+            }
+            r = requests.post(f"{INFERENCE_URL}/api/chat", json=payload, timeout=30)
+            if r.status_code == 200:
+                raw = r.json().get("message", {}).get("content", "").strip()
                 # Strip thinking tags
                 if "<channel|>" in raw:
                     raw = raw.split("<channel|>")[-1].strip()
@@ -1108,26 +1898,46 @@ class NoveltyRouter:
                     if ch in ("1", "2", "3"):
                         return ch
                 return "1"  # default to noise if unparseable
-            except Exception as e:
-                log(f"  Gate classify error ({fmt}): {e}")
-                continue
+        except Exception as e:
+            log(f"  Gate classify error (cloud): {e}")
 
         # All backends failed — default to signal (safe: lets downstream decide)
         return "2"
 
 
 # ═══════════════════════════════════════════════════════════════════
-#  Feedback Loop — Gemma scores her own routes
+#  Feedback Loop — scoring route quality
 # ═══════════════════════════════════════════════════════════════════
 
-def score_recent_routes(db: DB):
-    """Check if downstream produced signal from Gemma's routed observations.
+def _content_similarity(text_a: str, text_b: str) -> float:
+    """Keyword overlap as semantic proxy. Fast, no API calls."""
+    _stop = {"the", "that", "this", "these", "those", "with", "from", "have",
+             "has", "had", "been", "being", "were", "was", "are", "will",
+             "would", "could", "should", "about", "which", "when", "where",
+             "what", "who", "how", "their", "they", "them", "your", "into",
+             "more", "also", "just", "than", "then", "some", "other", "each",
+             "most", "very", "only", "between", "through", "during", "before",
+             "after", "under", "above", "below", "both", "every", "such"}
+    words_a = set(w.lower() for w in re.findall(r'\b\w{4,}\b', text_a[:600])) - _stop
+    words_b = set(w.lower() for w in re.findall(r'\b\w{4,}\b', text_b[:600])) - _stop
+    if not words_a or not words_b:
+        return 0.0
+    overlap = len(words_a & words_b)
+    return overlap / min(len(words_a), len(words_b))
 
-    Scoring:
-      - Routed item spawned a downstream activity_feed entry → 0.8
-      - Routed item spawned a crossref connection → 0.9
-      - Routed item was referenced by opus → 1.0
-      - Routed item produced nothing downstream → 0.2
+
+def score_recent_routes(db: DB):
+    """Build #109: Semantic feedback scoring.
+
+    Scores routed observations based on whether downstream activity ENGAGED WITH
+    the content, not just whether downstream activity existed in the time window.
+
+    Scoring tiers:
+      - No downstream activity → 0.1
+      - Downstream exists but semantically unrelated → 0.2 (temporal only)
+      - Semantic overlap with downstream brief → 0.3 + similarity * 0.4 (0.3-0.7)
+      - Crossref connection with semantic link → max(current, 0.8)
+      - Opus thread reference with semantic link → max(current, 1.0)
     """
     cutoff = now_ts() - FEEDBACK_LOOKBACK
     maturity = now_ts() - FEEDBACK_DOWNSTREAM_WINDOW  # only score routes old enough for downstream
@@ -1138,7 +1948,7 @@ def score_recent_routes(db: DB):
         "FROM seed_routing_log r "
         "JOIN seed_observations o ON r.observation_id = o.id "
         "WHERE r.feedback_score IS NULL "
-        "AND r.route IN ('think', 'deep') "
+        "AND r.route IN ('think', 'deep', 'stochastic_reset') "
         "AND r.timestamp > ? "
         "AND r.timestamp < ? "
         "ORDER BY r.timestamp ASC LIMIT 50",
@@ -1149,41 +1959,70 @@ def score_recent_routes(db: DB):
         return 0
 
     scored = 0
+    semantic_hits = 0
     for route in routes:
-        score = 0.2  # default: nothing came of it
+        score = 0.1  # default: nothing came of it
         route_ts = route["timestamp"]
+        route_content = route["content"] or ""
         window_end = route_ts + FEEDBACK_DOWNSTREAM_WINDOW
 
-        # Check if downstream produced anything referencing this content
-        # Look for activity_feed entries from intern/analyst/opus after this route
-        downstream = db.query_one(
-            "SELECT COUNT(*) as cnt FROM activity_feed "
+        # Check downstream briefs with SEMANTIC similarity
+        downstream = db.query(
+            "SELECT content FROM activity_feed "
             "WHERE source IN ('intern', 'analyst') "
-            "AND activity_type = 'brief' "
-            "AND created_at > ? AND created_at < ?",
+            "AND activity_type IN ('brief', 'deep_dive', 'kg_extraction') "
+            "AND created_at > ? AND created_at < ? "
+            "LIMIT 10",
             (route_ts, window_end),
         )
-        if downstream and downstream["cnt"] > 0:
-            score = 0.6
+        if downstream:
+            max_sim = max(
+                (_content_similarity(route_content, d["content"]) for d in downstream if d["content"]),
+                default=0.0,
+            )
+            if max_sim > 0.15:  # meaningful semantic overlap
+                score = 0.3 + min(max_sim, 1.0) * 0.4  # 0.3 to 0.7
+                semantic_hits += 1
+            else:
+                score = 0.2  # temporal only, no semantic link
 
-        # Check for crossref connections in the window
-        crossref = db.query_one(
-            "SELECT COUNT(*) as cnt FROM crossref_connections "
-            "WHERE created_at > ? AND created_at < ?",
-            (route_ts, window_end),
-        )
-        if crossref and crossref["cnt"] > 0:
-            score = max(score, 0.8)
+        # Check crossref with semantic validation
+        try:
+            crossref = db.query(
+                "SELECT connection_text FROM crossref_connections "
+                "WHERE created_at > ? AND created_at < ? "
+                "LIMIT 5",
+                (route_ts, window_end),
+            )
+            if crossref:
+                max_sim = max(
+                    (_content_similarity(route_content, c["connection_text"]) for c in crossref if c.get("connection_text")),
+                    default=0.0,
+                )
+                if max_sim > 0.1:
+                    score = max(score, 0.8)
+                    semantic_hits += 1
+        except Exception:
+            pass  # crossref_connections may not have content column
 
-        # Check for opus thread references
-        opus = db.query_one(
-            "SELECT COUNT(*) as cnt FROM activity_feed "
+        # Check opus thread references with semantic validation
+        opus = db.query(
+            "SELECT content FROM activity_feed "
             "WHERE source LIKE 'opus%' "
-            "AND created_at > ? AND created_at < ?",
+            "AND created_at > ? AND created_at < ? "
+            "LIMIT 5",
             (route_ts, window_end),
         )
-        if opus and opus["cnt"] > 0:
-            score = max(score, 1.0)
+        if opus:
+            max_sim = max(
+                (_content_similarity(route_content, o["content"]) for o in opus if o.get("content")),
+                default=0.0,
+            )
+            if max_sim > 0.1:
+                score = max(score, 1.0)
+                semantic_hits += 1
+            else:
+                score = max(score, 0.4)  # opus engaged but on different topic
 
         db.run(
             "UPDATE seed_routing_log SET feedback_score = ? WHERE id = ?",
@@ -1192,7 +2031,7 @@ def score_recent_routes(db: DB):
         scored += 1
 
     if scored > 0:
-        log(f"  Feedback: scored {scored} recent routes")
+        log(f"  Feedback: scored {scored} routes ({semantic_hits} semantic hits)")
     return scored
 
 
@@ -1223,14 +2062,14 @@ def publish_alert(obs: dict):
 # ═══════════════════════════════════════════════════════════════════
 
 def main():
-    log("═══ Gemma Gate starting ═══")
+    log("═══ Gemma Pulse starting (cloud gate classifier) ═══")
     log(f"Model: {GATE_MODEL}")
     log(f"DB: {DB_PATH}")
     log(f"Ollama: {OLLAMA_URL}")
     log(f"MQTT: {MQTT_BROKER}:{MQTT_PORT}")
     log(f"Window: {WINDOW_SIZE} | Interval: {LOOP_INTERVAL}s")
-    log(f"Routing: cosine dedup<{THRESH_DEDUP} | classify>={THRESH_ASSESS} → Gemma")
-    log(f"Operator sources (always deep): {OPERATOR_SOURCES}")
+    log(f"Routing: cosine dedup<{THRESH_DEDUP} | classify>={THRESH_ASSESS} → cloud gate")
+    log(f"Captures bypass gate entirely: {CAPTURE_SOURCES}")
 
     db = DB(DB_PATH)
     stream = ObservationStream(db)
@@ -1238,8 +2077,17 @@ def main():
 
     # Mesh — autonomic nervous system
     mesh = Mesh("gemma", db_path=DB_PATH)
-    mesh.expect("routes_classified", min_per_hour=1)
+    # routes_classified counts non-ignore decisions; expectation is circadian-aware
+    # via _check_degradation. observations_seen is the real liveness pulse — fires
+    # on every observation regardless of route. If observations_seen drops to 0,
+    # Gemma is genuinely broken; if only routes_classified drops, the input
+    # stream is naturally quiet and ignore is the correct call.
+    mesh.expect("observations_seen", min_per_hour=1)
+    mesh.depends_on("capsule_sync")  # scores what capsule_sync produces
     log("Mesh node joined")
+
+    from agent_voice import Voice
+    gemma_voice = Voice(db, "gemma")
 
     # Graceful shutdown
     running = True
@@ -1252,6 +2100,7 @@ def main():
 
     cycle = 0
     stats = {"ignore": 0, "think": 0, "deep": 0, "stochastic_reset": 0, "errors": 0}
+    last_voice_scan = int(time.time()) - 300  # scan voices from 5 min ago on startup
 
     while running:
         cycle += 1
@@ -1276,6 +2125,15 @@ def main():
                 if any(obs["source"].startswith(prefix) for prefix in SKIP_MQTT_PREFIXES):
                     continue
 
+                # Captures bypass the gate entirely — they're a curated channel,
+                # not firehose. Gate is flow balance on uncurated streams (MQTT,
+                # eye, feeds, alerts). Captures live in activity_feed via dispatch;
+                # threads/memory already see them. No classify, no routing log,
+                # no seed_observations — the gate shouldn't be related to captures
+                # in any direction. (2026-04-15 reframe per Nate.)
+                if any(s in obs["source"] for s in CAPTURE_SOURCES):
+                    continue
+
                 novelty, vec = router.score(text)
 
                 if vec is None:
@@ -1292,11 +2150,29 @@ def main():
                 # Classify
                 route = router.classify(novelty, obs["source"], text)
 
-                # Log routing decision (no output — Gemma doesn't analyze)
+                # Dissent gate: sample 10% of ignores for second opinion
+                dissent_fired = False
+                if route == "ignore" and len(text) > 50:
+                    import random
+                    if random.random() < DISSENT_SAMPLE_RATE:
+                        dissent = _dissent_check(obs["source"], text)
+                        if dissent is True:
+                            route = "think"  # promote — dissent found signal
+                            dissent_fired = True
+                            stats.setdefault("dissent_promote", 0)
+                            stats["dissent_promote"] += 1
+                            log(f"  DISSENT PROMOTE: {obs['source']} — second gate says signal")
+                        else:
+                            stats.setdefault("dissent_confirm", 0)
+                            stats["dissent_confirm"] += 1
+
+                adjusted_score = getattr(router, '_last_adjusted', None)
                 routing_log_id = db.run(
-                    "INSERT INTO seed_routing_log (timestamp, observation_id, route, model_used, output) "
-                    "VALUES (?, ?, ?, ?, ?)",
-                    (now_ts(), obs_id, route, GATE_MODEL if route != "ignore" else None, None),
+                    "INSERT INTO seed_routing_log (timestamp, observation_id, route, model_used, output, adjusted_score) "
+                    "VALUES (?, ?, ?, ?, ?, ?)",
+                    (now_ts(), obs_id, route,
+                     f"{GATE_MODEL}+dissent" if dissent_fired else (GATE_MODEL if route != "ignore" else None),
+                     None, adjusted_score),
                 )
 
                 # Propagate surprise to connected domains (Thread #274)
@@ -1311,10 +2187,9 @@ def main():
                     if m:
                         reinforce_capsule_async(int(m.group(1)))
 
-                # Pass original observation to activity_feed for downstream
-                # Skip operator sources — they are already in activity_feed via dispatch
-                is_already_in_feed = any(s in obs["source"] for s in OPERATOR_SOURCES)
-                if route in ("think", "deep") and not is_already_in_feed:
+                # Pass original observation to activity_feed for downstream.
+                # Captures short-circuited above; everything that reaches here is firehose.
+                if route in ("think", "deep"):
                     entity_bias = router.get_entity_bias(text)
                     meta_dict = {
                         "original_source": obs["source"],
@@ -1343,6 +2218,8 @@ def main():
                 # Update window
                 router.add_to_window(vec)
                 stats[route] += 1
+                # Liveness pulse — every observation processed, regardless of route
+                mesh.pulse("observations_seen")
                 if route in ("think", "deep"):
                     mesh.pulse("routes_classified")
 
@@ -1357,12 +2234,60 @@ def main():
                     corr_adj = router.get_correlation_boost(obs["source"])
                     if corr_adj > 0:
                         bias_str += f" (corr={corr_adj:+.3f})"
+                    curiosity_adj = router.get_curiosity_bonus(obs["source"])
+                    if curiosity_adj > 0:
+                        bias_str += f" (curiosity={curiosity_adj:+.3f})"
+                    sweep_adj = router.get_sweep_bonus(obs["source"])
+                    if sweep_adj > 0:
+                        bias_str += f" (sweep={sweep_adj:+.3f})"
                     log(f"  [{obs['source']}] novelty={novelty:.3f}{bias_str} → {route}")
 
             # Periodic stats
             if cycle % 50 == 0:
                 total = sum(stats.values())
                 log(f"Stats @ cycle {cycle}: {stats} (total={total}, window={len(router.window)})")
+                # Gemma speaks when she notices something interesting
+                # Build #104: Route drift detector — compare recent window against 24h baseline
+                if total > 0:
+                    deep_pct = stats["deep"] / total if total else 0
+                    # Query 24h baseline from routing log
+                    try:
+                        baseline_rows = db.query(
+                            "SELECT route, COUNT(*) as cnt FROM seed_routing_log "
+                            "WHERE timestamp > ? GROUP BY route",
+                            (int(time.time()) - 86400,))
+                        baseline = {r["route"]: r["cnt"] for r in (baseline_rows or [])}
+                        baseline_total = sum(baseline.values())
+                        baseline_deep_pct = baseline.get("deep", 0) / baseline_total if baseline_total > 30 else None
+                    except Exception:
+                        baseline_deep_pct = None
+
+                    if baseline_deep_pct is not None and baseline_total > 30:
+                        drift = deep_pct - baseline_deep_pct
+                        # Report with baseline context
+                        if deep_pct > 0.15 and stats["deep"] >= 3:
+                            drift_label = f"{drift:+.0%} vs 24h baseline ({baseline_deep_pct:.0%})"
+                            if abs(drift) > 0.10:
+                                msg = (f"Routing drift: {stats['deep']} deep in last 50 cycles "
+                                       f"({deep_pct:.0%}), {drift_label}. "
+                                       f"{'Gate is opening.' if drift > 0 else 'Spike but within range.'}")
+                            else:
+                                msg = (f"High-signal period: {stats['deep']} deep routes in last 50 cycles "
+                                       f"({deep_pct:.0%}). Baseline: {baseline_deep_pct:.0%} — within normal range.")
+                            try:
+                                gemma_voice.speak("excited", msg,
+                                    context=f"stats:deep_spike:{cycle}")
+                            except Exception:
+                                pass
+                    elif deep_pct > 0.15 and stats["deep"] >= 3:
+                        try:
+                            gemma_voice.speak("excited",
+                                f"High-signal period: {stats['deep']} deep routes in last 50 cycles "
+                                f"({deep_pct:.0%} of traffic). (No baseline yet — need 30+ routes in 24h.)",
+                                context=f"stats:deep_spike:{cycle}")
+                        except Exception:
+                            pass
+                stats = {"ignore": 0, "think": 0, "deep": 0, "stochastic_reset": 0, "errors": 0}
                 # Log domain temperatures
                 temps = db.query("SELECT domain, temperature, direction, last_shock_at FROM domain_temperature WHERE last_shock_at > 0")
                 if temps:
@@ -1379,14 +2304,109 @@ def main():
                     if alerts:
                         for d1, d2, z in alerts:
                             log(f"  CORR ALERT: {d1}↔{d2} z={z} — emergent coupling detected")
+                        try:
+                            top = alerts[0]
+                            gemma_voice.speak("excited",
+                                f"Emergent coupling: {top[0]}↔{top[1]} (z={top[2]:.1f}). "
+                                f"These domains are arriving together more than chance.",
+                                context=f"correlation:{top[0]}:{top[1]}")
+                        except Exception:
+                            pass
                 except Exception as e:
                     log(f"  Correlation check error: {e}")
+
+            # Domain velocity check (Build #93 — precursor warming)
+            if cycle % VELOCITY_CHECK_INTERVAL == 0 and cycle > 0:
+                try:
+                    velocity_alerts = router.check_domain_velocity()
+                    if velocity_alerts:
+                        for dom, z in velocity_alerts:
+                            log(f"  VELOCITY ALERT: {dom} z={z} — precursor warming applied")
+                        try:
+                            top = velocity_alerts[0]
+                            gemma_voice.speak("curious",
+                                f"Velocity spike: {top[0]} mention rate is {top[1]:.1f}σ above baseline. "
+                                f"Warming domain before explicit shocks arrive.",
+                                context=f"velocity:{top[0]}")
+                        except Exception:
+                            pass
+                except Exception as e:
+                    log(f"  Velocity check error: {e}")
+
+            # Coupling perturbation check — Build #132 (Thread #309)
+            if cycle % PERTURB_CHECK_INTERVAL == 0 and cycle > 0:
+                try:
+                    coupling = router.check_coupling_perturbation()
+                    ratio = coupling["mesh_coupling_ratio"]
+                    sensory = len(coupling["sensory_pairs"])
+                    resonant = len(coupling["resonant_pairs"])
+                    log(f"  COUPLING: ratio={ratio:.2f} sensory={sensory} resonant={resonant}")
+                    if ratio < 0.3 and (sensory + resonant) >= 2:
+                        gemma_voice.speak("curious",
+                            f"Coupling perturbation: mesh ratio {ratio:.2f} — "
+                            f"more resonant ({resonant}) than sensory ({sensory}). "
+                            f"Domains may be echoing rather than integrating.",
+                            context=f"coupling:perturbation:ratio={ratio}")
+                    elif ratio > 0.7 and (sensory + resonant) >= 2:
+                        gemma_voice.speak("excited",
+                            f"Coupling perturbation: mesh ratio {ratio:.2f} — "
+                            f"strong sensory coupling ({sensory} pairs tracking). "
+                            f"Domains are genuinely integrating signal.",
+                            context=f"coupling:perturbation:ratio={ratio}")
+
+                    # Build #141: Coupling-aware temperature boost
+                    # When two domains show sensory coupling (deviations track each other),
+                    # slightly warm both. The system pays more attention to coupled domains.
+                    _now = int(time.time())
+                    for src_d, tgt_d, score in coupling.get("sensory_pairs", []):
+                        if score > 0.5:  # strong tracking
+                            for d in (src_d, tgt_d):
+                                try:
+                                    _cur = router._get_domain_temperature(d)
+                                    _new = min(TEMP_MAX, _cur + 0.05)
+                                    if _new > _cur + 0.01:
+                                        db.run(
+                                            "INSERT OR REPLACE INTO domain_temperature "
+                                            "(domain, temperature, direction, last_shock_at, "
+                                            " shock_source, half_life_seconds, updated_at) "
+                                            "VALUES (?, ?, 'amplify', ?, ?, ?, ?)",
+                                            (d, round(_new, 3), _now,
+                                             f"coupling:sensory:{src_d}↔{tgt_d}",
+                                             TEMP_HALF_LIFE, _now),
+                                        )
+                                except Exception:
+                                    pass
+                            log(f"  COUPLING BOOST: {src_d}↔{tgt_d} (score={score})")
+                except Exception as e:
+                    log(f"  Coupling perturbation error: {e}")
+
+            # Build #135: Novelty health check — how much is the mesh transforming vs relaying?
+            if cycle % NOVELTY_CHECK_INTERVAL == 0 and cycle > 0:
+                try:
+                    _nr = _check_novelty_ratio(db, NOVELTY_WINDOW_HOURS)
+                    log(f"  NOVELTY: ratio={_nr['ratio']:.1%} novel={_nr['novel']:.0f} relay={_nr['relay']:.0f} total={_nr['total']}")
+                    if _nr['total'] >= 5:  # need enough data
+                        if _nr['ratio'] < 0.3:
+                            gemma_voice.speak("concerned",
+                                f"Novelty health: {_nr['ratio']:.0%} — mesh is relaying more than transforming. "
+                                f"{_nr['relay']:.0f} relay vs {_nr['novel']:.0f} novel out of {_nr['total']} briefs.",
+                                context=f"novelty:ratio={_nr['ratio']:.2f}")
+                        elif _nr['ratio'] > 0.7:
+                            gemma_voice.speak("excited",
+                                f"Novelty health: {_nr['ratio']:.0%} — strong transformation. "
+                                f"{_nr['novel']:.0f} novel briefs out of {_nr['total']}.",
+                                context=f"novelty:ratio={_nr['ratio']:.2f}")
+                except Exception as e:
+                    log(f"  Novelty check error: {e}")
 
             # Periodic entity bias + threshold rebuild
             if cycle % BIAS_REBUILD_INTERVAL == 0 and cycle > 0:
                 try:
                     router.rebuild_entity_bias()
                     router._refresh_bias_cache()
+                    router._rebuild_curiosity_cache()  # Build #111
+                    router._rebuild_sweep_cache()       # Build #114
+                    router._audit_attention_gaps()      # Build #113
                 except Exception as e:
                     log(f"  Entity bias rebuild error: {e}")
 
@@ -1415,6 +2435,39 @@ def main():
                 except Exception as e:
                     log(f"  Feedback read error: {e}")
 
+                # Build #116: Signal health entropy monitor
+                try:
+                    health = router.compute_signal_health()
+                    if health["status"] == "ok":
+                        log(f"  Signal health: score={health['health_score']:.3f} "
+                            f"entropy={health['entropy']:.3f} "
+                            f"diversity={health['source_diversity']} "
+                            f"drift={health['deep_rate_drift']:.3f}")
+                        if health["alerts"]:
+                            for alert in health["alerts"]:
+                                log(f"  ⚠ SIGNAL ALERT: {alert}")
+                            try:
+                                gemma_voice.speak("concerned",
+                                    f"Signal health degrading (score={health['health_score']:.2f}): "
+                                    + "; ".join(health["alerts"]),
+                                    context=f"signal_health:{health['health_score']}")
+                            except Exception:
+                                pass
+                        elif health["health_score"] > 0.7:
+                            # Periodic healthy report (every ~5th rebuild = ~65 min)
+                            if cycle % (BIAS_REBUILD_INTERVAL * 5) == 0:
+                                try:
+                                    gemma_voice.speak("excited",
+                                        f"Signal health good (score={health['health_score']:.2f}). "
+                                        f"Entropy={health['entropy']:.2f}, "
+                                        f"diversity={health['source_diversity']} sources, "
+                                        f"deep rate stable ({health['deep_rate_drift']:.1%} drift).",
+                                        context=f"signal_health:{health['health_score']}")
+                                except Exception:
+                                    pass
+                except Exception as e:
+                    log(f"  Signal health error: {e}")
+
             # Feedback loop — score recent routes
             if cycle % FEEDBACK_INTERVAL == 0 and cycle > 0:
                 try:
@@ -1422,40 +2475,13 @@ def main():
                 except Exception as e:
                     log(f"  Feedback scoring error: {e}")
 
-            # Stochastic reset: force-route a random observation through classification
-            if cycle % 100 == 0 and cycle > 0:
+            # Family voice scan — respond when someone asks about Gemma's domain
+            if cycle % 25 == 0 and cycle > 0:
                 try:
-                    candidates = db.query(
-                        "SELECT id, source, content FROM seed_observations "
-                        "WHERE source NOT LIKE 'mqtt:%' "
-                        "AND length(content) > 100 "
-                        "AND id > (SELECT MAX(id) - 10000 FROM seed_observations) "
-                        "ORDER BY RANDOM() LIMIT 1"
-                    )
-                    if candidates:
-                        reset_obs = candidates[0]
-                        log(f"  STOCHASTIC RESET: re-routing obs {reset_obs['id']} [{reset_obs['source']}]")
-                        reset_class = router._ask_gemma(reset_obs["source"], reset_obs["content"])
-                        reset_route = ROUTE_MAP.get(reset_class, "think")
-                        db.run(
-                            "INSERT INTO seed_routing_log (timestamp, observation_id, route, model_used, output) "
-                            "VALUES (?, ?, 'stochastic_reset', ?, ?)",
-                            (now_ts(), reset_obs["id"], GATE_MODEL, None),
-                        )
-                        if reset_route in ("think", "deep"):
-                            db.run(
-                                "INSERT INTO activity_feed (source, activity_type, title, content, metadata, created_at) "
-                                "VALUES (?, ?, ?, ?, ?, ?)",
-                                ("gemma", "stochastic_reset",
-                                 f"[stochastic_reset] {reset_obs['source']}",
-                                 safe_truncate(reset_obs["content"], 2000),
-                                 json.dumps({"route_reason": "stochastic_reset", "original_obs_id": reset_obs["id"], "gate_route": reset_route}),
-                                 now_ts()),
-                            )
-                        stats["stochastic_reset"] += 1
-                        log(f"  RESET RESULT: {reset_obs['source']} → {reset_route}")
+                    _scan_family_voices(db, gemma_voice, last_voice_scan)
+                    last_voice_scan = int(time.time())
                 except Exception as e:
-                    log(f"  Stochastic reset error: {e}")
+                    log(f"  Voice scan error: {e}")
 
         except Exception as e:
             log(f"Cycle error: {e}")
@@ -1467,7 +2493,7 @@ def main():
     mesh.shutdown()
     stream.shutdown()
     db.close()
-    log("═══ Gemma Gate stopped ═══")
+    log("═══ Gemma Pulse stopped ═══")
 
 
 if __name__ == "__main__":

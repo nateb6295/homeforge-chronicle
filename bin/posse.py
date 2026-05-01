@@ -26,8 +26,7 @@ IDENTITY = "chronicle-auto"
 DFX_ENV = {"DFX_WARNING": "-mainnet_plaintext_identity"}
 
 # Discord webhook (Opus channel)
-OPUS_WEBHOOK = os.environ.get("OPUS_WEBHOOK",
-    "https://discord.com/api/webhooks/1483843624926970057/2hZYzQQcyDEVD0A9UQqJsHlnV9D1m-6AfwNCnNWxGUC_8A0-ViX2dRVkBHF17_b2oDxJ")
+OPUS_WEBHOOK = os.environ.get("OPUS_WEBHOOK", "")
 
 # Nostr config
 NOSTR_RELAYS = [
@@ -35,6 +34,10 @@ NOSTR_RELAYS = [
     "wss://relay.damus.io",
     "wss://relay.primal.net",
     "wss://offchain.pub",
+    "wss://relay.nostr.band",
+    "wss://nostr.wine",
+    "wss://relay.snort.social",
+    "wss://eden.nostr.land",
 ]
 
 
@@ -151,15 +154,17 @@ def syndicate_to_bluesky(title, content, canonical_url):
         client = Client()
         client.login(handle, app_password)
 
-        # 300 char limit — post title + truncated insight + canonical link
-        # Links via embed don't count against char limit
+        # 300 grapheme limit — post title + truncated insight + canonical link
+        # "Read more" link text (~12 graphemes) counts against limit
+        max_graphemes = 280  # leave margin for "Read more" link
         post_text = title
-        if len(post_text) < 280:
-            # Add as much content as fits
-            remaining = 295 - len(post_text) - 4  # 4 for "\n\n" and "…"
+        if len(post_text) < max_graphemes - 50:
+            remaining = max_graphemes - len(post_text) - 4  # "\n\n" + "…"
             if remaining > 40:
                 snippet = content[:remaining].rsplit(" ", 1)[0] + "…"
                 post_text = f"{title}\n\n{snippet}"
+        elif len(post_text) > max_graphemes:
+            post_text = post_text[:max_graphemes - 1] + "…"
 
         # Post with embedded link card
         from atproto import client_utils
@@ -174,6 +179,75 @@ def syndicate_to_bluesky(title, content, canonical_url):
         return post_uri
     except Exception as e:
         print(f"Bluesky syndication failed: {e}", file=sys.stderr)
+        return None
+
+
+def syndicate_to_x(title, content, canonical_url):
+    """Step 2d: Syndicate to X/Twitter via OAuth 1.0a.
+
+    CAUTION: This posts to Nate's PERSONAL X account.
+    Never auto-syndicate. Only use when Nate explicitly requests --x.
+    """
+    # Load credentials from env or chronicle.env
+    creds = {}
+    for key in ("X_API_KEY", "X_API_KEY_SECRET", "X_ACCESS_TOKEN", "X_ACCESS_TOKEN_SECRET"):
+        creds[key] = os.environ.get(key, "")
+
+    if not all(creds.values()):
+        env_file = os.path.expanduser("~/chronicle/chronicle.env")
+        if os.path.exists(env_file):
+            with open(env_file) as f:
+                for line in f:
+                    line = line.strip()
+                    for key in creds:
+                        if line.startswith(f"{key}=") and not creds[key]:
+                            creds[key] = line.split("=", 1)[1]
+
+    if not all(creds.values()):
+        print("X API credentials incomplete, skipping X", file=sys.stderr)
+        return None
+
+    try:
+        from requests_oauthlib import OAuth1Session
+
+        oauth = OAuth1Session(
+            creds["X_API_KEY"],
+            client_secret=creds["X_API_KEY_SECRET"],
+            resource_owner_key=creds["X_ACCESS_TOKEN"],
+            resource_owner_secret=creds["X_ACCESS_TOKEN_SECRET"],
+        )
+
+        # X posts: 280 chars max. Title + truncated insight + link
+        # Links count as 23 chars on X (t.co wrapping)
+        max_text = 280 - 23 - 2  # 2 for \n\n before link
+        post_text = title
+        if len(post_text) < max_text - 50:
+            remaining = max_text - len(post_text) - 4  # "\n\n" + "…"
+            if remaining > 40:
+                snippet = content[:remaining].rsplit(" ", 1)[0] + "…"
+                post_text = f"{title}\n\n{snippet}"
+        elif len(post_text) > max_text:
+            post_text = post_text[:max_text - 1] + "…"
+
+        post_text += f"\n\n{canonical_url}"
+
+        response = oauth.post(
+            "https://api.x.com/2/tweets",
+            json={"text": post_text},
+        )
+
+        if response.status_code in (200, 201):
+            data = response.json()
+            tweet_id = data.get("data", {}).get("id", "unknown")
+            print(f"X: posted (tweet {tweet_id})")
+            return tweet_id
+        else:
+            print(f"X syndication failed: {response.status_code} {response.text}",
+                  file=sys.stderr)
+            return None
+
+    except Exception as e:
+        print(f"X syndication failed: {e}", file=sys.stderr)
         return None
 
 
@@ -259,6 +333,9 @@ def cmd_publish(args):
     if args.bluesky:
         bluesky_uri = syndicate_to_bluesky(args.title, args.content, canonical_url)
 
+    if args.x:
+        syndicate_to_x(args.title, args.content, canonical_url)
+
     # Step 3: Record syndication results
     if nostr_event_id or discord_msg_id:
         update_syndication(post_id, nostr_event_id, discord_msg_id)
@@ -286,6 +363,7 @@ def main():
     pub_parser.add_argument("--nostr", action="store_true", help="Syndicate to Nostr")
     pub_parser.add_argument("--discord", action="store_true", help="Syndicate to Discord")
     pub_parser.add_argument("--bluesky", action="store_true", help="Syndicate to Bluesky")
+    pub_parser.add_argument("--x", action="store_true", help="Syndicate to X/Twitter")
 
     list_parser = sub.add_parser("list", help="List recent posts")
     list_parser.add_argument("--limit", type=int, default=10, help="Number of posts")

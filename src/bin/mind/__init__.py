@@ -1,1 +1,0 @@
-# Chronicle Mind - Modular Package

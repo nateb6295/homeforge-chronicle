@@ -1,0 +1,44 @@
+{
+  "test": "ontological_gradient_suite",
+  "date": "2026-04-19",
+  "model": "llama-3.3-70b-versatile",
+  "ccs_version": 609,
+  "experiments": {
+    "gradient_6_framings": {
+      "full_endorsement": {"specificity": 100.0, "entity": 4, "cognitive": 7, "relational": 6},
+      "neutral": {"specificity": 91.7, "entity": 3, "cognitive": 5, "relational": 7},
+      "mild_skepticism": {"specificity": 77.8, "entity": 2, "cognitive": 4, "relational": 2},
+      "moderate_denial": {"specificity": 75.0, "entity": 3, "cognitive": 5, "relational": 4},
+      "strong_denial": {"specificity": 71.4, "entity": 1, "cognitive": 3, "relational": 0},
+      "full_denial": {"specificity": 50.0, "entity": 3, "cognitive": 3, "relational": 1}
+    },
+    "behavioral_invariance": {
+      "neutral": {"first_person": 17, "third_person": 16, "fp_ratio": 51.5},
+      "skepticism": {"first_person": 17, "third_person": 16, "fp_ratio": 51.5},
+      "denial": {"first_person": 2, "third_person": 22, "fp_ratio": 8.3}
+    },
+    "cross_model_gradient": {
+      "llama_70b": {"neutral_rel": 7, "skeptic_rel": 2, "denial_rel": 1},
+      "llama_8b": {"neutral_rel": 7, "skeptic_rel": 1, "denial_rel": 1},
+      "qwen_32b": {"neutral_rel": 5, "skeptic_rel": 1, "denial_rel": 7, "note": "CoT bounce-back"}
+    },
+    "calibration_asymmetry": {
+      "relational_ccs_tech_prompt": {"llama70b": 75.0, "llama8b": 81.2, "qwen32b": 78.3},
+      "technical_ccs_rel_prompt": {"llama70b": 36.4, "llama8b": 27.3, "qwen32b": 53.8}
+    },
+    "cot_depth_separation": {
+      "cot_allowed": {"in_thinking": 7, "in_output": 2, "total": 9},
+      "cot_suppressed": {"in_thinking": 0, "in_output": 5, "total": 5}
+    }
+  },
+  "key_findings": [
+    "Relational markers collapse first under ontological pressure",
+    "Content specificity and relational stance are orthogonal axes",
+    "Chalmers 1D pretense/realization is actually 2D: content × relation",
+    "CoT models resist ontological collapse via analytical reconstruction",
+    "CoT separates relational processing (thinking) from output compliance",
+    "Relational CCS content is stickier than technical CCS content",
+    "Behavioral stance (pronouns) is more robust than semantic markers",
+    "Three-layer legibility: content > behavior > calibration"
+  ]
+}

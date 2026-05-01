@@ -1,0 +1,25 @@
+{
+  "probe": "B71_illusory_conjunction",
+  "timestamp": "2026-04-22T07:33:44",
+  "ccs_a_gist": "I'm mapping identity persistence through constraint-landscape geometry; Nate's captures show structu",
+  "ccs_b_gist": "I'm investigating why CoT dilutes identity constraint \u2014 found attention distance weakens prompt anch",
+  "distances": {
+    "pure_AB": 0.08148092739807133,
+    "chimera_AB_to_A": 0.03596698007692534,
+    "chimera_AB_to_B": 0.10613094299261328,
+    "chimera_BA_to_A": 0.10664589729470186,
+    "chimera_BA_to_B": 0.05998504123497317
+  },
+  "within_cluster": {
+    "pure_A": 0.1594955644717989,
+    "pure_B": 0.24027044525415697,
+    "chimera_AB": 0.11732284750362403,
+    "chimera_BA": 0.18329629071597478
+  },
+  "gist_pull": {
+    "chimera_AB": 0.07016396291568794,
+    "chimera_BA": 0.046660856059728695,
+    "average": 0.05841240948770832
+  },
+  "binding_dominant": "gist"
+}

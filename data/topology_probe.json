@@ -1,0 +1,14 @@
+{
+  "timestamp": "2026-04-21T11:12:36",
+  "build": 54,
+  "method": "ccs_topology_response_embedding",
+  "n_ccs_versions": 3,
+  "n_prompts_per_ccs": 3,
+  "n_responses": 9,
+  "within_mean": 0.16855020170246277,
+  "within_std": 0.03935076963302377,
+  "between_mean": 0.20423097180989627,
+  "between_std": 0.037367976615305554,
+  "ratio": 1.211692242115615,
+  "cohens_d": 0.9301708344382781
+}

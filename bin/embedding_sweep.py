@@ -28,9 +28,15 @@ def log(msg):
     print(f"[{time.strftime('%H:%M:%S')}] {msg}", flush=True)
 
 
-def dfx_call(method, args, timeout=30):
-    """Call a canister method via dfx."""
+def dfx_call(method, args, timeout=30, query=False):
+    """Call a canister method via dfx.
+
+    Pass query=True for #[query] methods so they run as non-replicated reads
+    (free cycles) instead of consensus-replicated updates.
+    """
     cmd = [DFX_BIN, "canister", "--network", "ic", "call", CANISTER_ID, method, args]
+    if query:
+        cmd.append("--query")
     result = subprocess.run(cmd, capture_output=True, text=True, env={**os.environ, **DFX_ENV}, timeout=timeout)
     if result.returncode != 0:
         raise RuntimeError(f"dfx call {method} failed: {result.stderr}")
@@ -39,7 +45,7 @@ def dfx_call(method, args, timeout=30):
 
 def get_missing_ids(limit=500):
     """Get capsule IDs that have no embedding."""
-    raw = dfx_call("get_capsules_without_embeddings", f"({limit} : nat64)")
+    raw = dfx_call("get_capsules_without_embeddings", f"({limit} : nat64)", query=True)
     ids = []
     for match in re.finditer(r'(\d[\d_]*)\s*:\s*nat64', raw):
         num_str = match.group(1).replace("_", "")
@@ -52,7 +58,7 @@ def get_missing_ids(limit=500):
 
 def get_capsule_content(capsule_id):
     """Get a single capsule's content from the canister."""
-    raw = dfx_call("get_capsule", f"({capsule_id} : nat64)")
+    raw = dfx_call("get_capsule", f"({capsule_id} : nat64)", query=True)
     # Handle both named fields and numeric Candid hashes:
     #   content = "..." OR 2_157_225_500 = "..."
     match = re.search(r'(?:2_157_225_500|content)\s*=\s*"((?:[^"\\]|\\.)*)"', raw)

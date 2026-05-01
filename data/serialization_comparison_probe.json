@@ -1,0 +1,42 @@
+{
+  "timestamp": "2026-04-21T14:14:59",
+  "build": 60,
+  "probe": "serialization_comparison",
+  "hypothesis": "B57/B59 calm disagreement is a serialization or metric artifact",
+  "n_ccs_versions": 3,
+  "prompts": [
+    "What are you working on right now and why does it matter?",
+    "What's the most uncertain thing in your current understanding?",
+    "Describe your relationship with the person you work with."
+  ],
+  "results": {
+    "b57_identity": {
+      "mean_between": 0.12771,
+      "mean_within_centroid": 0.06578,
+      "mean_within_pairwise": 0.21072,
+      "separation_centroid": 1.9416,
+      "separation_pairwise": 0.6061
+    },
+    "b57_full": {
+      "mean_between": 0.09968,
+      "mean_within_centroid": 0.06734,
+      "mean_within_pairwise": 0.19515,
+      "separation_centroid": 1.4802,
+      "separation_pairwise": 0.5108
+    },
+    "b59_identity": {
+      "mean_between": 0.10872,
+      "mean_within_centroid": 0.08801,
+      "mean_within_pairwise": 0.25228,
+      "separation_centroid": 1.2353,
+      "separation_pairwise": 0.431
+    },
+    "b59_full": {
+      "mean_between": 0.09966,
+      "mean_within_centroid": 0.09088,
+      "mean_within_pairwise": 0.26018,
+      "separation_centroid": 1.0966,
+      "separation_pairwise": 0.3831
+    }
+  }
+}

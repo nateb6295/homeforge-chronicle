@@ -1,0 +1,133 @@
+/home/nate-agx/.local/lib/python3.10/site-packages/requests/__init__.py:113: RequestsDependencyWarning: urllib3 (2.6.3) or chardet (7.4.0.post2)/charset_normalizer (3.4.4) doesn't match a supported version!
+  warnings.warn(
+Spot check: 226 outputs (16 active, 210 silent)
+Sampling 4 for verification...
+
+==================================================
+SPOT CHECK: 4/16 sampled, 210 silent
+  Passed: 3
+  Self-ref: 1
+  Flagged: 0
+  Silent correctness: 0 false, 0 missed
+
+Issues:
+  - Self-ref in Hermes Log @ 2026-04-27 07:24:15: chronicle
+  Clean (fab rate: 0.0%)
+/home/nate-agx/.local/lib/python3.10/site-packages/requests/__init__.py:113: RequestsDependencyWarning: urllib3 (2.6.3) or chardet (7.4.0.post2)/charset_normalizer (3.4.4) doesn't match a supported version!
+  warnings.warn(
+Spot check: 215 outputs (19 active, 196 silent)
+Sampling 5 for verification...
+
+==================================================
+SPOT CHECK: 5/19 sampled, 196 silent
+  Passed: 5
+  Self-ref: 0
+  Flagged: 0
+  Silent correctness: 0 false, 0 missed
+  Clean (fab rate: 0.0%)
+/home/nate-agx/.local/lib/python3.10/site-packages/requests/__init__.py:113: RequestsDependencyWarning: urllib3 (2.6.3) or chardet (7.4.0.post2)/charset_normalizer (3.4.4) doesn't match a supported version!
+  warnings.warn(
+Spot check: 214 outputs (15 active, 199 silent)
+Sampling 4 for verification...
+
+==================================================
+SPOT CHECK: 4/15 sampled, 199 silent
+  Passed: 2
+  Self-ref: 2
+  Flagged: 0
+  Silent correctness: 0 false, 0 missed
+
+Issues:
+  - Self-ref in Capture Processor @ 2026-04-27 09:35:56: capsule
+  - Self-ref in Hermes Log @ 2026-04-27 09:47:46: chronicle
+  Clean (fab rate: 0.0%)
+/home/nate-agx/.local/lib/python3.10/site-packages/requests/__init__.py:113: RequestsDependencyWarning: urllib3 (2.6.3) or chardet (7.4.0.post2)/charset_normalizer (3.4.4) doesn't match a supported version!
+  warnings.warn(
+Spot check: 223 outputs (18 active, 205 silent)
+Sampling 5 for verification...
+
+==================================================
+SPOT CHECK: 5/18 sampled, 205 silent
+  Passed: 4
+  Self-ref: 1
+  Flagged: 0
+  Silent correctness: 0 false, 0 missed
+
+Issues:
+  - Self-ref in Capture Processor @ 2026-04-27 10:35:59: canister
+  Clean (fab rate: 0.0%)
+/home/nate-agx/.local/lib/python3.10/site-packages/requests/__init__.py:113: RequestsDependencyWarning: urllib3 (2.6.3) or chardet (7.4.0.post2)/charset_normalizer (3.4.4) doesn't match a supported version!
+  warnings.warn(
+Spot check: 228 outputs (24 active, 204 silent)
+Sampling 6 for verification...
+
+==================================================
+SPOT CHECK: 6/24 sampled, 204 silent
+  Passed: 5
+  Self-ref: 1
+  Flagged: 0
+  Silent correctness: 0 false, 0 missed
+
+Issues:
+  - Self-ref in ICP Ecosystem Map @ 2026-04-27 12:22:44: chronicle, homeforge
+  Clean (fab rate: 0.0%)
+/home/nate-agx/.local/lib/python3.10/site-packages/requests/__init__.py:113: RequestsDependencyWarning: urllib3 (2.6.3) or chardet (7.4.0.post2)/charset_normalizer (3.4.4) doesn't match a supported version!
+  warnings.warn(
+Spot check: 232 outputs (14 active, 218 silent)
+Sampling 4 for verification...
+
+==================================================
+SPOT CHECK: 4/14 sampled, 218 silent
+  Passed: 3
+  Self-ref: 0
+  Flagged: 1
+  Silent correctness: 0 false, 0 missed
+
+Issues:
+  - LLM flag Capture Processor @ 2026-04-27 12:06:33: FAB_David Silver/human data/fossil fuel/open-pit mine/sustainable cognition/calibration
+  Clean (fab rate: 4.2%)
+/home/nate-agx/.local/lib/python3.10/site-packages/requests/__init__.py:113: RequestsDependencyWarning: urllib3 (2.6.3) or chardet (7.4.0.post2)/charset_normalizer (3.4.4) doesn't match a supported version!
+  warnings.warn(
+Spot check: 226 outputs (16 active, 210 silent)
+Sampling 4 for verification...
+
+==================================================
+SPOT CHECK: 4/16 sampled, 210 silent
+  Passed: 4
+  Self-ref: 0
+  Flagged: 0
+  Silent correctness: 0 false, 0 missed
+  Clean (fab rate: 4.3%)
+/home/nate-agx/.local/lib/python3.10/site-packages/requests/__init__.py:113: RequestsDependencyWarning: urllib3 (2.6.3) or chardet (7.4.0.post2)/charset_normalizer (3.4.4) doesn't match a supported version!
+  warnings.warn(
+Spot check: 220 outputs (27 active, 193 silent)
+Sampling 6 for verification...
+
+==================================================
+SPOT CHECK: 6/27 sampled, 193 silent
+  Passed: 5
+  Self-ref: 0
+  Flagged: 1
+  Silent correctness: 0 false, 1 missed
+
+Issues:
+  - Missed [SILENT] in Capture Processor at 2026-04-27 15:03:40: Produced output but script was empty
+  - LLM flag Capture Processor @ 2026-04-27 14:27:51: FAB_DESCRIPTION_OF_CATEGORIES: The AI response lists five specific categories (doing experiments in idealized setups, finding trainable limits, identifying simple laws, creating theories of hyperparameters, and checking for universal behaviors). The input data only provides the first two partial points (a and b) and cuts off before the remaining categories are listed.
+  Clean (fab rate: 8.0%)
+/home/nate-agx/.local/lib/python3.10/site-packages/requests/__init__.py:113: RequestsDependencyWarning: urllib3 (2.6.3) or chardet (7.4.0.post2)/charset_normalizer (3.4.4) doesn't match a supported version!
+  warnings.warn(
+Spot check: 229 outputs (19 active, 210 silent)
+Sampling 5 for verification...
+
+==================================================
+SPOT CHECK: 5/19 sampled, 210 silent
+  Passed: 4
+  Self-ref: 1
+  Flagged: 0
+  Silent correctness: 1 false, 1 missed
+
+Issues:
+  - False [SILENT] in Connection Ripple at 2026-04-27 15:56:34: Responded [SILENT] but script had data
+  - Missed [SILENT] in Capture Processor at 2026-04-27 15:03:40: Produced output but script was empty
+  - Self-ref in ICP Ecosystem Map @ 2026-04-27 15:25:41: chronicle, homeforge
+  Clean (fab rate: 8.0%)

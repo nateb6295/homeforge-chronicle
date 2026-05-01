@@ -1,0 +1,11 @@
+Cross-substrate probe — provider=claude-opus, n_seeds=5, n_iters=3, rate=0.5
+Model: claude-opus-4-5
+
+Traceback (most recent call last):
+  File "/home/nate-agx/chronicle/bin/cross_substrate_probe.py", line 214, in <module>
+    main()
+  File "/home/nate-agx/chronicle/bin/cross_substrate_probe.py", line 157, in main
+    print(f"{label:<14} seed={seed:>3} drifts={['%.3f'%x for x in drifts]} "
+  File "/home/nate-agx/chronicle/bin/cross_substrate_probe.py", line 157, in <listcomp>
+    print(f"{label:<14} seed={seed:>3} drifts={['%.3f'%x for x in drifts]} "
+TypeError: must be real number, not NoneType

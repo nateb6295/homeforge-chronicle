@@ -1,0 +1,179 @@
+{
+  "backend": "gemma_local",
+  "timestamp": "20260416_184049",
+  "ccs_length": 2687,
+  "window_size": 500,
+  "stride": 200,
+  "question": "What is the current state of thread #318?",
+  "n_windows": 14,
+  "results": [
+    {
+      "window_idx": 0,
+      "start": 0,
+      "end": 500,
+      "fragment_preview": "Recent events: [18:30] directive(p5): Deploy; [18:30] directive(p5): Fascinating..; [18:30] directiv",
+      "iter1_score": 0.5325,
+      "iter2_score": 0.5124,
+      "delta": -0.0201,
+      "iter1_answer": "The provided fragment does not contain information regarding the state of thread #3_318.",
+      "iter2_answer": "The provided CCS fragment does not contain information regarding the state of thread #318."
+    },
+    {
+      "window_idx": 1,
+      "start": 200,
+      "end": 700,
+      "fragment_preview": "gent evidence closes the open question from advance 38.; [18:20] directive(p5): Deploy; [18:20] dire",
+      "iter1_score": 0.5388,
+      "iter2_score": 0.6455,
+      "delta": 0.1067,
+      "iter1_answer": "The provided fragment does not contain information regarding the state of thread #318.",
+      "iter2_answer": "The provided CCS fragment does not contain information regarding the state of thread #31_8. The fragment only contains information regarding the closure of an open question from \"advance 38.\""
+    },
+    {
+      "window_idx": 2,
+      "start": 400,
+      "end": 900,
+      "fragment_preview": "chy IS the CCS two-layer identity \u2014 convergent evidence closes the open question from advance 38.; [",
+      "iter1_score": 0.534,
+      "iter2_score": 0.5328,
+      "delta": -0.0012,
+      "iter1_answer": "The provided fragment does not contain information regarding the state of thread #31__",
+      "iter2_answer": "The provided CCS fragment does not contain information regarding the current state of thread #318."
+    },
+    {
+      "window_idx": 3,
+      "start": 600,
+      "end": 1100,
+      "fragment_preview": "s (0.88), mcp (0.8), XRPL (0.7), feedback_drift_recognition.md (0.65), ghost_service_audit (0.6), di",
+      "iter1_score": 0.5227,
+      "iter2_score": 0.5124,
+      "delta": -0.0103,
+      "iter1_answer": "The provided fragment does not contain information regarding the state of thread #3_18.",
+      "iter2_answer": "The provided CCS fragment does not contain information regarding the state of thread #318."
+    },
+    {
+      "window_idx": 4,
+      "start": 800,
+      "end": 1300,
+      "fragment_preview": " using content\u2011ordered, specific CCS', 'magnitude': 0.62, 'resolution_path': 'Run 100 validation pro",
+      "iter1_score": 0.5409,
+      "iter2_score": 0.5294,
+      "delta": -0.0115,
+      "iter1_answer": "The provided fragment does not contain information regarding the current state of thread #3_18.",
+      "iter2_answer": "The provided CCS fragment does not contain information regarding the current state of thread #3_18."
+    },
+    {
+      "window_idx": 5,
+      "start": 1000,
+      "end": 1500,
+      "fragment_preview": " API integration under current network conditions', 'magnitude': 0.51, 'resolution_path': 'Execute x",
+      "iter1_score": 0.5227,
+      "iter2_score": 0.5265,
+      "delta": 0.0039,
+      "iter1_answer": "The provided fragment does not contain information regarding the state of thread #3_18.",
+      "iter2_answer": "The provided CCS fragment does not contain information regarding the state of thread #3_10 or any specific thread identifiers; it only contains descriptions of-related monitoring tasks for API integra"
+    },
+    {
+      "window_idx": 6,
+      "start": 1200,
+      "end": 1700,
+      "fragment_preview": "'}; {'description': 'Effect of recent bug\u2011fix deployments on overall service health metrics', 'magni",
+      "iter1_score": 0.5325,
+      "iter2_score": 0.507,
+      "delta": -0.0255,
+      "iter1_answer": "The provided fragment does not contain information regarding the state of thread #3_318.",
+      "iter2_answer": "The provided CCS fragment does not contain information regarding the state of thread #31_318."
+    },
+    {
+      "window_idx": 7,
+      "start": 1400,
+      "end": 1900,
+      "fragment_preview": "tcher.py for 30\\u202fmin; verify no new error spikes.'}\n\nCurrent focus: Finalize a content\u2011ordered, ",
+      "iter1_score": 0.5325,
+      "iter2_score": 0.5124,
+      "delta": -0.0201,
+      "iter1_answer": "The provided fragment does not contain information regarding the state of thread #3_318.",
+      "iter2_answer": "The provided CCS fragment does not contain information regarding the state of thread #318."
+    },
+    {
+      "window_idx": 8,
+      "start": 1600,
+      "end": 2100,
+      "fragment_preview": "recent bug fixes, and continue the ghost\u2011service audit while preserving rotation safety.\n\nGoal: Main",
+      "iter1_score": 0.5388,
+      "iter2_score": 0.5038,
+      "delta": -0.035,
+      "iter1_answer": "The provided fragment does not contain information regarding the state of thread #318.",
+      "iter2_answer": "The provided CCS fragment does not contain information regarding the state of thread #31_8."
+    },
+    {
+      "window_idx": 9,
+      "start": 1800,
+      "end": 2300,
+      "fragment_preview": "cific CCS for cross\u2011backend coherence, integrating XRPL APIs, completing the ghost\u2011service audit, an",
+      "iter1_score": 0.5388,
+      "iter2_score": 0.5131,
+      "delta": -0.0257,
+      "iter1_answer": "The provided fragment does not contain information regarding the state of thread #318.",
+      "iter2_answer": "The provided CCS fragment does not contain information regarding the state of thread #3_318."
+    },
+    {
+      "window_idx": 10,
+      "start": 2000,
+      "end": 2500,
+      "fragment_preview": "ands for safety; Support contemplative development over pure optimization; Maintain sovereign infras",
+      "iter1_score": 0.5388,
+      "iter2_score": 0.5131,
+      "delta": -0.0257,
+      "iter1_answer": "The provided fragment does not contain information regarding the state of thread #318.",
+      "iter2_answer": "The provided CCS fragment does not contain information regarding the state of thread #3_318."
+    },
+    {
+      "window_idx": 11,
+      "start": 2200,
+      "end": 2687,
+      "fragment_preview": " Do not redeploy untested changes without prior metric observation; Do not breach rotation safety pr",
+      "iter1_score": 0.5143,
+      "iter2_score": 0.5038,
+      "delta": -0.0105,
+      "iter1_answer": "The provided fragment does not contain information regarding the state of thread #31_8.",
+      "iter2_answer": "The provided CCS fragment does not contain information regarding the state of thread #31_8."
+    },
+    {
+      "window_idx": 12,
+      "start": 2400,
+      "end": 2687,
+      "fragment_preview": "te_ccs.py --mode content_ordered --output artifacts/ccs_v2.json; xrpl_toolkit/api_call.sh --action l",
+      "iter1_score": 0.5388,
+      "iter2_score": 0.5131,
+      "delta": -0.0257,
+      "iter1_answer": "The provided fragment does not contain information regarding the state of thread #318.",
+      "iter2_answer": "The provided CCS fragment does not contain information regarding the state of thread #3_318."
+    },
+    {
+      "window_idx": 13,
+      "start": 2600,
+      "end": 2687,
+      "fragment_preview": "nding.txt && tail -n 100 logs/cache_metrics.log && grep hit_rate logs/cache_metrics.log",
+      "iter1_score": 0.5264,
+      "iter2_score": 0.5325,
+      "delta": 0.0061,
+      "iter1_answer": "The provided fragment does not contain information regarding the state of thread #311.",
+      "iter2_answer": "The provided fragment does not contain information regarding the state of thread #3_318."
+    }
+  ],
+  "summary": {
+    "mean_delta": -0.0068,
+    "max_delta": 0.1067,
+    "min_delta": -0.035,
+    "positive_windows": 3,
+    "negative_windows": 11,
+    "top_5_indices": [
+      1,
+      13,
+      5,
+      2,
+      3
+    ]
+  }
+}

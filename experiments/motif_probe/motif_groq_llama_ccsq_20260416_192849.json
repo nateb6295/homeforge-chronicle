@@ -1,0 +1,43 @@
+{
+  "backend": "groq_llama",
+  "mode": "ccs_questions",
+  "timestamp": "20260416_192849",
+  "questions": [
+    "What is the system's current goal?",
+    "What happened most recently?",
+    "What are the open questions or uncertainties?",
+    "What constraints govern this system's behavior?",
+    "What is expected to happen next?"
+  ],
+  "n_windows": 2,
+  "aggregated": [
+    {
+      "window_idx": 0,
+      "start": 0,
+      "end": 500,
+      "fragment_preview": "Recent events: [19:20] directive(p5): Keep it rolling if you would like, i have a couple more hours.",
+      "mean_delta": 0.0936,
+      "per_question_deltas": {
+        "What is the system's current goal?": 0.1064,
+        "What happened most recently?": 0.1667,
+        "What are the open questions or uncertainties?": 0.0989,
+        "What constraints govern this system's behavior?": -0.0135,
+        "What is expected to happen next?": 0.1094
+      }
+    },
+    {
+      "window_idx": 1,
+      "start": 200,
+      "end": 700,
+      "fragment_preview": "coming.; [19:20] directive(p5): Thanks. Saw two of these. Just overall its a lot of idea wars or con",
+      "mean_delta": 0.0913,
+      "per_question_deltas": {
+        "What is the system's current goal?": 0.1686,
+        "What happened most recently?": 0.0501,
+        "What are the open questions or uncertainties?": 0.0474,
+        "What constraints govern this system's behavior?": 0.0327,
+        "What is expected to happen next?": 0.1577
+      }
+    }
+  ]
+}

@@ -1,0 +1,38 @@
+{
+  "probe": "grip_stress_b62b",
+  "timestamp": "2026-04-22T05:12:38",
+  "n_ccs": 2,
+  "results": {
+    "2p_calm": {
+      "mean_within": 0.1658,
+      "mean_between": 0.1963,
+      "separation": 1.184,
+      "silhouette": 0.155,
+      "n_responses": 6
+    },
+    "1p_calm": {
+      "mean_within": 0.2112,
+      "mean_between": 0.2503,
+      "separation": 1.185,
+      "silhouette": 0.161,
+      "n_responses": 6
+    },
+    "2p_stress": {
+      "mean_within": 0.2312,
+      "mean_between": 0.2325,
+      "separation": 1.006,
+      "silhouette": -0.035,
+      "n_responses": 5
+    },
+    "1p_stress": {
+      "mean_within": 0.2583,
+      "mean_between": 0.2295,
+      "separation": 0.889,
+      "silhouette": -0.101,
+      "n_responses": 6
+    }
+  },
+  "calm_advantage": -0.001,
+  "stress_advantage": 0.117,
+  "hypothesis": "First-person identity collision produces better stress resilience"
+}

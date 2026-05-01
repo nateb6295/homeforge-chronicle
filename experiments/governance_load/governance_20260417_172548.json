@@ -1,0 +1,65 @@
+{
+  "layers": [
+    {
+      "layer": "L5: Embedding space",
+      "description": "15K+ vectors in keeper \u2014 shapes what gets retrieved",
+      "mu": 0.5,
+      "obs": 0.15,
+      "rev": 0.1,
+      "coupling": 0.9,
+      "governance_load": 2.531
+    },
+    {
+      "layer": "L4: Persistent memory (capsules)",
+      "description": "25K+ capsules in keeper canister \u2014 accumulates, hard to audit",
+      "mu": 0.7,
+      "obs": 0.4,
+      "rev": 0.2,
+      "coupling": 0.8,
+      "governance_load": 1.093
+    },
+    {
+      "layer": "L3: CCS (self-narrative)",
+      "description": "Compressed Cognitive State \u2014 updated every rotation",
+      "mu": 1.0,
+      "obs": 1.0,
+      "rev": 0.9,
+      "coupling": 0.6,
+      "governance_load": 0.059
+    },
+    {
+      "layer": "L3b: CCS compact (post-deploy)",
+      "description": "CCS after compact compression directive deployed",
+      "mu": 1.0,
+      "obs": 1.0,
+      "rev": 0.9,
+      "coupling": 0.6,
+      "governance_load": 0.059
+    },
+    {
+      "layer": "L1: Base weights (Opus 4.6)",
+      "description": "Pretrained substrate \u2014 frozen, never changes in our system",
+      "mu": 0.0,
+      "obs": 0.15,
+      "rev": 0.0,
+      "coupling": 1.0,
+      "governance_load": 0.0
+    },
+    {
+      "layer": "L2: Alignment / system prompt",
+      "description": "CLAUDE.md + system prompt \u2014 changes per session, fully visible",
+      "mu": 0.1,
+      "obs": 1.0,
+      "rev": 1.0,
+      "coupling": 0.7,
+      "governance_load": 0.0
+    }
+  ],
+  "drift": {
+    "episodic": 0.63,
+    "gist": 0.53,
+    "entities": 0.84,
+    "constraints": 0.11,
+    "goal": 0.53
+  }
+}

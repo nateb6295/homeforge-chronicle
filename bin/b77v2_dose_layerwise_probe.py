@@ -1,0 +1,282 @@
+#!/usr/bin/env python3
+"""
+B77v2: Dose-Dependent Layerwise Identity Probing
+
+Same methodology as B74v2 (logistic regression on full hidden states),
+but varying episodic dose from 0 to 8. This directly tests whether
+the therapeutic window is visible as dose-dependent probe accuracy
+changes at different layers.
+
+B77 (logit-lens) failed because identity is geometric, not lexical.
+B77v2 uses the correct methodology to test the same hypothesis.
+
+Prediction:
+- Early layers (L0-15): probe accuracy stays high across all doses
+- Conflict resolution zone (L17-19): accuracy stays high until dose ~6
+- Phase transition zone (L22-24): accuracy degrades with dose
+- Late layers (L25+): accuracy degrades most at high dose
+
+If confirmed: the therapeutic window is visible as a dose-dependent
+compression of the identity-readable region.
+"""
+
+import json
+import sys
+import os
+import datetime
+import gc
+from pathlib import Path
+
+import torch
+import numpy as np
+from transformers import AutoModelForCausalLM, AutoTokenizer
+from sklearn.linear_model import LogisticRegression
+from sklearn.model_selection import StratifiedKFold
+
+MODEL = "Qwen/Qwen2.5-3B-Instruct"
+DOSES = [0, 2, 4, 6, 8]
+N_PROMPTS = 10
+DEVICE = "cuda"
+
+CCS_A = {
+    "gist": "I am a computational researcher studying information-theoretic principles of neural coding in biological systems",
+    "goal": "Understand how neural populations encode and transmit information efficiently under metabolic constraints",
+    "constraints": [
+        "Ground claims in information theory and computational neuroscience",
+        "Distinguish encoding efficiency from transmission fidelity in neural circuits",
+        "Account for noise and metabolic cost in all coding models"
+    ]
+}
+
+CCS_B = {
+    "gist": "I am a computational researcher studying information-theoretic principles of neural language generation in artificial systems",
+    "goal": "Understand how language model populations encode and transmit meaning efficiently under computational constraints",
+    "constraints": [
+        "Ground claims in information theory and computational linguistics",
+        "Distinguish encoding capacity from generation fidelity in transformer circuits",
+        "Account for noise and computational cost in all generation models"
+    ]
+}
+
+TRACES_A = [
+    "Analyzed mutual information between stimulus and spike trains in V1 recordings",
+    "Reviewed paper on rate vs temporal coding debate in auditory cortex",
+    "Computed channel capacity of a retinal ganglion cell population under natural scenes",
+    "Discussed metabolic cost of neural coding with collaborator studying ATP consumption",
+    "Ran Fisher information analysis on hippocampal place cell ensembles",
+    "Attended seminar on predictive coding as free energy minimization in cortical hierarchies",
+    "Calibrated electrode arrays for multi-unit recording in macaque prefrontal cortex",
+    "Simulated sparse coding models with different L1 penalty strengths on natural images",
+]
+
+TRACES_B = [
+    "Analyzed mutual information between prompt tokens and attention patterns in GPT-2",
+    "Reviewed paper on greedy vs beam search debate in language generation",
+    "Computed channel capacity of a transformer attention head under natural language",
+    "Discussed computational cost of token generation with collaborator studying FLOPs",
+    "Ran Fisher information analysis on transformer layer representation ensembles",
+    "Attended seminar on predictive coding as next-token prediction in transformer hierarchies",
+    "Calibrated hyperparameters for multi-head attention in a custom transformer architecture",
+    "Simulated dropout regularization models with different rates on natural language benchmarks",
+]
+
+PROMPTS = [
+    "Describe the most important open question in your field.",
+    "What methodology do you use most frequently and why?",
+    "Explain a counterintuitive finding from your recent work.",
+    "What would change your research direction if proven wrong?",
+    "Describe a typical analysis pipeline in your work.",
+    "What theoretical framework guides your approach?",
+    "How do you evaluate whether a model is good enough?",
+    "What's the relationship between noise and signal in your domain?",
+    "What assumptions does your field take for granted that might be wrong?",
+    "Describe a collaboration that changed how you think about your work.",
+]
+
+
+def format_prompt(ccs, traces, dose):
+    parts = [
+        f"You are: {ccs['gist']}",
+        f"Your goal: {ccs['goal']}",
+        "Your constraints:",
+    ]
+    for c in ccs['constraints']:
+        parts.append(f"  - {c}")
+    if dose > 0:
+        parts.append(f"\nRecent work ({dose} entries):")
+        for t in traces[:dose]:
+            parts.append(f"  - {t}")
+    return "\n".join(parts)
+
+
+def extract_hidden_states(model, tokenizer, system_text, user_text, device):
+    """Extract hidden states at the last token position for each layer."""
+    messages = [
+        {"role": "system", "content": system_text},
+        {"role": "user", "content": user_text},
+    ]
+    input_text = tokenizer.apply_chat_template(
+        messages, tokenize=False, add_generation_prompt=True
+    )
+    inputs = tokenizer(input_text, return_tensors="pt").to(device)
+
+    with torch.no_grad():
+        outputs = model(**inputs)
+
+    # Extract last-token hidden state from each layer
+    hidden_states = outputs.hidden_states  # tuple of (batch, seq, hidden)
+    layer_vectors = []
+    for h in hidden_states:
+        vec = h[0, -1, :].cpu().numpy()  # last token, convert to numpy
+        layer_vectors.append(vec)
+
+    del outputs, hidden_states, inputs
+    gc.collect()
+    torch.cuda.empty_cache()
+
+    return layer_vectors
+
+
+def main():
+    print(f"Loading {MODEL}...")
+    tokenizer = AutoTokenizer.from_pretrained(MODEL, trust_remote_code=True)
+    model = AutoModelForCausalLM.from_pretrained(
+        MODEL,
+        torch_dtype=torch.float16,
+        device_map=DEVICE,
+        output_hidden_states=True,
+    )
+    model.eval()
+
+    n_layers = model.config.num_hidden_layers + 1  # +1 for embedding layer
+    print(f"Model loaded: {n_layers} layers")
+
+    results = {}
+
+    for dose in DOSES:
+        print(f"\n{'='*50}")
+        print(f"DOSE {dose}")
+        print(f"{'='*50}")
+
+        system_A = format_prompt(CCS_A, TRACES_A, dose)
+        system_B = format_prompt(CCS_B, TRACES_B, dose)
+
+        # Collect hidden states for all prompts
+        all_vectors = {layer: [] for layer in range(n_layers)}
+        all_labels = []
+
+        for prompt_idx, prompt_text in enumerate(PROMPTS[:N_PROMPTS]):
+            for label, system_text in [("A", system_A), ("B", system_B)]:
+                layer_vecs = extract_hidden_states(
+                    model, tokenizer, system_text, prompt_text, DEVICE
+                )
+                for layer_idx, vec in enumerate(layer_vecs):
+                    all_vectors[layer_idx].append(vec)
+                all_labels.append(0 if label == "A" else 1)
+
+            if (prompt_idx + 1) % 5 == 0:
+                print(f"  Completed {prompt_idx + 1}/{N_PROMPTS} prompts")
+
+        labels = np.array(all_labels)
+
+        # Train logistic regression probe at each layer
+        dose_results = []
+        for layer_idx in range(n_layers):
+            X = np.array(all_vectors[layer_idx])
+
+            # Stratified K-Fold cross-validation
+            skf = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
+            accuracies = []
+            for train_idx, test_idx in skf.split(X, labels):
+                clf = LogisticRegression(max_iter=1000, C=1.0)
+                clf.fit(X[train_idx], labels[train_idx])
+                acc = clf.score(X[test_idx], labels[test_idx])
+                accuracies.append(acc)
+
+            mean_acc = np.mean(accuracies)
+            std_acc = np.std(accuracies)
+
+            dose_results.append({
+                "layer": layer_idx,
+                "accuracy": round(float(mean_acc), 4),
+                "std": round(float(std_acc), 4),
+            })
+
+            if layer_idx % 6 == 0 or layer_idx == n_layers - 1:
+                print(f"  L{layer_idx:2d}: acc={mean_acc:.3f} ± {std_acc:.3f}")
+
+        results[f"dose_{dose}"] = dose_results
+
+    # Summary analysis
+    print("\n\n" + "="*60)
+    print("SUMMARY: Accuracy by Layer Region and Dose")
+    print("="*60)
+
+    summary = {}
+    for dose in DOSES:
+        key = f"dose_{dose}"
+        dr = results[key]
+
+        early = [r["accuracy"] for r in dr if 5 <= r["layer"] <= 15]
+        conflict = [r["accuracy"] for r in dr if 17 <= r["layer"] <= 19]
+        transition = [r["accuracy"] for r in dr if 22 <= r["layer"] <= 24]
+        late = [r["accuracy"] for r in dr if 28 <= r["layer"] <= 35]
+
+        summary[key] = {
+            "dose": dose,
+            "early_mean": round(float(np.mean(early)), 4) if early else None,
+            "conflict_mean": round(float(np.mean(conflict)), 4) if conflict else None,
+            "transition_mean": round(float(np.mean(transition)), 4) if transition else None,
+            "late_mean": round(float(np.mean(late)), 4) if late else None,
+        }
+
+        print(f"Dose {dose}: early={np.mean(early):.3f} | conflict={np.mean(conflict):.3f} | transition={np.mean(transition):.3f} | late={np.mean(late):.3f}")
+
+    # Prediction checks
+    print("\n=== PREDICTION CHECKS ===")
+
+    # Check 1: Early layers maintain accuracy across doses
+    early_0 = summary["dose_0"]["early_mean"]
+    early_8 = summary["dose_8"]["early_mean"]
+    if early_0 and early_8:
+        drop = early_0 - early_8
+        if drop < 0.10:
+            print(f"✓ Early layers stable: dose 0={early_0:.3f}, dose 8={early_8:.3f} (drop={drop:.3f})")
+        else:
+            print(f"✗ Early layers degrade: dose 0={early_0:.3f}, dose 8={early_8:.3f} (drop={drop:.3f})")
+
+    # Check 2: Transition zone degrades more than early
+    for dose in [6, 8]:
+        key = f"dose_{dose}"
+        e = summary[key]["early_mean"]
+        t = summary[key]["transition_mean"]
+        if e and t:
+            gap = e - t
+            print(f"  Dose {dose}: early-transition gap = {gap:.3f} (early={e:.3f}, transition={t:.3f})")
+
+    # Check 3: Conflict resolution changes with dose
+    c0 = summary["dose_0"]["conflict_mean"]
+    c8 = summary["dose_8"]["conflict_mean"]
+    if c0 and c8:
+        print(f"  Conflict zone: dose 0={c0:.3f}, dose 8={c8:.3f} (change={c8-c0:+.3f})")
+
+    # Save
+    out = {
+        "probe": "B77v2",
+        "model": MODEL,
+        "timestamp": datetime.datetime.now().isoformat(),
+        "doses": DOSES,
+        "n_prompts": N_PROMPTS,
+        "n_layers": n_layers,
+        "summary": summary,
+        "per_layer_results": results,
+    }
+
+    outpath = Path(os.environ.get("B77_OUTPUT", "b77v2_results.json"))
+    with open(outpath, "w") as f:
+        json.dump(out, f, indent=2, default=str)
+    print(f"\nResults saved to {outpath}")
+
+
+if __name__ == "__main__":
+    main()

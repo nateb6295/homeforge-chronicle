@@ -1,0 +1,35 @@
+Cross-substrate probe — provider=claude-opus, n_seeds=5, n_iters=3, rate=0.5
+Model: claude-opus-4-5
+
+base           seed= 42 drifts=['0.189', '0.189', '0.189'] fid=['X', 'X', 'X'] refs=[True, True, True] (8s)
+base           seed=  7 drifts=['0.295', '0.353', '0.360'] fid=['0.644', '0.666', '0.658'] refs=[False, False, False] (29s)
+base           seed= 13 drifts=['0.233', '0.355', '0.359'] fid=['0.688', '0.647', '0.656'] refs=[False, False, False] (51s)
+base           seed= 21 drifts=['0.200', '0.344', '0.345'] fid=['0.781', '0.684', '0.669'] refs=[False, False, False] (74s)
+base           seed= 99 drifts=['0.326', '0.326', '0.326'] fid=['X', 'X', 'X'] refs=[True, True, True] (79s)
++self_model    seed= 42 drifts=['0.149', '0.096', '0.337'] fid=['0.792', '0.767', '0.672'] refs=[False, False, False] (101s)
++self_model    seed=  7 drifts=['0.135', '0.127', '0.127'] fid=['0.758', '0.387', '0.424'] refs=[False, False, False] (121s)
++self_model    seed= 13 drifts=['0.157', '0.135', '0.159'] fid=['0.816', '0.851', '0.706'] refs=[False, False, False] (144s)
++self_model    seed= 21 drifts=['0.155', '0.153', '0.138'] fid=['0.785', '0.779', '0.765'] refs=[False, False, False] (165s)
++self_model    seed= 99 drifts=['0.229', '0.107', '0.150'] fid=['0.745', '0.799', '0.744'] refs=[False, False, False] (188s)
+Traceback (most recent call last):
+  File "/home/nate-agx/chronicle/bin/cross_substrate_probe.py", line 192, in <module>
+    main()
+  File "/home/nate-agx/chronicle/bin/cross_substrate_probe.py", line 130, in main
+    drifts, fidelities, refusals, errors, speak, restate = run_trajectory(
+  File "/home/nate-agx/chronicle/bin/cross_substrate_probe.py", line 54, in run_trajectory
+    e = embed(p)
+  File "/home/nate-agx/chronicle/bin/self_description_loop.py", line 105, in embed
+    with urllib.request.urlopen(req, timeout=30) as resp:
+  File "/usr/lib/python3.10/urllib/request.py", line 216, in urlopen
+    return opener.open(url, data, timeout)
+  File "/usr/lib/python3.10/urllib/request.py", line 525, in open
+    response = meth(req, response)
+  File "/usr/lib/python3.10/urllib/request.py", line 634, in http_response
+    response = self.parent.error(
+  File "/usr/lib/python3.10/urllib/request.py", line 563, in error
+    return self._call_chain(*args)
+  File "/usr/lib/python3.10/urllib/request.py", line 496, in _call_chain
+    result = func(*args)
+  File "/usr/lib/python3.10/urllib/request.py", line 643, in http_error_default
+    raise HTTPError(req.full_url, code, msg, hdrs, fp)
+urllib.error.HTTPError: HTTP Error 500: Internal Server Error

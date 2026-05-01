@@ -1,0 +1,34 @@
+{
+  "timestamp": "2026-04-21T12:04:17",
+  "build": 56,
+  "method": "ccs_field_contribution_analysis",
+  "n_ccs_versions": 3,
+  "identity_fields": [
+    "semantic_gist",
+    "goal_orientation",
+    "constraints"
+  ],
+  "episodic_fields": [
+    "episodic_trace"
+  ],
+  "full_vs_identity_mean_distance": 0.0315,
+  "full_vs_episodic_mean_distance": 0.3085,
+  "identity_dominance_ratio": 9.8,
+  "per_version": [
+    {
+      "gist": "legibility_inversion",
+      "full_vs_id": 0.03,
+      "full_vs_ep": 0.2534
+    },
+    {
+      "gist": "CoT_dilutes_identity",
+      "full_vs_id": 0.0398,
+      "full_vs_ep": 0.3284
+    },
+    {
+      "gist": "mapping_identity_persistence",
+      "full_vs_id": 0.0246,
+      "full_vs_ep": 0.3436
+    }
+  ]
+}

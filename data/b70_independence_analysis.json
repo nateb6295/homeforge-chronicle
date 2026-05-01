@@ -1,0 +1,27 @@
+{
+  "analysis": "B70_independence_via_large_deviations",
+  "bound": "P(dev >= eps) <= exp(-h_eff * eps^2)",
+  "fitted_parameters": {
+    "eps_squared": 0.9307,
+    "A": 2.7915
+  },
+  "depths": {
+    "minimal": {
+      "h_nominal": 2,
+      "h_effective": 2.0,
+      "degradation_pct": 43.4
+    },
+    "standard": {
+      "h_nominal": 3,
+      "h_effective": 3.0,
+      "degradation_pct": 17.1
+    },
+    "rich": {
+      "h_nominal": 5,
+      "h_effective": 2.37,
+      "degradation_pct": 30.7
+    }
+  },
+  "key_finding": "Rich CCS (5 fields) has effective independence h_eff=2.4, meaning episodic+entity fields are ~131% correlated with structural fields",
+  "prediction": "CCS with independently-anchored episodic content should recover h_eff ~= h_nominal"
+}

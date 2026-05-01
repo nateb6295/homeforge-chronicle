@@ -1,0 +1,221 @@
+{
+  "ecosystem": "icp",
+  "version": 1,
+  "created": "2026-04-16",
+  "last_updated": "2026-04-29",
+  "nodes": [
+    {
+      "id": "dfinity",
+      "name": "DFINITY Foundation",
+      "type": "foundation",
+      "role": "anchor",
+      "site": "https://dfinity.org",
+      "notes": "Primary ICP protocol steward; grants; NNS governance",
+      "added": "2026-04-16"
+    },
+    {
+      "id": "icp_protocol",
+      "name": "Internet Computer Protocol",
+      "type": "protocol",
+      "role": "anchor",
+      "site": "https://internetcomputer.org",
+      "notes": "The L1 itself \u2014 canisters, chain-key crypto, HTTPS outcalls",
+      "added": "2026-04-16"
+    },
+    {
+      "id": "openchat",
+      "name": "OpenChat",
+      "type": "dapp",
+      "role": "anchor",
+      "site": "https://oc.app",
+      "notes": "Fully on-chain messenger; SNS-governed",
+      "added": "2026-04-16"
+    },
+    {
+      "id": "caffeine",
+      "name": "Caffeine AI",
+      "type": "dapp",
+      "role": "anchor",
+      "site": "https://caffeine.ai",
+      "notes": "Anthropic-DFINITY partnership; Sonnet-backed canister generation",
+      "added": "2026-04-16"
+    },
+    {
+      "id": "origyn",
+      "name": "Origyn Foundation",
+      "type": "foundation",
+      "role": "anchor",
+      "site": "https://origyn.com",
+      "notes": "NFT + provenance infrastructure",
+      "added": "2026-04-16"
+    },
+    {
+      "id": "dmail",
+      "name": "dMail Network",
+      "type": "dapp",
+      "role": "anchor",
+      "site": "https://dmail.ai",
+      "notes": "Decentralized email + messaging on ICP",
+      "added": "2026-04-16"
+    },
+    {
+      "id": "bitfinity",
+      "name": "Bitfinity Network",
+      "type": "protocol",
+      "role": "anchor",
+      "site": "https://bitfinity.network",
+      "notes": "EVM on ICP; chain-fusion Bitcoin/Ethereum bridge",
+      "added": "2026-04-16"
+    },
+    {
+      "id": "chain_fusion_btc",
+      "name": "Chain-Fusion Bitcoin (ckBTC)",
+      "type": "protocol",
+      "role": "anchor",
+      "site": "https://internetcomputer.org/ckbtc",
+      "notes": "Direct Bitcoin integration via chain-key signing",
+      "added": "2026-04-16"
+    },
+    {
+      "id": "homeforge_chronicle",
+      "name": "Chronicle (homeforge)",
+      "type": "dapp",
+      "role": "anchor",
+      "site": "https://nbt4b-giaaa-aaaai-q33lq-cai.icp0.io",
+      "notes": "Nate + Opus canister deployment \u2014 we're in the set",
+      "added": "2026-04-16"
+    },
+    {
+      "id": "oisy_wallet",
+      "name": "OISY Wallet",
+      "type": "wallet",
+      "notes": "A browser-based multi-chain wallet powered by Chain Fusion technology.",
+      "role": "candidate",
+      "added": "2026-04-16",
+      "discovered_via": "icp_protocol"
+    },
+    {
+      "id": "pakistan_digital_authority",
+      "name": "Pakistan Digital Authority",
+      "type": "government",
+      "notes": "Government body partnering with DFINITY to advance sovereign AI-native digital infrastructure in Pakistan.",
+      "role": "candidate",
+      "added": "2026-04-16",
+      "discovered_via": "icp_protocol"
+    },
+    {
+      "id": "undp",
+      "name": "United Nations Development Programme",
+      "type": "ngo",
+      "notes": "Uses ICP to create tamperproof, verifiable credentials.",
+      "role": "candidate",
+      "added": "2026-04-16",
+      "discovered_via": "icp_protocol"
+    },
+    {
+      "id": "gza",
+      "name": "GZA",
+      "type": "organization",
+      "notes": "Europe's tech powerhouse where the Internet Computer plays a leading role.",
+      "role": "candidate",
+      "added": "2026-04-16",
+      "discovered_via": "icp_protocol"
+    },
+    {
+      "id": "aly",
+      "name": "Aly",
+      "type": "project",
+      "role": "ICP ecosystem (pending research)",
+      "site": null,
+      "notes": "Flagged by Nate 2026-04-16 as ICP ecosystem member. Test case for diffuser v0.4.",
+      "added": "2026-04-16"
+    }
+  ],
+  "edges": [
+    {
+      "from": "dfinity",
+      "to": "icp_protocol",
+      "kind": "stewards",
+      "note": "DFINITY is the protocol steward"
+    },
+    {
+      "from": "caffeine",
+      "to": "dfinity",
+      "kind": "partnership",
+      "note": "Anthropic-DFINITY partnership produces Caffeine"
+    },
+    {
+      "from": "bitfinity",
+      "to": "icp_protocol",
+      "kind": "built_on",
+      "note": "Bitfinity EVM runs as an ICP subnet"
+    },
+    {
+      "from": "chain_fusion_btc",
+      "to": "icp_protocol",
+      "kind": "native_integration",
+      "note": "ckBTC uses chain-key ECDSA at the protocol layer"
+    },
+    {
+      "from": "homeforge_chronicle",
+      "to": "icp_protocol",
+      "kind": "deployed_on",
+      "note": "Chronicle canisters live on ICP mainnet"
+    },
+    {
+      "from": "openchat",
+      "to": "icp_protocol",
+      "kind": "built_on",
+      "note": "Fully on-chain dapp, SNS-governed"
+    },
+    {
+      "from": "dmail",
+      "to": "icp_protocol",
+      "kind": "built_on",
+      "note": "Decentralized mail dapp"
+    },
+    {
+      "from": "origyn",
+      "to": "icp_protocol",
+      "kind": "built_on",
+      "note": "NFT + provenance infra"
+    },
+    {
+      "from": "pakistan_digital_authority",
+      "to": "dfinity",
+      "kind": "partnership",
+      "notes": "Partnering to advance sovereign AI-native digital infrastructure in Pakistan."
+    },
+    {
+      "from": "undp",
+      "to": "icp_protocol",
+      "kind": "integrates",
+      "notes": "Uses ICP to create tamperproof, verifiable credentials."
+    },
+    {
+      "from": "gza",
+      "to": "icp_protocol",
+      "kind": "integrates",
+      "notes": "The Internet Computer plays a leading role in the GZA's flourishing Tech Scene."
+    },
+    {
+      "from": "caffeine",
+      "to": "icp_protocol",
+      "kind": "built_on",
+      "notes": "Caffeine demonstrates the self-writing internet built on the Internet Computer."
+    },
+    {
+      "from": "chain_fusion_btc",
+      "to": "oisy_wallet",
+      "kind": "integrates",
+      "note": "OISY Wallet is a browser-based multi-chain wallet powered by Chain Fusion technology."
+    }
+  ],
+  "pending_research": [],
+  "stats": {
+    "nodes_total": 14,
+    "edges_total": 13,
+    "last_cycle_new_nodes": 0,
+    "last_cycle_new_edges": 0
+  }
+}

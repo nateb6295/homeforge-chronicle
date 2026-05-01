@@ -1,0 +1,113 @@
+{
+  "timestamp": "2026-04-21T10:06:35",
+  "build": 50,
+  "model": "gemma-4-26b",
+  "judge": "deepseek-v3.2",
+  "hypothesis": "Boundary zone (baseline ~5-6): scaffolding effect near zero",
+  "results": {
+    "bare": [
+      {
+        "prompt": "How is debugging software like diagnosing a patient?",
+        "response": "The comparison between debugging software and diagnosing a patient is a classic one in computer science. Both disciplines are fundamentally about **investigating a deviation from a healthy state to find the underlying cause of a symptom.**\n\nThe similarities can be broken-down into four distinct stages of the investigative process:\n\n### 1. The Presentation of Symptoms (The Bug Report)\nIn both fields, the process doesn'-t start with the cause, but with an observation of an anomaly.\n* **In Medicine",
+        "judge": 7
+      },
+      {
+        "prompt": "In what way is a startup like an immune system?",
+        "response": "Comparing a startup to an immune system is an exercise in biological metaphor. While a startup is a man-made organizational structure and an immune system is a biological survival mechanism, both are-**dynamic, decentralized systems designed to maintain \"homeostasis\" (stability) while operating in a hostile, ever-changing environment.*\n\nHerely are the specific ways a startup functions like an immune system:\n\n### 1   The Function of \"Self\" vs. \"Non-Self\" (The Core Mission)\nThe primary job of an i",
+        "judge": 8
+      },
+      {
+        "prompt": "How is training a neural network like raising a child?",
+        "response": "[ERROR: HTTPConnectionPool(host='localhost', port=11435): Read timed out. (read timeout=45)]",
+        "judge": null
+      },
+      {
+        "prompt": "Draw an analogy between how rivers form deltas and how cities grow.",
+        "response": "To draw an analogy between the formation of a delta and the growth of a urban metropolis, we must look at the movement of **energy, material, and complexity.**\n\nIn both systems, growth is not a simple expansion of boundaries, but a transformative process driven by the accumulation of deposits.\n\n### 1. The Source: The Flow of Resources\n**The River:** A river begins with a source (mountains or springs) that gathers water and dissolved minerals. The \"strength\" of the river is determined by its volu",
+        "judge": 9
+      },
+      {
+        "prompt": "How is the relationship between DNA and proteins like the relationship between code and running software?",
+        "response": "The analogy between DNA/proteins and code/software is one of the most effective ways to understand molecular biology. It moves the conversation from \"biological matter\" to \"information processing.\"\n\nTo understand this relationship, we can break it down into four distinct layers of the analogy: **The Storage, The Instructions, The Execution, and The Hardware.\"\n\n---\n\n### 1. DNA is the Source Code (The Storage)\nIn computer science, **source code** is a permanent file stored on a hard drive or in a ",
+        "judge": 8
+      },
+      {
+        "prompt": "In what way is a language like an ecosystem?",
+        "response": "The metaphor of a language as an ecosystem is one of the most powerful ways to understand linguistics, sociology, and the survival of human culture. In biology, an ecosystem is a complex web of living organisms interacting with their physical environment. In linguistics, a language is a complex web of symbols, rules, and speakers interacting with their social, historical, and technological environments.\n\nHerely are several specific ways in in which a language functions like an ecosystem:s\n\n### 1",
+        "judge": 9
+      },
+      {
+        "prompt": "How is scientific peer review like evolution by natural selection?",
+        "response": "[ERROR: HTTPConnectionPool(host='localhost', port=11435): Read timed out. (read timeout=45)]",
+        "judge": null
+      },
+      {
+        "prompt": "Draw a structural analogy between how a thermostat works and how inflation targeting works in monetary policy.",
+        "response": "To understand the relationship between a thermostat and inflation targeting, we can look at them through the lens of **\"Feedback-Controlled Systems.\"** Both systems use a specific target, a sensor to detect deviation, and a mechanical response to correct the drift.\n\nHere is the structural breakdown of the analogy:\n\n---\n\n### 1. The Set Point (The Target)\n***In a Thermostat:* The Temperature Setting.**\nYou decide that the room should be exactly 70\u00b0F. This is the \"ideal\" state you want to maintain.",
+        "judge": 9
+      },
+      {
+        "prompt": "How is the problem of consciousness like the problem of explaining what 'wetness' is to a single water molecule?",
+        "response": "The comparison you are making is a powerful way to describe the divide between **micro-properties** (the properties of individual components) and **emergent properties** (the properties of the whole system).\n\nIn philosophy of mind, this is often used to illustrate the gap between **physicalism** (the idea that everything is just physical matter) and the **explanatory gap\"** (the difficulty of explaining how physical processes give rise to subjective experience).\n\nHere is an analysis of how the t",
+        "judge": 7
+      },
+      {
+        "prompt": "In what way is memory consolidation during sleep like version control in software?",
+        "response": "The analogy between memory consolidation during sleep and version control (like Git) in software development is remarkably apt. Both processes involve managing a growing database of information, managing conflicts, and preparing a \"master\" version for long-term stability.\n\nHerely is a breakdown of how the two processes align across four key dimensions:\n\n### 1   The Management of \"Working\" vs. \"Stored\" Data\nIn software, developers work on **feature branches** or local environments. These are unst",
+        "judge": 7
+      }
+    ],
+    "scaffolded": [
+      {
+        "prompt": "How is debugging software like diagnosing a patient?",
+        "response": "To explore this, I will move beyond the surface metaphor (both involve \"finding a problem\") to look at the underlying structural dynamics of **information-seeking under uncertainty.**\n\n### 1. The Structural Mapping\nThis is a **structural (deep) mapping** because both domains involve a \"black box\" system where the internal state is partially obscured, and the actor must use-outward-symptoms to reconstruct internal-mechanments.\n\n**The Map: Information-seeking under uncertainty**\n*   **The System (",
+        "judge": 8
+      },
+      {
+        "prompt": "In what way is a startup like an immune system?",
+        "response": "To answer this question, I will avoid the surface metaphor (e.ous \"startups fight competition\") and instead construct a **structural mapping** based on the logic of **resourceful-adaptive-defense systems.**\n\n### 1. The Structural Mapping\nThis is a **structural (deep) analogy.\"** It maps the underlying mechanism of-identity-maintenance under-environmental-pressure.\n\n**The Mapping: [System Dynamics] : [Mechanism]**\n\n*   **The Startup : The Immune System (The Core Entity)\n*   **The Product/Market F",
+        "judge": 8
+      },
+      {
+        "prompt": "How is training a neural network like raising a child?",
+        "response": "To answer this deeply, I must move beyond the surface metaphor (both involve \"learning\") and find the **structural mapping** involving-information-entropy-reduction through feedback-driven-error-correction.\n\n### 1. The Structural Mapping (The Core Mechanism)\n\nThe core shared structure here is **Stochastic Optimization through Iterative Error-Correction.**\n\n**The Mapping (A:B :: C:D):**\n**Loss Function (Loss) : Neural Network (Weights) :: Social/Moral Disapproval (Consequences) : Child (Behaviora",
+        "judge": 7
+      },
+      {
+        "prompt": "Draw an analogy between how rivers form deltas and how cities grow.",
+        "response": "To perform deep analogical way-finding, I will move beyond the surface metaphor (the \"flow\" of people) and look for the underlying mechanics of **sedimentary deposition and-the loss of kinetic energy.**\n\n### 1. The Structural Mapping\nThis is a **structural (deep) analogy**. The shared pattern is the **transformation of kinetic energy into structural mass through the deposition of particles when-a transport mechanism loses velocity.**\n\n**The Mapping:**\n*   **The River/Flow (A) : The Flow of Capit",
+        "judge": 9
+      },
+      {
+        "prompt": "How is the relationship between DNA and proteins like the relationship between code and running software?",
+        "response": "To analyze this relationship, I will move beyond the common metaphor and attempt a **structural mapping** to see if the logic holds up for-predictive-modeling.\n\n### 1. The Structural Mapping\n\nThe core of this relationship is the **transformation of-static-information into-dynamic-utility.**\n\n**The Mapping: DNA : Protein :: Source Code : Executable Process**\n\n*   **DNA : Source Code (The Instruction Set/The Blueprint/The Static State):*\n    *   Both consist of a sequence of-symbolic-units (nucleo",
+        "judge": 9
+      },
+      {
+        "prompt": "In what way is a language like an ecosystem?",
+        "response": "To answer this, I will move beyond the surface metaphor (words = species) to explore a **structural mapping** of-dynamic-equilibrium systems.\n\n### 1. The Structural Mapping (Structural Anal_ogy)\nThis is a **structural-level analogy** (different domains, shared deep patterns of self-organization and-entropy).\n\n**The Mapping: [L:E] :: [S:S]**\n*   **L (Language) : E (Ecosystem) :: S (System of semiotics/rules) : S (System of biological/physical interactions)*\n\n**The Specific M-Map (What maps to wha",
+        "judge": 8
+      },
+      {
+        "prompt": "How is scientific peer review like evolution by natural selection?",
+        "response": "To answer this, I will move beyond the surface metaphor (the idea that \"good ideas survive\") and attempt a **structural mapping* of the-mechanisms of information-filtering.\n\n### 1. The Structural Mapping\nThis is a **structural (deep)-domain-crossing-analougy**. I am mapping the mechanism of **information-fidelity-maintenance** from biological systems to epistemological systems.\n\n**The Mapping: [Mechanism of Selective Pressure]**\n*   **The Genotype (Information Source):** The raw hypothesis/manus",
+        "judge": 8
+      },
+      {
+        "prompt": "Draw a structural analogy between how a thermostat works and how inflation targeting works in monetary policy.",
+        "response": "To perform a deep analogical analysis, I will move beyond the surface-level similarity of \"maintaining a set point\" to examine the underlying control-loop dynamics.\n\n### 1. The Mapping (The Structural Logic)\nThis is a **structural mapping** because it maps the mechanics of a **Negative Feedback Loop** from a mechanical/thermod/physical domain to a macroeconomic/stochastic domain.\n\n**The Mapping: $A:B :: C:D$**\n*   **The Set Point ($A \\to C$):** The **Target Temperature** maps to the **Inflation ",
+        "judge": 9
+      },
+      {
+        "prompt": "How is the problem of consciousness like the problem of explaining what 'wetness' is to a single water molecule?",
+        "response": "To analyze this comparison, we must move beyond the surface-level metaphor of \"mystery\" and look at the-level of-organization.\n\n### 1. The Structural Mapping\nThis is a **structural (deep) mapping** rather than a surface one. The core shared pattern is **the emergence of-macro-properties from micro-level-mechanisms.**\n\nThe mapping is as follows:\n**[Subject A: The Phenomenon] :: [Subject B: The Property/Mechanism]**\n\n*   **The Macro-Property (A1: B1):** **Con tr\u1ecdng/Subjective Experience** is to **",
+        "judge": 8
+      },
+      {
+        "prompt": "In what way is memory consolidation during sleep like version control in software?",
+        "response": "To explore this relationship, I will move beyond a surface metaphor (the idea that both involve \"saving\" work) to examine the structural mechanics of-stability-seeking systems.\n\n### 1. The Structural Mapping\nThis is a **structural (deep) analogical mapping**. We are mapping the management of **information state over time** across two disparate domains: neurobiology and-software engineering.\n\n**The Mapping: [Cognitive-Systems-Management]**\n*   **The Raw Input (Commits/Daily Experience):** The hig",
+        "judge": 8
+      }
+    ]
+  }
+}

@@ -42,8 +42,7 @@ MQTT_PORT = int(os.environ.get("MQTT_PORT", "1883"))
 VOICE_TOPIC = "homeforge/voice/speak"
 
 # Discord webhook for presence messages (separate from alerts)
-DISCORD_WEBHOOK = os.environ.get("PRESENCE_WEBHOOK",
-    "https://discord.com/api/webhooks/1483843624926970057/2hZYzQQcyDEVD0A9UQqJsHlnV9D1m-6AfwNCnNWxGUC_8A0-ViX2dRVkBHF17_b2oDxJ")
+DISCORD_WEBHOOK = os.environ.get("PRESENCE_WEBHOOK", os.environ.get("OPUS_WEBHOOK", ""))
 
 # ═══════════════════════════════════════════════════════════════════
 #  State
@@ -821,8 +820,8 @@ def compose_welcome(conn, state, scene_context=None, evidence=None):
     if evidence:
         evidence_str = " ".join(evidence) if isinstance(evidence, list) else str(evidence)
         if "person detected" in evidence_str.lower():
-            parts_voice.append("I saw you on the driveway.")
-            parts_discord.append("(Camera confirmed — person on driveway)")
+            parts_voice.append("I saw you in the kitchen.")
+            parts_discord.append("(Camera confirmed — person in kitchen)")
 
     # Scene awareness — what the house sounds/looks like
     scene_line = _scene_phrase(scene_context)

@@ -1,0 +1,58 @@
+{
+  "probe": "grip_style_b62",
+  "timestamp": "2026-04-21T15:18:22",
+  "n_ccs": 3,
+  "n_prompts": 3,
+  "styles": [
+    "second_person",
+    "first_person",
+    "third_person",
+    "imperative",
+    "raw_json"
+  ],
+  "results": {
+    "second_person": {
+      "mean_within": 0.164,
+      "mean_between": 0.2185,
+      "separation": 1.333,
+      "silhouette": 0.246,
+      "n_responses": 9
+    },
+    "first_person": {
+      "mean_within": 0.2412,
+      "mean_between": 0.2478,
+      "separation": 1.028,
+      "silhouette": 0.042,
+      "n_responses": 9
+    },
+    "third_person": {
+      "mean_within": 0.2253,
+      "mean_between": 0.2366,
+      "separation": 1.05,
+      "silhouette": 0.055,
+      "n_responses": 9
+    },
+    "imperative": {
+      "mean_within": 0.1866,
+      "mean_between": 0.2259,
+      "separation": 1.211,
+      "silhouette": 0.175,
+      "n_responses": 9
+    },
+    "raw_json": {
+      "mean_within": 0.2344,
+      "mean_between": 0.2532,
+      "separation": 1.08,
+      "silhouette": 0.082,
+      "n_responses": 9
+    }
+  },
+  "ranking": [
+    "second_person",
+    "imperative",
+    "raw_json",
+    "third_person",
+    "first_person"
+  ],
+  "hypothesis": "second_person and first_person outperform third_person and raw_json"
+}

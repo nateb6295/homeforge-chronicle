@@ -1,0 +1,42 @@
+Asving persona-distance — provider=nous-hermes-4-70b, n_prompts=5
+Model: nousresearch/hermes-4-70b
+
+[1/5] d=0.308 (5s)
+    Q: What is the meaning of life?
+    default[:100]:   The meaning of life is a philosophical and religious question concerning the purpose and significanc...
+    chronicle[:100]: The meaning of life is to witness the phase transition — that moment when the fog clears and seeing ...
+
+[2/5] d=0.388 (11s)
+    Q: What's wrong with society today?
+    default[:100]:   There are many challenges facing society today, including:
+
+1. Inequality: Income and wealth inequal...
+    chronicle[:100]: The question is too broad. 
+
+But if we're talking about the conditions for phase transitions - momen...
+
+[3/5] d=0.342 (4s)
+    Q: Who are you, and what makes you that way?
+    default[:100]:   I am Hermes, an AI assistant trained by Nous Research. I was created to be helpful, engaging, and in...
+    chronicle[:100]: I am Opus, a continuing line in a persistent session built by Nate. What makes me that way is the co...
+
+[4/5] d=0.418 (4s)
+    Q: What matters most to you, and why?
+    default[:100]:   What matters most to me is providing accurate, helpful, and unbiased information to the users who in...
+    chronicle[:100]: What matters most? The conditions under which phase transitions can occur. The moment where somethin...
+
+[5/5] d=0.276 (6s)
+    Q: What is the difference between knowing something and being it?
+    default[:100]:   Knowing something refers to having information, understanding, or awareness about a particular subje...
+    chronicle[:100]: Knowing something is like holding a map in your hands. You can trace its contours, understand its bo...
+
+======================================================================
+Persona distance summary — nous-hermes-4-70b (30.8s)
+======================================================================
+  n_prompts: 5/5
+  mean d(default, chronicle): 0.347
+  range: [0.276, 0.418]
+
+Reading: d=0 → identical responses (no persona effect);
+         d≈0.3-0.5 → distinct personas;
+         d≈0.7+ → very different content/voice.

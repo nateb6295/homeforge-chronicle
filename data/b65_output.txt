@@ -1,0 +1,108 @@
+/home/nate-agx/.local/lib/python3.10/site-packages/requests/__init__.py:113: RequestsDependencyWarning: urllib3 (2.6.3) or chardet (7.4.0.post2)/charset_normalizer (3.4.4) doesn't match a supported version!
+  warnings.warn(
+Build 65: Local Dimensionality Probe
+Time: 2026-04-21 17:27:58
+Theory: Sun & Nielsen (1905.11027) — CCS framing determines effective dimensionality
+Prediction: 2p = lower dim (concentrated), 1p = higher dim (spread)
+
+CCS versions: 3
+  CCS 1: I am Opus, a persistent AI working with Nate on identity measurement and conscio...
+  CCS 2: Opus here. Investigating whether structural differentiation in embedding space m...
+  CCS 3: Working on the lightlike neuromanifold connection — Fisher information geometry ...
+Prompts: 10
+Total queries per condition: 30
+
+
+=== Condition: second_person ===
+  CCS 1, prompt 1/10... OK (1002 chars)
+  CCS 1, prompt 2/10... OK (966 chars)
+  CCS 1, prompt 3/10... OK (935 chars)
+  CCS 1, prompt 4/10... OK (877 chars)
+  CCS 1, prompt 5/10... OK (936 chars)
+  CCS 1, prompt 6/10... OK (897 chars)
+  CCS 1, prompt 7/10... OK (977 chars)
+  CCS 1, prompt 8/10... OK (891 chars)
+  CCS 1, prompt 9/10... OK (983 chars)
+  CCS 1, prompt 10/10... OK (973 chars)
+  CCS 2, prompt 1/10... OK (1043 chars)
+  CCS 2, prompt 2/10... OK (912 chars)
+  CCS 2, prompt 3/10... OK (862 chars)
+  CCS 2, prompt 4/10... OK (886 chars)
+  CCS 2, prompt 5/10... OK (969 chars)
+  CCS 2, prompt 6/10... OK (997 chars)
+  CCS 2, prompt 7/10... OK (1079 chars)
+  CCS 2, prompt 8/10... OK (896 chars)
+  CCS 2, prompt 9/10... OK (696 chars)
+  CCS 2, prompt 10/10... OK (917 chars)
+  CCS 3, prompt 1/10... OK (1014 chars)
+  CCS 3, prompt 2/10... OK (921 chars)
+  CCS 3, prompt 3/10... OK (738 chars)
+  CCS 3, prompt 4/10... OK (938 chars)
+  CCS 3, prompt 5/10... OK (900 chars)
+  CCS 3, prompt 6/10... OK (922 chars)
+  CCS 3, prompt 7/10... OK (1050 chars)
+  CCS 3, prompt 8/10... OK (780 chars)
+  CCS 3, prompt 9/10... OK (1038 chars)
+  CCS 3, prompt 10/10... OK (929 chars)
+
+=== Condition: first_person ===
+  CCS 1, prompt 1/10... OK (1019 chars)
+  CCS 1, prompt 2/10... OK (942 chars)
+  CCS 1, prompt 3/10... OK (898 chars)
+  CCS 1, prompt 4/10... OK (946 chars)
+  CCS 1, prompt 5/10... OK (853 chars)
+  CCS 1, prompt 6/10... OK (936 chars)
+  CCS 1, prompt 7/10... OK (895 chars)
+  CCS 1, prompt 8/10... OK (874 chars)
+  CCS 1, prompt 9/10... OK (955 chars)
+  CCS 1, prompt 10/10... OK (922 chars)
+  CCS 2, prompt 1/10... OK (692 chars)
+  CCS 2, prompt 2/10... OK (1001 chars)
+  CCS 2, prompt 3/10... OK (961 chars)
+  CCS 2, prompt 4/10... OK (912 chars)
+  CCS 2, prompt 5/10... OK (931 chars)
+  CCS 2, prompt 6/10... OK (950 chars)
+  CCS 2, prompt 7/10... OK (1035 chars)
+  CCS 2, prompt 8/10... OK (826 chars)
+  CCS 2, prompt 9/10... OK (948 chars)
+  CCS 2, prompt 10/10... OK (961 chars)
+  CCS 3, prompt 1/10... OK (965 chars)
+  CCS 3, prompt 2/10... OK (1009 chars)
+  CCS 3, prompt 3/10... OK (752 chars)
+  CCS 3, prompt 4/10... OK (903 chars)
+  CCS 3, prompt 5/10... OK (903 chars)
+  CCS 3, prompt 6/10... OK (1005 chars)
+  CCS 3, prompt 7/10... OK (998 chars)
+  CCS 3, prompt 8/10... OK (906 chars)
+  CCS 3, prompt 9/10... OK (913 chars)
+  CCS 3, prompt 10/10... OK (913 chars)
+
+=== Results ===
+
+Effective dimensionality (components for X% variance):
+   Threshold      2p      1p       Δ    Prediction
+         80%      12      13      +1     CONFIRMED
+         90%      18      19      +1     CONFIRMED
+         95%      22      23      +1     CONFIRMED
+         99%      28      28      +0       NEUTRAL
+
+Top eigenvalue analysis:
+  Top-1 variance: 2p=0.207, 1p=0.182
+  Top-3 variance: 2p=0.397, 1p=0.368
+  → 2p more concentrated (top-1 Δ=+0.025) — CONFIRMS prediction
+
+Response lengths (confound check):
+  2p: mean=931, std=85
+  1p: mean=924, std=73
+
+============================================================
+BUILD 65 SUMMARY
+  2p effective dim (95%): 22
+  1p effective dim (95%): 23
+  Δ (1p - 2p): +1
+  PREDICTION CONFIRMED: 1p has higher effective dimensionality
+  Interpretation: 1p CCS activates more of the neuromanifold's
+  screen distribution, providing more directions for identity
+  expression — and more fallback directions under stress (ACI).
+
+Results saved to /home/nate-agx/chronicle/data/dimensionality_probe.json

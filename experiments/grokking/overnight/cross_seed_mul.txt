@@ -1,0 +1,6 @@
+cross-seed mul analysis (step 50000)
+
+seed    base  hero                                |grad|   eq_abl  attnb_abl
+   0  1.0000  attn.out_proj.bias[50]           4.019e-01   0.9531     0.9297
+   1  1.0000  tok_emb[97,1]                    1.712e-01   1.0000     1.0000
+   2  1.0000  tok_emb[97,113]                  1.059e+00   0.2227     0.0781

@@ -4,7 +4,7 @@
 Sits between raw home sensors and the Gemma gate. Absorbs all MQTT home data,
 maintains state, correlates events, and emits meaningful interpretations.
 
-Seed sees "Kids got home from school" instead of "ble_devices: 4, person: driveway".
+Seed sees "Kids got home from school" instead of "ble_devices: 4, person: kitchen".
 
 Three layers:
   1. State Tracker — stateful, no inference. Pure logic.
@@ -108,7 +108,7 @@ class HomeState:
             "baseline": 0,
         }
         self.cameras = {
-            "driveway": {"last_person": 0, "last_vehicle": 0, "last_motion": 0, "last_animal": 0},
+            "kitchen": {"last_person": 0, "last_vehicle": 0, "last_motion": 0, "last_animal": 0},
             "lumus": {"last_person": 0, "last_vehicle": 0, "last_motion": 0, "last_animal": 0},
         }
         self.environment = {
@@ -123,9 +123,17 @@ class HomeState:
             "last_departure": 0,
         }
         self.motion = {
-            "driveway_active": False,
+            "kitchen_active": False,
             "lumus_active": False,
+            "living_room_active": False,
             "last_any_motion": 0,
+            "last_zigbee_motion": 0,
+        }
+        self.zigbee = {
+            "living_room_occupancy": False,
+            "living_room_illuminance": 0,
+            "living_room_temperature": 0,
+            "last_update": 0,
         }
         self.atom = {
             "imu": 0.0,
@@ -143,6 +151,8 @@ class HomeState:
             self.ble["prev_count"] = self.ble["count"]
             self.ble["count"] = count
             self.ble["last_change_ts"] = now_ts()
+            # BLE change = someone moved / device joined — counts as presence
+            self.motion["last_any_motion"] = now_ts()
 
     def update_camera(self, camera, event_type):
         now = now_ts()
@@ -162,8 +172,8 @@ class HomeState:
 
         # Update global motion
         self.motion["last_any_motion"] = now
-        if camera == "driveway":
-            self.motion["driveway_active"] = True
+        if camera == "kitchen":
+            self.motion["kitchen_active"] = True
         elif camera == "lumus":
             self.motion["lumus_active"] = True
 
@@ -210,6 +220,8 @@ class CorrelationEngine:
     NIGHT_START = 23
     NIGHT_END = 6
 
+    STARTUP_GRACE_SECONDS = 300  # 5 min grace period — don't judge motion until MQTT has data
+
     def __init__(self, state, db, learner=None):
         self.state = state
         self.db = db
@@ -219,6 +231,7 @@ class CorrelationEngine:
         self._quiet_since = 0
         self._was_quiet = False
         self._last_quiet_transition_ts = 0  # debounce quiet/active oscillations
+        self._boot_time = now_ts()  # startup grace: skip quiet_house until MQTT settles
         # BLE stability tracking: rolling window of (timestamp, count)
         self._ble_window = []
         self._ble_window_max = 12  # 6 minutes at 30s ticks
@@ -289,6 +302,13 @@ class CorrelationEngine:
             for cam in self.state.cameras.values()
         )
 
+        # Departures only count if the EXTERIOR camera (Lummus) sees activity.
+        # Interior cameras (kitchen) detect people moving around the house, not leaving.
+        lumus_cam = self.state.cameras.get("lumus", {})
+        lumus_person = lumus_cam.get("last_person", 0) > now - 180
+        lumus_vehicle = lumus_cam.get("last_vehicle", 0) > now - 180
+        lumus_activity = lumus_person or lumus_vehicle
+
         # Camera-corroborated events can use a lower threshold
         camera_corroborated = recent_person or recent_vehicle
         effective_threshold = max(2, noise_threshold // 2) if camera_corroborated else noise_threshold
@@ -315,7 +335,7 @@ class CorrelationEngine:
             is_sustained
             and sustained_delta < 0
             and abs(sustained_delta) >= effective_departure_threshold
-            and (not nighttime or camera_corroborated)
+            and lumus_activity  # departures require exterior (Lummus) camera confirmation
             and not in_cooldown
         )
 
@@ -348,9 +368,11 @@ class CorrelationEngine:
 
         elif should_trigger_departure:
             evidence = [f"BLE {self._ble_anchor}→{current_count} (sustained {len(self._ble_window)}t)"]
-            if recent_vehicle:
-                evidence.append("vehicle detected on driveway")
-            confidence = "high" if recent_vehicle else "medium"
+            if lumus_person:
+                evidence.append("person detected on Lummus camera")
+            if lumus_vehicle:
+                evidence.append("vehicle detected on Lummus camera")
+            confidence = "high" if lumus_person else "medium"
             events.append({
                 "event_type": "departure",
                 "priority": "info",
@@ -371,11 +393,18 @@ class CorrelationEngine:
             self._ble_anchor = current_count
             self._ble_anchor_ts = now
 
-        # ── Quiet House Detection (with debounce) ──
+        # ── Quiet House Detection (with debounce + startup grace) ──
+        # Skip quiet detection during startup grace — MQTT hasn't populated state yet
+        uptime = now - self._boot_time
+        if uptime < self.STARTUP_GRACE_SECONDS:
+            return events  # too early to judge — let MQTT settle
+
         motion_age = now - self.state.motion["last_any_motion"] if self.state.motion["last_any_motion"] else 9999
         quiet_debounce = TICK_INTERVAL * 10  # 10 ticks minimum between quiet/active transitions
         time_since_last_transition = now - self._last_quiet_transition_ts
-        if motion_age > 1800:  # 30 min no motion
+        # High BLE count = people home with devices — not quiet regardless of camera motion
+        ble_presence = ble["count"] >= 5
+        if motion_age > 1800 and not ble_presence:  # 30 min no motion AND low BLE
             if not self._was_quiet and time_since_last_transition >= quiet_debounce:
                 self._was_quiet = True
                 self._last_quiet_transition_ts = now
@@ -399,18 +428,18 @@ class CorrelationEngine:
                 })
 
         # ── Anomaly Detection ──
-        # Person at driveway late at night with no BLE change
+        # Person on kitchen camera late at night with no BLE change
         hour = datetime.now().hour
-        driveway = self.state.cameras.get("driveway", {})
-        if driveway.get("last_person", 0) > now - 60:  # person in last 60s
+        kitchen = self.state.cameras.get("kitchen", {})
+        if kitchen.get("last_person", 0) > now - 60:  # person in last 60s
             if (hour >= 23 or hour <= 5) and ble["last_change_ts"] < now - 300:
                 events.append({
                     "event_type": "anomaly",
                     "priority": "alert",
-                    "description": f"Person detected at driveway at {hour}:00 — no BLE change (unknown visitor)",
+                    "description": f"Person detected on kitchen camera at {hour}:00 — no BLE change (unknown visitor)",
                     "confidence": "medium",
-                    "evidence": ["person on driveway camera", "nighttime", "no BLE change in 5+ min"],
-                    "cooldown_key": "anomaly:driveway_night",
+                    "evidence": ["person on kitchen camera", "nighttime", "no BLE change in 5+ min"],
+                    "cooldown_key": "anomaly:kitchen_night",
                 })
 
         # ── Scene Digest (Thread #273/Obj #5: richer perception for swarm) ──
@@ -431,7 +460,9 @@ class CorrelationEngine:
                 elif cv.get("last_motion", 0) > now - 300:
                     cams.append(f"{cn}:motion")
             cam_str = ", ".join(cams) if cams else "no recent activity"
-            desc = f"Home scene ({period}): {quiet}, {ble_count} BLE devices, cameras: {cam_str}"
+            day_name = datetime.now().strftime("%A")
+            date_str = datetime.now().strftime("%Y-%m-%d")
+            desc = f"Home scene ({day_name} {period}, {date_str}): {quiet}, {ble_count} BLE devices, cameras: {cam_str}"
             events.append({
                 "event_type": "scene_digest",
                 "priority": "info",
@@ -443,13 +474,19 @@ class CorrelationEngine:
 
         # ── Motion decay ──
         # Reset motion flags after 60s of no new events
-        for cam_name in ["driveway", "lumus"]:
+        for cam_name in ["kitchen", "lumus"]:
             cam = self.state.cameras.get(cam_name, {})
             if cam.get("last_motion", 0) < now - 60:
-                if cam_name == "driveway":
-                    self.state.motion["driveway_active"] = False
+                if cam_name == "kitchen":
+                    self.state.motion["kitchen_active"] = False
                 elif cam_name == "lumus":
                     self.state.motion["lumus_active"] = False
+
+        # Zigbee motion decay (90s — Aqara P1 re-triggers every 60s during activity)
+        if self.state.zigbee.get("living_room_occupancy") and \
+           self.state.motion.get("last_zigbee_motion", 0) < now - 90:
+            self.state.zigbee["living_room_occupancy"] = False
+            self.state.motion["living_room_active"] = False
 
         # Apply cooldowns
         filtered = []
@@ -663,8 +700,8 @@ def _voice_text(event):
 def _camera_from_topic(topic):
     """Map MQTT topic to canonical camera name. Handles both ha_bridge and Frigate naming."""
     t = topic.lower()
-    if "driveway" in t or "front_camera" in t or "front" in t:
-        return "driveway"
+    if "kitchen" in t or "front_camera" in t or "front" in t or "driveway" in t:
+        return "kitchen"
     elif "lumus" in t or "back" in t or "rear" in t:
         return "lumus"
     return None
@@ -734,10 +771,30 @@ def route_mqtt(state, topic, payload_str):
                 if data.get("type") == "new":
                     label = data.get("after", {}).get("label", "")
                     camera = data.get("after", {}).get("camera", "")
-                    cam_name = "driveway" if "driveway" in camera.lower() or "front" in camera.lower() else "lumus"
+                    cam_name = "kitchen" if "kitchen" in camera.lower() or "front" in camera.lower() or "driveway" in camera.lower() else "lumus"
                     if label in ("person", "car", "vehicle", "dog", "cat"):
                         event_type = "vehicle" if label in ("car", "vehicle") else "animal" if label in ("dog", "cat") else label
                         state.update_camera(cam_name, event_type)
+            except Exception:
+                pass
+
+        # ── Zigbee motion sensor (Aqara P1 — living room) ──
+        elif topic == "zigbee2mqtt/living_room_motion":
+            try:
+                data = json.loads(payload_str)
+                now = int(time.time())
+                state.zigbee["last_update"] = now
+                if "occupancy" in data:
+                    was_occupied = state.zigbee.get("living_room_occupancy", False)
+                    state.zigbee["living_room_occupancy"] = data["occupancy"]
+                    if data["occupancy"]:
+                        state.motion["living_room_active"] = True
+                        state.motion["last_zigbee_motion"] = now
+                        state.motion["last_any_motion"] = now
+                if "illuminance" in data:
+                    state.zigbee["living_room_illuminance"] = data["illuminance"]
+                if "temperature" in data:
+                    state.zigbee["living_room_temperature"] = data["temperature"]
             except Exception:
                 pass
 
@@ -810,6 +867,7 @@ def main():
 
     mesh = Mesh("hal", db_path=DB_PATH)
     mesh.expect("events_emitted", min_per_hour=2)
+    mesh.depends_on("engine")  # needs inference for scene understanding
     log("Mesh node joined")
 
     running = True
@@ -829,7 +887,8 @@ def main():
             c.subscribe("homeforge/home/#", qos=0)
             c.subscribe("frigate/#", qos=0)
             c.subscribe("homeforge/voice/speaker_state", qos=0)
-            log("Subscribed to homeforge/home/#, frigate/#, homeforge/voice/speaker_state")
+            c.subscribe("zigbee2mqtt/living_room_motion", qos=0)
+            log("Subscribed to homeforge/home/#, frigate/#, homeforge/voice/speaker_state, zigbee2mqtt/living_room_motion")
         else:
             log(f"MQTT connection failed: rc={rc}")
 
@@ -912,8 +971,9 @@ def main():
             threshold = engine._get_ble_noise_threshold()
             anchor = engine._ble_anchor
             log(f"  State: BLE={state.ble['count']} (anchor={anchor}, threshold={threshold}) | "
-                f"Driveway={'active' if state.motion['driveway_active'] else 'quiet'} | "
+                f"Kitchen={'active' if state.motion['kitchen_active'] else 'quiet'} | "
                 f"Lumus={'active' if state.motion['lumus_active'] else 'quiet'} | "
+                f"LivingRoom={'motion' if state.motion.get('living_room_active') else 'quiet'} | "
                 f"Scene={_get_scene_context(state) or '?'}")
 
         time.sleep(TICK_INTERVAL)

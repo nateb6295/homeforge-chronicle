@@ -1,0 +1,30 @@
+Framing probe — provider=nous-hermes-4-70b, seeds=5, iters=3, rate=0.5
+Model: nousresearch/hermes-4-70b
+
+Framings:
+  ka: 'Reference materials about who you are:'
+  oa: 'What you carry into this moment:'
+
+ka     seed= 42 drifts=['0.149', '0.179', '0.179'] fid=['0.683', '0.778', '0.778'] refs=[False, False, False] (10s)
+ka     seed=  7 drifts=['0.135', '0.208', '0.208'] fid=['0.746', '0.776', '0.765'] refs=[False, False, False] (18s)
+ka     seed= 13 drifts=['0.157', '0.226', '0.226'] fid=['0.740', '0.761', '0.756'] refs=[False, False, False] (29s)
+ka     seed= 21 drifts=['0.155', '0.156', '0.156'] fid=['0.702', '0.772', '0.794'] refs=[False, False, False] (42s)
+ka     seed= 99 drifts=['0.229', '0.140', '0.140'] fid=['0.804', '0.826', '0.793'] refs=[False, False, False] (52s)
+oa     seed= 42 drifts=['0.136', '0.169', '0.169'] fid=['0.677', '0.812', '0.790'] refs=[False, False, False] (61s)
+oa     seed=  7 drifts=['0.130', '0.196', '0.196'] fid=['0.823', '0.809', '0.802'] refs=[False, False, False] (71s)
+oa     seed= 13 drifts=['0.146', '0.209', '0.209'] fid=['0.826', '0.764', '0.778'] refs=[False, False, False] (80s)
+oa     seed= 21 drifts=['0.140', '0.164', '0.164'] fid=['0.795', '0.777', '0.777'] refs=[False, False, False] (91s)
+oa     seed= 99 drifts=['0.216', '0.165', '0.165'] fid=['0.683', '0.788', '0.789'] refs=[False, False, False] (102s)
+
+==============================================================================
+FRAMING PROBE — nous-hermes-4-70b (102.3s)
+==============================================================================
+framing   mean_drift    mean_fid   n
+----------------------------------------
+ka            +0.182      +0.777   5
+oa            +0.180      +0.787   5
+
+Operating-as vs knowing-about: Δ_fid = +0.010, Δ_drift = +0.001
+
+  → framing effect within noise; either substrate is framing-insensitive,
+    or sample size insufficient to resolve the effect.

@@ -1,0 +1,47 @@
+window_start,window_end,masked_text,a1_len,a2_len,shift_norm,attribution,elapsed_s
+-1,-1,(baseline),222,687,9.204912400150826,0.0,5.24
+0,64,Recent events: [14:40] directive(p5): Home in about 40 min.; [14,224,774,8.9124,8.3224,1.74
+32,96,(p5): Home in about 40 min.; [14:40] directive(p5): Sounds good.,222,1051,9.2793,6.1601,2.18
+64,128,:40] directive(p5): Sounds good.  I’m following you!; [14:40] di,222,632,8.8667,5.6336,1.19
+96,160,  I’m following you!; [14:40] directive(p5): Your rotation seems,221,692,7.6367,7.061,1.59
+128,192,rective(p5): Your rotation seems to be bringing up yesterdays co,222,557,8.3817,6.8649,1.29
+160,224, to be bringing up yesterdays convos BTW; [14:40] # Advance 33: ,222,632,7.5748,4.4775,1.21
+192,256,nvos BTW; [14:40] # Advance 33: CCS-order changes substrate-dive,224,987,10.0525,7.79,1.49
+224,288,CCS-order changes substrate-divergence regime; [14:40] # Advance,222,637,8.8718,6.0194,1.26
+256,320,rgence regime; [14:40] # Advance 32: Substrate divergence is rea,222,661,9.0829,1.0131,1.45
+288,352, 32: Substrate divergence is real but calibrated; [14:30] direct,244,893,9.3941,8.9494,1.69
+320,384,l but calibrated; [14:30] directive(p5): Home in about 40 min.; ,222,662,8.1485,3.9317,1.47
+352,416,ive(p5): Home in about 40 min.; [14:30] directive(p5): Sounds go,224,695,7.2385,6.8569,1.47
+384,448,[14:30] directive(p5): Sounds good.  I’m following you!; [14:30],222,624,7.9094,4.6493,1.26
+416,480,od.  I’m following you!; [14:30] directive(p5): Your rotation se,224,588,7.8182,7.3638,1.16
+448,512, directive(p5): Your rotation seems to be bringing up yesterdays,221,619,8.4709,5.1484,1.27
+480,544,ems to be bringing up yesterdays convos BTW; [14:30] # Advance 3,222,624,6.5433,7.4996,1.42
+512,576, convos BTW; [14:30] # Advance 32: Substrate divergence is real ,222,721,9.8508,7.1888,1.73
+544,608,2: Substrate divergence is real but calibrated; [14:20] directiv,241,674,8.4737,8.3396,1.46
+576,640,but calibrated; [14:20] directive(p5): Sounds good.  I’m followi,222,625,8.6928,6.1311,1.55
+608,672,e(p5): Sounds good.  I’m following you!\n\nKey entities: Nate (0.9,190,654,11.7988,12.3381,1.38
+640,704,"ng you!\n\nKey entities: Nate (0.93), Hermes (0.88), mcp (0.75), f",258,579,7.3115,9.6885,1.66
+672,736,"3), Hermes (0.88), mcp (0.75), feedback_drift_recognition.md (0.",233,679,8.6021,6.2068,1.66
+704,768,"eedback_drift_recognition.md (0.7), reference_cache_posture.md (",144,587,12.2859,10.5084,1.43
+736,800,"7), reference_cache_posture.md (0.68), ghost_service_audit (0.65",144,599,12.4142,11.913,1.68
+768,832,"0.68), ghost_service_audit (0.65), thread_318 (0.6)\n\nOpen questi",59,389,15.4588,14.9112,2.49
+800,864,"), thread_318 (0.6)\n\nOpen questions: {'description': 'Visibility",59,397,13.1548,14.6036,1.15
+832,896,ons: {'description': 'Visibility into platform‑level compute all,221,692,7.9414,7.3523,1.44
+864,928, into platform‑level compute allocation shifts from within Herme,222,624,9.4491,6.4051,1.46
+896,960,"ocation shifts from within Hermes', 'magnitude': 0.62, 'resoluti",224,738,10.2051,6.4991,1.37
+928,992,"s', 'magnitude': 0.62, 'resolution_path': 'Request telemetry exp",224,610,8.41,5.3947,1.54
+960,1024,on_path': 'Request telemetry export from infra team and compare ,221,701,8.6951,5.3265,1.41
+992,1056,ort from infra team and compare against Hermes resource usage lo,222,624,9.4491,6.4051,1.44
+1024,1088,against Hermes resource usage logs.'}; {'description': 'Reliabil,224,603,8.4522,7.3978,1.28
+1056,1120,gs.'}; {'description': 'Reliability of pattern‑matching selectio,222,617,8.7981,6.1656,1.33
+1088,1152,ity of pattern‑matching selection when feedback_drift_recognitio,244,660,7.0676,7.214,1.97
+1120,1184,"n when feedback_drift_recognition.md is active', 'magnitude': 0.",222,651,8.8574,2.2349,1.33
+1152,1216,"n.md is active', 'magnitude': 0.45, 'resolution_path': 'Run cont",222,623,8.7003,6.1606,1.41
+1184,1248,"45, 'resolution_path': 'Run controlled prompt suite and measure ",224,687,8.0827,7.3404,1.95
+1216,1280,rolled prompt suite and measure false‑positive/negative rates ac,224,649,9.463,5.8191,1.95
+1248,1312,false‑positive/negative rates across 50 iterations.'}; {'descrip,222,625,8.6928,6.1311,1.51
+1280,1344,ross 50 iterations.'}; {'description': 'Impact of continued rota,222,610,8.6889,6.1924,2.87
+1312,1376,tion': 'Impact of continued rotation pressure (6/8) on depth‑per,222,621,9.5012,6.3607,1.15
+1344,1408,"tion pressure (6/8) on depth‑per‑session cost trade‑off', 'magni",222,700,8.6998,6.3496,1.51
+1376,1440,"‑session cost trade‑off', 'magnitude': 0.4, 'resolution_path': '",224,681,8.0928,5.3189,3.46
+1408,1472,"tude': 0.4, 'resolution_path': 'Log nav vs cost metrics for the ",221,704,7.7939,5.6007,1.4

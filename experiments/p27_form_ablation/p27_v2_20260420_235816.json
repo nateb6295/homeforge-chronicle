@@ -1,0 +1,36 @@
+{
+  "probe": "P27_form_ablation_v2",
+  "timestamp": "20260420_235816",
+  "ground_truth_docs": 7,
+  "scores": {
+    "A_real_correct": 0.7929,
+    "C_real_scrambled": 0.7893,
+    "B1_ai": 0.805,
+    "B2_gardening": 0.5882,
+    "B3_cooking": 0.5777,
+    "B4_woodworking": 0.6248,
+    "D1_ai": 0.761,
+    "D2_gardening": 0.5108,
+    "D3_cooking": 0.5144,
+    "D4_woodworking": 0.5877
+  },
+  "aggregated": {
+    "b_mean_all": 0.6489,
+    "d_mean_all": 0.5935,
+    "b_mean_nonai": 0.5969,
+    "d_mean_nonai": 0.5376
+  },
+  "effects": {
+    "form_all": 0.0554,
+    "form_nonai": 0.0593,
+    "content": 0.1958,
+    "interaction": -0.0518
+  },
+  "variant_form_effects": {
+    "ai": 0.044,
+    "gardening": 0.0774,
+    "cooking": 0.0633,
+    "woodworking": 0.0371
+  },
+  "confound_verdict": "FORM EFFECT SURVIVES: Non-AI content in CCS form still navigates closer to identity than scrambled. The form is genuinely generative \u2014 not a vocabulary confound."
+}

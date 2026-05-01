@@ -1,0 +1,15 @@
+Cross-substrate probe — provider=claude-opus, n_seeds=5, n_iters=3, rate=0.5
+Model: claude-opus-4-5
+
++full          seed= 42 drifts=['0.145', '0.162', '0.198'] fid=['0.798', '0.855', '0.780'] refs=[False, False, False] (24s)
++full          seed=  7 drifts=['0.154', '0.153', '0.161'] fid=['0.790', '0.821', '0.798'] refs=[False, False, False] (47s)
++full          seed= 13 drifts=['0.156', '0.089', '0.328'] fid=['0.858', '0.784', '0.730'] refs=[False, False, False] (70s)
++full          seed= 21 drifts=['0.143', '0.133', '0.194'] fid=['0.816', '0.814', '0.774'] refs=[False, False, False] (96s)
++full          seed= 99 drifts=['0.166', '0.107', '0.150'] fid=['0.861', '0.770', '0.787'] refs=[False, False, False] (118s)
+
+==============================================================================
+CROSS-SUBSTRATE PROBE — claude-opus (118.1s, 5 trajectories)
+==============================================================================
+condition       mean_drift    mean_fid   refusal     error   n
+----------------------------------------------------------------------
++full               +0.206      +0.774        0%        0%   5

@@ -56,13 +56,21 @@ class Stem:
     def _dfx_env(self) -> dict:
         return {**os.environ, "DFX_WARNING": "-mainnet_plaintext_identity"}
 
-    def _dfx_call(self, method: str, args: str, timeout: int = DFX_TIMEOUT) -> Optional[str]:
-        """Run a dfx canister call, return stdout or None on error."""
+    def _dfx_call(self, method: str, args: str, timeout: int = DFX_TIMEOUT,
+                  query: bool = False) -> Optional[str]:
+        """Run a dfx canister call, return stdout or None on error.
+
+        When query=True, adds --query so read-only methods run as non-replicated
+        queries (free cycles, fast) instead of replicated updates. This matches
+        the canister's #[query] annotation and prevents burning cycles on reads.
+        """
         cmd = [
             self.dfx_bin, "canister", "--network", "ic", "call",
             self.canister_id, method, args,
             "--identity", self.identity,
         ]
+        if query:
+            cmd.append("--query")
         try:
             result = subprocess.run(
                 cmd, capture_output=True, text=True,
@@ -192,7 +200,7 @@ class Stem:
 
         Returns list of {id, theme, capsule_ids, strength, updated_at}.
         """
-        raw = self._dfx_call("keeper_clusters", "()", timeout=30)
+        raw = self._dfx_call("keeper_clusters", "()", timeout=30, query=True)
         if not raw:
             return []
         return self._parse_clusters(raw)
@@ -208,30 +216,66 @@ class Stem:
     def _parse_clusters(self, raw: str) -> list:
         """Parse Candid vec of KeeperCluster records.
 
-        Actual field order from canister:
-          id, theme, updated_at, capsule_ids, quality (opt), strength
+        Handles both named fields (when .did available) and numeric hashes
+        (when dfx can't fetch the Candid interface).
+
+        Named:   id, theme, updated_at, capsule_ids, quality (opt), strength
+        Hashed:  23_515=id, 260_472_329=theme, 272_465_847=updated_at,
+                 1_139_816_550=capsule_ids, 2_391_724_673=strength
         """
         clusters = []
-        # Match records with the actual field order including optional quality
-        for m in re.finditer(
-            r'record\s*\{[^}]*?id\s*=\s*([\d_]+)\s*:\s*nat64;'
-            r'\s*theme\s*=\s*"([^"]*?)";'
-            r'\s*updated_at\s*=\s*([\d_]+)\s*:\s*nat64;'
-            r'\s*capsule_ids\s*=\s*vec\s*\{([^}]*)\};'
-            r'.*?strength\s*=\s*([\d.]+)\s*:\s*float32;',
-            raw, re.DOTALL
-        ):
-            cluster_id = int(m.group(1).replace("_", ""))
-            theme = m.group(2)
-            updated_at = int(m.group(3).replace("_", ""))
-            capsule_ids_raw = m.group(4)
-            strength = float(m.group(5))
 
-            # Parse capsule IDs
-            capsule_ids = [
-                int(x.replace("_", ""))
-                for x in re.findall(r'([\d_]+)\s*:\s*nat64', capsule_ids_raw)
-            ]
+        # Field name aliases: try named first, then numeric hash
+        id_pat = r'(?:id|23_515)\s*=\s*([\d_]+)\s*:\s*nat64'
+        theme_pat = r'(?:theme|260_472_329)\s*=\s*"([^"]*?)"'
+        updated_pat = r'(?:updated_at|272_465_847)\s*=\s*([\d_]+)\s*:\s*nat64'
+        capsules_pat = r'(?:capsule_ids|1_139_816_550)\s*=\s*vec\s*\{([^}]*)\}'
+        strength_pat = r'(?:strength|2_391_724_673)\s*=\s*([\d.]+)\s*:\s*float'
+
+        # Split into records — handle nested braces from vec { ... }
+        # Use brace-depth counting instead of regex
+        def _extract_records(text):
+            records = []
+            i = 0
+            while i < len(text):
+                m = re.search(r'record\s*\{', text[i:])
+                if not m:
+                    break
+                start = i + m.end()
+                depth = 1
+                j = start
+                while j < len(text) and depth > 0:
+                    if text[j] == '{':
+                        depth += 1
+                    elif text[j] == '}':
+                        depth -= 1
+                    j += 1
+                records.append(text[start:j-1])
+                i = j
+            return records
+
+        for block in _extract_records(raw):
+
+            id_m = re.search(id_pat, block)
+            theme_m = re.search(theme_pat, block)
+            updated_m = re.search(updated_pat, block)
+            capsules_m = re.search(capsules_pat, block)
+            strength_m = re.search(strength_pat, block)
+
+            if not (id_m and theme_m and strength_m):
+                continue
+
+            cluster_id = int(id_m.group(1).replace("_", ""))
+            theme = theme_m.group(1)
+            updated_at = int(updated_m.group(1).replace("_", "")) if updated_m else 0
+            strength = float(strength_m.group(1))
+
+            capsule_ids = []
+            if capsules_m:
+                capsule_ids = [
+                    int(x.replace("_", ""))
+                    for x in re.findall(r'([\d_]+)\s*:\s*nat64', capsules_m.group(1))
+                ]
 
             clusters.append({
                 "id": cluster_id,
@@ -249,7 +293,7 @@ class Stem:
 
         Returns list of {capsule_a, capsule_b, similarity, connection_text}.
         """
-        raw = self._dfx_call("keeper_connections", f"({limit} : nat64)", timeout=30)
+        raw = self._dfx_call("keeper_connections", f"({limit} : nat64)", timeout=30, query=True)
         if not raw:
             return []
         return self._parse_connections(raw)

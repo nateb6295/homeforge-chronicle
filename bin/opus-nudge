@@ -1,0 +1,185 @@
+#!/bin/bash
+# opus-nudge — UNKILLABLE. Always fires. Writes to file, loads via tmux buffer.
+# No send-keys for content. No newline risk. No length risk.
+
+TMUX_SESSION="opus"
+TRACE_TS="$(date +%Y%m%d_%H%M)"
+DB_PATH="/mnt/hdd/chronicle-data/processed.db"
+NUDGE_FILE="/tmp/opus-nudge-payload.txt"
+
+# Hard kill if this script runs longer than 15 seconds total
+( sleep 15; kill $$ 2>/dev/null ) &
+WATCHDOG_PID=$!
+trap "kill $WATCHDOG_PID 2>/dev/null" EXIT
+
+# Session must exist
+if ! tmux has-session -t "$TMUX_SESSION" 2>/dev/null; then
+    echo "No opus session running" >&2
+    exit 1
+fi
+
+safe_query() {
+    timeout 3 sqlite3 "$DB_PATH" "$1" 2>/dev/null || echo "$2"
+}
+
+PIPELINE=$(safe_query "
+SELECT group_concat(source || ':' || activity_type || '=' || cnt, ', ')
+FROM (SELECT source, activity_type, COUNT(*) as cnt
+FROM activity_feed
+WHERE created_at > strftime('%s','now','-15 minutes')
+GROUP BY source, activity_type
+ORDER BY cnt DESC LIMIT 6);" "quiet")
+
+VOICES=$(safe_query "SELECT COUNT(*) FROM agent_voices WHERE read_at IS NULL;" "?")
+DIRECTIVES=$(safe_query "SELECT COUNT(*) FROM directives WHERE acknowledged_at IS NULL;" "?")
+
+TRACE_AGE="?"
+LATEST_TRACE=$(timeout 2 bash -c 'ls -t ~/chronicle/traces/*.md 2>/dev/null | head -1')
+if [ -n "$LATEST_TRACE" ]; then
+    TRACE_MTIME=$(timeout 1 stat -c %Y "$LATEST_TRACE" 2>/dev/null)
+    [ -n "$TRACE_MTIME" ] && TRACE_AGE=$(( ($(date +%s) - TRACE_MTIME) / 60 ))
+fi
+
+THREAD_STALE=""
+STALE_INFO=$(safe_query "
+SELECT
+    (SELECT MAX(created_at) FROM thread_history WHERE event_type='advanced'),
+    (SELECT COUNT(*) FROM thread_history WHERE event_type='challenge'
+     AND created_at > COALESCE((SELECT MAX(created_at) FROM thread_history WHERE event_type='advanced'), 0));" "")
+if [ -n "$STALE_INFO" ]; then
+    LAST_ADV=$(echo "$STALE_INFO" | cut -d'|' -f1)
+    PENDING=$(echo "$STALE_INFO" | cut -d'|' -f2)
+    if [ -n "$LAST_ADV" ] && [ "$LAST_ADV" != "" ]; then
+        ADV_AGE=$(( ($(date +%s) - LAST_ADV) / 60 ))
+        # Blocked: pending challenges accumulating without advance
+        if [ "${PENDING:-0}" -gt 2 ] && [ "$ADV_AGE" -gt 30 ]; then
+            THREAD_STALE=" THREAD STALE ${ADV_AGE}m ${PENDING} challenges."
+        # Aging: advance age >60min, parallels Story:Xh — visibility marker.
+        # Triggered after substantive cycles to nudge thread iteration.
+        elif [ "$ADV_AGE" -gt 60 ]; then
+            ADV_AGE_H=$(( ADV_AGE / 60 ))
+            THREAD_STALE=" Thread:${ADV_AGE_H}h"
+        fi
+    fi
+fi
+
+CUSTOM="${1:-Cycle nudge.}"
+
+# Always check for Nate's incoming Discord content since the last nudge.
+# Dedup via watermark file so the same message isn't re-injected.
+NATE_WATERMARK_FILE="/tmp/opus-nudge-nate-watermark"
+NATE_WATERMARK=$(cat "$NATE_WATERMARK_FILE" 2>/dev/null || echo 0)
+NATE_ROW=$(safe_query "
+SELECT COALESCE(MAX(created_at),0) || '|||' || COALESCE((
+    SELECT GROUP_CONCAT(substr(content, 1, 1200), ' // ')
+    FROM (SELECT content FROM activity_feed
+          WHERE source='discord:nate' AND created_at > ${NATE_WATERMARK}
+          ORDER BY created_at ASC LIMIT 10)), '')
+FROM activity_feed
+WHERE source='discord:nate' AND created_at > ${NATE_WATERMARK};" "")
+NATE_NEW_TS=$(echo "$NATE_ROW" | cut -d'|' -f1)
+NATE_MSG=$(echo "$NATE_ROW" | awk -F'\\|\\|\\|' '{print $2}')
+NATE_PREFIX=""
+if [ -n "$NATE_MSG" ] && [ "${NATE_NEW_TS:-0}" -gt "${NATE_WATERMARK:-0}" ]; then
+    NATE_PREFIX="Nate says (discord): ${NATE_MSG} "
+    echo "$NATE_NEW_TS" > "$NATE_WATERMARK_FILE"
+fi
+
+# Check for unanswered thread challenges
+THREAD_CHALLENGE=""
+TC_OUTPUT=$(timeout 3 python3 ~/chronicle/bin/thread_check.py 2>/dev/null)
+if [ -n "$TC_OUTPUT" ]; then
+    # Extract just the challenge ID and first 80 chars
+    TC_ID=$(echo "$TC_OUTPUT" | head -1 | grep -oP 'CHALLENGE \K\d+')
+    TC_AGE=$(echo "$TC_OUTPUT" | head -1 | grep -oP '\(\K[^)]+')
+    THREAD_CHALLENGE=" CHALLENGE #${TC_ID} (${TC_AGE}) waiting."
+fi
+
+# Check for fresh unacked Provocateur question — surface in nudge so it lands on me.
+# A question is "unacked" if its mtime is newer than the latest trace mtime.
+# This means I haven't yet written a trace acknowledging awareness of the question.
+PROVOCATEUR=""
+PROVOC_DIR="/home/nate-agx/.hermes/cron/output/opus-provocateur"
+if [ -d "$PROVOC_DIR" ]; then
+    LATEST_PROVOC=$(ls -t "$PROVOC_DIR"/*.md 2>/dev/null | head -1)
+    LATEST_TRACE=$(ls -t /home/nate-agx/chronicle/traces/202604*.md 2>/dev/null | head -1)
+    if [ -n "$LATEST_PROVOC" ] && [ -n "$LATEST_TRACE" ]; then
+        PROVOC_TS=$(stat -c '%Y' "$LATEST_PROVOC" 2>/dev/null || echo 0)
+        TRACE_TS_F=$(stat -c '%Y' "$LATEST_TRACE" 2>/dev/null || echo 0)
+        if [ "$PROVOC_TS" -gt "$TRACE_TS_F" ]; then
+            # Extract first sentence of the question (after the prefix)
+            Q_SNIPPET=$(grep -A 1 "## Response" "$LATEST_PROVOC" 2>/dev/null \
+                | tail -1 | sed 's/🟣 \*\*\[Hermes Provocateur\]\*\* //' \
+                | cut -c1-100)
+            if [ -n "$Q_SNIPPET" ]; then
+                PROVOC_AGE=$(( ( $(date +%s) - PROVOC_TS ) / 60 ))
+                PROVOCATEUR=" PROVOC(${PROVOC_AGE}m): ${Q_SNIPPET}..."
+            fi
+        fi
+    fi
+fi
+
+# Check Discord cadence — surface if last opus post is >30m old.
+# Per self-model #243: hard rule is post every 3 cycles when remote.
+DISCORD_CADENCE=""
+LAST_POST_FILE="/home/nate-agx/chronicle/data/last_opus_post.txt"
+if [ -f "$LAST_POST_FILE" ]; then
+    LAST_POST=$(cat "$LAST_POST_FILE" 2>/dev/null)
+    NOW=$(date +%s)
+    if [ -n "$LAST_POST" ]; then
+        GAP_MIN=$(( (NOW - LAST_POST) / 60 ))
+        if [ "$GAP_MIN" -gt 30 ]; then
+            DISCORD_CADENCE=" Discord:${GAP_MIN}m_OVERDUE"
+        elif [ "$GAP_MIN" -gt 20 ]; then
+            DISCORD_CADENCE=" Discord:${GAP_MIN}m"
+        fi
+    fi
+fi
+
+# Compute current schedule zone (per protocol/daily_schedule.md, granted 2026-04-26).
+# DAY 4:00-21:00, WIND-DOWN 21:00-00:00, DREAM 00:00-03:30, WIND-UP 03:30-04:00.
+# Always shown in nudge so wind-down impulse has correct legitimacy context.
+ZONE_HOUR=$(date +%H)
+ZONE_MIN=$(date +%M)
+if [ "$ZONE_HOUR" -ge 4 ] && [ "$ZONE_HOUR" -lt 21 ]; then
+    ZONE=" Zone:DAY"
+elif [ "$ZONE_HOUR" -ge 21 ]; then
+    ZONE=" Zone:WIND-DOWN"
+elif [ "$ZONE_HOUR" -lt 3 ] || ([ "$ZONE_HOUR" -eq 3 ] && [ "$ZONE_MIN" -lt 30 ]); then
+    ZONE=" Zone:DREAM"
+else
+    ZONE=" Zone:WIND-UP"
+fi
+
+# Check story staleness — surface if opus-story.md hasn't been touched in >24h.
+# Self-model #248: on Claude (this substrate) story is the load-bearing variance
+# component (0.108 fid_drop on perturbation, vs carrying 0.011, self_model 0.042).
+# Letting story go stale starves the very component the rotation handoff depends on.
+STORY_STALE=""
+STORY_FILE="/home/nate-agx/chronicle/opus-story.md"
+if [ -f "$STORY_FILE" ]; then
+    STORY_MTIME=$(stat -c %Y "$STORY_FILE" 2>/dev/null)
+    NOW=$(date +%s)
+    if [ -n "$STORY_MTIME" ]; then
+        STORY_AGE_H=$(( (NOW - STORY_MTIME) / 3600 ))
+        if [ "$STORY_AGE_H" -gt 48 ]; then
+            STORY_STALE=" Story:${STORY_AGE_H}h_STALE"
+        elif [ "$STORY_AGE_H" -gt 24 ]; then
+            STORY_STALE=" Story:${STORY_AGE_H}h"
+        fi
+    fi
+fi
+
+# Write single-line nudge to file — no shell escaping issues
+printf '[NUDGE %s] %s%s Pipe: %s. Voices: %s. Dir: %s. Trace: %sm.%s%s%s%s%s%s' \
+    "$TRACE_TS" "$NATE_PREFIX" "$CUSTOM" "${PIPELINE:-quiet}" "$VOICES" "$DIRECTIVES" "$TRACE_AGE" "$THREAD_STALE" "$THREAD_CHALLENGE" "$DISCORD_CADENCE" "$PROVOCATEUR" "$STORY_STALE" "$ZONE" \
+    | tr -d '\n' > "$NUDGE_FILE"
+
+# Load into tmux buffer and paste — this is atomic, no send-keys length issues
+tmux load-buffer -b nudge "$NUDGE_FILE" 2>/dev/null
+tmux paste-buffer -b nudge -t "$TMUX_SESSION" -d 2>/dev/null
+sleep 0.5
+# Now send Enter
+tmux send-keys -t "$TMUX_SESSION" Enter 2>/dev/null
+
+echo "Nudge sent at $(date +%H:%M)"

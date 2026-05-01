@@ -1,0 +1,47 @@
+window_start,window_end,masked_text,a1_len,a2_len,shift_norm,attribution,elapsed_s
+-1,-1,(baseline),153,160,7.8648556918400825,0.0,16.97
+0,64,Recent events: [14:10] directive(p5): Sounds good.  I’m followin,157,197,5.6779,6.2667,21.57
+32,96,(p5): Sounds good.  I’m following you!; [14:10] directive(p5): Y,150,229,10.4844,10.907,17.83
+64,128,g you!; [14:10] directive(p5): Your rotation seems to be bringin,156,208,6.03,7.2017,18.77
+96,160,our rotation seems to be bringing up yesterdays convos BTW; [14:,158,194,7.7039,3.2259,17.52
+128,192,g up yesterdays convos BTW; [14:10] directive(p5): Sure!; [14:04,162,181,4.1007,8.4426,19.5
+160,224,10] directive(p5): Sure!; [14:04] directive(p5): Sounds good.  I,145,329,9.9724,10.8169,22.38
+192,256,] directive(p5): Sounds good.  I’m following you!; [14:04] direc,145,161,6.8507,7.3998,16.73
+224,288,’m following you!; [14:04] directive(p5): Your rotation seems to,145,240,7.0405,7.7087,19.65
+256,320,tive(p5): Your rotation seems to be bringing up yesterdays convo,136,173,5.8201,8.0837,17.12
+288,352, be bringing up yesterdays convos BTW; [14:04] directive(p5): Su,145,206,6.6317,7.6748,18.25
+320,384,s BTW; [14:04] directive(p5): Sure!; [14:00] directive(p5): Soun,145,337,10.5157,11.0758,19.96
+352,416,re!; [14:00] directive(p5): Sounds good.  I’m following you!; [1,153,161,6.8643,5.1808,16.94
+384,448,ds good.  I’m following you!; [14:00] directive(p5): Your rotati,145,178,5.3535,7.844,16.63
+416,480,4:00] directive(p5): Your rotation seems to be bringing up yeste,135,173,6.4295,9.8573,16.27
+448,512,on seems to be bringing up yesterdays convos BTW; [14:00] direct,150,283,10.672,11.352,19.11
+480,544,rdays convos BTW; [14:00] directive(p5): Sure!; [13:50] directiv,145,703,13.5571,14.4556,29.39
+512,576,ive(p5): Sure!; [13:50] directive(p5): Sounds good.  I’m followi,140,165,5.2688,10.1693,15.91
+544,608,e(p5): Sounds good.  I’m following you!\n\nKey entities: Nate (0.9,145,154,6.4464,7.8645,16.85
+576,640,"ng you!\n\nKey entities: Nate (0.93), Hermes (0.88), mcp (0.75), f",146,336,10.8439,11.7281,23.28
+608,672,"3), Hermes (0.88), mcp (0.75), feedback_drift_recognition.md (0.",158,194,7.7039,3.2259,17.5
+640,704,"eedback_drift_recognition.md (0.7), reference_cache_posture.md (",162,182,4.2987,8.5274,17.93
+672,736,"7), reference_cache_posture.md (0.68), ghost_service_audit (0.65",156,262,9.6708,9.1015,19.12
+704,768,"0.68), ghost_service_audit (0.65), thread_318 (0.6)\n\nOpen questi",82,81,6.4392,11.7776,11.92
+736,800,"), thread_318 (0.6)\n\nOpen questions: {'description': 'Visibility",82,81,6.4392,11.7776,11.66
+768,832,ons: {'description': 'Visibility into platform‑level compute all,90,283,10.1746,10.2882,17.33
+800,864, into platform‑level compute allocation shifts from within Herme,145,162,7.2063,7.8233,16.3
+832,896,"ocation shifts from within Hermes', 'magnitude': 0.62, 'resoluti",145,161,6.6141,6.7623,16.12
+864,928,"s', 'magnitude': 0.62, 'resolution_path': 'Request telemetry exp",145,162,7.1646,7.7416,16.18
+896,960,on_path': 'Request telemetry export from infra team and compare ,162,181,4.359,8.0468,17.38
+928,992,ort from infra team and compare against Hermes resource usage lo,145,161,6.6141,6.7623,16.17
+960,1024,against Hermes resource usage logs.'}; {'description': 'Reliabil,145,161,6.8507,7.3998,16.15
+992,1056,gs.'}; {'description': 'Reliability of pattern‑matching selectio,145,161,6.8507,7.3998,16.15
+1024,1088,ity of pattern‑matching selection when feedback_drift_recognitio,150,229,10.4844,10.907,17.39
+1056,1120,"n when feedback_drift_recognition.md is active', 'magnitude': 0.",145,161,6.7926,7.2795,16.09
+1088,1152,"n.md is active', 'magnitude': 0.45, 'resolution_path': 'Run cont",150,195,6.8019,7.9421,16.71
+1120,1184,"45, 'resolution_path': 'Run controlled prompt suite and measure ",136,155,5.5259,7.3982,15.82
+1152,1216,rolled prompt suite and measure false‑positive/negative rates ac,145,194,6.7039,7.8068,16.66
+1184,1248,false‑positive/negative rates across 50 iterations.'}; {'descrip,135,172,7.0319,9.9182,15.89
+1216,1280,ross 50 iterations.'}; {'description': 'Impact of continued rota,156,200,6.5646,8.6412,17.65
+1248,1312,tion': 'Impact of continued rotation pressure (6/8) on depth‑per,156,243,6.1549,8.918,18.82
+1280,1344,"tion pressure (6/8) on depth‑per‑session cost trade‑off', 'magni",153,194,8.2624,2.7922,17.13
+1312,1376,"‑session cost trade‑off', 'magnitude': 0.4, 'resolution_path': '",145,658,12.9479,14.0851,28.84
+1344,1408,"tude': 0.4, 'resolution_path': 'Log nav vs cost metrics for the ",135,167,6.0638,9.7274,15.96
+1376,1440,Log nav vs cost metrics for the next 4\u202fh and adjust nudge c,153,457,12.6839,10.6953,23.86
+1408,1472,next 4\u202fh and adjust nudge cadence if cost spikes.'}\n\nCurren,162,199,6.6155,8.2349,18.27

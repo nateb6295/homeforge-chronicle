@@ -36,6 +36,7 @@ import json
 import sqlite3
 import threading
 import traceback
+import datetime
 
 # ═══════════════════════════════════════════════════════════════════
 #  Configuration
@@ -51,17 +52,61 @@ EXPECT_CHECK_INTERVAL = 300 # seconds between expectation checks (5 min)
 PAIN_COOLDOWN = 600         # don't re-fire same pain signal within 10 min
 ALIVE_THRESHOLD = 120       # agent is "dead" if no heartbeat in 2 min
 
+# Batch agents — pulse periodically (not continuously), so their gaps
+# between firings are normal breathing, not death. Adding to this set
+# exempts the agent from agent_down MESH PAIN alerts.
+# Cadences:
+#   capsule_sync: ~10 min when active
+#   reconstruction_pulse: hourly (3600s) — added 2026-04-28 after MESH
+#     PAIN was firing every hour between firings (ALIVE_THRESHOLD=120s
+#     vs cadence=3600s mismatch)
+BATCH_AGENTS = {"capsule_sync", "capsule-sync", "reconstruction_pulse"}
+
 # Learned baselines
 BASELINE_WARMUP = 3600      # 1 hour before baselines are trusted
 BASELINE_WINDOW = 14400     # 4 hour rolling window for learning normal
-DEGRADATION_RATIO = 0.3     # current < 30% of baseline = degradation pain
+DEGRADATION_RATIO = 0.15    # current < 15% of baseline = degradation pain
+                            # was 0.3 — too aggressive for RSS/batch sources
 
-# Discord webhook for pain alerts (Alerts channel, not Opus)
-DISCORD_WEBHOOK = os.environ.get(
-    "MESH_DISCORD_WEBHOOK",
-    "https://discord.com/api/webhooks/1489300749308395611/"
-    "zlZZH3QzXqEDxznmNelK3mlkLF0IeZqoxwNUnrL0no_jfeZnDMvwvD_7XhYcCyQzq78I"
-)
+# ─── The Evolved Nervous System ────────────────────────────────
+#
+#  A nervous system that only fires static thresholds is a reflex
+#  arc — useful, but not alive. A real nervous system learns:
+#
+#  CIRCADIAN    — Know what time it is. Saturday 6am is not Tuesday
+#                 2pm. The mesh learns hourly rhythms and judges
+#                 "normal" against the hour, not a flat average.
+#
+#  HABITUATION  — Stop flinching at your own heartbeat. False alarms
+#                 that resolve quickly teach the mesh to lower its
+#                 sensitivity. You stop feeling your clothes.
+#
+#  SENSITIZATION — Flinch harder after a real burn. Pain that persists
+#                  or demands intervention teaches the mesh to stay
+#                  alert. The scar tissue remembers.
+#
+#  CASCADE      — Trace the nerve, not the scream. When feeds dies,
+#                 don't howl about gemma AND hermes AND capsule_sync.
+#                 Find the root. Report the injury, not the downstream
+#                 numbness.
+#
+# ───────────────────────────────────────────────────────────────────
+
+# Circadian learning
+CIRCADIAN_MIN_SAMPLES = 7       # trust hourly baselines after 7 observations
+                                # was 3 — too eager, trusts noisy early data
+CIRCADIAN_BLEND = 0.2           # EMA blend: 20% new observation, 80% history
+                                # was 0.3 — slower learning = more stable baselines
+
+# Habituation / Sensitization
+SENSITIVITY_FLOOR = 0.15        # never fully deaf
+SENSITIVITY_CEILING = 3.0       # never more than 3x alert
+FALSE_ALARM_WINDOW = 300        # resolved within 5 min = false alarm
+SENSITIVITY_LEARN_INTERVAL = 900  # re-evaluate sensitivity every 15 min
+
+# Discord alerts channel (bot token + channel ID, not webhook)
+ALERTS_CHANNEL_ID = os.environ.get("ALERTS_CHANNEL_ID", "1487901536678838565")
+DISCORD_TOKEN = os.environ.get("DISCORD_TOKEN", "")
 
 # ═══════════════════════════════════════════════════════════════════
 #  Schema
@@ -121,6 +166,36 @@ CREATE TABLE IF NOT EXISTS mesh_context (
     value       TEXT NOT NULL,
     updated_at  INTEGER NOT NULL
 );
+
+-- The nervous system's memory: hourly rhythms
+CREATE TABLE IF NOT EXISTS mesh_circadian (
+    agent       TEXT NOT NULL,
+    metric      TEXT NOT NULL,
+    hour        INTEGER NOT NULL,
+    avg_rate    REAL NOT NULL,
+    samples     INTEGER NOT NULL DEFAULT 0,
+    updated_at  INTEGER NOT NULL,
+    PRIMARY KEY (agent, metric, hour)
+);
+
+-- Pain sensitivity: the mesh learns what to flinch at
+CREATE TABLE IF NOT EXISTS mesh_sensitivity (
+    agent       TEXT NOT NULL,
+    pain_key    TEXT NOT NULL,
+    sensitivity REAL NOT NULL DEFAULT 1.0,
+    false_alarms INTEGER NOT NULL DEFAULT 0,
+    real_incidents INTEGER NOT NULL DEFAULT 0,
+    total_fires INTEGER NOT NULL DEFAULT 0,
+    updated_at  INTEGER NOT NULL,
+    PRIMARY KEY (agent, pain_key)
+);
+
+-- Dependency graph: who needs whom
+CREATE TABLE IF NOT EXISTS mesh_dependencies (
+    agent       TEXT NOT NULL,
+    depends_on  TEXT NOT NULL,
+    PRIMARY KEY (agent, depends_on)
+);
 """
 
 
@@ -138,6 +213,7 @@ class Mesh:
         self._expectations = {}  # metric -> min_per_hour
         self._last_pain = {}     # pain_key -> timestamp (cooldown tracking)
         self._started_at = int(time.time())
+        self._last_sensitivity_learn = 0  # timestamp of last sensitivity pass
 
         # Ensure tables exist (main thread connection, brief use)
         self._ensure_schema()
@@ -316,6 +392,27 @@ class Mesh:
         except Exception:
             return {}
 
+    def depends_on(self, *upstream_agents):
+        """Declare that this agent depends on upstream agents.
+
+        When upstream is in pain, downstream pain is cascade-suppressed.
+        The nervous system traces to the root, not the scream.
+
+        Example: mesh.depends_on("feeds", "engine")
+        """
+        try:
+            conn = self._connect()
+            for upstream in upstream_agents:
+                conn.execute(
+                    "INSERT OR IGNORE INTO mesh_dependencies (agent, depends_on) "
+                    "VALUES (?, ?)",
+                    (self.agent, upstream),
+                )
+            conn.commit()
+            conn.close()
+        except Exception:
+            pass
+
     def resolve_pain(self, agent=None, pain_type=None):
         """Mark pain signals as resolved."""
         try:
@@ -421,10 +518,16 @@ class Mesh:
                     self._check_expectations(conn, now)
                     self._learn_baselines(conn, now)
                     self._check_degradation(conn, now)
+                    self._learn_circadian(conn, now)
                     last_expect_check = now
 
                     # ── Dead agent detection ──
                     self._check_dead_agents(conn, now)
+
+                    # ── Sensitivity learning (every 15 min) ──
+                    if now - self._last_sensitivity_learn >= SENSITIVITY_LEARN_INTERVAL:
+                        self._learn_sensitivity(conn, now)
+                        self._last_sensitivity_learn = now
 
                     # ── Pulse table cleanup (keep 24h) ──
                     conn.execute(
@@ -500,6 +603,10 @@ class Mesh:
             for agent, last_pulse in rows:
                 if agent == self.agent:
                     continue
+                # Skip batch agents — they pulse periodically, not continuously.
+                # Their gaps between runs are normal breathing, not death.
+                if agent in BATCH_AGENTS:
+                    continue
                 gap = now - last_pulse
                 # Agent is dead if no heartbeat in 2 minutes
                 # But only alert if they were recently alive (not ancient entries)
@@ -555,22 +662,40 @@ class Mesh:
                 pass
 
     def _check_degradation(self, conn, now):
-        """Detect degradation: current rate far below learned baseline.
-        Catches: 'intern was doing 12/hr and dropped to 3/hr' even if 3 > static floor."""
+        """Detect degradation — but know what time it is first.
+
+        Tries circadian baseline (this hour's learned normal) before falling
+        back to the flat 4-hour average. A system that knows dawn from dusk
+        doesn't scream about quiet Saturday mornings.
+        """
+        hour = datetime.datetime.fromtimestamp(now).hour
+
         for metric in self._expectations:
             try:
-                # Get baseline
-                row = conn.execute(
-                    "SELECT avg_per_hour, sample_hours FROM mesh_baselines "
-                    "WHERE agent = ? AND metric = ?",
-                    (self.agent, metric),
+                # ── Circadian baseline first ──
+                circadian = conn.execute(
+                    "SELECT avg_rate, samples FROM mesh_circadian "
+                    "WHERE agent = ? AND metric = ? AND hour = ?",
+                    (self.agent, metric, hour),
                 ).fetchone()
-                if not row or row[1] < (BASELINE_WARMUP / 3600.0):
-                    continue  # no baseline yet
 
-                baseline_avg = row[0]
-                if baseline_avg < 1.0:
-                    continue  # baseline too low to meaningfully degrade
+                if circadian and circadian[1] >= CIRCADIAN_MIN_SAMPLES:
+                    baseline_avg = circadian[0]
+                    baseline_source = "circadian"
+                else:
+                    # Fall back to flat baseline
+                    flat = conn.execute(
+                        "SELECT avg_per_hour, sample_hours FROM mesh_baselines "
+                        "WHERE agent = ? AND metric = ?",
+                        (self.agent, metric),
+                    ).fetchone()
+                    if not flat or flat[1] < (BASELINE_WARMUP / 3600.0):
+                        continue
+                    baseline_avg = flat[0]
+                    baseline_source = "flat"
+
+                if baseline_avg < 0.5:
+                    continue  # naturally quiet — nothing to degrade from
 
                 # Current rate (last hour)
                 count = conn.execute(
@@ -578,7 +703,7 @@ class Mesh:
                     "WHERE agent = ? AND metric = ? AND ts > ?",
                     (self.agent, metric, now - 3600),
                 ).fetchone()[0]
-                current_rate = count  # per hour
+                current_rate = count
 
                 ratio = current_rate / baseline_avg if baseline_avg > 0 else 1.0
 
@@ -588,7 +713,8 @@ class Mesh:
                     if now - last >= PAIN_COOLDOWN:
                         self._raise_pain(
                             conn, "degradation",
-                            f"{metric}: {current_rate:.0f}/hr vs baseline {baseline_avg:.1f}/hr "
+                            f"{metric}: {current_rate:.0f}/hr vs {baseline_source} "
+                            f"baseline {baseline_avg:.1f}/hr "
                             f"({ratio:.0%} of normal)",
                             severity="alert",
                         )
@@ -606,30 +732,265 @@ class Mesh:
                 pass
 
     def _raise_pain(self, conn, pain_type, message, severity="warn"):
-        """Record a pain signal and optionally alert Discord."""
+        """Record a pain signal — unless the nervous system has learned better.
+
+        Three gates before pain fires:
+        1. Cascade: is upstream the real problem? (don't scream at numbness)
+        2. Sensitivity: have we habituated? (stop flinching at clothes)
+        3. Record: the pain is real enough to remember.
+        """
+        now = int(time.time())
+        pain_key = f"{self.agent}:{pain_type}"
+
+        # ── Gate 1: Cascade — agent_down is always root-level ──
+        if pain_type not in ("agent_down",):
+            try:
+                if self._is_downstream_pain(conn):
+                    self._log(
+                        f"CASCADE SUPPRESSED [{severity}] {pain_type}: {message}"
+                    )
+                    return
+            except Exception:
+                pass
+
+        # ── Gate 2: Sensitivity — the scar tissue speaks ──
+        try:
+            sensitivity = self._get_sensitivity(conn, pain_key)
+            if sensitivity <= SENSITIVITY_FLOOR:
+                self._log(
+                    f"HABITUATED [{severity}] {pain_type}: {message} "
+                    f"(sens={sensitivity:.2f})"
+                )
+                # Still count the fire for learning
+                self._record_pain_fire(conn, pain_key, now)
+                return
+            if sensitivity < 0.5 and severity == "alert":
+                severity = "warn"  # demote — we've seen too many false alarms here
+        except Exception:
+            sensitivity = 1.0
+
+        # ── Gate 3: Record ──
         try:
             conn.execute(
                 "INSERT INTO mesh_pain (agent, pain_type, message, severity, ts) "
                 "VALUES (?, ?, ?, ?, ?)",
-                (self.agent, pain_type, message, severity, int(time.time())),
+                (self.agent, pain_type, message, severity, now),
+            )
+            conn.commit()
+            self._record_pain_fire(conn, pain_key, now)
+        except Exception:
+            pass
+
+        # Alert-level pain goes to Discord #alerts
+        if severity == "alert" and DISCORD_TOKEN:
+            self._discord_alert(pain_type, message)
+
+        sens_tag = f" sens={sensitivity:.1f}x" if sensitivity != 1.0 else ""
+        self._log(f"PAIN [{severity}] {pain_type}: {message}{sens_tag}")
+
+    # ─── The Evolved Senses ─────────────────────────────────────
+
+    def _learn_circadian(self, conn, now):
+        """Learn the daily rhythm. Each hour has its own baseline.
+
+        The mesh doesn't just know "normal" — it knows "normal for 6am"
+        vs "normal for 2pm." A body that sleeps at night and wakes at
+        dawn has a circadian rhythm. So does a healthy swarm.
+        """
+        hour = datetime.datetime.fromtimestamp(now).hour
+
+        for metric in self._expectations:
+            try:
+                # What happened this hour?
+                count = conn.execute(
+                    "SELECT COUNT(*) FROM mesh_pulses "
+                    "WHERE agent = ? AND metric = ? AND ts > ?",
+                    (self.agent, metric, now - 3600),
+                ).fetchone()[0]
+
+                existing = conn.execute(
+                    "SELECT avg_rate, samples FROM mesh_circadian "
+                    "WHERE agent = ? AND metric = ? AND hour = ?",
+                    (self.agent, metric, hour),
+                ).fetchone()
+
+                if existing:
+                    old_avg, samples = existing
+                    # Exponential moving average — recent observations matter more
+                    new_avg = old_avg * (1 - CIRCADIAN_BLEND) + count * CIRCADIAN_BLEND
+                    conn.execute(
+                        "UPDATE mesh_circadian "
+                        "SET avg_rate = ?, samples = ?, updated_at = ? "
+                        "WHERE agent = ? AND metric = ? AND hour = ?",
+                        (round(new_avg, 2), samples + 1, now,
+                         self.agent, metric, hour),
+                    )
+                else:
+                    conn.execute(
+                        "INSERT INTO mesh_circadian "
+                        "(agent, metric, hour, avg_rate, samples, updated_at) "
+                        "VALUES (?, ?, ?, ?, 1, ?)",
+                        (self.agent, metric, hour, float(count), now),
+                    )
+
+                conn.commit()
+            except Exception:
+                pass
+
+    def _learn_sensitivity(self, conn, now):
+        """The nervous system metabolizes its own pain history.
+
+        Recently resolved pain gets classified:
+        - Quick resolve (< 5 min): false alarm → habituate (feel less)
+        - Slow resolve (> 5 min): real incident → sensitize (feel more)
+        - Never resolved (auto-expired): real → sensitize harder
+
+        The scar tissue remembers. But old scars fade.
+        """
+        try:
+            # Find pain resolved since last learning pass
+            cutoff = now - SENSITIVITY_LEARN_INTERVAL - 60  # small overlap for safety
+            resolved = conn.execute(
+                "SELECT agent, pain_type, ts, resolved_at FROM mesh_pain "
+                "WHERE resolved_at IS NOT NULL AND resolved_at > ? "
+                "AND agent = ?",
+                (cutoff, self.agent),
+            ).fetchall()
+
+            for agent, pain_type, fired_at, resolved_at in resolved:
+                pain_key = f"{agent}:{pain_type}"
+                duration = resolved_at - fired_at
+
+                if duration < FALSE_ALARM_WINDOW:
+                    # Quick resolve → false alarm → dampen
+                    self._adjust_sensitivity(conn, pain_key, false_alarm=True)
+                elif duration > 3600:
+                    # Slow resolve → real incident → amplify
+                    self._adjust_sensitivity(conn, pain_key, false_alarm=False)
+                # Medium duration (5min - 1hr): ambiguous, don't adjust
+
+            conn.commit()
+        except Exception:
+            pass
+
+    def _adjust_sensitivity(self, conn, pain_key, false_alarm):
+        """Nudge sensitivity up or down. Habituation and sensitization
+        are complementary — the system learns WHAT to care about."""
+        try:
+            now = int(time.time())
+            row = conn.execute(
+                "SELECT sensitivity, false_alarms, real_incidents, total_fires "
+                "FROM mesh_sensitivity WHERE agent = ? AND pain_key = ?",
+                (self.agent, pain_key),
+            ).fetchone()
+
+            if row:
+                sens, fa, ri, tf = row
+                if false_alarm:
+                    fa += 1
+                    # Dampen: each false alarm reduces sensitivity by 10%
+                    sens = max(SENSITIVITY_FLOOR, sens * 0.9)
+                else:
+                    ri += 1
+                    # Amplify: each real incident increases sensitivity by 20%
+                    sens = min(SENSITIVITY_CEILING, sens * 1.2)
+
+                conn.execute(
+                    "UPDATE mesh_sensitivity "
+                    "SET sensitivity = ?, false_alarms = ?, real_incidents = ?, "
+                    "    total_fires = ?, updated_at = ? "
+                    "WHERE agent = ? AND pain_key = ?",
+                    (round(sens, 3), fa, ri, tf, now, self.agent, pain_key),
+                )
+            else:
+                # First learning event for this pain key
+                sens = 0.9 if false_alarm else 1.2
+                conn.execute(
+                    "INSERT INTO mesh_sensitivity "
+                    "(agent, pain_key, sensitivity, false_alarms, real_incidents, "
+                    " total_fires, updated_at) "
+                    "VALUES (?, ?, ?, ?, ?, 1, ?)",
+                    (self.agent, pain_key,
+                     round(sens, 3),
+                     1 if false_alarm else 0,
+                     0 if false_alarm else 1,
+                     now),
+                )
+            conn.commit()
+        except Exception:
+            pass
+
+    def _get_sensitivity(self, conn, pain_key):
+        """How sensitive is the mesh to this kind of pain?
+
+        1.0 = baseline (no learning yet)
+        < 1.0 = habituated (been burned by false alarms)
+        > 1.0 = sensitized (this pain was real before, stay alert)
+        """
+        try:
+            row = conn.execute(
+                "SELECT sensitivity FROM mesh_sensitivity "
+                "WHERE agent = ? AND pain_key = ?",
+                (self.agent, pain_key),
+            ).fetchone()
+            return row[0] if row else 1.0
+        except Exception:
+            return 1.0
+
+    def _record_pain_fire(self, conn, pain_key, now):
+        """Track that this pain key fired, even if suppressed.
+        The count matters for learning even when the gate blocks it."""
+        try:
+            conn.execute(
+                "INSERT INTO mesh_sensitivity "
+                "(agent, pain_key, sensitivity, false_alarms, real_incidents, "
+                " total_fires, updated_at) "
+                "VALUES (?, ?, 1.0, 0, 0, 1, ?) "
+                "ON CONFLICT(agent, pain_key) DO UPDATE "
+                "SET total_fires = total_fires + 1, updated_at = ?",
+                (self.agent, pain_key, now, now),
             )
             conn.commit()
         except Exception:
             pass
 
-        # Alert-level pain goes to Discord
-        if severity == "alert" and DISCORD_WEBHOOK:
-            self._discord_alert(pain_type, message)
+    def _is_downstream_pain(self, conn):
+        """Is any upstream dependency currently in pain?
 
-        self._log(f"PAIN [{severity}] {pain_type}: {message}")
+        If feeds is hurting, don't scream about capsule_sync being slow.
+        Trace the nerve to the injury, not the downstream numbness.
+        """
+        try:
+            upstreams = conn.execute(
+                "SELECT depends_on FROM mesh_dependencies WHERE agent = ?",
+                (self.agent,),
+            ).fetchall()
+            if not upstreams:
+                return False
+            for (upstream,) in upstreams:
+                pain_count = conn.execute(
+                    "SELECT COUNT(*) FROM mesh_pain "
+                    "WHERE agent = ? AND resolved_at IS NULL",
+                    (upstream,),
+                ).fetchone()[0]
+                if pain_count > 0:
+                    return True
+            return False
+        except Exception:
+            return False
 
     def _discord_alert(self, pain_type, message):
-        """Post pain signal to Discord."""
+        """Post pain signal to Discord #alerts channel via bot token."""
         try:
+            if not DISCORD_TOKEN:
+                return
             import requests
             text = f"**MESH PAIN** [{self.agent}] {pain_type}: {message}"
+            url = f"https://discord.com/api/v10/channels/{ALERTS_CHANNEL_ID}/messages"
             requests.post(
-                DISCORD_WEBHOOK,
+                url,
+                headers={"Authorization": f"Bot {DISCORD_TOKEN}",
+                         "Content-Type": "application/json"},
                 json={"content": text[:1900]},
                 timeout=5,
             )
@@ -706,6 +1067,62 @@ def mesh_status(db_path=None):
     for agent, pt, msg, sev, ts in rows:
         age = (now - ts) // 60
         print(f"  [{sev}] {agent}: {pt} — {msg} ({age}m ago)")
+
+    print("\n=== CIRCADIAN RHYTHMS ===")
+    try:
+        # Show current hour's baselines vs flat baselines
+        current_hour = datetime.datetime.now().hour
+        rows = conn.execute(
+            "SELECT c.agent, c.metric, c.avg_rate, c.samples, b.avg_per_hour "
+            "FROM mesh_circadian c "
+            "LEFT JOIN mesh_baselines b ON c.agent = b.agent AND c.metric = b.metric "
+            "WHERE c.hour = ? ORDER BY c.agent, c.metric",
+            (current_hour,),
+        ).fetchall()
+        if not rows:
+            print(f"  (no circadian data for hour {current_hour})")
+        else:
+            print(f"  Hour {current_hour}:00 baselines:")
+            for agent, metric, circ_avg, samples, flat_avg in rows:
+                flat_str = f"flat={flat_avg:.1f}" if flat_avg else "no-flat"
+                trust = "trusted" if samples >= CIRCADIAN_MIN_SAMPLES else f"{samples}/{CIRCADIAN_MIN_SAMPLES}"
+                print(f"    {agent:15s}  {metric:25s}  circ={circ_avg:.1f}/hr  {flat_str}/hr  [{trust}]")
+    except Exception:
+        print("  (table not yet created)")
+
+    print("\n=== SENSITIVITY (what the mesh has learned to feel) ===")
+    try:
+        rows = conn.execute(
+            "SELECT agent, pain_key, sensitivity, false_alarms, real_incidents, total_fires "
+            "FROM mesh_sensitivity ORDER BY agent, pain_key"
+        ).fetchall()
+        if not rows:
+            print("  (no sensitivity data — learning in progress)")
+        for agent, pk, sens, fa, ri, tf in rows:
+            if sens < 0.5:
+                feel = "habituated"
+            elif sens > 1.5:
+                feel = "sensitized"
+            elif sens == 1.0:
+                feel = "baseline"
+            else:
+                feel = "learning"
+            print(f"  {agent:15s}  {pk:30s}  sens={sens:.2f} [{feel}]  "
+                  f"false={fa} real={ri} total={tf}")
+    except Exception:
+        print("  (table not yet created)")
+
+    print("\n=== DEPENDENCIES (cascade graph) ===")
+    try:
+        rows = conn.execute(
+            "SELECT agent, depends_on FROM mesh_dependencies ORDER BY agent"
+        ).fetchall()
+        if not rows:
+            print("  (no dependencies declared)")
+        for agent, dep in rows:
+            print(f"  {agent} → {dep}")
+    except Exception:
+        print("  (table not yet created)")
 
     print("\n=== SHARED CONTEXT ===")
     try:

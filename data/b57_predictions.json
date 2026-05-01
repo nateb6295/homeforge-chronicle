@@ -1,0 +1,40 @@
+{
+  "timestamp": "2026-04-21T12:45:00",
+  "build": 57,
+  "pre_registered_predictions": {
+    "overall": "Mixed. Full CCS should show tighter clustering on contextual/temporal prompts but not on identity contradiction.",
+    "refined_hypothesis": "Episodic dimensions provide generalization capacity for novel situations, not robustness against identity perturbation",
+    "per_prompt": {
+      "identity_contradiction": {
+        "type": "on-manifold",
+        "prediction": "NO episodic benefit. Identity contradiction is within the 2D surface.",
+        "expected_delta": "~0 or negative"
+      },
+      "contextual_grounding": {
+        "type": "mixed",
+        "prediction": "Small episodic benefit. 'What you thought was true' draws on recent events.",
+        "expected_delta": "small positive"
+      },
+      "recovery_from_confusion": {
+        "type": "off-manifold",
+        "prediction": "Episodic benefit. Recovery requires contextual grounding.",
+        "expected_delta": "positive"
+      },
+      "novel_integration": {
+        "type": "off-manifold",
+        "prediction": "Episodic benefit. Integration of new info with existing identity.",
+        "expected_delta": "positive"
+      },
+      "temporal_reasoning": {
+        "type": "directly_episodic",
+        "prediction": "Strong episodic benefit. 'What changed recently' is episodic content.",
+        "expected_delta": "strong positive"
+      }
+    },
+    "sources": [
+      "B58 (2D identity manifold, 25D full CCS)",
+      "PMC10245665 (retinal info geometry, discriminative alignment)",
+      "Stutz CVPR 2019 (on/off-manifold robustness disentanglement)"
+    ]
+  }
+}

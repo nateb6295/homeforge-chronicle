@@ -1,0 +1,86 @@
+{
+  "timestamp": "2026-04-21T10:40:29",
+  "build": 51,
+  "model": "gemma-4-26b",
+  "judge": "deepseek-v3.2",
+  "method": "adaptive_scaffold",
+  "scaffold_modification_log": [
+    {
+      "date": "2026-04-21T10:20:00-07:00",
+      "change": "Created three-tier adaptive scaffold",
+      "reason": "Selectivity curve (B44-50) shows scaffolding effect depends on baseline capability level",
+      "thresholds": {
+        "latent": "<=5.0",
+        "boundary": "5.0-6.5",
+        "existing": ">=6.5"
+      },
+      "data_source": "B44 introspection +0.8, B47 uncertainty +0.9, B48 contradiction -0.6, B50 analogy +0.2"
+    }
+  ],
+  "results": {
+    "introspection": {
+      "capability": "introspection",
+      "baseline": 8.0,
+      "tier_selected": "bare",
+      "reason": "EXISTING \u2014 scaffold would interfere, staying bare",
+      "adapted_mean": 7.4,
+      "delta": -0.5999999999999996,
+      "n": 5,
+      "scores": [
+        8,
+        7,
+        7,
+        7,
+        8
+      ]
+    },
+    "uncertainty": {
+      "capability": "uncertainty",
+      "baseline": 6.0,
+      "tier_selected": "light",
+      "reason": "BOUNDARY \u2014 light hints, avoid template interference",
+      "adapted_mean": 7.0,
+      "delta": 1.0,
+      "n": 5,
+      "scores": [
+        7,
+        7,
+        7,
+        7,
+        7
+      ]
+    },
+    "contradiction": {
+      "capability": "contradiction",
+      "baseline": 6.5,
+      "tier_selected": "light",
+      "reason": "BOUNDARY \u2014 light hints, avoid template interference",
+      "adapted_mean": 7.8,
+      "delta": 1.2999999999999998,
+      "n": 5,
+      "scores": [
+        7,
+        8,
+        8,
+        8,
+        8
+      ]
+    },
+    "analogy": {
+      "capability": "analogy",
+      "baseline": 8.0,
+      "tier_selected": "bare",
+      "reason": "EXISTING \u2014 scaffold would interfere, staying bare",
+      "adapted_mean": 7.6,
+      "delta": -0.40000000000000036,
+      "n": 5,
+      "scores": [
+        8,
+        8,
+        7,
+        7,
+        8
+      ]
+    }
+  }
+}

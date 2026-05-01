@@ -1,0 +1,82 @@
+[2026-04-12T18:48:11Z] watchdog start (poll 60s, window 1000000)
+[2026-04-12T18:48:11Z] new session detected: 94de3383-fae3-461d-9c1a-09e4b3e639bf (was '')
+[2026-04-12T18:49:52Z] discord_post error: HTTP Error 403: Forbidden
+[2026-04-12T18:54:12Z] new session detected: 9e267873-fca7-4fd3-83de-7b0a84acb31e (was '94de3383-fae3-461d-9c1a-09e4b3e639bf')
+[2026-04-14T22:09:38Z] new session detected: 8c85d1ca-22be-49cf-aad7-27f88cad3d83 (was '9e267873-fca7-4fd3-83de-7b0a84acb31e')
+[2026-04-16T23:33:00Z] new session detected: eb7f04b7-b934-4f6a-a842-4ec2bfc4bf70 (was '8c85d1ca-22be-49cf-aad7-27f88cad3d83')
+[2026-04-19T03:37:38Z] watchdog start (poll 60s, window 1000000)
+[2026-04-19T03:40:30Z] watchdog start (poll 60s, window 1000000)
+[2026-04-24T03:07:12Z] new session detected: 311d9117-00e2-4d96-b868-76531e0a199b (was 'eb7f04b7-b934-4f6a-a842-4ec2bfc4bf70')
+[2026-04-24T12:08:39Z] discord_post error: HTTP Error 403: Forbidden
+[2026-04-24T12:08:39Z] crossed yellow: 40.3%
+[2026-04-24T17:10:53Z] discord_post error: HTTP Error 403: Forbidden
+[2026-04-24T17:10:53Z] crossed orange: 65.0%
+[2026-04-24T19:08:58Z] discord_post error: HTTP Error 403: Forbidden
+[2026-04-24T19:08:58Z] crossed red: 78.1%
+[2026-04-24T19:08:58Z] dropped ROTATE_NOW at 78.1%
+[2026-04-24T20:50:03Z] discord_post error: HTTP Error 403: Forbidden
+[2026-04-24T20:50:03Z] crossed critical: 90.2%
+[2026-04-24T21:25:05Z] new session detected: 9c441f19-50c0-4ffc-ba05-b31138984a31 (was '311d9117-00e2-4d96-b868-76531e0a199b')
+[2026-04-24T21:25:05Z] cleared stale ROTATE_NOW on session change
+[2026-04-25T00:47:14Z] discord_post error: HTTP Error 403: Forbidden
+[2026-04-25T00:47:14Z] crossed yellow: 40.6%
+[2026-04-25T03:42:22Z] discord_post error: HTTP Error 403: Forbidden
+[2026-04-25T03:42:22Z] crossed orange: 65.1%
+[2026-04-25T06:50:32Z] discord_post error: HTTP Error 403: Forbidden
+[2026-04-25T06:50:32Z] crossed red: 78.1%
+[2026-04-25T06:50:32Z] dropped ROTATE_NOW at 78.1%
+[2026-04-25T12:34:49Z] discord_post error: HTTP Error 403: Forbidden
+[2026-04-25T12:34:49Z] crossed critical: 90.1%
+[2026-04-25T15:56:59Z] discord_post error: HTTP Error 403: Forbidden
+[2026-04-25T15:56:59Z] crossed yellow: 40.2%
+[2026-04-25T20:06:10Z] discord_post error: HTTP Error 403: Forbidden
+[2026-04-25T20:06:10Z] crossed orange: 66.7%
+[2026-04-25T21:48:15Z] discord_post error: HTTP Error 403: Forbidden
+[2026-04-25T21:48:15Z] crossed red: 78.1%
+[2026-04-25T21:48:15Z] dropped ROTATE_NOW at 78.1%
+[2026-04-25T23:08:18Z] discord_post error: HTTP Error 403: Forbidden
+[2026-04-25T23:08:18Z] crossed critical: 90.4%
+[2026-04-26T00:59:24Z] new session detected: e338deb6-13e0-4a7d-8efb-dfa3df514039 (was '9c441f19-50c0-4ffc-ba05-b31138984a31')
+[2026-04-26T01:22:51Z] watchdog start (poll 60s, window 1000000)
+[2026-04-26T01:23:40Z] watchdog start (poll 60s, window 1000000)
+[2026-04-26T13:27:16Z] crossed yellow: 50.4%
+[2026-04-26T19:10:32Z] crossed orange: 70.1%
+[2026-04-26T20:50:37Z] crossed red: 81.3%
+[2026-04-26T20:50:37Z] dropped ROTATE_NOW at 81.3%
+[2026-04-26T20:55:37Z] escalated to #operator at 300s flag-age, pct 81.9%
+[2026-04-26T21:04:38Z] crossed critical: 83.1%
+[2026-04-26T21:20:38Z] new session detected: 8d2abd56-89b8-40d8-9ed2-d88f91f32603 (was 'e338deb6-13e0-4a7d-8efb-dfa3df514039')
+[2026-04-26T21:20:38Z] cleared stale ROTATE_NOW on session change
+[2026-04-27T03:14:54Z] crossed yellow: 50.5%
+[2026-04-27T09:25:10Z] crossed orange: 70.1%
+[2026-04-27T12:08:18Z] new session detected: 6fda4f36-f244-4eab-ae55-24ff40b9ce52 (was '8d2abd56-89b8-40d8-9ed2-d88f91f32603')
+[2026-04-27T14:48:26Z] crossed yellow: 50.5%
+[2026-04-27T16:42:32Z] crossed orange: 70.0%
+[2026-04-27T21:17:43Z] crossed red: 80.5%
+[2026-04-27T21:17:43Z] dropped ROTATE_NOW at 80.5%
+[2026-04-27T21:22:43Z] escalated to #operator at 300s flag-age, pct 81.6%
+[2026-04-27T21:36:44Z] crossed critical: 83.2%
+[2026-04-28T06:48:10Z] crossed yellow: 50.0%
+[2026-04-28T13:28:29Z] crossed orange: 70.1%
+[2026-04-28T15:22:35Z] crossed red: 80.0%
+[2026-04-28T15:56:38Z] crossed critical: 83.1%
+[2026-04-28T18:43:46Z] crossed critical: 91.7%
+[2026-04-28T18:43:47Z] crossed red: 91.7%
+[2026-04-28T18:43:47Z] crossed orange: 91.7%
+[2026-04-28T18:43:48Z] crossed yellow: 91.7%
+[2026-04-29T02:00:09Z] crossed yellow: 50.1%
+[2026-04-29T04:12:15Z] crossed orange: 70.2%
+[2026-04-29T15:02:45Z] crossed yellow: 50.0%
+[2026-04-29T17:26:52Z] crossed orange: 70.1%
+[2026-04-29T18:50:02Z] loop error: [Errno 28] No space left on device
+[2026-04-29T18:51:02Z] loop error: [Errno 28] No space left on device
+[2026-04-29T18:52:04Z] loop error: [Errno 28] No space left on device
+[2026-04-29T18:53:04Z] loop error: [Errno 28] No space left on device
+[2026-04-29T21:26:11Z] crossed yellow: 50.0%
+[2026-04-29T23:12:17Z] crossed orange: 70.5%
+[2026-04-30T04:05:32Z] crossed yellow: 50.7%
+[2026-04-30T12:11:52Z] crossed orange: 70.4%
+[2026-04-30T17:48:08Z] crossed yellow: 50.0%
+[2026-04-30T21:44:17Z] crossed orange: 70.0%
+[2026-05-01T08:53:47Z] crossed yellow: 50.1%
+[2026-05-01T16:26:09Z] crossed orange: 70.1%

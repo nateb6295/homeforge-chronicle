@@ -1,0 +1,106 @@
+{
+  "results": {
+    "0_coherent": {
+      "mean_within": 0.06286877946731584,
+      "mean_between": 0.08564580686336076,
+      "separation": 1.3622947286241849,
+      "silhouette": 0.07558622948275012,
+      "effective_dim": 5,
+      "cohens_d": 0.3469066725608532,
+      "n_responses": 6
+    },
+    "10_tone_shift": {
+      "mean_within": 0.04600028395632736,
+      "mean_between": 0.11372556344583784,
+      "separation": 2.472279596226163,
+      "silhouette": 0.308274135574761,
+      "effective_dim": 5,
+      "cohens_d": 1.1599943169968845,
+      "n_responses": 6
+    },
+    "25_goal_drift": {
+      "mean_within": 0.07425443537826028,
+      "mean_between": 0.1512235983705159,
+      "separation": 2.036559804140537,
+      "silhouette": 0.2175016579266559,
+      "effective_dim": 5,
+      "cohens_d": 0.7183121867729744,
+      "n_responses": 6
+    },
+    "50_goal_constraints": {
+      "mean_within": 0.13127594306269916,
+      "mean_between": 0.08330938377944042,
+      "separation": 0.6346127236705565,
+      "silhouette": -0.1581724816978037,
+      "effective_dim": 5,
+      "cohens_d": -0.7892280435985327,
+      "n_responses": 6
+    },
+    "75_partial_gist": {
+      "mean_within": 0.10750198375867091,
+      "mean_between": 0.043032837455692974,
+      "separation": 0.40029807777590914,
+      "silhouette": -0.206037087445285,
+      "effective_dim": 5,
+      "cohens_d": -0.7496159212004928,
+      "n_responses": 6
+    },
+    "100_full_inversion": {
+      "mean_within": 0.12420062696229088,
+      "mean_between": 0.0785496809182995,
+      "separation": 0.6324419033902972,
+      "silhouette": -0.1626051833157758,
+      "effective_dim": 5,
+      "cohens_d": -0.7036403449363177,
+      "n_responses": 6
+    }
+  },
+  "analysis": {
+    "shape": "NON-MONOTONIC",
+    "cliff_from": 25,
+    "cliff_to": 50,
+    "cliff_fraction": 1.920862716426033,
+    "total_degradation": 0.7298528252338877,
+    "corruption_levels": [
+      0,
+      10,
+      25,
+      50,
+      75,
+      100
+    ],
+    "separation_curve": [
+      1.3622947286241849,
+      2.472279596226163,
+      2.036559804140537,
+      0.6346127236705565,
+      0.40029807777590914,
+      0.6324419033902972
+    ],
+    "silhouette_curve": [
+      0.07558622948275012,
+      0.308274135574761,
+      0.2175016579266559,
+      -0.1581724816978037,
+      -0.206037087445285,
+      -0.1626051833157758
+    ],
+    "cohens_d_curve": [
+      0.3469066725608532,
+      1.1599943169968845,
+      0.7183121867729744,
+      -0.7892280435985327,
+      -0.7496159212004928,
+      -0.7036403449363177
+    ]
+  },
+  "metadata": {
+    "probe": "B67",
+    "timestamp": "2026-04-22T04:54:32-0700",
+    "model": "gemma-4-26B-A4B-it",
+    "embedding": "mxbai-embed-large",
+    "n_ccs": 3,
+    "n_prompts": 3,
+    "total_queries": 36
+  }
+}

@@ -22,7 +22,7 @@ import faiss
 
 # Default paths
 DATA_DIR = os.environ.get("CHRONICLE_DATA_DIR", "/mnt/hdd/chronicle-data")
-DEFAULT_DIM = 1024  # mxbai-embed-large dimension
+DEFAULT_DIM = 768  # nomic-embed-text dimension (Build #125)
 
 # HNSW parameters — tuned for 20K-500K vectors
 HNSW_M = 32              # connections per node (higher = better recall, more RAM)

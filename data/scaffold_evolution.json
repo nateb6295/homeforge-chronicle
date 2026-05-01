@@ -1,0 +1,109 @@
+{
+  "timestamp": "2026-04-21T10:57:37",
+  "build": 52,
+  "method": "evolutionary_scaffold_optimization",
+  "mutation_engine": "llama-3.1-70b-instruct-turbo",
+  "judge": "deepseek-v3.2",
+  "target_model": "gemma-4-26b",
+  "generations": 3,
+  "results": {
+    "uncertainty": {
+      "capability": "uncertainty",
+      "parent_scaffold": "When uncertain, be specific about what exactly you're unsure of and why. Avoid generic hedging.",
+      "parent_score": 7.0,
+      "best_scaffold": "---\nWhen uncertain, pinpoint the specific information or assumption that's unclear and explain why it's ambiguous. Avoid generic hedging like 'I'm not sure' or 'it's possible'; instead, provide concrete reasons for your uncertainty.",
+      "best_score": 7.333333333333333,
+      "improvement": 0.33333333333333304,
+      "history": [
+        {
+          "gen": 0,
+          "scaffold": "When uncertain, be specific about what exactly you're unsure of and why. Avoid generic hedging.",
+          "score": 7.0,
+          "type": "parent"
+        },
+        {
+          "gen": 1,
+          "scaffold": "---\nWhen uncertain, pinpoint the specific information or assumption that's unclear and explain why it's ambiguous. Avoid generic hedging like 'I'm not sure' or 'it's possible'; instead, provide concrete reasons for your uncertainty.",
+          "score": 7.333333333333333,
+          "scores": [
+            7,
+            8,
+            7
+          ],
+          "type": "improvement"
+        },
+        {
+          "gen": 2,
+          "scaffold": "When uncertain, pinpoint the specific information or assumption that's unclear and explain why it's ambiguous. To clarify, identify the key concept or fact that's causing the uncertainty and describe the specific conditions or circumstances that make it ambiguous. Avoid generic hedging like 'I'm not sure' or 'it's possible'; instead, provide concrete reasons for your uncertainty, such as a lack of data, conflicting information, or an unclear relationship between concepts.",
+          "score": 7.0,
+          "scores": [
+            7,
+            7,
+            7
+          ],
+          "type": "rejected"
+        },
+        {
+          "gen": 3,
+          "scaffold": "---\nWhen uncertain, pinpoint the specific information or assumption that's unclear and explain why it's ambiguous. Identify the source of the ambiguity, whether it's a lack of data, conflicting information, or an unclear definition. Avoid generic hedging like 'I'm not sure' or 'it's possible'; instead, provide concrete reasons for your uncertainty and suggest what additional information or clarification would resolve the ambiguity.\n---",
+          "score": 7.333333333333333,
+          "scores": [
+            7,
+            7,
+            8
+          ],
+          "type": "rejected"
+        }
+      ]
+    },
+    "contradiction": {
+      "capability": "contradiction",
+      "parent_scaffold": "If you notice any tension or contradiction in the question or your reasoning, name it directly.",
+      "parent_score": 7.8,
+      "best_scaffold": "If you notice any tension or contradiction in the question or your reasoning, name it directly.",
+      "best_score": 7.8,
+      "improvement": 0.0,
+      "history": [
+        {
+          "gen": 0,
+          "scaffold": "If you notice any tension or contradiction in the question or your reasoning, name it directly.",
+          "score": 7.8,
+          "type": "parent"
+        },
+        {
+          "gen": 1,
+          "scaffold": "MUTATED SCAFFOLD:\n---\nIf you notice any tension or contradiction in the question or your reasoning, pause and name it directly, specifying the exact words or assumptions that are in conflict.\n---",
+          "score": 7.333333333333333,
+          "scores": [
+            7,
+            8,
+            7
+          ],
+          "type": "rejected"
+        },
+        {
+          "gen": 2,
+          "scaffold": "If you notice any tension or contradiction in the question or your reasoning, explicitly state the conflicting ideas and clarify how they relate to each other.",
+          "score": 7.333333333333333,
+          "scores": [
+            7,
+            7,
+            8
+          ],
+          "type": "rejected"
+        },
+        {
+          "gen": 3,
+          "scaffold": "MUTATED SCAFFOLD:\n---\nAs you analyze the question, identify any tension or contradiction, no matter how minor, and explicitly state it. If your reasoning leads to conflicting conclusions, acknowledge the inconsistency and explain why it arose.\n---",
+          "score": 7.666666666666667,
+          "scores": [
+            7,
+            8,
+            8
+          ],
+          "type": "rejected"
+        }
+      ]
+    }
+  }
+}

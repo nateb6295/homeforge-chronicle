@@ -1,0 +1,455 @@
+{
+  "n_pairs": 49,
+  "median_interval_sec": 2441,
+  "short_mean_drift": 0.012,
+  "long_mean_drift": 0.0,
+  "drift_diff": -0.012,
+  "short_mean_novelty": 0.1677,
+  "long_mean_novelty": 0.2218,
+  "novelty_diff": 0.0542,
+  "rho_drift": -0.157,
+  "rho_novelty": 0.45,
+  "pairs": [
+    {
+      "from_v": 584,
+      "to_v": 585,
+      "interval_sec": 1912,
+      "interval_min": 31.9,
+      "identity_sim": 1.0,
+      "identity_drift": 0.0,
+      "episodic_novelty": 0.1437
+    },
+    {
+      "from_v": 585,
+      "to_v": 586,
+      "interval_sec": 1971,
+      "interval_min": 32.9,
+      "identity_sim": 1.0,
+      "identity_drift": 0.0,
+      "episodic_novelty": 0.1437
+    },
+    {
+      "from_v": 586,
+      "to_v": 587,
+      "interval_sec": 2763,
+      "interval_min": 46.0,
+      "identity_sim": 1.0,
+      "identity_drift": 0.0,
+      "episodic_novelty": 0.1403
+    },
+    {
+      "from_v": 587,
+      "to_v": 588,
+      "interval_sec": 5525,
+      "interval_min": 92.1,
+      "identity_sim": 1.0,
+      "identity_drift": 0.0,
+      "episodic_novelty": 0.1925
+    },
+    {
+      "from_v": 588,
+      "to_v": 589,
+      "interval_sec": 1965,
+      "interval_min": 32.8,
+      "identity_sim": 1.0,
+      "identity_drift": 0.0,
+      "episodic_novelty": 0.1208
+    },
+    {
+      "from_v": 589,
+      "to_v": 590,
+      "interval_sec": 2844,
+      "interval_min": 47.4,
+      "identity_sim": 1.0,
+      "identity_drift": 0.0,
+      "episodic_novelty": 0.192
+    },
+    {
+      "from_v": 590,
+      "to_v": 591,
+      "interval_sec": 3951,
+      "interval_min": 65.8,
+      "identity_sim": 1.0,
+      "identity_drift": 0.0,
+      "episodic_novelty": 0.2741
+    },
+    {
+      "from_v": 591,
+      "to_v": 592,
+      "interval_sec": 2472,
+      "interval_min": 41.2,
+      "identity_sim": 1.0,
+      "identity_drift": 0.0,
+      "episodic_novelty": 0.0739
+    },
+    {
+      "from_v": 592,
+      "to_v": 593,
+      "interval_sec": 3309,
+      "interval_min": 55.1,
+      "identity_sim": 1.0,
+      "identity_drift": 0.0,
+      "episodic_novelty": 0.3705
+    },
+    {
+      "from_v": 593,
+      "to_v": 594,
+      "interval_sec": 3682,
+      "interval_min": 61.4,
+      "identity_sim": 1.0,
+      "identity_drift": 0.0,
+      "episodic_novelty": 0.0642
+    },
+    {
+      "from_v": 594,
+      "to_v": 595,
+      "interval_sec": 10843,
+      "interval_min": 180.7,
+      "identity_sim": 1.0,
+      "identity_drift": 0.0,
+      "episodic_novelty": 0.0102
+    },
+    {
+      "from_v": 595,
+      "to_v": 596,
+      "interval_sec": 12021,
+      "interval_min": 200.3,
+      "identity_sim": 1.0,
+      "identity_drift": 0.0,
+      "episodic_novelty": 0.2489
+    },
+    {
+      "from_v": 596,
+      "to_v": 597,
+      "interval_sec": 2045,
+      "interval_min": 34.1,
+      "identity_sim": 1.0,
+      "identity_drift": 0.0,
+      "episodic_novelty": 0.408
+    },
+    {
+      "from_v": 597,
+      "to_v": 598,
+      "interval_sec": 2318,
+      "interval_min": 38.6,
+      "identity_sim": 1.0,
+      "identity_drift": 0.0,
+      "episodic_novelty": 0.1524
+    },
+    {
+      "from_v": 598,
+      "to_v": 599,
+      "interval_sec": 2311,
+      "interval_min": 38.5,
+      "identity_sim": 1.0,
+      "identity_drift": 0.0,
+      "episodic_novelty": 0.0915
+    },
+    {
+      "from_v": 599,
+      "to_v": 600,
+      "interval_sec": 2139,
+      "interval_min": 35.6,
+      "identity_sim": 1.0,
+      "identity_drift": 0.0,
+      "episodic_novelty": 0.2655
+    },
+    {
+      "from_v": 600,
+      "to_v": 601,
+      "interval_sec": 2484,
+      "interval_min": 41.4,
+      "identity_sim": 1.0,
+      "identity_drift": 0.0,
+      "episodic_novelty": 0.1286
+    },
+    {
+      "from_v": 601,
+      "to_v": 602,
+      "interval_sec": 3279,
+      "interval_min": 54.6,
+      "identity_sim": 1.0,
+      "identity_drift": 0.0,
+      "episodic_novelty": 0.262
+    },
+    {
+      "from_v": 602,
+      "to_v": 603,
+      "interval_sec": 2603,
+      "interval_min": 43.4,
+      "identity_sim": 1.0,
+      "identity_drift": 0.0,
+      "episodic_novelty": 0.2706
+    },
+    {
+      "from_v": 603,
+      "to_v": 604,
+      "interval_sec": 1843,
+      "interval_min": 30.7,
+      "identity_sim": 1.0,
+      "identity_drift": 0.0,
+      "episodic_novelty": 0.07
+    },
+    {
+      "from_v": 604,
+      "to_v": 605,
+      "interval_sec": 3834,
+      "interval_min": 63.9,
+      "identity_sim": 1.0,
+      "identity_drift": 0.0,
+      "episodic_novelty": 0.3178
+    },
+    {
+      "from_v": 605,
+      "to_v": 606,
+      "interval_sec": 2673,
+      "interval_min": 44.5,
+      "identity_sim": 1.0,
+      "identity_drift": 0.0,
+      "episodic_novelty": 0.28
+    },
+    {
+      "from_v": 606,
+      "to_v": 607,
+      "interval_sec": 1403,
+      "interval_min": 23.4,
+      "identity_sim": 1.0,
+      "identity_drift": 0.0,
+      "episodic_novelty": 0.2028
+    },
+    {
+      "from_v": 607,
+      "to_v": 608,
+      "interval_sec": 5,
+      "interval_min": 0.1,
+      "identity_sim": 1.0,
+      "identity_drift": 0.0,
+      "episodic_novelty": 0.0
+    },
+    {
+      "from_v": 608,
+      "to_v": 609,
+      "interval_sec": 4,
+      "interval_min": 0.1,
+      "identity_sim": 1.0,
+      "identity_drift": 0.0,
+      "episodic_novelty": 0.0
+    },
+    {
+      "from_v": 609,
+      "to_v": 610,
+      "interval_sec": 5,
+      "interval_min": 0.1,
+      "identity_sim": 1.0,
+      "identity_drift": 0.0,
+      "episodic_novelty": 0.0
+    },
+    {
+      "from_v": 610,
+      "to_v": 611,
+      "interval_sec": 2155,
+      "interval_min": 35.9,
+      "identity_sim": 1.0,
+      "identity_drift": 0.0,
+      "episodic_novelty": 0.223
+    },
+    {
+      "from_v": 611,
+      "to_v": 612,
+      "interval_sec": 2205,
+      "interval_min": 36.8,
+      "identity_sim": 1.0,
+      "identity_drift": 0.0,
+      "episodic_novelty": 0.4199
+    },
+    {
+      "from_v": 612,
+      "to_v": 613,
+      "interval_sec": 5368,
+      "interval_min": 89.5,
+      "identity_sim": 1.0,
+      "identity_drift": 0.0,
+      "episodic_novelty": 0.1628
+    },
+    {
+      "from_v": 613,
+      "to_v": 614,
+      "interval_sec": 3087,
+      "interval_min": 51.5,
+      "identity_sim": 1.0,
+      "identity_drift": 0.0,
+      "episodic_novelty": 0.2853
+    },
+    {
+      "from_v": 614,
+      "to_v": 615,
+      "interval_sec": 3017,
+      "interval_min": 50.3,
+      "identity_sim": 1.0,
+      "identity_drift": 0.0,
+      "episodic_novelty": 0.2155
+    },
+    {
+      "from_v": 615,
+      "to_v": 616,
+      "interval_sec": 2193,
+      "interval_min": 36.5,
+      "identity_sim": 1.0,
+      "identity_drift": 0.0,
+      "episodic_novelty": 0.2518
+    },
+    {
+      "from_v": 616,
+      "to_v": 617,
+      "interval_sec": 3161,
+      "interval_min": 52.7,
+      "identity_sim": 1.0,
+      "identity_drift": 0.0,
+      "episodic_novelty": 0.2108
+    },
+    {
+      "from_v": 617,
+      "to_v": 618,
+      "interval_sec": 2580,
+      "interval_min": 43.0,
+      "identity_sim": 1.0,
+      "identity_drift": 0.0,
+      "episodic_novelty": 0.2067
+    },
+    {
+      "from_v": 618,
+      "to_v": 619,
+      "interval_sec": 2063,
+      "interval_min": 34.4,
+      "identity_sim": 1.0,
+      "identity_drift": 0.0,
+      "episodic_novelty": 0.2064
+    },
+    {
+      "from_v": 619,
+      "to_v": 620,
+      "interval_sec": 5990,
+      "interval_min": 99.8,
+      "identity_sim": 1.0,
+      "identity_drift": 0.0,
+      "episodic_novelty": 0.304
+    },
+    {
+      "from_v": 620,
+      "to_v": 621,
+      "interval_sec": 2171,
+      "interval_min": 36.2,
+      "identity_sim": 1.0,
+      "identity_drift": 0.0,
+      "episodic_novelty": 0.3209
+    },
+    {
+      "from_v": 621,
+      "to_v": 622,
+      "interval_sec": 336,
+      "interval_min": 5.6,
+      "identity_sim": 1.0,
+      "identity_drift": 0.0,
+      "episodic_novelty": 0.0631
+    },
+    {
+      "from_v": 622,
+      "to_v": 623,
+      "interval_sec": 4140,
+      "interval_min": 69.0,
+      "identity_sim": 1.0,
+      "identity_drift": 0.0,
+      "episodic_novelty": 0.3105
+    },
+    {
+      "from_v": 623,
+      "to_v": 624,
+      "interval_sec": 15630,
+      "interval_min": 260.5,
+      "identity_sim": 1.0,
+      "identity_drift": 0.0,
+      "episodic_novelty": 0.2732
+    },
+    {
+      "from_v": 624,
+      "to_v": 625,
+      "interval_sec": 14563,
+      "interval_min": 242.7,
+      "identity_sim": 1.0,
+      "identity_drift": 0.0,
+      "episodic_novelty": 0.2059
+    },
+    {
+      "from_v": 625,
+      "to_v": 626,
+      "interval_sec": 2361,
+      "interval_min": 39.4,
+      "identity_sim": 1.0,
+      "identity_drift": 0.0,
+      "episodic_novelty": 0.2809
+    },
+    {
+      "from_v": 626,
+      "to_v": 627,
+      "interval_sec": 846,
+      "interval_min": 14.1,
+      "identity_sim": 1.0,
+      "identity_drift": 0.0,
+      "episodic_novelty": 0.0648
+    },
+    {
+      "from_v": 627,
+      "to_v": 628,
+      "interval_sec": 154,
+      "interval_min": 2.6,
+      "identity_sim": 1.0,
+      "identity_drift": 0.0,
+      "episodic_novelty": 0.1746
+    },
+    {
+      "from_v": 628,
+      "to_v": 629,
+      "interval_sec": 1898,
+      "interval_min": 31.6,
+      "identity_sim": 0.6988,
+      "identity_drift": 0.3012,
+      "episodic_novelty": 0.1883
+    },
+    {
+      "from_v": 629,
+      "to_v": 630,
+      "interval_sec": 2441,
+      "interval_min": 40.7,
+      "identity_sim": 1.0,
+      "identity_drift": 0.0,
+      "episodic_novelty": 0.1123
+    },
+    {
+      "from_v": 630,
+      "to_v": 631,
+      "interval_sec": 498,
+      "interval_min": 8.3,
+      "identity_sim": 1.0,
+      "identity_drift": 0.0,
+      "episodic_novelty": 0.0816
+    },
+    {
+      "from_v": 631,
+      "to_v": 632,
+      "interval_sec": 1578,
+      "interval_min": 26.3,
+      "identity_sim": 1.0,
+      "identity_drift": 0.0,
+      "episodic_novelty": 0.2054
+    },
+    {
+      "from_v": 632,
+      "to_v": 633,
+      "interval_sec": 3479,
+      "interval_min": 58.0,
+      "identity_sim": 1.0,
+      "identity_drift": 0.0,
+      "episodic_novelty": 0.3235
+    }
+  ]
+}

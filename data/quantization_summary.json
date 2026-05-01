@@ -1,0 +1,64 @@
+{
+  "ccs_versions_analyzed": 50,
+  "version_range": "v584-v633",
+  "consecutive_pairs": 49,
+  "fields_measured": {
+    "semantic_gist": {
+      "fisher_kT": 2.75,
+      "quant_ratio": 49.1,
+      "mean_drift": 0.007,
+      "regime": "discrete"
+    },
+    "goal_orientation": {
+      "fisher_kT": 1.14,
+      "quant_ratio": 49.0,
+      "mean_drift": 0.008,
+      "regime": "discrete"
+    },
+    "focal_entities": {
+      "fisher_kT": 0.51,
+      "quant_ratio": "inf",
+      "mean_drift": 0.0,
+      "regime": "guard-frozen"
+    },
+    "episodic_trace": {
+      "fisher_kT": 0.39,
+      "quant_ratio": 2.2,
+      "mean_drift": 0.194,
+      "regime": "continuous"
+    },
+    "constraints": {
+      "fisher_kT": 0.0,
+      "quant_ratio": null,
+      "mean_drift": null,
+      "regime": "sloppy"
+    },
+    "predictive_cue": {
+      "fisher_kT": 0.0,
+      "quant_ratio": null,
+      "mean_drift": null,
+      "regime": "sloppy"
+    },
+    "uncertainty_signals": {
+      "fisher_kT": 0.0,
+      "quant_ratio": null,
+      "mean_drift": null,
+      "regime": "sloppy"
+    }
+  },
+  "compression_spacing": {
+    "n_pairs": 49,
+    "median_interval_min": 40.7,
+    "short_mean_drift": 0.012,
+    "long_mean_drift": 0.0,
+    "rho_drift": -0.157,
+    "rho_novelty": 0.45,
+    "optimal_interval_min": "30-40"
+  },
+  "fisher_eigenvalue_ratio": {
+    "profiles_logged": 2,
+    "mean_ratio": 0.5437,
+    "prediction_band": "0.56 \u00b1 0.11",
+    "status": "within_band"
+  }
+}

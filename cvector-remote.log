@@ -1,0 +1,57 @@
+[2026-04-10 18:14:03] === Launching cvector generation pod ===
+[2026-04-10 18:14:03] Vector: critical_analysis, GPU: NVIDIA A100-SXM4-80GB
+[2026-04-10 18:14:03] Creating RunPod pod...
+[2026-04-10 18:14:03] ERROR: Pod creation failed: Usage:
+  runpodctl pod create [flags]
+
+Flags:
+      --cloud-type string          cloud type (SECURE or COMMUNITY) (default "SECURE")
+      --compute-type string        compute type (GPU or CPU) (default "GPU")
+      --container-disk-in-gb int   container disk size in gb (default 20)
+      --data-center-ids string     comma-separated list of data center ids
+      --env string                 environment variables as json object
+      --global-networking          enable global networking (secure cloud only)
+      --gpu-count int              number of gpus (default 1)
+      --gpu-id string              gpu id (from 'runpodctl gpu list')
+  -h, --help                       help for create
+      --image string               docker image name (required if no template)
+      --name string                pod name
+      --network-volume-id string   network volume id to attach
+      --ports string               comma-separated list of ports (e.g., '8888/http,22/tcp')
+      --public-ip                  require public ip (community cloud only)
+      --ssh                        enable ssh on the pod (default true)
+      --template-id string         template id (use 'runpodctl template search' to find templates)
+      --volume-in-gb int           volume size in gb
+      --volume-mount-path string   volume mount path (default "/workspace")
+
+Global Flags:
+  -o, --output string   output format (json, yaml) (default "json")
+
+{"error":"unknown flag: --gpuType"}
+[2026-04-10 18:16:14] === Launching cvector generation pod ===
+[2026-04-10 18:16:14] Vector: critical_analysis, GPU: NVIDIA A100-SXM4-80GB
+[2026-04-10 18:16:14] Creating RunPod pod...
+[2026-04-10 18:16:15] Create output: {
+  "containerDiskInGb": 20,
+  "costPerHr": 1.49,
+  "desiredStatus": "RUNNING",
+  "env": [
+    "PUBLIC_KEY=ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIM9vff6/MkLH1onzYHVW0N+j8AEVOdkXEtW+Q774QJ8K bradf@ADMINIS-2TNER41\n\nssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDn/jsR23BWGSeERB+ATjumLv/cpa2gqBIYMcJ/yjXxYJ2Pd7dNiNd2f1PDR/G3infoERC+XVd1AuS+KvdtwTX/c4n3cCaCsTcZUIMKah5DKVo124g5Yg4zyimQ6T/6F4POs5zD/lNA53FRf2Wb7oJrTSafwq/gdxu5E1RrlQS01gLmA7SeB1qcBx/dfgSUPnqc/8gIM8CyJbWD+BMriiTaQUkCBg3D8sbWd5gV3vz77znsPCXtVmBmn3/qJjP+CBgRqWkVA+ciZdg770Ok2E97OJxTZgFbdZib+zDSNiGMQRPlieHIl2nVqtE2AoJSLBns8M6zK6UqnrcMQv+OycOb RunPod-Key-Go"
+  ],
+  "gpuCount": 1,
+  "id": "s6aaq774p3kj1b",
+  "imageName": "runpod/pytorch:2.4.0-py3.11-cuda12.4.1-devel-ubuntu22.04",
+  "lastStatusChange": "Rented by User: Sat Apr 11 2026 01:16:15 GMT+0000 (Coordinated Universal Time)",
+  "machine": {
+    "gpuDisplayName": "A100 SXM",
+    "location": "US"
+  },
+  "memoryInGb": 250,
+  "name": "chronicle-cvector-critical_analysis",
+  "ports": "8888/http,22/tcp",
+  "vcpuCount": 16,
+  "volumeInGb": 80,
+  "volumeMountPath": "/workspace"
+}
+[2026-04-10 18:16:24] === Launching cvector generation pod ===
+[2026-04-10 18:16:24] Vector: critical_analysis, GPU: NVIDIA A100-SXM4-80GB

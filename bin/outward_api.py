@@ -202,11 +202,179 @@ def stats_handler(params):
     }
 
 
+def rationales_handler(params):
+    """Prediction rationale ledger — WHY we predicted, not just what.
+
+    Darby's proposal: a public, timestamped, signed ledger of reasoning traces.
+    Each entry includes a SHA-256 hash of the reasoning for verifiability.
+    """
+    import hashlib
+    limit = min(int(params.get("limit", ["20"])[0]), 50)
+    settled_only = params.get("settled", ["false"])[0].lower() == "true"
+
+    db = get_db()
+    query = """
+        SELECT id, symbol, direction, entry_price, confidence, reasoning,
+               timeframe_hours, created_at, settles_at, settled, won
+        FROM ftso_predictions
+        WHERE reasoning IS NOT NULL AND reasoning != ''
+    """
+    if settled_only:
+        query += " AND settled = 1"
+    query += " ORDER BY created_at DESC LIMIT ?"
+    rows = db.execute(query, (limit,)).fetchall()
+    db.close()
+
+    results = []
+    for r in rows:
+        reasoning = r["reasoning"] or ""
+        reasoning_hash = hashlib.sha256(reasoning.encode("utf-8")).hexdigest()[:16]
+        entry = {
+            "id": r["id"],
+            "symbol": r["symbol"],
+            "direction": r["direction"],
+            "confidence": round(r["confidence"], 4),
+            "reasoning": reasoning,
+            "reasoning_hash": reasoning_hash,
+            "timeframe_hours": r["timeframe_hours"],
+            "created_at": r["created_at"],
+            "settles_at": r["settles_at"],
+        }
+        if r["settled"]:
+            entry["settled"] = True
+            entry["won"] = bool(r["won"])
+            entry["calibration"] = "correct" if r["won"] else "incorrect"
+        else:
+            entry["settled"] = False
+        results.append(entry)
+    return results
+
+
+def thread_handler(params):
+    """Live thread status — active thread with recent advancements and challenges."""
+    db = get_db()
+
+    # Get active thread
+    thread = db.execute(
+        "SELECT id, title, question, context, status, created_at, updated_at "
+        "FROM cognitive_threads WHERE status='active' ORDER BY updated_at DESC LIMIT 1"
+    ).fetchone()
+    if not thread:
+        db.close()
+        return {"active": False, "message": "No active thread"}
+
+    # Get history (last 10 events)
+    history = db.execute(
+        "SELECT event_type, substr(content, 1, 500) as content, source, created_at "
+        "FROM thread_history WHERE thread_id=? ORDER BY created_at DESC LIMIT 10",
+        (thread["id"],)
+    ).fetchall()
+    db.close()
+
+    advances = sum(1 for h in history if h["event_type"] == "advanced")
+    challenges = sum(1 for h in history if h["event_type"] == "challenge")
+
+    # Count total advances and challenges
+    db2 = get_db()
+    totals = db2.execute(
+        "SELECT event_type, count(*) as cnt FROM thread_history "
+        "WHERE thread_id=? GROUP BY event_type", (thread["id"],)
+    ).fetchall()
+    db2.close()
+    total_map = {r["event_type"]: r["cnt"] for r in totals}
+
+    return {
+        "active": True,
+        "id": thread["id"],
+        "title": thread["title"],
+        "question": thread["question"],
+        "context": thread["context"][:500] if thread["context"] else None,
+        "total_advancements": total_map.get("advanced", 0),
+        "total_challenges": total_map.get("challenge", 0),
+        "created_at": thread["created_at"],
+        "updated_at": thread["updated_at"],
+        "recent_events": [
+            {
+                "type": h["event_type"],
+                "content": h["content"],
+                "source": h["source"],
+                "timestamp": h["created_at"],
+            }
+            for h in history
+        ],
+    }
+
+
+def captures_handler(params):
+    """Nate's recent captures + Darby's deep dive analysis."""
+    hours = int(params.get("hours", ["48"])[0])
+    limit = min(int(params.get("limit", ["20"])[0]), 50)
+    since = int(time.time()) - (hours * 3600)
+
+    db = get_db()
+
+    # Get captures
+    captures = db.execute("""
+        SELECT id, content, created_at
+        FROM activity_feed
+        WHERE source='operator:capture' AND created_at > ?
+        ORDER BY created_at DESC LIMIT ?
+    """, (since, limit)).fetchall()
+
+    # Get corresponding briefs and deep dives
+    results = []
+    for cap in captures:
+        cap_id = cap["id"]
+        cap_text = cap["content"]
+
+        # Find the brief generated from this capture
+        brief = db.execute("""
+            SELECT title, content, metadata FROM activity_feed
+            WHERE source='intern' AND activity_type='brief'
+            AND json_extract(metadata, '$.input_id') = ?
+            LIMIT 1
+        """, (cap_id,)).fetchone()
+
+        # Find any deep dive on this brief
+        deep_dive = None
+        if brief:
+            brief_meta = {}
+            try:
+                brief_meta = json.loads(brief["metadata"] or "{}")
+            except Exception:
+                pass
+            dd = db.execute("""
+                SELECT content FROM activity_feed
+                WHERE source='intern' AND activity_type='deep_dive'
+                AND json_extract(metadata, '$.original_brief') = ?
+                LIMIT 1
+            """, (cap_id,)).fetchone()
+            if dd:
+                deep_dive = dd["content"]
+
+        results.append({
+            "capture_id": cap_id,
+            "raw_capture": cap_text[:500],
+            "captured_at": cap["created_at"],
+            "brief": {
+                "title": brief["title"] if brief else None,
+                "content": brief["content"][:500] if brief else None,
+            } if brief else None,
+            "deep_dive": deep_dive[:800] if deep_dive else None,
+        })
+
+    db.close()
+    return results
+
+
 ROUTES = {
     "/api/briefs": briefs_handler,
     "/api/connections": connections_handler,
     "/api/challenges": challenges_handler,
     "/api/syntheses": syntheses_handler,
+    "/api/rationales": rationales_handler,
+    "/api/thread": thread_handler,
+    "/api/captures": captures_handler,
     "/api/health": health_handler,
     "/api/stats": stats_handler,
 }
@@ -235,6 +403,15 @@ code { background: #1a1a1a; padding: 2px 6px; border-radius: 3px; }
 
 <div class="endpoint"><a href="/api/syntheses">/api/syntheses</a> <code>?hours=24&limit=20</code>
 <div class="desc">Cross-domain synthesis connections</div></div>
+
+<div class="endpoint"><a href="/api/rationales">/api/rationales</a> <code>?limit=20&settled=false</code>
+<div class="desc">Prediction rationale ledger — WHY we predicted, with reasoning hashes</div></div>
+
+<div class="endpoint"><a href="/api/thread">/api/thread</a>
+<div class="desc">Live thread status — active thread with recent advancements and challenges</div></div>
+
+<div class="endpoint"><a href="/api/captures">/api/captures</a> <code>?hours=48&limit=20</code>
+<div class="desc">Nate's recent captures with intern briefs and Darby deep dives</div></div>
 
 <div class="endpoint"><a href="/api/health">/api/health</a>
 <div class="desc">System health, activity counts, fabrication rate</div></div>

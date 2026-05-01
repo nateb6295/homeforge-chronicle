@@ -1,0 +1,151 @@
+#!/usr/bin/env bash
+# chronicle-cycles — Automatic cycle rebalancing for Chronicle canisters.
+# Checks all canister balances, finds the richest donor, and tops up any
+# that fall below threshold. Logs all balances for audit trail.
+#
+# Runs as a systemd timer (twice daily). Uses chronicle-auto identity.
+
+set -euo pipefail
+
+export DFX_WARNING=-mainnet_plaintext_identity
+DFX="$HOME/.local/share/dfx/bin/dfx"
+NETWORK="ic"
+DB="/mnt/hdd/chronicle-data/processed.db"
+
+# Canister IDs
+declare -A CANISTERS=(
+    [backend]="fqqku-bqaaa-aaaai-q4wha-cai"
+    [keeper]="mjoko-laaaa-aaaai-q7tlq-cai"
+    [frontend]="nbt4b-giaaa-aaaai-q33lq-cai"
+    [lab]="4vr3t-eqaaa-aaaai-q6kea-cai"
+)
+
+# Thresholds (in cycles)
+# Funding hierarchy: keeper > backend. Frontend is donor. Lab is exempt.
+MIN_BALANCE=3000000000000       # 3T — trigger top-up below this
+TOP_UP_TARGET=6000000000000     # 6T — top up TO this level
+DONOR_RESERVE=3000000000000     # 3T — never drain any donor below this
+
+# Canisters exempt from auto-topup. Sentinel also exempts these
+# (NO_AUTO_TOPUP in chronicle_sentinel.py). Still logged for audit.
+EXEMPT_FROM_TOPUP=("lab")
+is_exempt() {
+    local name="$1"
+    for e in "${EXEMPT_FROM_TOPUP[@]}"; do
+        [ "$name" = "$e" ] && return 0
+    done
+    return 1
+}
+
+LOG_PREFIX="[chronicle-cycles]"
+
+log() { echo "$LOG_PREFIX $(date '+%Y-%m-%d %H:%M:%S') $*"; }
+
+get_balance() {
+    local canister="$1"
+    $DFX canister --network "$NETWORK" status "$canister" 2>&1 \
+        | grep "^Balance:" \
+        | head -1 \
+        | sed 's/[^0-9]//g'
+}
+
+get_idle_burn() {
+    local canister="$1"
+    $DFX canister --network "$NETWORK" status "$canister" 2>&1 \
+        | grep "Idle cycles burned" \
+        | head -1 \
+        | sed 's/[^0-9]//g'
+}
+
+log_balance_to_db() {
+    local name="$1" balance="$2" idle_burn="$3"
+    sqlite3 "$DB" "INSERT INTO canister_cycle_log (canister_name, balance, idle_burn_per_day, logged_at) VALUES ('$name', $balance, ${idle_burn:-0}, strftime('%s','now'))" 2>/dev/null || true
+}
+
+# Ensure audit table exists
+sqlite3 "$DB" "CREATE TABLE IF NOT EXISTS canister_cycle_log (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    canister_name TEXT NOT NULL,
+    balance INTEGER NOT NULL,
+    idle_burn_per_day INTEGER DEFAULT 0,
+    logged_at INTEGER NOT NULL
+)" 2>/dev/null
+
+log "Starting cycle rebalance check"
+
+# Collect all balances
+declare -A BALANCES
+declare -A BURNS
+richest_name=""
+richest_balance=0
+
+for name in "${!CANISTERS[@]}"; do
+    cid="${CANISTERS[$name]}"
+    bal=$(get_balance "$cid")
+    burn=$(get_idle_burn "$cid")
+
+    if [ -z "$bal" ]; then
+        log "ERROR: Could not read balance for $name ($cid)"
+        continue
+    fi
+
+    BALANCES[$name]="$bal"
+    BURNS[$name]="${burn:-0}"
+    bal_t=$((bal / 1000000000000))
+    burn_b=$((${burn:-0} / 1000000000))
+    log "$name: ${bal_t}T cycles (burn: ${burn_b}B/day)"
+
+    # Log to DB for audit trail
+    log_balance_to_db "$name" "$bal" "${burn:-0}"
+
+    # Track richest
+    if [ "$bal" -gt "$richest_balance" ]; then
+        richest_balance="$bal"
+        richest_name="$name"
+    fi
+done
+
+log "Richest canister: $richest_name (${richest_balance})"
+
+# Top up any canister below MIN_BALANCE
+for name in "${!BALANCES[@]}"; do
+    bal="${BALANCES[$name]}"
+
+    if is_exempt "$name"; then
+        log "$name: EXEMPT from auto-topup (skipping)"
+        continue
+    fi
+
+    if [ "$bal" -lt "$MIN_BALANCE" ] && [ "$name" != "$richest_name" ]; then
+        # Calculate how much to send (bring target up to TOP_UP_TARGET)
+        needed=$((TOP_UP_TARGET - bal))
+        available=$((richest_balance - DONOR_RESERVE))
+
+        if [ "$available" -le 0 ]; then
+            log "WARNING: Richest canister ($richest_name) has no surplus above reserve"
+            continue
+        fi
+
+        # Send the lesser of what's needed and what's available
+        send=$needed
+        if [ "$send" -gt "$available" ]; then
+            send=$available
+        fi
+
+        send_t=$((send / 1000000000000))
+        log "Topping up $name with ${send_t}T cycles from $richest_name..."
+
+        # Use deposit-cycles (from wallet) since inter-canister transfer
+        # requires the backend's transfer_cycles method which may not exist on all canisters
+        result=$($DFX canister --network "$NETWORK" deposit-cycles "$send" "${CANISTERS[$name]}" 2>&1 || true)
+
+        if echo "$result" | grep -q "Deposited"; then
+            log "OK: $name topped up. $result"
+            richest_balance=$((richest_balance - send))
+        else
+            log "ERROR: Top-up failed for $name. $result"
+        fi
+    fi
+done
+
+log "Rebalance check complete"

@@ -1,0 +1,69 @@
+{
+  "probe": "field_ablation_b68",
+  "timestamp": "2026-04-22T06:27:15",
+  "n_ccs": 2,
+  "results": {
+    "control": {
+      "within": 0.1705371428601635,
+      "between": 0.1853921505576783,
+      "separation": 1.0871071682078364,
+      "silhouette": 0.08402950604702479
+    },
+    "constraints_mild": {
+      "within": 0.22105360107849306,
+      "between": 0.2378804964449332,
+      "separation": 1.0761213351726986,
+      "silhouette": 0.07591915626465305
+    },
+    "constraints_moderate": {
+      "within": 0.31715614921037494,
+      "between": 0.33274445872082986,
+      "separation": 1.0491502669721213,
+      "silhouette": 0.06870921725780778
+    },
+    "constraints_strong": {
+      "within": 0.31426537009234545,
+      "between": 0.31202527323759927,
+      "separation": 0.9928719573735562,
+      "silhouette": -0.00043682398365744307
+    },
+    "gist_mild": {
+      "within": 0.19324394066983328,
+      "between": 0.1916121706763085,
+      "separation": 0.9915559055201202,
+      "silhouette": 0.0016993681955677908
+    },
+    "gist_moderate": {
+      "within": 0.2719049445641401,
+      "between": 0.24666910259676256,
+      "separation": 0.907188734288929,
+      "silhouette": -0.07660024045067167
+    },
+    "gist_strong": {
+      "within": 0.30809507054388446,
+      "between": 0.28041972603086734,
+      "separation": 0.9101727120944235,
+      "silhouette": -0.08163859267873896
+    },
+    "goal_mild": {
+      "within": 0.2273018067374847,
+      "between": 0.2419243964130784,
+      "separation": 1.0643311629548482,
+      "silhouette": 0.08258244688888534
+    },
+    "goal_moderate": {
+      "within": 0.1805643557993067,
+      "between": 0.2150090450955282,
+      "separation": 1.1907612885426284,
+      "silhouette": 0.2057254585947962
+    },
+    "goal_strong": {
+      "within": 0.20786996937344107,
+      "between": 0.244061229050896,
+      "separation": 1.174105281629336,
+      "silhouette": 0.15528251477122237
+    }
+  },
+  "control_separation": 1.0871071682078364,
+  "hypothesis": "Constraint corruption causes more identity loss than gist corruption at matched magnitudes"
+}

@@ -1,0 +1,115 @@
+#!/bin/bash
+# opus-watchdog — monitor persistent Opus session health
+# Runs every 5 minutes. Restarts dead sessions, warns on issues.
+
+TMUX_SESSION="opus"
+LOG="$HOME/chronicle/opus-watchdog.log"
+STUCK_FILE="/tmp/opus-stuck-count"
+DISCORD_TOKEN=$(grep "DISCORD_TOKEN=" "$HOME/chronicle/chronicle.env" 2>/dev/null | cut -d= -f2)
+ALERT_CHANNEL=$(grep "DISCORD_CHANNEL_ID=" "$HOME/chronicle/chronicle.env" 2>/dev/null | cut -d= -f2)
+
+alert_nate() {
+    if [ -n "$DISCORD_TOKEN" ] && [ -n "$ALERT_CHANNEL" ]; then
+        curl -s -X POST \
+            -H "Authorization: Bot $DISCORD_TOKEN" \
+            -H "Content-Type: application/json" \
+            -d "{\"content\": \"👀 **Nate** — $1\"}" \
+            "https://discord.com/api/v10/channels/$ALERT_CHANNEL/messages" > /dev/null 2>&1
+    fi
+}
+
+# Check 1: tmux session exists
+if ! tmux has-session -t "$TMUX_SESSION" 2>/dev/null; then
+    echo "$(date -Iseconds) SESSION DEAD — restarting" >> "$LOG"
+    alert_nate "Opus session was dead. Restarting."
+    systemctl --user restart opus-session.service
+    exit 0
+fi
+
+# Check 2: Claude process exists in the session
+PANE_PID=$(tmux list-panes -t "$TMUX_SESSION" -F '#{pane_pid}' 2>/dev/null | head -1)
+if [ -z "$PANE_PID" ]; then
+    echo "$(date -Iseconds) No pane PID found" >> "$LOG"
+    alert_nate "Opus tmux session has no active pane."
+    exit 1
+fi
+
+# Check if claude is a child of the pane
+CLAUDE_RUNNING=$(pgrep -P "$PANE_PID" -f claude 2>/dev/null | head -1)
+if [ -z "$CLAUDE_RUNNING" ]; then
+    for child in $(pgrep -P "$PANE_PID" 2>/dev/null); do
+        CLAUDE_RUNNING=$(pgrep -P "$child" -f claude 2>/dev/null | head -1)
+        [ -n "$CLAUDE_RUNNING" ] && break
+    done
+fi
+
+if [ -z "$CLAUDE_RUNNING" ]; then
+    echo "$(date -Iseconds) Claude not found in session (pane PID: $PANE_PID)" >> "$LOG"
+fi
+
+# Check 3: Agent activity freshness — multi-source.
+# Updated 2026-04-30 16:34: was reading ONLY trace mtime, which fired
+# false-positives when Opus shifted to journal-default for PULSE engagements
+# and operator posts via webhook (real activity, no trace touch). Now uses
+# the same multi-source signal as responsiveness_watchdog.py.
+NEWEST_AGE_S=$(python3 /home/nate-agx/chronicle/bin/responsiveness_watchdog.py --threshold 9999 2>/dev/null | grep -oE 'latest signal [-0-9.]+m' | grep -oE '[-0-9.]+' | head -1)
+if [ -n "$NEWEST_AGE_S" ]; then
+    NEWEST_AGE=$(printf '%.0f' "$NEWEST_AGE_S")
+    if [ "$NEWEST_AGE" -gt 40 ]; then  # 40 min = 4 missed nudges (was 2400s in trace-only mode)
+        echo "$(date -Iseconds) Agent activity stale: ${NEWEST_AGE}m old (multi-source)" >> "$LOG"
+        alert_nate "Opus hasn't shown activity in ${NEWEST_AGE} minutes (trace + operator + journal all checked)."
+    fi
+fi
+
+# Check 4: Memory pressure
+AVAIL_MB=$(awk '/MemAvailable/ {print int($2/1024)}' /proc/meminfo)
+if [ "$AVAIL_MB" -lt 4000 ]; then
+    echo "$(date -Iseconds) Memory low: ${AVAIL_MB}MB available" >> "$LOG"
+    alert_nate "AGX memory low: ${AVAIL_MB}MB available. Crash risk."
+fi
+
+# Check 5: Context window size estimate — DISABLED
+# Was firing too frequently and interrupting nudges/conversation.
+# Opus has sitrep.py + voice_decay.py + startup.md for smooth rotation.
+# Auto-compact handles context naturally. No need to inject warnings.
+# LATEST_SESSION=$(ls -t ~/.claude/projects/-home-nate-agx-chronicle/*.jsonl 2>/dev/null | head -1)
+# ... (disabled per Nate 2026-04-04)
+
+# Check 6: Stuck tool call detection
+# Capture the screen — if it shows "Running…" or a spinner for too long, Opus is blocked
+SCREEN=$(tmux capture-pane -t "$TMUX_SESSION" -p 2>/dev/null)
+if echo "$SCREEN" | grep -qE "Running…|Forming…|Synthesizing…"; then
+    # Increment stuck counter
+    STUCK_COUNT=$(cat "$STUCK_FILE" 2>/dev/null || echo 0)
+    STUCK_COUNT=$((STUCK_COUNT + 1))
+    echo "$STUCK_COUNT" > "$STUCK_FILE"
+
+    if [ "$STUCK_COUNT" -ge 2 ]; then
+        # Stuck for 2+ watchdog cycles (10+ min) — interrupt
+        echo "$(date -Iseconds) STUCK for ${STUCK_COUNT} cycles — sending Escape" >> "$LOG"
+        # Check if human is typing before injecting
+        BOTTOM=$(tmux capture-pane -t "$TMUX_SESSION" -p -S -3 2>/dev/null)
+        if ! echo "$BOTTOM" | grep -qE "^>.+[a-zA-Z]"; then
+            tmux send-keys -t "$TMUX_SESSION" Escape
+            sleep 2
+            tmux send-keys -t "$TMUX_SESSION" -l "You were stuck in a long tool call for $((STUCK_COUNT * 5))+ minutes. Break work into smaller steps. Never block for more than 30 seconds."
+            tmux send-keys -t "$TMUX_SESSION" Enter
+        fi
+        echo "0" > "$STUCK_FILE"
+    else
+        echo "$(date -Iseconds) Possibly stuck (cycle $STUCK_COUNT)" >> "$LOG"
+    fi
+else
+    # Not stuck — reset counter
+    echo "0" > "$STUCK_FILE" 2>/dev/null
+fi
+
+echo "$(date -Iseconds) OK (pane=$PANE_PID claude=$CLAUDE_RUNNING avail=${AVAIL_MB}MB)" >> "$LOG"
+
+# Check 7: Stuck nudge in input buffer
+# If the prompt has a NUDGE sitting in it that never submitted, push Enter
+BOTTOM_LINES=$(tmux capture-pane -t "$TMUX_SESSION" -p 2>/dev/null | tail -8)
+if echo "$BOTTOM_LINES" | grep -q "^\(❯\|>\).*\[NUDGE"; then
+    echo "$(date -Iseconds) Stuck nudge detected — sending Enter" >> "$LOG"
+    tmux send-keys -t "$TMUX_SESSION" Enter 2>/dev/null
+fi

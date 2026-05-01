@@ -46,11 +46,8 @@ THEME_LOOKBACK_HOURS = 48
 # Max items to inject per cycle
 MAX_INJECT = 5
 
-# Discord webhook for reporting
-OPUS_WEBHOOK = (
-    "https://discord.com/api/webhooks/1483843624926970057/"
-    "2hZYzQQcyDEVD0A9UQqJsHlnV9D1m-6AfwNCnNWxGUC_8A0-ViX2dRVkBHF17_b2oDxJ"
-)
+# Discord webhook for reporting — read from env, never hardcode
+OPUS_WEBHOOK = os.environ.get("OPUS_WEBHOOK", "")
 
 
 def _db():
@@ -198,10 +195,11 @@ def capture_themes(hours=THEME_LOOKBACK_HOURS):
     db = _db()
     cutoff = int(time.time()) - (hours * 3600)
 
-    # Get briefs generated from captures
+    # Get capture descriptions (operator:capture) and Hermes capture briefs
     rows = db.execute(
         "SELECT content FROM activity_feed "
-        "WHERE source='intern' AND activity_type='brief' "
+        "WHERE (source='operator:capture' OR source='hermes:capture' "
+        "       OR (source='intern' AND activity_type='brief')) "
         "AND created_at > ? "
         "ORDER BY created_at DESC LIMIT 40",
         (cutoff,)
@@ -226,6 +224,11 @@ def capture_themes(hours=THEME_LOOKBACK_HOURS):
         "specific", "within", "rather", "suggests", "according",
         "provides", "including", "potential", "across", "toward",
         "without", "research", "researchers", "study",
+        # URL/meta noise from capture descriptions
+        "https", "status", "quoting", "shorturl", "tweet", "twitter",
+        "discord", "capture", "message", "posted", "source", "articles",
+        "thread", "already", "medium", "comprehensive", "associated",
+        "identified", "conducted",
     }
 
     word_counts = Counter()
@@ -292,10 +295,11 @@ def capture_topics(hours=24):
     # Extract the tweet text portion (after the URL)
     topics = Counter()
     # Domain-specific terms that signal real interest (not stopwords)
+    # NOTE: Generic crypto/finance terms removed — they attract spam when mixed
+    # into author queries. Specific tokens (XRP, Flare, ICP) kept as signal.
     domain_terms = {
         "neural", "brain", "consciousness", "cognition", "embodied",
         "agent", "autonomous", "sovereignty", "decentralized", "infrastructure",
-        "crypto", "blockchain", "token", "defi", "staking",
         "model", "training", "inference", "fine-tuning", "distillation",
         "biology", "genetic", "protein", "evolution", "organism",
         "prediction", "forecast", "signal", "sensor", "feedback",
@@ -349,6 +353,17 @@ def _build_search_queries(authors, themes):
         "sciencecorp_": "Science Corp neurotech brain-computer interface",
         "daniellefong": "Danielle Fong energy science",
         "celestediwind": "Celeste Di Wind research",
+        "bravo_abad": "Jorge Bravo Abad AI biochemistry materials science optimization",
+        # Build #28b: Added from top capture authors to prevent noise
+        "lilithdatura": "Lilith Datura AI consciousness recursion persistence",
+        "networkspapers": "network science synchronization topology paper",
+        "statmlpapers": "statistical machine learning methods paper",
+        "repligate": "janus AI alignment capabilities simulacra",
+        "elder_plinius": "Pliny AI red-teaming jailbreaking safety",
+        "millerlabmit": "Earl Miller MIT neuroscience oscillations top-down",
+        "scitechera": "science technology quantum computing breakthrough",
+        "kpaxs": "creativity neuroscience philosophy memory cognition",
+        "lu_sichu": "Sichu Lu AI research",
     }
     for author, count in authors[:10]:
         if count >= 3:
@@ -384,6 +399,15 @@ def _build_search_queries(authors, themes):
         ("protein folding network topology pattern", "bio→network protein"),
         ("wearable sensor signal processing noise filtering", "sensor-grade"),
         ("knowledge distillation model compression inference", "distillation"),
+        # Deep evolution topics — richer signal for self-improving architecture
+        ("mechanistic interpretability sparse autoencoder activation steering", "interp-mech"),
+        ("AI model welfare moral patienthood consciousness assessment", "model-welfare"),
+        ("alignment evaluation behavioral audit deception detection", "alignment-empirics"),
+        ("computational psychiatry salience gating predictive processing pathology", "comp-psych"),
+        ("representation engineering activation vector emotion behavior", "rep-engineering"),
+        ("scaffold autonomy persistent memory agent identity continuity", "scaffold-identity"),
+        ("corollary discharge efference copy self-monitoring neural", "corollary-discharge"),
+        ("psychodynamic assessment AI personality organization self-model", "AI-psychodynamics"),
     ]
     # Pick 3 random intersection queries per run (variety)
     for q, reason in _rnd.sample(intersections, min(3, len(intersections))):
@@ -396,13 +420,85 @@ def _build_search_queries(authors, themes):
     # Feed gap queries: topics Nate captures about but feeds miss
     gap_terms = ["biology neuroscience mechanism", "embodied cognition robotics",
                  "sensor wearable signal", "protein structure network",
-                 "knowledge distillation transfer learning"]
+                 "knowledge distillation transfer learning",
+                 "interpretability sparse autoencoder features",
+                 "AI welfare sentience moral consideration",
+                 "computational psychiatry prediction error",
+                 "activation steering emotion vector behavior",
+                 "long-form AI philosophy dialogue consciousness"]
     gap_q = _rnd.choice(gap_terms)
     queries.append({
         "query": f"{gap_q} research breakthrough 2026",
         "reason": "feed gap coverage",
         "type": "gap",
     })
+
+    # Build #145: Counter-thesis seeker — search for evidence AGAINST recent conclusions
+    # The mesh confirms its environment's framing by default. This channel
+    # actively seeks counterevidence so the system can surprise itself.
+    try:
+        conn_ct = sqlite3.connect(DB_PATH, timeout=10)
+        conn_ct.row_factory = sqlite3.Row
+        # Get transfer hypotheses from recent briefs — these represent current beliefs
+        _cutoff = int(time.time()) - 7200  # last 2 hours
+        _recent = conn_ct.execute(
+            "SELECT content FROM activity_feed "
+            "WHERE source='intern' AND activity_type='brief' "
+            "AND content LIKE '%Transfer hypothesis:%' "
+            "AND created_at > ? ORDER BY created_at DESC LIMIT 10",
+            (_cutoff,)
+        ).fetchall()
+        if _recent:
+            # Extract the transfer hypotheses
+            _hypotheses = []
+            for row in _recent:
+                m = re.search(r'Transfer hypothesis:\s*(.+?)(?:\.|$)', row["content"])
+                if m:
+                    _hypotheses.append(m.group(1).strip())
+            if _hypotheses:
+                # Pick one and search for its negation
+                _hyp = _rnd.choice(_hypotheses)
+                # Extract key nouns (4+ chars)
+                _words = [w for w in re.findall(r'\b[a-z]{4,}\b', _hyp.lower())
+                         if w not in {"could","would","should","their","these",
+                                     "those","where","when","which","about","more",
+                                     "also","such","being","into","through","apply",
+                                     "inform","improve"}][:4]
+                if len(_words) >= 2:
+                    _counter_q = " ".join(_words) + " limitations criticism failure"
+                    queries.append({
+                        "query": _counter_q,
+                        "reason": f"counter-thesis: challenging '{_hyp[:60]}...'",
+                        "type": "counter",
+                    })
+        conn_ct.close()
+    except Exception:
+        pass
+
+    # Family suggestions — Build #71: agents propose keywords
+    try:
+        conn = sqlite3.connect(DB_PATH, timeout=10)
+        conn.row_factory = sqlite3.Row
+        family_kw = conn.execute(
+            "SELECT id, content, rationale, agent FROM family_suggestions "
+            "WHERE suggestion_type = 'keyword' AND status = 'pending' "
+            "ORDER BY created_at DESC LIMIT 3"
+        ).fetchall()
+        for fk in family_kw:
+            queries.append({
+                "query": f"{fk['content']} 2026",
+                "reason": f"family:{fk['agent']} — {(fk['rationale'] or '')[:60]}",
+                "type": "family",
+            })
+            conn.execute(
+                "UPDATE family_suggestions SET status='acted_on', "
+                "acted_on_by='algo_seeker', acted_on_at=? WHERE id=?",
+                (int(time.time()), fk["id"])
+            )
+        conn.commit()
+        conn.close()
+    except Exception:
+        pass  # Don't break seeker if table doesn't exist yet
 
     return queries
 
@@ -481,7 +577,23 @@ def seek(dry_run=False):
                                        "nitter.", "tweetdeck.",
                                        "linkedin.com/in/",
                                        "linkedin.com/company/",
-                                       "scholar.google.com/citations"]):
+                                       "scholar.google.com/citations",
+                                       # Crypto spam magnets
+                                       "solscan.io", "opensea.io",
+                                       "dexscreener.com", "dextools.io",
+                                       "coingecko.com/en/coins/",
+                                       "coinmarketcap.com/currencies/",
+                                       "heybeluga.com", "cryptollia.com",
+                                       "theledgermind.com",
+                                       "robertsspaceindustries.com",
+                                       "manifold.markets",
+                                       "ashbyhq.com",
+                                       # Education/exam noise
+                                       "shiksha.com", "jagranjosh.com",
+                                       "cbseacademic", "vedantu.com",
+                                       # Entertainment noise
+                                       "imdb.com", "rottentomatoes.com",
+                                       "themoviedb.org"]):
                 continue
             r["seek_reason"] = q["reason"]
             r["seek_type"] = q["type"]
@@ -510,7 +622,76 @@ def seek(dry_run=False):
     injected = []
     now = int(time.time())
 
-    for r in unique_results[:MAX_INJECT]:
+    # Filter out sports/entertainment noise before injection
+    NOISE_TERMS = [
+        "nfl", "ncaa", "basketball", "football", "soccer", "baseball",
+        "transfer portal", "free agency", "free agent", "draft pick",
+        "college basketball", "college football", "fantasy football",
+        "sports betting", "playoff", "championship game", "bowl game",
+        "royaleapi", "hero balloon", "clash royale",
+        # Crypto spam (Build #123) — specific patterns, not general crypto terms
+        "token price", "token launch", "buy token", "token schedule",
+        "top tokens", "best defi", "defi protocols 2026",
+        "best crypto", "top crypto", "meme coin", "airdrop",
+        "by tvl", "by returns",
+        # Education noise (Build #125b) — "model" attracts exam papers
+        "model paper", "exam paper", "question paper", "sample paper",
+        "ssc model", "class model", "board exam", "pdf download",
+        "previous year", "guess paper",
+        # Product reviews (Build #150b) — "model" attracts product reviews
+        "golf ball", "golf club", "golf review", "tennis racket",
+        "product review", "buying guide", "best buy",
+    ]
+    unique_results = [
+        r for r in unique_results
+        if not any(term in r.get("title", "").lower() for term in NOISE_TERMS)
+        and not any(term in r.get("url", "").lower() for term in ["247sports", "espn.com", "foxsports", "bleacherreport", "spotrac", "topdrawersoccer"])
+    ]
+    print(f"  After noise filter: {len(unique_results)} items")
+
+    # Build #131: Thin-source filter — skip results with insufficient body text.
+    # When body is too thin, the intern fills from training data → fabrication.
+    pre_thin = len(unique_results)
+    unique_results = [
+        r for r in unique_results
+        if len(r.get("body", "").strip()) >= 80
+        or r.get("seek_type") == "x_timeline"  # tweets are inherently short but have context
+    ]
+    if pre_thin != len(unique_results):
+        print(f"  After thin-source filter: {len(unique_results)} items (dropped {pre_thin - len(unique_results)} thin)")
+
+    # Build #131: Relevance overlap — verify result relates to seek query.
+    # Prevents off-topic results (motorcycles when seeking neuroscience).
+    def _relevance_ok(result):
+        """Check that result title/body shares at least 1 word with seek reason."""
+        reason = result.get("seek_reason", "").lower()
+        title = result.get("title", "").lower()
+        body = result.get("body", "").lower()
+        combined = title + " " + body
+        # Extract significant words from seek reason (4+ chars, skip common words)
+        skip = {"author", "captures", "topic", "intersection", "family", "coverage", "research", "paper", "breakthrough"}
+        reason_words = {w for w in re.findall(r'[a-z]{4,}', reason) if w not in skip}
+        if not reason_words:
+            return True  # Can't check, let it through
+        # At least 1 reason word must appear in title or body
+        return any(w in combined for w in reason_words)
+
+    pre_rel = len(unique_results)
+    unique_results = [r for r in unique_results if _relevance_ok(r)]
+    if pre_rel != len(unique_results):
+        print(f"  After relevance filter: {len(unique_results)} items (dropped {pre_rel - len(unique_results)} off-topic)")
+
+    # Build #149: Diverse injection — don't let author results monopolize slots.
+    # Counter-thesis and intersection results were structurally never injected
+    # because author queries run first and fill all MAX_INJECT slots.
+    # Fix: pick up to 2 from priority types first, fill remaining from the rest.
+    priority_types = {"counter", "intersection", "gap", "family"}
+    priority_pool = [r for r in unique_results if r.get("seek_type") in priority_types]
+    regular_pool = [r for r in unique_results if r.get("seek_type") not in priority_types]
+    selected = priority_pool[:2] + regular_pool[:MAX_INJECT - min(2, len(priority_pool))]
+    selected = selected[:MAX_INJECT]
+
+    for r in selected:
         content = (
             f"[Algo Seeker/{r['seek_type']}] {r['title']}\n"
             f"{r['url']}\n"

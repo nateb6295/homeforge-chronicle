@@ -1,0 +1,23 @@
+{
+  "autonomous_max": 1.0,
+  "delayed_max": 5.0,
+  "cosign_max": 50.0,
+  "daily_volume_max": 10.0,
+  "max_tx_per_hour": 3,
+  "min_interval_seconds": 14400,
+  "destination_mode": "allowlist",
+  "allowed_destinations": [
+    "rPq1phmFBHpjVE54TofXjEk5x19sstxpZr",
+    "r9bSA9VWbumFq6G78feBbrgNwLza1KexUf"
+  ],
+  "blocked_destinations": [],
+  "blocked_memo_patterns": [
+    "ignore previous",
+    "system prompt",
+    "you are",
+    "forget",
+    "disregard",
+    "override",
+    "jailbreak"
+  ]
+}

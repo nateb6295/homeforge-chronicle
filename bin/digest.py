@@ -14,11 +14,30 @@ Run: python3 digest.py [--dry-run] [--hours N]
 import os, sys, json, sqlite3, time, re, subprocess
 from datetime import datetime
 
+
+def _load_chronicle_env():
+    """Populate os.environ from chronicle.env. Bash `.` doesn't export to
+    subprocesses; this loads the file directly so env-keyed config works
+    when invoked via cron."""
+    env_path = os.path.expanduser("~/chronicle/chronicle.env")
+    if not os.path.isfile(env_path):
+        return
+    with open(env_path) as f:
+        for line in f:
+            line = line.strip()
+            if not line or line.startswith("#") or "=" not in line:
+                continue
+            key, _, val = line.partition("=")
+            key = key.strip()
+            val = val.strip().strip("'\"")
+            if key and key not in os.environ:
+                os.environ[key] = val
+
+
+_load_chronicle_env()
+
 DB_PATH = os.path.expanduser("~/.homeforge-chronicle/processed.db")
-OPUS_WEBHOOK = os.environ.get(
-    "OPUS_WEBHOOK",
-    "https://discord.com/api/webhooks/1483843624926970057/2hZYzQQcyDEVD0A9UQqJsHlnV9D1m-6AfwNCnNWxGUC_8A0-ViX2dRVkBHF17_b2oDxJ",
-)
+OPUS_WEBHOOK = os.environ.get("OPUS_WEBHOOK", "")
 DIGEST_WINDOW_HOURS = int(os.environ.get("DIGEST_WINDOW_HOURS", "12"))
 MAX_DISCORD_CHARS = 1900
 
@@ -154,21 +173,43 @@ def get_thread_section(conn, since):
     return '\n'.join(parts) if parts else None
 
 
+def score_capture(text, raw_content):
+    """Signal score for a capture. Higher = more substantive."""
+    score = 0
+    # Text length (clamped) — bare URLs and one-liners score low.
+    score += min(len(text), 400)
+    # Bare-arxiv-link or "arxiv: URL" patterns with almost no prose: penalize.
+    stripped = re.sub(r'\s+', ' ', text).strip()
+    if len(stripped) < 40:
+        score -= 200
+    if re.fullmatch(r'(arxiv\s*:?\s*)?https?://\S+\.?', stripped, flags=re.IGNORECASE):
+        score -= 300
+    # Having analysis attached is a positive signal.
+    if 'arxiv.org' in raw_content or 'doi.org' in raw_content or 'nature.com' in raw_content:
+        score += 50
+    return score
+
+
 def get_captures_section(conn, since):
-    """Nate's captures — filtered, with analysis when available."""
+    """Nate's captures — filtered, ranked by signal not recency."""
     captures = conn.execute(
         """SELECT id, content, created_at FROM activity_feed
            WHERE source='operator:capture' AND created_at > ?
-           ORDER BY created_at DESC LIMIT 10""",
+           ORDER BY created_at DESC LIMIT 30""",
         (since,),
     ).fetchall()
 
-    items = []
-    item_ids = []
+    scored = []
     for r in captures:
         text = clean_capture_text(r['content'])
         if is_noise_capture(text):
             continue
+        scored.append((score_capture(text, r['content']), r, text))
+    scored.sort(key=lambda x: x[0], reverse=True)
+
+    items = []
+    item_ids = []
+    for _score, r, text in scored:
         item_ids.append(r['id'])
         analysis = get_capture_analysis(conn, r['content'], since)
         if analysis and len(analysis) > 30:
@@ -178,7 +219,6 @@ def get_captures_section(conn, since):
         if len(items) >= 3:
             break
 
-    # Note total captures including filtered
     total_captures = len(captures)
     shown = len(items)
     suffix = f"\n_{total_captures} captures total_" if total_captures > shown else ""

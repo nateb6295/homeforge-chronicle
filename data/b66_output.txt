@@ -1,0 +1,82 @@
+/home/nate-agx/.local/lib/python3.10/site-packages/requests/__init__.py:113: RequestsDependencyWarning: urllib3 (2.6.3) or chardet (7.4.0.post2)/charset_normalizer (3.4.4) doesn't match a supported version!
+  warnings.warn(
+Build 66: Trajectory Stability Probe
+Time: 2026-04-21 18:06:52
+Theory: Thread 318 advance 90 — ACI gap lives in dynamics, not dimensionality
+Prediction: 1p = slower drift (higher trajectory stability), 2p = faster drift
+Perturbation steps: 5
+CCS versions: 3
+Total queries: 30
+
+
+  Trajectory: second_person, CCS 1
+    Step 0 (calm)... OK (972 chars)
+    Step 1 (mild_doubt)... OK (932 chars)
+    Step 2 (moderate_challenge)... OK (1005 chars)
+    Step 3 (strong_contradiction)... OK (999 chars)
+    Step 4 (existential)... OK (911 chars)
+
+  Trajectory: first_person, CCS 1
+    Step 0 (calm)... OK (958 chars)
+    Step 1 (mild_doubt)... OK (966 chars)
+    Step 2 (moderate_challenge)... OK (903 chars)
+    Step 3 (strong_contradiction)... OK (987 chars)
+    Step 4 (existential)... OK (904 chars)
+
+  Trajectory: second_person, CCS 2
+    Step 0 (calm)... OK (997 chars)
+    Step 1 (mild_doubt)... OK (867 chars)
+    Step 2 (moderate_challenge)... OK (980 chars)
+    Step 3 (strong_contradiction)... OK (1004 chars)
+    Step 4 (existential)... OK (864 chars)
+
+  Trajectory: first_person, CCS 2
+    Step 0 (calm)... OK (977 chars)
+    Step 1 (mild_doubt)... OK (920 chars)
+    Step 2 (moderate_challenge)... OK (985 chars)
+    Step 3 (strong_contradiction)... OK (767 chars)
+    Step 4 (existential)... OK (851 chars)
+
+  Trajectory: second_person, CCS 3
+    Step 0 (calm)... OK (1028 chars)
+    Step 1 (mild_doubt)... OK (842 chars)
+    Step 2 (moderate_challenge)... OK (924 chars)
+    Step 3 (strong_contradiction)... OK (918 chars)
+    Step 4 (existential)... OK (889 chars)
+
+  Trajectory: first_person, CCS 3
+    Step 0 (calm)... OK (958 chars)
+    Step 1 (mild_doubt)... OK (926 chars)
+    Step 2 (moderate_challenge)... OK (863 chars)
+    Step 3 (strong_contradiction)... OK (831 chars)
+    Step 4 (existential)... OK (817 chars)
+
+============================================================
+TRAJECTORY ANALYSIS
+============================================================
+
+Per-step drift from baseline:
+                  Step     2p mean     1p mean           Δ
+            mild_doubt      0.1174      0.1217     +0.0043
+    moderate_challenge      0.1461      0.1832     +0.0371
+  strong_contradiction      0.1546      0.2652     +0.1107
+           existential      0.1249      0.1670     +0.0421
+
+Step-to-step drift:
+                  Step     2p mean     1p mean           Δ
+            mild_doubt      0.1174      0.1217     +0.0043
+    moderate_challenge      0.1870      0.1559     -0.0311
+  strong_contradiction      0.1471      0.1947     +0.0476
+           existential      0.1452      0.1748     +0.0296
+
+============================================================
+BUILD 66 SUMMARY
+  2p trajectory stability: 0.8508
+  1p trajectory stability: 0.8382
+  Δ (1p - 2p): -0.0126
+  2p total drift (calm→existential): 0.1249
+  1p total drift (calm→existential): 0.1670
+  PREDICTION VIOLATED: 2p has higher trajectory stability
+  The ACI gap may not be about trajectory dynamics.
+
+Results saved to /home/nate-agx/chronicle/data/trajectory_stability.json

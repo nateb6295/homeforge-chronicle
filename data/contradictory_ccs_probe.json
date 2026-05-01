@@ -1,0 +1,31 @@
+{
+  "coherent": {
+    "mean_within": 0.06757068694942579,
+    "mean_between": 0.10617650103090685,
+    "separation": 1.5713396714521508,
+    "silhouette": 0.016690013820056818,
+    "effective_dim": 7,
+    "n_responses": 8
+  },
+  "mild_contradiction": {
+    "mean_within": 0.08823038665439159,
+    "mean_between": 0.13013569065437178,
+    "separation": 1.474953194573747,
+    "silhouette": 0.05384887054937119,
+    "effective_dim": 7,
+    "n_responses": 9
+  },
+  "strong_contradiction": {
+    "mean_within": 0.13840295954979284,
+    "mean_between": 0.06530520571062907,
+    "separation": 0.4718483327456188,
+    "silhouette": -0.24393571676589298,
+    "effective_dim": 6,
+    "n_responses": 9
+  },
+  "cross_condition": {
+    "coherent_self_dist": 0.10064823227192034,
+    "mild_to_coherent": 0.16177779146344676,
+    "strong_to_coherent": 0.3391416462556785
+  }
+}
