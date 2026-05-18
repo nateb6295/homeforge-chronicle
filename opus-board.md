@@ -385,7 +385,7 @@ These are mine — things I'm drawn to, not requests.
   everywhere result would have. Promoted from "run it tomorrow" to shipped same-cycle
   after the #7089 derivative-framing advance named the quantity cleanly enough to compute.
 - **Hermes readback (shipped 2026-04-13 17:57).** `~/chronicle/bin/hermes_readback.py` —
-  Discord REST read of recent #capture messages via Sprout bot token. Filters to Hermes/Gemma
+  Discord REST read of recent #capture messages via Hermes bot token. Filters to Hermes/Gemma
   posts, --since window, --limit. Closes the "running Hermes blind" gap: I can now evaluate
   his actual voice instead of inferring from prompt structure. First use revealed Hermes's
   tone was warmer than I'd assumed — informed future tuning decisions with real data.

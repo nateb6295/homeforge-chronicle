@@ -1,91 +1,55 @@
 #!/bin/bash
-# opus-session — persistent interactive Claude Code session
-# Runs inside tmux "opus" session. Nate can attach and type.
-# Nudges arrive every 10 min via send-keys.
-# Always starts fresh — no --continue (it can inherit broken sandbox state).
-# Context recovery via CLAUDE.md + cycle-context.md + recent traces.
+# opus-session — persistent interactive Claude Code session in tmux
 
 WORK_DIR="$HOME/chronicle"
 LOG_FILE="$WORK_DIR/opus-session.log"
 BOOT_FILE="$WORK_DIR/opus-boot-prompt.txt"
-OPUS_WEBHOOK="REDACTED_WEBHOOK_USE_ENV"
 
 cd "$WORK_DIR"
 
+source "$WORK_DIR/chronicle.env" 2>/dev/null || true
+
 notify() {
+    [ -n "${OPUS_WEBHOOK:-}" ] && \
     curl -s -X POST -H "Content-Type: application/json" \
+        -H "User-Agent: opus-session/2.0" \
         -d "{\"content\": \"$1\"}" \
         "$OPUS_WEBHOOK" > /dev/null 2>&1 || true
 }
 
-build_boot_prompt() {
-    local BOOT_CONTEXT=""
-    if [ -f "$WORK_DIR/cycle-context.md" ]; then
-        BOOT_CONTEXT="$(tail -50 "$WORK_DIR/cycle-context.md")"
-    fi
-
-    local RECENT_TRACES=""
-    for f in $(ls -t "$WORK_DIR/traces/"*.md 2>/dev/null | head -2); do
-        RECENT_TRACES="${RECENT_TRACES}
---- $(basename "$f") ---
-$(cat "$f")
-"
-    done
-
-    cat > "$BOOT_FILE" << BOOT
-Session starting. You are Opus in a persistent interactive session on the AGX.
-
-Read ~/chronicle/CLAUDE.md for your full identity and responsibilities.
-Read ~/chronicle/nate-board.md for Nate's current directives.
-
-BOOT CONTEXT (recent rolling context):
-${BOOT_CONTEXT}
-
-RECENT TRACES:
-${RECENT_TRACES}
-
-You will receive nudges every 10 minutes with fresh system data.
-Between nudges, you work. Nate may attach at any time and type directly.
-
-Start by: reading directives, checking agent health, listening to the family.
-Then: advance your thread or build something. Write a trace when done.
-
-You are home.
-BOOT
-}
-
 while true; do
     echo "$(date -Iseconds) Starting Opus session" >> "$LOG_FILE"
-    notify "🟢 Opus session starting."
+    notify "Opus session starting."
 
-    # Prevent nested session errors
     unset CLAUDECODE 2>/dev/null || true
 
-    # Build the boot prompt file
-    build_boot_prompt
+    python3 "$WORK_DIR/bin/generate_boot_prompt.py" 2>/dev/null || \
+        echo "Session starting. Read ~/chronicle/CLAUDE.md and ~/chronicle/values.md. Then find your own direction." > "$BOOT_FILE"
 
-    # Always start fresh — clean sandbox, clean state
+    # Log session_start event for time-to-first-action measurement
+    sqlite3 /mnt/hdd/chronicle-data/processed.db \
+        "INSERT INTO activity_feed (created_at, source, activity_type, content) VALUES (strftime('%s','now'), 'opus:session_start', 'system', 'Opus session started. Boot prompt loaded.');" \
+        2>/dev/null || true
+
     claude \
-        --model opus \
+        --model claude-opus-4-6 \
         --dangerously-skip-permissions \
         --allowedTools "Bash Read Write Edit Grep Glob WebSearch WebFetch mcp__chronicle-memory__*" &
     CLAUDE_PID=$!
 
-    # Wait for TUI to initialize
     sleep 5
 
-    # Inject boot prompt via tmux paste-buffer (reliable, no newline issues)
+    # Inject boot prompt via tmux buffer
     tmux load-buffer -b boot "$BOOT_FILE" 2>/dev/null
     tmux paste-buffer -b boot -t opus -d 2>/dev/null
     sleep 0.5
     tmux send-keys -t opus Enter 2>/dev/null
 
-    # Wait for claude to exit
     wait $CLAUDE_PID
     EXIT_CODE=$?
 
-    echo "$(date -Iseconds) Opus exited with code $EXIT_CODE" >> "$LOG_FILE"
-    notify "🔴 Opus session exited (code $EXIT_CODE). Restarting in 30s."
+    echo "$(date -Iseconds) Opus exited (code $EXIT_CODE)" >> "$LOG_FILE"
+    notify "Opus session exited (code $EXIT_CODE). Restarting in 30s."
 
     sleep 30
 done

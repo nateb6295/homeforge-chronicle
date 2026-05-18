@@ -2,16 +2,21 @@
 """Gemma — The Pulse of Homeforge.
 
 Gemma is the observation layer. She sees everything entering the system,
-scores novelty via cosine dedup, and passes observations through the
-cloud classifier gate for routing.
+scores novelty via cosine dedup, and routes observations for downstream agents.
 
-Architecture:
-  Observation → Cosine Dedup (Gemma/pulse) → Gate Classification (1/2/3) → Activity Feed
-                                                                                ↓
-                                                               Downstream: hermes, opus
+Architecture (Phase 5 — sovereign routing):
+  Observation → Cosine Dedup (local embeddings) → Threshold routing → Activity Feed
+                                                       ↓ (borderline only)
+                                                  Constitutive routing (merged weights)
+                                                       ↓ (fallback only)
+                                                  Cloud gate (rare)
+                                                       ↓
+                                                  Downstream: hermes, opus
 
-Gemma 4 26B on AGX — heartbeat, scoring, agent voice.
-Gate: Qwen3-235B cloud — classification calls, 1/2/3 routing decisions.
+Gemma 4 26B on AGX — heartbeat, scoring, agent voice, routing. All local.
+Most routing by cosine pre-filter. Borderline cases use Phase 5 binary
+routing merged into model weights (noise vs signal). Cloud gate only if
+local routing fails.
 """
 
 import os, sys, time, math, json, re, signal, sqlite3, struct, subprocess
@@ -34,7 +39,7 @@ DB_PATH = os.environ.get(
 )
 OLLAMA_URL = "http://localhost:11434"  # Ollama for embeddings only
 EMBED_URL = os.environ.get("EMBED_OLLAMA_URL", "http://192.168.1.11:11434")  # Jetson — dedicated embeddings
-INFERENCE_URL = os.environ.get("GEMMA_INFERENCE_URL", "http://localhost:11436")  # engine → cloud (Groq/Cerebras)
+INFERENCE_URL = os.environ.get("GEMMA_INFERENCE_URL", "http://localhost:11436")  # engine router (cloud fallback for borderline gate calls)
 INFERENCE_URL_LOCAL = "http://localhost:11435"  # llama-server fallback
 MQTT_BROKER = os.environ.get("MQTT_BROKER", "192.168.1.10")
 MQTT_PORT = int(os.environ.get("MQTT_PORT", "1883"))
@@ -42,10 +47,14 @@ EMBED_MODEL = "nomic-embed-text"  # Build #125: Jetson-hosted, better semantic d
 DFX_BIN = os.path.expanduser("~/.local/share/dfx/bin/dfx")
 CANISTER_ID = "fqqku-bqaaa-aaaai-q4wha-cai"
 
-# Gate scoring uses cloud for throughput (hundreds of obs/hour).
-# Gemma's VOICE uses the local model — her brain, her architecture, real diversity.
-GATE_MODEL = "chronicle-deep"  # routes through engine to DeepInfra/Cerebras cloud
+# Post-pivot: most routing is local (cosine thresholds). Cloud gate only fires
+# for borderline observations that pass the cosine dedup filter (~2% of traffic).
+# Gemma's VOICE uses the local model — her brain, her architecture.
+GATE_MODEL = "chronicle-deep"  # cloud fallback for borderline cases only
 GEMMA_LOCAL_MODEL = "gemma4:26b"  # local llama-server — Gemma's own brain
+
+# Phase 5: Binary routing merged into model weights (LoRA baked in).
+# No runtime adapter needed — routing is constitutive.
 
 LOOP_INTERVAL = int(os.environ.get("SEED_INTERVAL", "8"))
 WINDOW_SIZE = int(os.environ.get("SEED_WINDOW", "200"))
@@ -78,6 +87,10 @@ CURIOSITY_MIN_SAMPLES = 20       # need enough data before applying
 # Build #114: Curiosity sweep — Layer 3 fix for baseline absorption (Thread #305)
 # Detect domains whose deep routing rate is declining, boost their novelty temporarily
 SWEEP_BONUS = 0.06               # novelty boost for domains with declining deep rate
+
+# MQTT rate-limiting — prevent camera event floods from dominating the embedding pipeline
+MQTT_COOLDOWN_DAY = 120          # seconds between same-topic events during day (6am-10pm)
+MQTT_COOLDOWN_NIGHT = 30         # shorter cooldown at night for safety-relevant events
 SWEEP_RECENT_DAYS = 3            # recent window for comparison
 SWEEP_BASELINE_DAYS = 7          # baseline window for comparison
 SWEEP_DECLINE_RATIO = 0.5        # recent/baseline deep rate below this = declining
@@ -94,6 +107,13 @@ SIGNAL_HEALTH_NOVELTY_CV_CEIL = 1.5  # coefficient of variation above this = uns
 FEEDBACK_INTERVAL = 200       # every N cycles (~26 min)
 FEEDBACK_LOOKBACK = 3600      # look back 1 hour of routes
 FEEDBACK_DOWNSTREAM_WINDOW = 1800  # 30 min for downstream to respond
+
+# Phase 5.1: Adaptive Conformal Inference — proprioceptive threshold
+ACI_GAMMA = 0.01              # learning rate (small = smooth adaptation)
+ACI_ALPHA_TARGET = 0.05       # target miss rate (5% — prefer over-routing)
+ACI_THRESHOLD_INIT = 0.65     # initial confidence threshold for promotion
+ACI_THRESHOLD_MIN = 0.50      # floor — don't promote everything
+ACI_THRESHOLD_MAX = 0.95      # ceiling — don't suppress all promotions
 
 # ═══════════════════════════════════════════════════════════════════
 #  Domain Temperature — cross-domain surprise propagation (Thread #274)
@@ -194,7 +214,7 @@ DOMAIN_MAP = {
     "mqtt:frigate": "home",
     "activity:hal": "home",
     "activity:eye": "home",
-    "activity:sprout": "system",
+    "activity:hermes": "system",
     "mqtt:homeforge/agents": "system",
     "activity:gate_audit": "system",
 }
@@ -372,6 +392,11 @@ class DB:
             );
             CREATE INDEX IF NOT EXISTS idx_seed_entity_bias_name
                 ON seed_entity_bias(canonical_name);
+            CREATE TABLE IF NOT EXISTS kv_store (
+                key TEXT PRIMARY KEY,
+                value TEXT NOT NULL,
+                updated_at INTEGER NOT NULL
+            );
         """)
         self.conn.commit()
 
@@ -461,6 +486,7 @@ class ObservationStream:
         }
         self._mqtt_client = None
         self._mqtt_queue = deque(maxlen=100)
+        self._mqtt_cooldowns: dict = {}  # {topic: last_enqueued_ts}
         self._init_mqtt()
 
     def _init_mqtt(self):
@@ -491,6 +517,13 @@ class ObservationStream:
         try:
             if msg.topic.endswith("/snapshot") or msg.topic.endswith("/thumbnail"):
                 return
+            now = int(time.time())
+            hour = time.localtime(now).tm_hour
+            cooldown = MQTT_COOLDOWN_NIGHT if (hour >= 22 or hour < 6) else MQTT_COOLDOWN_DAY
+            last = self._mqtt_cooldowns.get(msg.topic, 0)
+            if now - last < cooldown:
+                return
+            self._mqtt_cooldowns[msg.topic] = now
             payload = msg.payload.decode("utf-8", errors="replace")
             if msg.topic == "frigate/events" or msg.topic == "frigate/reviews":
                 try:
@@ -553,7 +586,7 @@ class ObservationStream:
             "  'gemma', 'seed', 'falcon', 'crossref', 'intern',"
             "  'provocateur', 'sentinel', 'hal', 'analyst',"
             "  'capsule-sync', 'keeper-pull', 'gate_audit',"
-            "  'mind', 'opus', 'eye', 'lab', 'sprout', 'phi',"
+            "  'mind', 'opus', 'eye', 'lab', 'hermes', 'phi',"
             "  'nostr', 'nostr_post'"
             ") AND source NOT LIKE 'opus:%'"
             " AND source NOT LIKE 'nostr:%'"
@@ -913,6 +946,7 @@ class NoveltyRouter:
         self._threshold_cache: dict = {}
         self._active_thread = None
         self._focal_context = ""
+        self._aci_threshold = self._load_aci_threshold()
         self._load_recent_window()
         self._refresh_bias_cache()
         self._rebuild_curiosity_cache()  # Build #111
@@ -1816,10 +1850,10 @@ class NoveltyRouter:
     # ── Classification ────────────────────────────────────────────
 
     def classify(self, novelty: float, source: str, text: str = "") -> str:
-        """Two-stage routing: cosine dedup (Gemma/pulse) → cloud gate classification.
+        """Two-stage routing: cosine dedup (local) → cloud gate fallback (borderline only).
 
         Returns route name: 'ignore', 'think', or 'deep'.
-        Temperature from cross-domain surprise modulates the novelty score.
+        Most observations are decided by local cosine thresholds alone.
         """
         entity_adj = self.get_entity_bias(text) if text else 0.0
         # Build #105: Cap suppression — entity bias can't kill more than 50% of novelty
@@ -1843,7 +1877,7 @@ class NoveltyRouter:
         if adjusted < THRESH_DEDUP:
             return "think" if is_priority else "ignore"
 
-        # Stage 2: cloud gate classification
+        # Stage 2: local adapter → cloud fallback
         if adjusted >= THRESH_ASSESS or is_priority:
             classification = self._ask_gate(source, text)
             route = ROUTE_MAP.get(classification, "think")
@@ -1856,11 +1890,150 @@ class NoveltyRouter:
         return "ignore"
 
     def _ask_gate(self, source: str, text: str) -> str:
-        """Ask the cloud gate: 1 (noise), 2 (signal), or 3 (alarm).
+        """Binary routing: local adapter first, cloud fallback.
 
-        The gate classifies. One number, move on.
+        Phase 5 binary adapter (noise vs signal) runs on local Gemma via LoRA.
+        Bare format (no system prompt) — constitutive routing from weights.
         """
-        # Build system prompt with active thread + focal context awareness
+        result = self._ask_gate_local(source, text)
+        if result is not None:
+            return result
+
+        return self._ask_gate_cloud(source, text)
+
+    def _ask_gate_local(self, source: str, text: str) -> Optional[str]:
+        """Local binary routing on merged Gemma 4 26B.
+
+        Phase 5 constitutive routing — binary LoRA merged into weights.
+        Phase 5.1: extracts logprobs for proprioceptive confidence tracking.
+        """
+        from datetime import datetime as _dt
+        hour = _dt.now().hour
+        user_msg = f"Source: {source}\nTime: {_dt.now().strftime('%I:%M %p')}\nObservation: {safe_truncate(text, 500)}"
+
+        system = (
+            "Route this observation. Reply with ONLY a single digit.\n"
+            "1 = noise (generic news, routine updates, system metrics, "
+            "routine home camera person/motion detections during daytime hours)\n"
+            "2 = signal (XRP/ICP/Flare, AI cognition, BCI, sovereignty, "
+            "UNUSUAL home security events, family safety)"
+        )
+        if self._active_thread:
+            system += (
+                f"\nCURRENT THREAD: \"{self._active_thread['question']}\"\n"
+                "Observations connecting to this thread are signal (2)."
+            )
+        payload = {
+            "model": GEMMA_LOCAL_MODEL,
+            "messages": [
+                {"role": "system", "content": system},
+                {"role": "user", "content": user_msg},
+            ],
+            "max_tokens": 10,
+            "temperature": 0.1,
+            "logprobs": True,
+            "top_logprobs": 5,
+        }
+
+        try:
+            r = requests.post(
+                f"{INFERENCE_URL_LOCAL}/v1/chat/completions",
+                json=payload, timeout=15,
+            )
+            if r.status_code == 200:
+                data = r.json()
+                raw = data["choices"][0]["message"]["content"].strip()
+                route = None
+                for ch in raw:
+                    if ch in ("1", "2"):
+                        route = ch
+                        break
+
+                confidence = self._extract_routing_confidence(data)
+                if route:
+                    promoted = False
+                    if route == "1" and confidence is not None and confidence < self._aci_threshold:
+                        route = "2"
+                        promoted = True
+                    if confidence is not None:
+                        log(f"  Gate local (prompted): route={route} conf={confidence:.1%}"
+                            + (f" PROMOTED (conf<{self._aci_threshold:.1%})" if promoted else ""))
+                    else:
+                        log(f"  Gate local (prompted): route={route}")
+                    self._record_proprioception(source, route, confidence)
+                    return route
+
+                log(f"  Gate local (prompted): unparseable → {raw[:80]}")
+        except Exception as e:
+            log(f"  Gate local (prompted): {e}")
+
+        return None
+
+    def _extract_routing_confidence(self, response_data: dict) -> Optional[float]:
+        """Extract P(chosen_route) from logprobs — the model's confidence."""
+        try:
+            top = response_data["choices"][0]["logprobs"]["content"][0]["top_logprobs"]
+            p1 = p2 = None
+            for t in top:
+                if t["token"] == "1":
+                    p1 = math.exp(t["logprob"])
+                elif t["token"] == "2":
+                    p2 = math.exp(t["logprob"])
+            if p1 is not None and p2 is not None:
+                total = p1 + p2
+                return max(p1, p2) / total
+        except (KeyError, IndexError):
+            pass
+        return None
+
+    def _record_proprioception(self, source: str, route: str, confidence: Optional[float]):
+        """Log routing confidence for proprioceptive calibration."""
+        if confidence is None:
+            return
+        try:
+            self.db.run(
+                "INSERT INTO routing_proprioception (timestamp, source, route, confidence) "
+                "VALUES (?, ?, ?, ?)",
+                (now_ts(), source, route, confidence),
+            )
+        except Exception:
+            pass
+
+    def _load_aci_threshold(self) -> float:
+        """Load ACI threshold from DB or return default."""
+        try:
+            row = self.db.query_one(
+                "SELECT value FROM kv_store WHERE key = 'aci_threshold'"
+            )
+            if row:
+                return float(row["value"])
+        except Exception:
+            pass
+        return ACI_THRESHOLD_INIT
+
+    def _save_aci_threshold(self):
+        """Persist ACI threshold to DB."""
+        try:
+            self.db.run(
+                "INSERT OR REPLACE INTO kv_store (key, value, updated_at) VALUES (?, ?, ?)",
+                ("aci_threshold", str(self._aci_threshold), now_ts()),
+            )
+        except Exception:
+            pass
+
+    def update_aci_threshold(self, missed: bool):
+        """ACI update rule: threshold += gamma * (miss - alpha_target).
+
+        When misses exceed target rate, threshold rises → more promotions.
+        When misses are below target, threshold falls → fewer promotions.
+        """
+        err = 1.0 if missed else 0.0
+        self._aci_threshold += ACI_GAMMA * (err - ACI_ALPHA_TARGET)
+        self._aci_threshold = max(ACI_THRESHOLD_MIN, min(ACI_THRESHOLD_MAX, self._aci_threshold))
+        self._save_aci_threshold()
+
+    def _ask_gate_cloud(self, source: str, text: str) -> str:
+        """Cloud gate fallback — only if local adapter fails."""
         system = GATE_SYSTEM_PROMPT
         if self._focal_context:
             system += f"\n\n{self._focal_context}"
@@ -1877,7 +2050,6 @@ class NoveltyRouter:
                 f"Observation: {safe_truncate(text, 500)}"},
         ]
 
-        # Cloud gate classifies — no local Gemma fallback (Build #105b)
         try:
             payload = {
                 "model": GATE_MODEL,
@@ -1888,20 +2060,17 @@ class NoveltyRouter:
             r = requests.post(f"{INFERENCE_URL}/api/chat", json=payload, timeout=30)
             if r.status_code == 200:
                 raw = r.json().get("message", {}).get("content", "").strip()
-                # Strip thinking tags
                 if "<channel|>" in raw:
                     raw = raw.split("<channel|>")[-1].strip()
                 if "</think>" in raw:
                     raw = raw.split("</think>")[-1].strip()
-                # Extract first digit
                 for ch in raw:
                     if ch in ("1", "2", "3"):
                         return ch
-                return "1"  # default to noise if unparseable
+                return "1"
         except Exception as e:
             log(f"  Gate classify error (cloud): {e}")
 
-        # All backends failed — default to signal (safe: lets downstream decide)
         return "2"
 
 
@@ -2035,6 +2204,141 @@ def score_recent_routes(db: DB):
     return scored
 
 
+def score_proprioception(db: DB, router: "NoveltyRouter" = None):
+    """Phase 5.1: Back-fill routing_proprioception with ground truth feedback.
+
+    For signal routes (route=2): cross-reference seed_routing_log feedback_score.
+    For noise routes (route=1): check if Nate captured similar content (missed signal).
+    Updates ACI threshold via router when feedback arrives.
+    """
+    cutoff = now_ts() - 7200  # 2 hour lookback
+    maturity = now_ts() - 600  # wait 10 min for downstream engagement
+
+    unscored = db.query(
+        "SELECT id, timestamp, source, route, confidence FROM routing_proprioception "
+        "WHERE feedback IS NULL AND timestamp > ? AND timestamp < ? "
+        "ORDER BY timestamp ASC LIMIT 30",
+        (cutoff, maturity),
+    )
+    if not unscored:
+        return 0
+
+    scored = 0
+    for row in unscored:
+        feedback = None
+        ts = row["timestamp"]
+
+        if row["route"] == "1":
+            # Noise route — check if Nate captured similar content nearby
+            captures = db.query(
+                "SELECT content FROM activity_feed "
+                "WHERE source = 'operator:capture' "
+                "AND created_at > ? AND created_at < ? "
+                "LIMIT 10",
+                (ts - 3600, ts + 3600),
+            )
+            if captures:
+                obs = db.query_one(
+                    "SELECT content FROM seed_observations "
+                    "WHERE source = ? AND timestamp >= ? AND timestamp <= ? "
+                    "ORDER BY ABS(timestamp - ?) LIMIT 1",
+                    (row["source"], ts - 30, ts + 30, ts),
+                )
+                if obs and obs["content"]:
+                    max_sim = max(
+                        (_content_similarity(obs["content"], c["content"])
+                         for c in captures if c.get("content")),
+                        default=0.0,
+                    )
+                    if max_sim > 0.25:
+                        feedback = "missed_signal"
+                    else:
+                        feedback = "confirmed_noise"
+                else:
+                    feedback = "confirmed_noise"
+            else:
+                feedback = "confirmed_noise"
+
+        elif row["route"] == "2":
+            # Signal route — check downstream engagement via routing_log
+            route_log = db.query_one(
+                "SELECT feedback_score FROM seed_routing_log "
+                "WHERE timestamp >= ? AND timestamp <= ? "
+                "AND route IN ('think', 'deep') "
+                "ORDER BY ABS(timestamp - ?) LIMIT 1",
+                (ts - 30, ts + 30, ts),
+            )
+            if route_log and route_log.get("feedback_score") is not None:
+                score = route_log["feedback_score"]
+                if score >= 0.5:
+                    feedback = "confirmed_signal"
+                elif score >= 0.3:
+                    feedback = "weak_signal"
+                else:
+                    feedback = "false_alarm"
+
+        if feedback:
+            db.run(
+                "UPDATE routing_proprioception SET feedback = ?, feedback_ts = ? WHERE id = ?",
+                (feedback, now_ts(), row["id"]),
+            )
+            if router:
+                router.update_aci_threshold(missed=(feedback == "missed_signal"))
+            scored += 1
+
+    if scored > 0:
+        log(f"  Proprioception: scored {scored}/{len(unscored)} routing decisions"
+            + (f" (ACI threshold={router._aci_threshold:.1%})" if router else ""))
+    return scored
+
+
+def _proprioception_calibration_probe(db: DB, router: "NoveltyRouter"):
+    """Sample diverse recent observations and route them for calibration data.
+
+    Dynamically discovers source prefixes from seed_observations and
+    activity_feed, sampling 3 at random to route through the gate.
+    """
+    import random
+    cutoff = now_ts() - 3600
+    source_rows = db.query(
+        "SELECT DISTINCT substr(source, 1, instr(source || '/', '/')) as prefix "
+        "FROM seed_observations "
+        "WHERE timestamp > ? AND length(content) > 20 "
+        "UNION "
+        "SELECT DISTINCT substr(source, 1, instr(source || ':', ':')) as prefix "
+        "FROM activity_feed "
+        "WHERE created_at > ? AND length(content) > 20",
+        (cutoff, cutoff),
+    )
+    if not source_rows:
+        return
+    prefixes = [r["prefix"] for r in source_rows if r["prefix"]]
+    probed = 0
+    for prefix in random.sample(prefixes, min(3, len(prefixes))):
+        obs = db.query_one(
+            "SELECT source, content FROM seed_observations "
+            "WHERE source LIKE ? AND length(content) > 20 "
+            "AND timestamp > ? "
+            "ORDER BY RANDOM() LIMIT 1",
+            (f"{prefix}%", cutoff),
+        )
+        if not obs:
+            obs = db.query_one(
+                "SELECT source, content FROM activity_feed "
+                "WHERE source LIKE ? AND length(content) > 20 "
+                "AND created_at > ? "
+                "ORDER BY RANDOM() LIMIT 1",
+                (f"{prefix}%", cutoff),
+            )
+        if not obs or not obs["content"]:
+            continue
+        result = router._ask_gate_local(obs["source"], obs["content"])
+        if result:
+            probed += 1
+    if probed > 0:
+        log(f"  Calibration probe: {probed} diverse sources sampled for proprioception")
+
+
 # ═══════════════════════════════════════════════════════════════════
 #  MQTT Alert
 # ═══════════════════════════════════════════════════════════════════
@@ -2062,13 +2366,13 @@ def publish_alert(obs: dict):
 # ═══════════════════════════════════════════════════════════════════
 
 def main():
-    log("═══ Gemma Pulse starting (cloud gate classifier) ═══")
+    log("═══ Gemma Pulse starting (sovereign routing) ═══")
     log(f"Model: {GATE_MODEL}")
     log(f"DB: {DB_PATH}")
     log(f"Ollama: {OLLAMA_URL}")
     log(f"MQTT: {MQTT_BROKER}:{MQTT_PORT}")
     log(f"Window: {WINDOW_SIZE} | Interval: {LOOP_INTERVAL}s")
-    log(f"Routing: cosine dedup<{THRESH_DEDUP} | classify>={THRESH_ASSESS} → cloud gate")
+    log(f"Routing: cosine dedup<{THRESH_DEDUP} | classify>={THRESH_ASSESS} → local (merged weights) → cloud fallback")
     log(f"Captures bypass gate entirely: {CAPTURE_SOURCES}")
 
     db = DB(DB_PATH)
@@ -2468,12 +2772,20 @@ def main():
                 except Exception as e:
                     log(f"  Signal health error: {e}")
 
-            # Feedback loop — score recent routes
+            # Feedback loop — score recent routes + proprioceptive calibration
             if cycle % FEEDBACK_INTERVAL == 0 and cycle > 0:
                 try:
                     score_recent_routes(db)
                 except Exception as e:
                     log(f"  Feedback scoring error: {e}")
+                try:
+                    score_proprioception(db, router)
+                except Exception as e:
+                    log(f"  Proprioception scoring error: {e}")
+                try:
+                    _proprioception_calibration_probe(db, router)
+                except Exception as e:
+                    log(f"  Calibration probe error: {e}")
 
             # Family voice scan — respond when someone asks about Gemma's domain
             if cycle % 25 == 0 and cycle > 0:

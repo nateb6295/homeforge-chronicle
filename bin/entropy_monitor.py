@@ -42,7 +42,7 @@ TOPIC_THRESHOLDS = {
     "predictions/recorded":      {"low": 0.50, "high": 0.75, "critical": 0.35},
     # Reflections/synthesis — diversity matters most here
     "chronicle/reflection":      {"low": 0.70, "high": 0.90, "critical": 0.55},
-    "sprout/reflection":         {"low": 0.65, "high": 0.85, "critical": 0.50},
+    "hermes/reflection":         {"low": 0.65, "high": 0.85, "critical": 0.50},
     "crossref/connection":       {"low": 0.70, "high": 0.90, "critical": 0.55},
     # Feed topics — externally diverse by nature, lower bar
     # (prefix-matched in _get_thresholds)
@@ -273,7 +273,7 @@ def write_health_signal(topics_to_check=None):
     if topics_to_check is None:
         topics_to_check = [
             "chronicle/reflection",
-            "sprout/reflection",
+            "hermes/reflection",
         ]
 
     # Measure each topic

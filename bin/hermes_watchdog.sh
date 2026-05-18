@@ -17,22 +17,43 @@
 # If THIS one fires again, the path is to detect "Hermes mid-LLM-call" and
 # defer the stale-check rather than just bumping further.
 
-LOG="/home/nate-agx/.hermes/logs/agent.log"
+AGENT_LOG="/home/nate-agx/.hermes/logs/agent.log"
+GATEWAY_LOG="/home/nate-agx/.hermes/logs/gateway.log"
 STALE_SECONDS=1200  # 20 minutes without a log line = stuck
+MIN_UPTIME=1800     # don't restart if Hermes has been up less than 30 min
 
-if [ ! -f "$LOG" ]; then
-    echo "$(date): Log file missing, restarting Hermes"
-    systemctl --user restart chronicle-hermes
-    exit 0
+# Check process uptime — slash command sync + cron ramp-up can take 20+ min
+hermes_pid=$(systemctl --user show chronicle-hermes --property=MainPID --value 2>/dev/null)
+if [ -n "$hermes_pid" ] && [ "$hermes_pid" != "0" ] && [ -d "/proc/$hermes_pid" ]; then
+    start_time=$(stat -c %Z "/proc/$hermes_pid" 2>/dev/null || echo 0)
+    now=$(date +%s)
+    uptime=$((now - start_time))
+    if [ "$uptime" -lt "$MIN_UPTIME" ]; then
+        echo "$(date): Hermes uptime ${uptime}s < ${MIN_UPTIME}s, skipping stale check (post-restart settling)"
+        exit 0
+    fi
 fi
 
-last_mod=$(stat -c %Y "$LOG" 2>/dev/null || echo 0)
+agent_mod=$(stat -c %Y "$AGENT_LOG" 2>/dev/null || echo 0)
+gateway_mod=$(stat -c %Y "$GATEWAY_LOG" 2>/dev/null || echo 0)
+
+if [ "$gateway_mod" -gt "$agent_mod" ]; then
+    last_mod=$gateway_mod
+    which_log="gateway.log"
+else
+    last_mod=$agent_mod
+    which_log="agent.log"
+fi
+
 now=$(date +%s)
 age=$((now - last_mod))
 
-if [ "$age" -gt "$STALE_SECONDS" ]; then
-    echo "$(date): Hermes log stale for ${age}s (threshold ${STALE_SECONDS}s), restarting"
+if [ "$last_mod" -eq 0 ]; then
+    echo "$(date): No log files found, restarting Hermes"
+    systemctl --user restart chronicle-hermes
+elif [ "$age" -gt "$STALE_SECONDS" ]; then
+    echo "$(date): Hermes log stale for ${age}s via ${which_log} (threshold ${STALE_SECONDS}s), restarting"
     systemctl --user restart chronicle-hermes
 else
-    echo "$(date): Hermes healthy (log age ${age}s)"
+    echo "$(date): Hermes healthy (${which_log} age ${age}s)"
 fi

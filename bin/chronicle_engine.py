@@ -60,6 +60,11 @@ CEREBRAS_API_KEY = os.environ.get("CEREBRAS_API_KEY", "")
 CEREBRAS_BASE_URL = "https://api.cerebras.ai/v1"
 CEREBRAS_MODEL = "qwen-3-235b-a22b-instruct-2507"  # Qwen3 235B MoE via Cerebras wafer-scale
 
+# Cloud inference (Anthropic) — CCS compression via Claude Sonnet
+ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY", "")
+ANTHROPIC_BASE_URL = "https://api.anthropic.com/v1"
+ANTHROPIC_MODEL = "claude-sonnet-4-6"
+
 # Three always-on servers
 SERVERS = {
     "embed": {
@@ -99,8 +104,8 @@ MODEL_ROUTES = {
     # Darby (Qwen3 235B via DeepInfra primary, Cerebras fallback) — intern, deep reasoning
     "chronicle-deep": ("deepinfra" if DEEPINFRA_API_KEY else "cerebras" if CEREBRAS_API_KEY else "groq" if GROQ_API_KEY else "chat32b", None),
     "chronicle-mind": ("deepinfra" if DEEPINFRA_API_KEY else "cerebras" if CEREBRAS_API_KEY else "groq" if GROQ_API_KEY else "chat32b", None),
-    # CCS compression — Groq primary for speed+reliability (DeepInfra 429s/timeouts block rotation)
-    "chronicle-compress": ("groq" if GROQ_API_KEY else "cerebras" if CEREBRAS_API_KEY else "deepinfra" if DEEPINFRA_API_KEY else "chat32b", None),
+    # CCS compression — Anthropic Claude Sonnet primary (preserves voice + identity)
+    "chronicle-compress": ("anthropic" if ANTHROPIC_API_KEY else "groq" if GROQ_API_KEY else "cerebras" if CEREBRAS_API_KEY else "chat32b", None),
     "qwen3:32b": ("deepinfra" if DEEPINFRA_API_KEY else "cerebras" if CEREBRAS_API_KEY else "groq" if GROQ_API_KEY else "chat32b", None),
 }
 
@@ -433,6 +438,52 @@ async def _call_cerebras(messages: List[Dict], options: Dict) -> Dict:
             return await resp.json()
 
 
+async def _call_anthropic(messages: List[Dict], options: Dict) -> Dict:
+    """Call Anthropic Claude API for CCS compression. Returns OpenAI-shaped response."""
+    system_msg = None
+    chat_msgs = []
+    for m in messages:
+        if m.get("role") == "system":
+            system_msg = m["content"]
+        else:
+            chat_msgs.append({"role": m["role"], "content": m["content"]})
+
+    payload = {
+        "model": ANTHROPIC_MODEL,
+        "messages": chat_msgs,
+        "max_tokens": options.get("num_predict", 4096),
+        "temperature": options.get("temperature", 0.6),
+    }
+    if system_msg:
+        payload["system"] = system_msg
+    headers = {
+        "x-api-key": ANTHROPIC_API_KEY,
+        "anthropic-version": "2023-06-01",
+        "Content-Type": "application/json",
+    }
+    timeout_s = options.get("timeout", 90)
+    async with ClientSession(timeout=ClientTimeout(total=timeout_s)) as session:
+        async with session.post(
+            f"{ANTHROPIC_BASE_URL}/messages",
+            json=payload,
+            headers=headers,
+        ) as resp:
+            if resp.status != 200:
+                error_body = await resp.text()
+                raise Exception(f"Anthropic {resp.status}: {error_body}")
+            data = await resp.json()
+            content = ""
+            if data.get("content"):
+                content = "".join(
+                    b["text"] for b in data["content"] if b.get("type") == "text"
+                )
+            return {
+                "choices": [{"message": {"role": "assistant", "content": content}}],
+                "model": data.get("model", ANTHROPIC_MODEL),
+                "usage": data.get("usage", {}),
+            }
+
+
 async def handle_chat(request: web.Request) -> web.Response:
     body = await request.json()
     model_name = body.get("model", "chronicle-deep")
@@ -445,7 +496,9 @@ async def handle_chat(request: web.Request) -> web.Response:
 
     t0 = time.time()
     try:
-        if server_key == "deepinfra":
+        if server_key == "anthropic":
+            data = await _call_anthropic(messages, options)
+        elif server_key == "deepinfra":
             data = await _call_deepinfra(messages, options)
         elif server_key == "cerebras":
             data = await _call_cerebras(messages, options)
@@ -517,7 +570,9 @@ async def handle_generate(request: web.Request) -> web.Response:
 
     t0 = time.time()
     try:
-        if server_key == "deepinfra":
+        if server_key == "anthropic":
+            data = await _call_anthropic(messages, options)
+        elif server_key == "deepinfra":
             data = await _call_deepinfra(messages, options)
         elif server_key == "cerebras":
             data = await _call_cerebras(messages, options)
@@ -617,6 +672,12 @@ async def handle_status(request: web.Request) -> web.Response:
             "status": "enabled",
             "model": GROQ_MODEL_ALT,
             "routes": ["chronicle-challenger"],
+        }
+    if ANTHROPIC_API_KEY:
+        status["anthropic"] = {
+            "status": "enabled",
+            "model": ANTHROPIC_MODEL,
+            "routes": ["chronicle-compress"],
         }
     return web.json_response(status)
 

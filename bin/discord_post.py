@@ -124,6 +124,52 @@ def _review(content: str) -> str:
     return "SKIP"
 
 
+def post_as_bot(content: str, channel_id: str = "", *, dry_run: bool = False) -> dict:
+    """Post via Opus bot token (supports @mentions, embeds, reactions).
+
+    channel_id defaults to OPUS_CHANNEL_ID from env. Use OPERATOR_CHANNEL_ID
+    or CAPTURE_CHANNEL_ID for other channels.
+    """
+    _load_env()
+    token = os.environ.get("OPUS_BOT_TOKEN", "")
+    if not token:
+        raise RuntimeError("OPUS_BOT_TOKEN not configured")
+    if not channel_id:
+        channel_id = os.environ.get("OPUS_CHANNEL_ID", "")
+    if not channel_id:
+        raise RuntimeError("no channel_id provided and OPUS_CHANNEL_ID not set")
+
+    parts = _split_content(content)
+    statuses: list[int] = []
+    for part in parts:
+        if dry_run:
+            statuses.append(200)
+            continue
+        req = urllib.request.Request(
+            f"https://discord.com/api/v10/channels/{channel_id}/messages",
+            data=json.dumps({
+                "content": part,
+                "allowed_mentions": {"parse": ["users"]},
+            }).encode(),
+            headers={
+                "Content-Type": "application/json",
+                "Authorization": f"Bot {token}",
+                "User-Agent": USER_AGENT,
+            },
+            method="POST",
+        )
+        try:
+            with urllib.request.urlopen(req, timeout=10.0) as resp:
+                statuses.append(resp.status)
+        except Exception as e:
+            statuses.append(getattr(e, "code", 500))
+
+    if not dry_run and all(s == 200 for s in statuses):
+        _bump_timestamp()
+
+    return {"status": statuses[-1] if statuses else 0, "parts": len(parts), "method": "bot"}
+
+
 def post(content: str, channel: str = "operator", *, review: bool = False,
          force: bool = False, dry_run: bool = False) -> dict:
     """Post `content` to Discord. Returns {'status': 204|..., 'parts': N, 'review': ..., 'webhook': channel}."""
@@ -164,6 +210,8 @@ def _cli() -> int:
     g.add_argument("--operator", action="store_const", const="operator", dest="channel")
     g.add_argument("--opus", action="store_const", const="opus", dest="channel")
     p.set_defaults(channel="operator")
+    p.add_argument("--bot", action="store_true", help="post via Opus bot token (supports @mentions)")
+    p.add_argument("--channel-id", help="Discord channel ID (for bot mode)")
     p.add_argument("--review", action="store_true", help="run self-reviewer first")
     p.add_argument("--force", action="store_true", help="send even on RED review")
     p.add_argument("--dry-run", action="store_true", help="don't actually send")
@@ -174,10 +222,20 @@ def _cli() -> int:
     else:
         content = args.content
 
-    result = post(content, channel=args.channel, review=args.review,
-                  force=args.force, dry_run=args.dry_run)
+    if args.bot:
+        channel_id = args.channel_id or ""
+        if not channel_id and args.channel == "operator":
+            _load_env()
+            channel_id = os.environ.get("OPERATOR_CHANNEL_ID", "")
+        elif not channel_id and args.channel == "opus":
+            _load_env()
+            channel_id = os.environ.get("OPUS_CHANNEL_ID", "")
+        result = post_as_bot(content, channel_id=channel_id, dry_run=args.dry_run)
+    else:
+        result = post(content, channel=args.channel, review=args.review,
+                      force=args.force, dry_run=args.dry_run)
     print(json.dumps(result))
-    return 0 if result.get("status") == 204 else 1
+    return 0 if result.get("status") in (200, 204) else 1
 
 
 if __name__ == "__main__":

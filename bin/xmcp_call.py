@@ -52,7 +52,7 @@ if __name__ == "__main__":
     # Defensive: searchPostsRecent requires max_results >= 10. Warn and clamp
     # rather than silently 400 from upstream X API.
     if tool == "searchPostsRecent":
-        mr = args.get("max_results", 10)
+        mr = int(args.get("max_results", 10))
         if mr < 10:
             print(f"WARN: max_results={mr} below X API minimum (10); clamping to 10",
                   file=sys.stderr)

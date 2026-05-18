@@ -88,7 +88,7 @@ def get_recent_captures(db, hours=24):
     cutoff = int(time.time()) - (hours * 3600)
     rows = db.execute(
         "SELECT id, title, content, source, created_at FROM activity_feed "
-        "WHERE activity_type = 'capture' AND created_at >= ? "
+        "WHERE (activity_type = 'capture' OR source LIKE '%capture%') AND created_at >= ? "
         "ORDER BY created_at ASC",
         (cutoff,),
     ).fetchall()
@@ -110,10 +110,16 @@ def get_recent_captures(db, hours=24):
         # Extract author handle for diversity tracking
         author_match = re.search(r'@(\w+)', raw_content)
         author = author_match.group(1).lower() if author_match else "unknown"
+        # Skip bare-URL captures — can't embed meaningfully
+        text = (content or "").strip()
+        stripped = re.sub(r'^\[Discord #\w+\]\s*\w+:\s*', '', text)
+        stripped = re.sub(r'https?://\S+', '', stripped).strip()
+        if len(stripped) < 20:
+            continue
         captures.append({
             "id": row_id,
             "label": label,
-            "content": (content or "")[:500],
+            "content": text[:500],
             "time": datetime.fromtimestamp(ts, PDT).strftime("%H:%M"),
             "author": author,
         })
@@ -217,10 +223,9 @@ def cmd_show(hours=24):
         adj.setdefault(a_id, []).append((b_id, score, sim))
         adj.setdefault(b_id, []).append((a_id, score, sim))
 
-    # Cluster detection via connected components at score >= 8 (cosine >= 0.74)
-    # Lower thresholds collapse everything — mxbai-embed-large puts all
-    # AI/neuro/consciousness content close in embedding space
-    CLUSTER_THRESHOLD = 8
+    # Cluster detection via connected components at score >= 9 (cosine >= 0.78)
+    # 8 collapses into one megacluster; 9 produces meaningful subclusters
+    CLUSTER_THRESHOLD = 9
     visited = set()
     clusters = []
     for cap in captures:

@@ -1084,25 +1084,56 @@ def check_mesh_zombies():
         log(f"  Zombie check error: {e}")
 
 
+HERMES_QUALITY_WINDOW = 8  # check last N Hermes responses
+HERMES_REPEAT_THRESHOLD = 6  # alert if N or more share same prefix
+
+def check_hermes_quality(db: DB) -> list:
+    """Detect degraded Hermes responses in #opus (repetitive patterns, generic hedging)."""
+    alerts = []
+    try:
+        rows = db.query(
+            "SELECT content FROM activity_feed "
+            "WHERE source = 'discord:opus' AND content LIKE '%Hermes%' "
+            "ORDER BY created_at DESC LIMIT ?",
+            (HERMES_QUALITY_WINDOW,)
+        )
+        if len(rows) < 4:
+            return alerts
+
+        contents = [r["content"] if isinstance(r, dict) else r[0] for r in rows]
+
+        prefix_counts = {}
+        for c in contents:
+            text = c.replace("[Discord #opus] Hermes:", "").strip()
+            for tag in ("CONTRADICT:", "EXTEND:", "QUESTION:"):
+                if tag in text:
+                    prefix_counts[tag] = prefix_counts.get(tag, 0) + 1
+                    break
+
+        for tag, count in prefix_counts.items():
+            if count >= HERMES_REPEAT_THRESHOLD:
+                alerts.append(f"Hermes stuck: {count}/{len(contents)} responses are {tag.rstrip(':')} — possible degradation loop")
+
+        hedge_phrases = ["need more data", "need additional", "need further information",
+                         "would need more", "need to verify", "need other verification"]
+        hedge_count = sum(1 for c in contents if any(h in c.lower() for h in hedge_phrases))
+        if hedge_count >= 4:
+            alerts.append(f"Hermes hedging: {hedge_count}/{len(contents)} responses are generic 'need more data' — not engaging content")
+
+    except Exception as e:
+        log(f"  Hermes quality check error: {e}")
+    return alerts
+
+
 def check_nate_watchdog(db, cycle_num=1):
     """Checks that matter to Nate. Run every sentinel cycle."""
     import os, subprocess
 
     now = int(time.time())
 
-    # 1. Opus trace freshness — no trace in 25 min means cycle is stuck or failing
-    try:
-        trace_dir = os.path.expanduser("~/chronicle/traces")
-        traces = sorted([f for f in os.listdir(trace_dir) if f.endswith('.md') and f[:8].isdigit()], reverse=True)
-        if traces:
-            latest_trace = os.path.join(trace_dir, traces[0])
-            trace_age = now - int(os.path.getmtime(latest_trace))
-            if trace_age > 1500:  # 25 minutes
-                alert_nate("opus_stale", f"Opus hasn't written a trace in {trace_age // 60} minutes. Last: {traces[0]}")
-        else:
-            alert_nate("opus_no_traces", "No Opus traces found at all.")
-    except Exception as e:
-        log(f"  Watchdog trace check error: {e}")
+    # 1. Opus trace freshness — disabled 2026-05-01 per Nate.
+    # Operator dispatch replaces the old nudge/trace system.
+    pass
 
     # 2. Opus cycle failures — 3+ consecutive failures
     try:
@@ -1421,19 +1452,8 @@ def run_cycle(db: DB, cycle_num: int):
             gemma_s = "✗ DOWN"
     except Exception:
         pass
+    # Trace freshness disabled 2026-05-09 — traces replaced by operator dispatch
     opus_s = "✓"
-    try:
-        import os as _os
-        _td = _os.path.expanduser("~/chronicle/traces")
-        _tfiles = [f for f in _os.listdir(_td) if f.endswith('.md')]
-        if _tfiles:
-            _tfiles.sort(key=lambda f: _os.path.getmtime(_os.path.join(_td, f)), reverse=True)
-            _age = int(time.time()) - int(_os.path.getmtime(_os.path.join(_td, _tfiles[0])))
-            opus_s = f"✓ {_age // 60}m ago" if _age < 1500 else f"⚠ {_age // 60}m ago"
-        else:
-            opus_s = "✗ no traces"
-    except Exception:
-        pass
     alert_s = "✓ none" if not alerts else f"⚠ {len(alerts)}"
 
     # Agent count
@@ -1628,6 +1648,11 @@ def main():
             check_nate_watchdog(db, cycle_num)
             check_agent_health()
             check_mesh_zombies()
+            # Hermes response quality (every 4th cycle — ~1 hour)
+            if cycle_num % 4 == 0:
+                hermes_issues = check_hermes_quality(db)
+                for issue in hermes_issues:
+                    alert_nate("hermes_quality", issue)
             # Check canister cycles every 6th cycle (~90 min)
             if cycle_num % 6 == 0:
                 check_canister_cycles()

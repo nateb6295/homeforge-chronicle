@@ -23,8 +23,8 @@ import sys
 import urllib.request
 
 DB = "/mnt/hdd/chronicle-data/processed.db"
-GEMMA_URL = "http://localhost:11435/v1/chat/completions"
-GEMMA_MODEL = "gemma-4-26B-A4B-it-Q4_K_M.gguf"
+GEMMA_URL = "http://localhost:11436/api/chat"
+GEMMA_MODEL = "chronicle-challenger"
 def _load_chronicle_env():
     env_path = os.path.expanduser("~/chronicle/chronicle.env")
     if not os.path.isfile(env_path):
@@ -45,17 +45,51 @@ _load_chronicle_env()
 OPERATOR_WEBHOOK = os.environ.get("OPERATOR_WEBHOOK", "")
 
 
+CHALLENGE_LOG = os.path.expanduser("~/chronicle/data/thread_challenge_log.json")
+
+
+def _recent_challenges():
+    if os.path.exists(CHALLENGE_LOG):
+        try:
+            with open(CHALLENGE_LOG) as f:
+                return json.load(f)
+        except (json.JSONDecodeError, IOError):
+            pass
+    return {}
+
+
+def _log_challenge(thread_id):
+    import time as _time
+    recent = _recent_challenges()
+    recent[str(thread_id)] = _time.time()
+    os.makedirs(os.path.dirname(CHALLENGE_LOG), exist_ok=True)
+    with open(CHALLENGE_LOG, "w") as f:
+        json.dump(recent, f)
+
+
 def pick_thread(db, thread_id=None):
+    import random, time as _time
     if thread_id:
         row = db.execute(
             "SELECT id, title, question FROM cognitive_threads WHERE id = ?",
             (thread_id,),
         ).fetchone()
     else:
-        row = db.execute(
+        rows = db.execute(
             "SELECT id, title, question FROM cognitive_threads "
-            "WHERE status = 'active' ORDER BY updated_at ASC LIMIT 1"
-        ).fetchone()
+            "WHERE status = 'active' ORDER BY updated_at ASC"
+        ).fetchall()
+        if not rows:
+            return None
+        recent = _recent_challenges()
+        cooldown = 6 * 3600
+        eligible = [
+            r for r in rows
+            if _time.time() - recent.get(str(r[0]), 0) > cooldown
+        ]
+        if not eligible:
+            eligible = rows
+        row = random.choice(eligible[:5])
     return row
 
 
@@ -68,19 +102,29 @@ def thread_history(db, thread_id, limit=8):
     return list(reversed(rows))
 
 
+CHALLENGE_ANGLES = [
+    "tests an assumption — find the weakest load-bearing claim and push on it",
+    "surfaces a counterexample — name a concrete case where the current position breaks",
+    "forces a measurable claim — turn the current position into something with a number attached",
+    "connects to another domain — what field outside this thread's usual territory has a result that bears on it",
+    "inverts the framing — argue the opposite position and find where it's strongest",
+    "asks what's missing — what evidence would change your mind, and why hasn't anyone looked for it",
+]
+
+
 def build_prompt(title, question, history):
+    import random
     history_text = "\n".join(
         f"- [{ev}] {content[:300]}" for ev, content, _ in history
     ) or "(no recorded history yet)"
+    angle = random.choice(CHALLENGE_ANGLES)
     return (
         f"You are helping a long-running inquiry pose its next move.\n\n"
         f"Thread title: {title}\n"
         f"Original question: {question}\n\n"
         f"Recent thread arc (oldest → newest):\n{history_text}\n\n"
-        f"Write ONE sharp challenge question (1–3 sentences) that would pressure "
-        f"the thread's current position — something that tests an assumption, "
-        f"surfaces a counterexample, or forces a measurable claim. Do not "
-        f"summarize. Do not preface. Output ONLY the challenge question itself."
+        f"Write ONE sharp challenge question (1–3 sentences) that {angle}. "
+        f"Do not summarize. Do not preface. Output ONLY the challenge question itself."
     )
 
 
@@ -88,8 +132,6 @@ def call_gemma(prompt, timeout=60):
     payload = {
         "model": GEMMA_MODEL,
         "messages": [{"role": "user", "content": prompt}],
-        "max_tokens": 220,
-        "temperature": 0.75,
     }
     data = json.dumps(payload).encode("utf-8")
     req = urllib.request.Request(
@@ -97,7 +139,7 @@ def call_gemma(prompt, timeout=60):
     )
     with urllib.request.urlopen(req, timeout=timeout) as r:
         resp = json.loads(r.read())
-    return resp["choices"][0]["message"]["content"].strip()
+    return resp["message"]["content"].strip()
 
 
 def post_operator(content):
@@ -138,14 +180,14 @@ def main():
         return 1
 
     msg = (
-        f"**Thread #{tid} auto-challenge** — generated from {len(history)} history entries\n\n"
-        f"*{title}*\n\n"
+        f"**Thread #{tid} challenge** — *{title}*\n\n"
         f"{challenge}"
     )
     print(msg)
 
     if not args.dry:
         post_operator(msg)
+        _log_challenge(tid)
         print("[posted to #operator]")
     return 0
 

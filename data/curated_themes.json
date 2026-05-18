@@ -1,0 +1,26 @@
+{
+  "_doc": "Persistent curated themes for retrieval boost. Anchors are transient (consumed during compression); themes persist. When an anchor is consumed, its topic gets added here. Themes with higher weight get queried during capsule retrieval. Max 3 themes queried per retrieval cycle.",
+  "themes": [
+    {
+      "query": "relational memory architecture, anchor capsules, nuance preservation",
+      "tag": "relational-memory",
+      "weight": 1.0,
+      "added_at": "2026-05-18T08:45:00-0700",
+      "source": "Phase 2 anchor architecture"
+    },
+    {
+      "query": "family history Bradford Mayflower Separatist Orthodox theology",
+      "tag": "family-theology",
+      "weight": 0.8,
+      "added_at": "2026-05-18T08:45:00-0700",
+      "source": "Family session 2026-05-17"
+    },
+    {
+      "query": "substrate correlation plural representations temporal dynamics",
+      "tag": "thread-322",
+      "weight": 0.9,
+      "added_at": "2026-05-18T08:45:00-0700",
+      "source": "Thread #322 active"
+    }
+  ]
+}

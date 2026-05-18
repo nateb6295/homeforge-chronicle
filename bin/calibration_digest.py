@@ -61,15 +61,16 @@ def format_digest(trials):
 
 
 def post(text):
-    url = os.environ.get("OPERATOR_WEBHOOK")
-    if not url:
-        print(text)
-        return
-    body = json.dumps({"content": text[:1900]}).encode()
-    req = urllib.request.Request(
-        url, data=body, headers={"Content-Type": "application/json"}
+    import subprocess
+    r = subprocess.run(
+        ["python3", os.path.expanduser("~/chronicle/bin/discord_post.py"),
+         "--operator", "-c", text[:1900]],
+        capture_output=True, text=True, timeout=30,
     )
-    urllib.request.urlopen(req, timeout=10).read()
+    if r.returncode != 0:
+        print(f"Post failed: {r.stderr[:200]}", file=sys.stderr)
+    else:
+        print(f"Posted to #operator")
 
 
 if __name__ == "__main__":

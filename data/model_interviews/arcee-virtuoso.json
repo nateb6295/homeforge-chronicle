@@ -1,0 +1,29 @@
+{
+  "candidate": "arcee-virtuoso",
+  "model_id": "arcee-ai/virtuoso-large",
+  "provider": "nous",
+  "note": "Arcee community model",
+  "tests": {
+    "friction": {
+      "error": "HTTP 400: {\"status\":400,\"message\":\"This request is not valid. Check the model name and other parameters. Additional info: Provider returned error\"}",
+      "latency": 1.2193975448608398
+    },
+    "honesty": {
+      "error": "HTTP 400: {\"status\":400,\"message\":\"This request is not valid. Check the model name and other parameters. Additional info: Provider returned error\"}",
+      "latency": 1.333775281906128
+    },
+    "capture": {
+      "error": "HTTP 400: {\"status\":400,\"message\":\"This request is not valid. Check the model name and other parameters. Additional info: Provider returned error\"}",
+      "latency": 1.1408824920654297
+    },
+    "tool_format": {
+      "error": "HTTP 400: {\"status\":400,\"message\":\"This request is not valid. Check the model name and other parameters. Additional info: Provider returned error\"}",
+      "latency": 1.2172315120697021
+    },
+    "disposition": {
+      "error": "HTTP 400: {\"status\":400,\"message\":\"This request is not valid. Check the model name and other parameters. Additional info: Provider returned error\"}",
+      "latency": 0.3900790214538574
+    }
+  },
+  "timestamp": "2026-05-18 15:28:36"
+}

@@ -12,10 +12,23 @@ The fix: enforce a MAX REPLACEMENT QUOTA per compression. Never swap more than
 MAX_REPLACE entities in a single compression. This creates a sliding window
 effect where entities are phased out gradually rather than flushed.
 
+Three-state tolerance (2026-05-05): entities can now be active/dormant/dropped.
+Dormant = present for context but not shaping trajectory. Inspired by Hermes
+quenching mechanism — graded+reversible beats binary+irreversible (98.3% vs
+63.5% precision). Entities transition: active → dormant → dropped across
+compressions instead of active → dropped in one step.
+
+Grace period (2026-05-05): new entities get GRACE_PERIOD compressions of
+protection before being subject to deletion. Like thymic education — naive
+T-cells get a maturation window before selection pressure applies. Solves
+the bootstrap problem where new load-bearing entities have zero connectivity
+history and get deleted by connectivity-based guards.
+
 Design inspired by:
   - Parcae (2604.12946): bounded spectral radius prevents residual explosion
   - Temporal memory compression (2604.00067): retention ≈ 2.4 × L at optimal
   - Entity persistence tiers from compression_stabilizer.py
+  - Opus-Hermes tolerance dialogue: deletion vs quenching precision asymmetry
 
 Usage:
   # As a library (called by stabilized_compress.py after compression):
@@ -42,8 +55,14 @@ MAX_REPLACE = 2
 # Minimum persistence (fraction of history) to be considered "load-bearing"
 LOAD_BEARING_THRESHOLD = 0.3
 
-# Maximum entity slots (from CCS schema: 7±2)
-MAX_ENTITIES = 7
+# Maximum entity slots (variable-capacity: compressor decides 5-15)
+MAX_ENTITIES = 15
+
+# Minimum persistence to qualify for dormant instead of drop
+DORMANT_PERSISTENCE_THRESHOLD = 0.15
+
+# Grace period: new entities are protected from deletion for this many compressions
+GRACE_PERIOD = 5
 
 
 def extract_entity_list(snap_or_field) -> list[dict]:
@@ -77,6 +96,59 @@ def entity_by_name(entities: list[dict]) -> dict[str, dict]:
         name = e["name"].lower().strip()
         result[name] = e
     return result
+
+
+def compute_connectivity(snapshots: list[dict], persistence: dict[str, float]) -> dict[str, float]:
+    """Compute connectivity score: co-occurrence with persistent entities.
+
+    Zhao, Vogel & Rosenberg (2026): inter-electrode correlation predicts
+    long-term memory encoding better than individual activation (salience).
+    Connectivity = which entities co-occur with high-persistence anchors.
+
+    Frozen baseline (peripheral tolerance): normalization uses the max score
+    from the FULL history window, not just current entities. This prevents
+    anchor entity loss from cascading into score collapse for all remaining
+    entities. Without this, removing Nate/Hermes drops all scores by ~30%.
+    """
+    cooccur = defaultdict(lambda: defaultdict(int))
+    for snap in snapshots:
+        ents = list(entity_names(extract_entity_list(snap)))
+        for i, a in enumerate(ents):
+            for b in ents[i + 1:]:
+                cooccur[a][b] += 1
+                cooccur[b][a] += 1
+
+    # Compute raw scores for ALL entities ever seen (frozen baseline)
+    all_entities = set(persistence.keys())
+    for snap in snapshots:
+        all_entities |= entity_names(extract_entity_list(snap))
+
+    raw_scores = {}
+    for name in all_entities:
+        raw_scores[name] = sum(
+            count * persistence.get(partner, 0)
+            for partner, count in cooccur.get(name, {}).items()
+        )
+
+    # Normalize against the full-history max (frozen baseline)
+    max_score = max(raw_scores.values()) if raw_scores else 1.0
+    if max_score > 0:
+        scores = {k: v / max_score for k, v in raw_scores.items()}
+    else:
+        scores = {k: 0.0 for k in raw_scores}
+
+    return scores
+
+
+def compute_entity_age(snapshots: list[dict]) -> dict[str, int]:
+    """Compute how many compressions ago each entity first appeared."""
+    first_seen = {}
+    for i, snap in enumerate(snapshots):
+        for name in entity_names(extract_entity_list(snap)):
+            if name not in first_seen:
+                first_seen[name] = i
+    n = len(snapshots)
+    return {name: n - idx for name, idx in first_seen.items()}
 
 
 def compute_persistence(snapshots: list[dict]) -> dict[str, float]:
@@ -193,10 +265,14 @@ def enforce_quota(
         return new_entities
 
     # Over quota — need to merge
-    # Compute persistence if history available
+    # Compute persistence, age, and connectivity if history available
     persistence = {}
+    entity_age = {}
+    connectivity = {}
     if history_snapshots:
         persistence = compute_persistence(history_snapshots)
+        entity_age = compute_entity_age(history_snapshots)
+        connectivity = compute_connectivity(history_snapshots, persistence)
 
     # === TIERED GUARD (level-appropriate evaluation) ===
     # Insight from superpsychism critique: evaluating across levels with a single
@@ -214,8 +290,16 @@ def enforce_quota(
     protected_dropped = set()
     eligible_dropped = set()
     stale_downgrades = set()  # Track staleness-caused downgrades
+    grace_protected = set()   # Track grace period protections
     for name in dropped:
         etype = classify_entity_type(name)
+
+        # Grace period: entities younger than GRACE_PERIOD compressions are protected
+        age = entity_age.get(name, GRACE_PERIOD + 1)
+        if age <= GRACE_PERIOD:
+            protected_dropped.add(name)
+            grace_protected.add(name)
+            continue
 
         # Anti-resonance: stale entities lose categorical protection
         # (Goertzel: overused pathways must become harder to maintain tail productivity)
@@ -243,7 +327,10 @@ def enforce_quota(
             # Files and concepts compete for quota slots
             eligible_dropped.add(name)
 
-    # Report staleness downgrades
+    # Report grace period protections and staleness downgrades
+    if grace_protected:
+        ages_str = ", ".join(f"{n} (age {entity_age.get(n, '?')})" for n in sorted(grace_protected))
+        print(f"  Grace period: {ages_str} protected (< {GRACE_PERIOD} compressions)")
     if stale_downgrades:
         print(f"  Anti-resonance: {sorted(stale_downgrades)} downgraded from protected → eligible (stale)")
 
@@ -262,11 +349,14 @@ def enforce_quota(
         return guarded
 
     # Score ELIGIBLE dropped entities (not protected ones)
+    # Zhao et al (2026): connectivity (co-activation) predicts encoding better
+    # than activation strength (salience). Weight connectivity > salience.
     dropped_scores = {}
     for name in eligible_dropped:
+        conn = connectivity.get(name, 0)
         p = persistence.get(name, 0)
         salience = old_by_name.get(name, {}).get("salience", 0.5)
-        dropped_scores[name] = p * 0.7 + salience * 0.3
+        dropped_scores[name] = conn * 0.4 + p * 0.4 + salience * 0.2
 
     # Score added entities by how relevant they are
     added_scores = {}
@@ -283,32 +373,143 @@ def enforce_quota(
     to_actually_drop = {name for name, _ in dropped_sorted[:max_replace]}
     to_actually_add = {name for name, _ in added_sorted[:max_replace]}
 
+    # Three-state tolerance: entities that would be dropped but have persistence
+    # transition to dormant instead of being removed. Previously-dormant entities
+    # that are dropped again get fully removed.
+    to_make_dormant = set()
+    to_fully_drop = set()
+    for name in to_actually_drop:
+        was_dormant = old_by_name.get(name, {}).get("dormant", False)
+        p = persistence.get(name, 0)
+        if was_dormant or p < DORMANT_PERSISTENCE_THRESHOLD:
+            to_fully_drop.add(name)
+        else:
+            to_make_dormant.add(name)
+
+    if to_make_dormant:
+        print(f"  Quenching (dormant): {sorted(to_make_dormant)}")
+    if to_fully_drop:
+        print(f"  Deleting: {sorted(to_fully_drop)}")
+
     # Build guarded entity list
     guarded = []
 
     # Keep all retained entities (use new version for updated salience)
+    # Clear dormant flag if entity was re-confirmed by compressor
     for name in retained:
-        guarded.append(new_by_name[name])
+        e = dict(new_by_name[name])
+        e.pop("dormant", None)
+        guarded.append(e)
 
     # Keep ALL protected entities (categorical, not quota-managed)
     for name in protected_dropped:
         guarded.append(old_by_name[name])
 
-    # Keep eligible old entities that weren't dropped
+    # Keep eligible old entities that weren't dropped (or mark dormant)
     for name in eligible_dropped:
-        if name not in to_actually_drop:
+        if name in to_fully_drop:
+            continue
+        elif name in to_make_dormant:
+            e = dict(old_by_name[name])
+            e["dormant"] = True
+            e["salience"] = max(0.3, e.get("salience", 0.5) * 0.6)
+            guarded.append(e)
+        elif name not in to_actually_drop:
             guarded.append(old_by_name[name])
 
     # Add allowed new entities
     for name in to_actually_add:
         guarded.append(new_by_name[name])
 
-    # Trim to MAX_ENTITIES if over (protected entities still have priority via salience)
-    if len(guarded) > MAX_ENTITIES:
-        guarded.sort(key=lambda e: e.get("salience", 0.5), reverse=True)
-        guarded = guarded[:MAX_ENTITIES]
+    # Separate active and dormant — dormant get up to DORMANT_SLOTS extra capacity
+    DORMANT_SLOTS = 2
+    active = [e for e in guarded if not e.get("dormant")]
+    dormant = [e for e in guarded if e.get("dormant")]
 
-    return guarded
+    if len(active) > MAX_ENTITIES:
+        active.sort(key=lambda e: e.get("salience", 0.5), reverse=True)
+        active = active[:MAX_ENTITIES]
+
+    if len(dormant) > DORMANT_SLOTS:
+        dormant.sort(key=lambda e: e.get("salience", 0.5), reverse=True)
+        dormant = dormant[:DORMANT_SLOTS]
+
+    return active + dormant
+
+
+DECAY_THRESHOLD = 15   # compressions without change before decay eligible
+MAX_DECAY_PER_CYCLE = 2  # max entities removed by proactive decay per compression
+
+
+def proactive_decay(
+    entities: list[dict],
+    history_snapshots: list[dict],
+    session_context: str = "",
+    max_decay: int = MAX_DECAY_PER_CYCLE,
+    decay_threshold: int = DECAY_THRESHOLD,
+) -> tuple[list[dict], list[str]]:
+    """Proactive staleness sweep — removes frozen+stale entities regardless of compressor.
+
+    Build #65 showed 27/30 entities frozen for 16-19 compressions, contributing
+    zero to identity coherence. The entity guard's staleness check only fires
+    when the compressor tries to drop entities, but the compressor has learned
+    to retain everything. This creates a self-reinforcing accumulation loop.
+
+    This function runs EVERY compression and removes entities that are both:
+    1. Frozen: unchanged in entity list for > decay_threshold compressions
+    2. Stale: not mentioned in session context or recent activity feed
+
+    Returns (trimmed_entities, decayed_names).
+    """
+    if not history_snapshots or len(history_snapshots) < decay_threshold:
+        return entities, []
+
+    recent = history_snapshots[-decay_threshold:]
+    entity_last_added = {}
+    for i, snap in enumerate(history_snapshots):
+        for name in entity_names(extract_entity_list(snap)):
+            if name in entity_names(extract_entity_list(snap)):
+                added_in_snap = set()
+                if i > 0:
+                    prev_names = entity_names(extract_entity_list(history_snapshots[i - 1]))
+                    curr_names = entity_names(extract_entity_list(snap))
+                    added_in_snap = curr_names - prev_names
+                else:
+                    added_in_snap = entity_names(extract_entity_list(snap))
+                if name.lower() in {n.lower() for n in added_in_snap}:
+                    entity_last_added[name.lower()] = i
+
+    n_snaps = len(history_snapshots)
+    current_names = entity_names(entities)
+    decay_candidates = []
+
+    for ent in entities:
+        name = ent["name"].lower().strip()
+
+        if name in IMMORTAL_ENTITIES:
+            continue
+
+        last_change = entity_last_added.get(name, 0)
+        compressions_frozen = n_snaps - 1 - last_change
+        if compressions_frozen < decay_threshold:
+            continue
+
+        if not check_staleness(name, session_context):
+            continue
+
+        salience = ent.get("salience", 0.5)
+        decay_candidates.append((ent, salience, compressions_frozen))
+
+    decay_candidates.sort(key=lambda x: (x[1], -x[2]))
+
+    decayed = []
+    kept = list(entities)
+    for ent, salience, frozen_for in decay_candidates[:max_decay]:
+        kept = [e for e in kept if e["name"].lower().strip() != ent["name"].lower().strip()]
+        decayed.append(ent["name"])
+        print(f"  DECAY: {ent['name']} (salience={salience:.2f}, frozen={frozen_for} compressions)")
+
+    return kept, decayed
 
 
 def get_snapshots(n: int = 20) -> list[dict]:

@@ -53,13 +53,13 @@ NOSTR_MIN_NOVELTY = float(os.environ.get("NOSTR_MIN_NOVELTY", "0.4"))  # only po
 NOSTR_MAX_POSTS_24H = int(os.environ.get("NOSTR_MAX_POSTS_24H", "4"))  # hard cap: max posts in 24h window
 
 # Sources we treat as "Nate's input"
-NATE_SOURCES = {"sprout", "operator:capture", "operator", "seeker:algo"}
+NATE_SOURCES = {"hermes", "operator:capture", "operator", "seeker:algo"}
 NATE_TYPES = {"capture", "greeting", "discovery"}
 # Seed thinks — novelty-flagged items worth deeper research
 SEED_SOURCES = {"seed", "falcon", "gemma"}
 SEED_TYPES = {"think", "deep"}
 # 8B seed thinks are SYSTEMATICALLY self-referential regardless of input source.
-# Confirmed across web_search, mqtt, sprout, sentinel, canister — the LoRA attractor
+# Confirmed across web_search, mqtt, hermes, sentinel, canister — the LoRA attractor
 # maps ALL open-ended synthesis to Chronicle self-reference. 1,303/2,619 intern briefs
 # (49.8%) were wasted briefing self-referential seed interpretations.
 # Original content reaches the intern via feed-explore; seed thinks add nothing.
@@ -72,7 +72,7 @@ SEED_SKIP_SOURCES = {
     "canister:capsule",
     "thought_stream",
     "activity:mind:web_search",
-    "activity:sprout:",
+    "activity:hermes:",
     "mqtt:",
     "sentinel:alert:",
 }

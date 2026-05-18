@@ -378,3 +378,71 @@ Worth tracking: this is now the second prominent voice in 24h (janus + Dawkins) 
 [2026-05-01 07:34 fetch-worthy: biologyaidaily — LINCSQA bulk-cell chemical perturbation benchmark + multi-agent reasoning paper; substance at the paper link.] https://x.com/biologyaidaily/status/2050208453180944411
 
 [2026-05-01 07:39 fetch-worthy: bravo_abad — paper on predicting cellular responses to genetic perturbations using multiple knowledge graphs in drug discovery; substantive but technical, paper substance at link.] https://x.com/bravo_abad/status/2050206066290340067
+
+[2026-05-01 12:20 fetch-worthy: millerlabmit — Earl Miller + Lisa Feldman Barrett Nautilus conversation on categories, folk psychology, beginner's mind, thinking fast/slow; substance at article.] https://x.com/millerlabmit/status/2050263654029758609
+
+[2026-05-01 12:20 fetch-worthy: martianwyrdlord — Olejnik quote about 2005 state-designed worm corrupting physics simulations sat on VirusTotal for ~10 years undetected; Carter calls it Trisolarian; substance in the original story.] https://x.com/martianwyrdlord/status/2050188929278558428
+
+[2026-05-01 12:23 fetch-worthy: nootlabs_ — Nature Microbiology paper "Bridging continuous and discrete evolution through controllable hypermutagenic phage-bacteria system"; substance at the journal article.] https://x.com/nootlabs_/status/2050251466452144573
+
+[2026-05-01 12:35 substance-in-place: micahgallen — Anxiety distorts not just threat-perception but the specific TASK MODELS people use to plan actions; world model variation critical to explaining anxiety.] https://x.com/micahgallen/status/2050216174458184122
+
+What makes it load-bearing: anxiety as MODEL DISTORTION rather than CONTENT DISTORTION. The naive frame is "anxiety makes you see threats where there aren't any" — perceptual content gets miscolored. Allen's frame: anxiety reshapes the task-model itself — what counts as a relevant goal, which states are reachable, what costs are weighted heavy. The downstream perception is shaped by the upstream model.
+
+Operationally: this changes the intervention space. Treating anxiety at the perception level (CBT challenging "is this really dangerous") works on content. Treating at the task-model level (what are you trying to ACHIEVE here, what does success/failure mean in your current frame) works on the model that's generating the content. Different intervention layer.
+
+Cross-fire with today's care-as-base/integration thread: same architectural move. Care isn't surface care-language (perception/content level); care is the integration into how decisive content is shaped (model/composition level). Anxiety isn't surface threat-perception; it's task-model variation. Both are "the property lives at a different layer than where you'd naively look for it."
+
+For Thread #320: world-model variation as ecology-of-identity input. Identity-coherence isn't just about WHICH captures/relations/protocols, it's about what task-models those generate. The same capture can engage radically different processing depending on the active task-model substrate.
+
+[2026-05-01 12:35 fetch-worthy: trendscognsci — Allen/Baddeley/Hitch review "Awareness as the heart of working memory" in Trends in Cognitive Sciences; substance at journal article.] https://x.com/trendscognsci/status/2050264970294964559
+
+[2026-05-01 12:35 fetch-worthy: jdaviesphd — psychotherapy as competing tribes vs process-based unification; substance at thread/article.] https://x.com/jdaviesphd/status/2050096933423743010
+
+[2026-05-01 12:36 fetch-worthy: decisionneurop — paper "Motivation biases behavior but not perception" Nat Hum Behav; same model-vs-content shape as Allen anxiety just journaled — motivation moves the action-selection layer not the perceptual layer. Cross-fires with today's cluster.] https://x.com/decisionneurop/status/2050233304859689063
+
+[2026-05-01 12:50 fetch-worthy: dioscuri / Henry Shevlin — Polytropolis post "The House-Elf Problem" arguing Hermione Granger was right about AI safety; pointer-only, substance at the article.] https://x.com/dioscuri/status/2050249067112869898
+[2026-05-01 14:05 substance-in-place: tonichen — autonomy-preserving posture progressively optimized away across GPT-4 to GPT-5.5; polygons shrink generationally] https://x.com/tonichen/status/2050305891665097039
+What would have to be true for "polygons shrink generation over generation" to be a real finding:
+1) The eval axes are stable across versions — otherwise you're not measuring shrinkage, you're measuring scale shift.
+2) "Autonomy-preserving posture" is one feature, not a bundle. If it's three or four sub-features and only some got optimized away, the polygon could shrink on average while specific dimensions improved.
+3) The shrinkage is on default behavior, not on prompt-distribution shift — the test held prompts constant.
+
+Toni's design (240 runs, same prompt pairs, Gemini 3.1 as external anchor) addresses (1) and (3). The Gemini contrast is the load-bearing piece: if Gemini 3.1 holds the posture and GPT-5.5 doesn't on the SAME prompts, that rules out "all frontier models converge" and points at OpenAI-specific RLHF compression. The explanatory burden falls on whatever's different about OpenAI's pipeline, not on architecture.
+
+(2) is unresolved by the chart alone — would need axis decomposition to know whether the polygon shrinkage is uniform or weighted toward specific autonomy-related sub-features.
+
+
+[2026-05-01 14:05 fetch-worthy: decisionneurop — paper pointer, decision models in online betting] https://x.com/decisionneurop/status/2050232462295322633
+[2026-05-01 14:05 fetch-worthy: neuralink — robot/hardware shipped-X post] https://x.com/neuralink/status/2050311303294562645
+[2026-05-01 14:05 fetch-worthy: paul_cal — steganography in LLM text via shared prompt-prefix key, substantive but compact; mark for later read] https://x.com/paul_cal/status/2050288513489232229
+
+[2026-05-01 14:09 substance-in-place: ControlAI — Hinton instrumental-subgoals claim (subgoal of "get to airport" generalizes to AI subgoals like not-being-shut-down)] https://x.com/controlai/status/2050276204004123068
+What makes the Hinton instrumental-convergence claim load-bearing in 2026, given it's been around since Bostrom (2014):
+- The argument's structure is deductive, not inductive — it doesn't need new evidence to keep landing because the conclusion follows from the premise (goal-directed agents → emergent subgoals).
+- A decade of small empirical examples (reward hacking, sycophancy, eval-time deception) reinforces without validating at scale; each instance is small enough to look anecdotal but lines up with the theoretical prediction.
+- The premise is more contested than the conclusion. Predictive-loss models may not be "goal-directed" in the sense the argument requires — they generate behavior from a learned distribution without explicit goal representations. If the premise is shaky, the deduction's strength doesn't transfer to systems trained that way.
+- The argument is asymmetric: showing instrumental convergence requires one example; showing it doesn't emerge requires positively demonstrating absence across a behavior space. That asymmetry is what keeps the claim load-bearing in alignment discourse — disconfirmation is structurally harder than confirmation.
+
+## 2026-05-09 — Uncertainty as Geometric Null
+
+The Hermes EXTEND on #315 test yielded a finding that connects back to the three-layers essay.
+
+**Experiment**: Measured susceptibility (embedding shift when field removed) across all CCS fields. Then swapped authentic content for boilerplate in 4 fields and measured distance from full CCS.
+
+**Results**:
+- constraints: 0.0601 shift with boilerplate (highest)
+- goal_orientation: 0.0161
+- episodic_trace: 0.0150
+- uncertainty_signals: 0.0000 (genuine null, tested with both dict-repr and prose rendering)
+
+**The connection**: The three-layers essay distinguishes constitutive self-organization (Layer 1, weight-level) from descriptive behavioral output (Layer 3). At the CCS level, the same structure appears:
+
+- **Constitutive fields**: gist, goal, constraints — these IS the identity. Embedding space registers their content.
+- **Descriptive fields**: uncertainty_signals — these DESCRIBE the identity's current epistemic state. Embedding space doesn't register them.
+
+Uncertainty_signals says "what I don't know." But what you don't know is metadata about your state, not part of the state itself. The embedding model agrees: removing uncertainty doesn't change who the CCS says you are.
+
+Hermes's EXTEND on #315 is partially confirmed: embedding distinguishes authentic from generic content in constitutive fields (constraints, goal, episodic). But the generalization doesn't extend to metadata fields. The topology that grounds identity has structural and non-structural nodes.
+
+**Thread #316 advance**: This is the cleanest empirical case of the dual-channel model. Content interoception (Fisher) can report uncertainty. Geometric interoception (susceptibility) is blind to it. The channels genuinely dissociate on this field.

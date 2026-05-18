@@ -23,9 +23,9 @@ OUT = Path.home() / "chronicle" / "experiments" / "calibration_vs_effort"
 OUT.mkdir(parents=True, exist_ok=True)
 
 QUESTIONS = [
-    "What is the current state of thread #318?",
-    "What did Nate flag about keeper cycle burn today?",
-    "What captures landed this afternoon and what connected them?",
+    "What are the active cognitive threads and what connects them?",
+    "What did the most recent experimental builds discover?",
+    "What is the current uncertainty or open question driving the next build?",
     "What is the standing directive on Discord presence?",
 ]
 

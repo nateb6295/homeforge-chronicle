@@ -1,0 +1,10 @@
+[Unit]
+Description=Opus Nudge Timer — Every 15 Minutes (was 7; reduced 2026-04-29 per cadence redesign v0)
+
+[Timer]
+OnBootSec=2min
+OnUnitActiveSec=15min
+AccuracySec=30s
+
+[Install]
+WantedBy=timers.target

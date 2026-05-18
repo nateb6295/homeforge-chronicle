@@ -80,7 +80,7 @@ def entity_terms(entity: dict) -> set[str]:
     """all salient terms for an entity — name AND context field.
     The context field carries the topical content (e.g. 'Patient Elliot,
     Memento Problem'), which is what activity_feed text actually mentions.
-    Pure name-tokens (chronicle-local.rs, sprout) miss the semantic link.
+    Pure name-tokens (chronicle-local.rs, hermes) miss the semantic link.
     """
     parts = []
     if entity.get("name"):

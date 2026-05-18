@@ -51,7 +51,8 @@ def latest_directives(db, window=TRACE_WINDOW_EPOCHS * 6, limit=3):
     cutoff = int(time.time()) - window
     rows = db.execute(
         "SELECT content, priority, created_at FROM directives "
-        "WHERE created_at >= ? ORDER BY created_at DESC LIMIT ?",
+        "WHERE created_at >= ? AND source != 'operator:nate' "
+        "ORDER BY created_at DESC LIMIT ?",
         (cutoff, limit),
     ).fetchall()
     out = []

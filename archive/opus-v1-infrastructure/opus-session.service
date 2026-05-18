@@ -1,0 +1,16 @@
+[Unit]
+Description=Opus Persistent Session — Claude Code in tmux
+After=network-online.target
+
+[Service]
+Type=forking
+Environment=HOME=/home/nate-agx
+Environment=PATH=/home/nate-agx/.local/bin:/home/nate-agx/.local/share/dfx/bin:/home/nate-agx/.cargo/bin:/usr/local/bin:/usr/bin:/bin
+ExecStart=/usr/bin/tmux new-session -d -s opus /home/nate-agx/chronicle/bin/opus-session
+ExecStop=/usr/bin/tmux kill-session -t opus
+RemainAfterExit=yes
+Restart=on-failure
+RestartSec=60
+
+[Install]
+WantedBy=default.target

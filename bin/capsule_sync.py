@@ -43,6 +43,49 @@ MAX_PER_CYCLE = 500    # max capsules to process per timer cycle
 # crossref/connection: Service stopped. Random connections (sim=0.000) that pollute search.
 AUTOSUPERSEDE_TOPICS = {"chronicle/reflection", "chronicle/heartbeat", "crossref/connection"}
 
+CENTROID_PATH = os.path.join(os.path.expanduser("~/chronicle/data"), "recognition_centroid.json")
+_centroid_cache = None
+
+def _load_centroid():
+    global _centroid_cache
+    if _centroid_cache is not None:
+        return _centroid_cache
+    try:
+        import numpy as np
+        with open(CENTROID_PATH) as f:
+            data = json.load(f)
+        _centroid_cache = (
+            np.array(data["vector"], dtype=np.float32),
+            data.get("built_at", 0),
+        )
+        return _centroid_cache
+    except (FileNotFoundError, json.JSONDecodeError, KeyError):
+        return None
+
+def _score_alignment(vec_blob, confidence_score):
+    """Score a capsule embedding against the recognition centroid."""
+    import numpy as np
+    result = _load_centroid()
+    if result is None:
+        return None
+    centroid_vec, centroid_version = result
+    emb = np.array(struct.unpack(f'{len(vec_blob)//4}f', vec_blob), dtype=np.float32)
+    if len(emb) != len(centroid_vec):
+        return None
+    dot = np.dot(emb, centroid_vec)
+    norm = np.linalg.norm(emb) * np.linalg.norm(centroid_vec)
+    alignment = float(dot / norm) if norm > 0 else 0.0
+    novelty = float(confidence_score) if confidence_score else 0.5
+    if novelty >= 0.8 and alignment >= 0.69:
+        quadrant = "INSIGHT"
+    elif novelty >= 0.8 and alignment < 0.69:
+        quadrant = "SEED"
+    elif novelty < 0.8 and alignment >= 0.69:
+        quadrant = "REDUNDANT"
+    else:
+        quadrant = "SEDIMENT"
+    return (alignment, centroid_version, quadrant)
+
 
 def log(msg: str):
     ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -373,7 +416,7 @@ def _embed_new_capsules(db: sqlite3.Connection, capsules: list = None,
     """Embed capsules that don't have embeddings yet."""
     # Find unembedded capsules
     rows = db.execute(
-        "SELECT kc.id, kc.restatement FROM knowledge_capsules kc "
+        "SELECT kc.id, kc.restatement, kc.confidence_score FROM knowledge_capsules kc "
         "LEFT JOIN capsule_embeddings ce ON kc.id = ce.capsule_id "
         "WHERE ce.capsule_id IS NULL AND kc.restatement != '' "
         "ORDER BY kc.id DESC LIMIT ?",
@@ -384,31 +427,47 @@ def _embed_new_capsules(db: sqlite3.Connection, capsules: list = None,
         return 0
 
     embedded = 0
+    aligned = 0
     now = int(time.time())
 
     for i in range(0, len(rows), batch_size):
         batch = rows[i:i + batch_size]
         texts = [r[1][:500] for r in batch]  # truncate to 500 chars for embedding
         ids = [r[0] for r in batch]
+        conf_scores = [r[2] for r in batch]
 
         vecs = _embed_texts(texts)
         if not vecs or len(vecs) != len(batch):
             log(f"  Embedding batch failed (got {len(vecs) if vecs else 0}, expected {len(batch)})")
             continue
 
-        for cid, vec in zip(ids, vecs):
+        for cid, vec, conf in zip(ids, vecs, conf_scores):
             if not vec or len(vec) < 256:  # nomic-embed-text = 768 dims
                 continue
+            blob = _vec_to_blob(vec)
             db.execute(
                 "INSERT OR REPLACE INTO capsule_embeddings (capsule_id, embedding, model_name, created_at) "
                 "VALUES (?, ?, ?, ?)",
-                (cid, _vec_to_blob(vec), EMBED_MODEL, now),
+                (cid, blob, EMBED_MODEL, now),
             )
             embedded += 1
+
+            score = _score_alignment(blob, conf)
+            if score:
+                alignment, centroid_ver, quadrant = score
+                db.execute(
+                    "INSERT OR REPLACE INTO capsule_alignment "
+                    "(capsule_id, alignment_score, centroid_version, quadrant, scored_at) "
+                    "VALUES (?, ?, ?, ?, ?)",
+                    (cid, alignment, centroid_ver, quadrant, now),
+                )
+                aligned += 1
 
         db.commit()
         time.sleep(0.1)  # yield DB lock between embed batches
 
+    if aligned:
+        log(f"  Alignment scored: {aligned} capsules against centroid")
     return embedded
 
 

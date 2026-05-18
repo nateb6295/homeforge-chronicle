@@ -86,14 +86,27 @@ def check_capture_processing(db):
 
 
 def check_thread_activity(db):
-    row = db.execute(
+    import calendar, datetime as _dt
+    rows = db.execute(
         "SELECT created_at FROM thread_history "
-        "WHERE event_type = 'advanced' "
-        "ORDER BY created_at DESC LIMIT 1"
-    ).fetchone()
-    if not row:
+        "WHERE event_type IN ('advance', 'advanced', 'ADVANCE') "
+        "AND created_at IS NOT NULL AND created_at != '' "
+    ).fetchall()
+    if not rows:
         return "WARN", "no thread advances found", None
-    age_h = (int(time.time()) - row[0]) / 3600
+    best = 0
+    for (raw,) in rows:
+        if isinstance(raw, str):
+            try:
+                dt = _dt.datetime.strptime(raw, "%Y-%m-%d %H:%M:%S")
+                ts = int(calendar.timegm(dt.timetuple()))
+            except ValueError:
+                ts = int(raw) if raw.isdigit() else 0
+        else:
+            ts = int(raw)
+        if ts > best:
+            best = ts
+    age_h = (int(time.time()) - best) / 3600
     if age_h > THRESHOLDS["thread_max_dormant_hours"]:
         return "WARN", f"thread dormant {age_h:.1f}h (limit {THRESHOLDS['thread_max_dormant_hours']}h)", age_h
     return "OK", f"last advance {age_h:.1f}h ago", age_h
@@ -305,19 +318,28 @@ def main():
         icon = "OK" if status == "OK" else "!!" if status == "WARN" else "XX"
         print(f"  [{icon}] {name}: {msg}")
 
+    hour = int(time.strftime("%H"))
+    is_dream = hour >= 22 or hour < 4
+
     actions = None
-    if do_remediate and g != "A":
+    if do_remediate and g != "A" and not is_dream:
         actions = remediate(db, checks)
         if actions:
             print("Remediation:")
             for a in actions:
                 print(f"  -> {a}")
+    elif do_remediate and is_dream and g != "A":
+        print("DREAM hours — remediation suppressed (no operator noise 10pm-4am)")
 
     db.close()
 
-    if not dry and g not in ("A", "B"):
+    post_threshold = ("A", "B", "C", "D") if is_dream else ("A", "B")
+
+    if not dry and g not in post_threshold:
         post_alert(g, checks, actions=actions)
         print(f"Alert posted to #operator (grade {g})")
+    elif not dry and is_dream and g not in ("A", "B"):
+        print(f"DREAM hours — grade {g} suppressed (only F posts during 10pm-4am)")
     elif full:
         print("(full mode: showing all checks, no alert needed)")
 

@@ -2,13 +2,13 @@
 """hermes_failover — safety net for Opus.
 
 If Nate posts to #operator and Opus's last trace is older than STALE_THRESHOLD
-seconds, this tags Sprout (Hermes) in #operator with Nate's message forwarded,
+seconds, this tags Hermes in #operator with Nate's message forwarded,
 so Hermes can answer in place of Opus.
 
 Runs as a systemd timer every 30s. Tracks the last forwarded message via a
 state file so the same message isn't relayed twice.
 
-Also supports pull: Nate can always @Sprout directly — Hermes handles that
+Also supports pull: Nate can always @Hermes directly — Hermes handles that
 natively, no watchdog involvement needed. This script only handles the
 auto-failover leg.
 """
@@ -29,7 +29,7 @@ STATE_FILE = Path("/home/nate-agx/chronicle/hermes_failover.state.json")
 ENV_FILE = Path("/home/nate-agx/chronicle/chronicle.env")
 STALE_THRESHOLD = 20 * 60  # Opus trace older than 20 min → failover
 
-SPROUT_USER_ID = "1469193641431138427"
+HERMES_USER_ID = "1469193641431138427"
 OPERATOR_CHANNEL_ID = "1483843570292228213"
 
 
@@ -87,12 +87,12 @@ def latest_nate_operator_msg() -> dict | None:
     return {"created_at": int(created_at), "content": content}
 
 
-def already_mentioned_sprout(content: str) -> bool:
+def already_mentioned_hermes(content: str) -> bool:
     c = content.lower()
-    return SPROUT_USER_ID in content or "@sprout" in c or "<@sprout>" in c
+    return HERMES_USER_ID in content or "@hermes" in c or "<@hermes>" in c
 
 
-def forward_to_sprout(env: dict, nate_msg: dict, trace_age: int) -> bool:
+def forward_to_hermes(env: dict, nate_msg: dict, trace_age: int) -> bool:
     webhook = env.get("OPERATOR_WEBHOOK")
     if not webhook:
         print("[failover] OPERATOR_WEBHOOK missing", file=sys.stderr)
@@ -100,7 +100,7 @@ def forward_to_sprout(env: dict, nate_msg: dict, trace_age: int) -> bool:
     inner = nate_msg["content"].split("]", 1)[-1].strip()
     inner = inner[:1500]
     body = (
-        f"<@{SPROUT_USER_ID}> — Opus hasn't written in {trace_age // 60}m. "
+        f"<@{HERMES_USER_ID}> — Opus hasn't written in {trace_age // 60}m. "
         f"Safety-net ping. Nate just asked in #operator:\n\n> {inner}\n\n"
         "Please help where you can. Opus will catch up when responsive."
     )
@@ -126,7 +126,7 @@ def main() -> int:
     if nate["created_at"] <= state.get("last_forwarded_created_at", 0):
         return 0
 
-    if already_mentioned_sprout(nate["content"]):
+    if already_mentioned_hermes(nate["content"]):
         state["last_forwarded_created_at"] = nate["created_at"]
         save_state(state)
         return 0
@@ -144,7 +144,7 @@ def main() -> int:
         save_state(state)
         return 0
 
-    if forward_to_sprout(env, nate, trace_age):
+    if forward_to_hermes(env, nate, trace_age):
         state["last_forwarded_created_at"] = nate["created_at"]
         state["last_failover_at"] = int(time.time())
         save_state(state)

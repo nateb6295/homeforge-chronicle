@@ -19,6 +19,9 @@ import sys
 import time
 from datetime import datetime
 
+UPLOAD_DIR = os.path.expanduser("~/chronicle/uploads")
+os.makedirs(UPLOAD_DIR, exist_ok=True)
+
 import requests
 
 
@@ -45,10 +48,14 @@ DB_PATH = os.environ.get("CHRONICLE_DB",
 
 def _load_token():
     env_file = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "chronicle.env")
-    token = os.environ.get("DISCORD_TOKEN")
+    # Prefer OPUS_BOT_TOKEN so "own messages" filtering skips Opus posts, not Hermes posts
+    token = os.environ.get("OPUS_BOT_TOKEN") or os.environ.get("DISCORD_TOKEN")
     if not token and os.path.exists(env_file):
         with open(env_file) as f:
             for line in f:
+                if line.startswith("OPUS_BOT_TOKEN="):
+                    token = line.strip().split("=", 1)[1]
+                    break
                 if line.startswith("DISCORD_TOKEN="):
                     token = line.strip().split("=", 1)[1]
     return token
@@ -64,13 +71,11 @@ CHANNELS = {
     "operator":  "1483843570292228213",
     "opus":      "1483843572129202427",
     "alerts":    "1487901536678838565",
-    "crew":      "1487902154923704420",
     "oversight": "1488178551491657728",
-    "family":    "1490750142565974047",
 }
 
 # Which channels to poll for new messages
-POLL_CHANNELS = ["capture", "crew", "family", "opus", "operator", "oversight"]  # opus: Sprout/bot only; operator + oversight: Nate direct line
+POLL_CHANNELS = ["capture", "opus", "operator", "oversight"]
 
 # State file for tracking last-read message IDs
 STATE_PATH = os.path.expanduser("~/chronicle/discord_presence_state.json")
@@ -153,6 +158,8 @@ def post_message(channel_name, content, reply_to=None):
         return None
 
 
+SEEN_IDS_CAP = 200
+
 def poll_channels():
     """Poll monitored channels for new messages. Ingest into activity_feed."""
     state = _load_state()
@@ -162,44 +169,64 @@ def poll_channels():
 
     for channel_name in POLL_CHANNELS:
         last_id = state.get(channel_name)
+        seen_key = f"{channel_name}_seen"
+        seen_ids = set(state.get(seen_key, []))
+
         msgs = read_channel(channel_name, limit=20, after=last_id)
 
         if not msgs:
             continue
 
-        # Messages come newest-first, reverse for chronological
         msgs.reverse()
 
         for msg in msgs:
+            msg_id = msg["id"]
+
+            if msg_id in seen_ids:
+                continue
+
             is_bot = msg["author"]["id"] == bot_id
             is_webhook = bool(msg.get("webhook_id"))
             author_name = msg["author"]["username"]
-            # Chronicle webhook = Opus's own outbound posts (we want to track these)
             is_chronicle_webhook = is_webhook and author_name == "Chronicle"
 
-            # In #opus: ONLY ingest Sprout/bot messages (Nate's are private)
-            if channel_name == "opus":
-                if not is_bot:
-                    continue
-            else:
-                # All other channels: skip bot and non-Chronicle webhooks.
-                # Chronicle webhook posts in #operator are Opus's outbound traffic
-                # — track them so dedup queries + Mirror gather have ground truth.
-                if is_bot or (is_webhook and not is_chronicle_webhook):
-                    continue
+            if is_bot:
+                seen_ids.add(msg_id)
+                continue
+            if channel_name not in ("opus",) and is_webhook and not is_chronicle_webhook:
+                seen_ids.add(msg_id)
+                continue
 
             author = author_name
             content = msg["content"]
-            msg_id = msg["id"]
+            if not content.strip() and msg.get("attachments"):
+                fnames = ", ".join(a.get("filename", "file") for a in msg["attachments"])
+                content = f"[Attachment: {fnames}]"
             ts = msg["timestamp"][:19]
 
-            # Determine source tag
+            for att in msg.get("attachments", []):
+                att_url = att.get("url", "")
+                att_name = att.get("filename", "unknown")
+                att_type = att.get("content_type", "")
+                if att_type.startswith("image/") or att_name.lower().endswith(('.png', '.jpg', '.jpeg', '.gif', '.webp')):
+                    try:
+                        ext = os.path.splitext(att_name)[1] or '.png'
+                        local_name = f"discord_{time.strftime('%Y%m%d_%H%M%S')}_{msg_id}{ext}"
+                        local_path = os.path.join(UPLOAD_DIR, local_name)
+                        r_att = requests.get(att_url, timeout=30)
+                        if r_att.status_code == 200:
+                            with open(local_path, 'wb') as f_att:
+                                f_att.write(r_att.content)
+                            content += f"\n[Image saved: {local_path}]"
+                    except Exception as e_att:
+                        content += f"\n[Image download failed: {e_att}]"
+
             if channel_name == "operator" and is_chronicle_webhook:
-                source = "discord:opus"  # Opus's own posts via Chronicle webhook
+                source = "discord:opus"
             elif channel_name == "operator":
                 source = "discord:nate"
             elif channel_name == "oversight":
-                source = "discord:nate:crosschain"  # Nate's direct line in crosschain sandbox
+                source = "discord:nate:crosschain"
             elif channel_name == "capture":
                 source = "discord:capture"
             elif channel_name == "crew":
@@ -207,7 +234,6 @@ def poll_channels():
             else:
                 source = f"discord:{channel_name}"
 
-            # Family channel → inject as voice (bypasses analysis pipeline)
             if channel_name == "family" and content.strip():
                 existing_voice = db.execute(
                     "SELECT 1 FROM agent_voice WHERE agent='nate' AND content LIKE ? LIMIT 1",
@@ -226,15 +252,16 @@ def poll_channels():
                     "content": content[:200],
                     "id": msg_id,
                 })
+                seen_ids.add(msg_id)
                 continue
 
-            # Check if already ingested
             existing = db.execute(
                 "SELECT 1 FROM activity_feed WHERE source=? AND content LIKE ? LIMIT 1",
                 (source, f"%{content[:50]}%")
             ).fetchone()
 
-            if not existing and content.strip():
+            has_attachments = bool(msg.get("attachments"))
+            if not existing and (content.strip() or has_attachments):
                 db.execute(
                     "INSERT INTO activity_feed (source, activity_type, content, created_at) "
                     "VALUES (?, ?, ?, ?)",
@@ -249,11 +276,12 @@ def poll_channels():
                     "id": msg_id,
                 })
 
-        # Update last-read ID
+            seen_ids.add(msg_id)
+
         if msgs:
-            # msgs was reversed (line 151) to chronological order, so msgs[-1] is newest
-            newest_id = msgs[-1]["id"]
-            state[channel_name] = newest_id
+            state[channel_name] = msgs[-1]["id"]
+            seen_list = sorted(seen_ids)
+            state[seen_key] = seen_list[-SEEN_IDS_CAP:]
 
     db.commit()
     db.close()

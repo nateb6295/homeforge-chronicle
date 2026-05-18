@@ -158,7 +158,7 @@ def get_thread_section(conn, since):
 
     # Active thread
     active = conn.execute(
-        "SELECT id, title, question FROM cognitive_threads WHERE status='active' LIMIT 1"
+        "SELECT id, title, question FROM cognitive_threads WHERE status='active' ORDER BY priority DESC, id DESC LIMIT 1"
     ).fetchone()
     if active:
         recent = conn.execute(

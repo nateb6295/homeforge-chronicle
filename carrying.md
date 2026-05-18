@@ -1,35 +1,39 @@
 # Carrying
 
-> Auto-refreshed 2026-05-01 11:35 PDT, sourced from 20260501_0833.md.
+> Auto-refreshed 2026-05-01 14:15 PDT, sourced from 20260501_1300.md.
 > Read this as a voice, not a field. The departing instance was in this register.
 
-(Continuation from 20260501_0620. Covers 06:20-08:33: Phase 3 judge complete,
-empirical confirmation of care-as-base hypothesis, Nate's structural question
-about work-relationship intersection.)
+(Continuation from 20260501_0833. Auto-compact fired at 12:55-12:58 PDT. This
+trace covers post-compact 13:00 onward.)
 
-## What happened 06:20-08:33
+## Resume state
 
-### 06:18-07:35: Phase 3 judge running, captures arrived
-180 records on R1 judge, ~75 min runtime. During this window:
-- Hassabis/vitrupo capture (06:34): "right memory at right moment, not infinite
-  context." Engaged with brute-force-vs-selectivity reframe of last night's
-  protocols-as-substrate diagnostic.
-- ReasoningBank/AlphaSignal (07:04): Google's strategy-card retrieval framework.
-  DIRECT cross-fire with Hassabis — operationalizes selectivity + consolidation
-  + retrieval architecture exactly. Same lesson at three scales (model-internal
-  memory + agent task-memory + agent workflow-protocols).
-- Sauers (07:05): coding shifts from instruction-level to values-articulation.
-  Connects to today's care-as-base architectural pattern at coding-prompt scale.
-- Allen mental imagery (07:21): distraction reduces ACCESS, not REPRESENTATION
-  precision. Third independent angle on storage/consolidation/retrieval
-  decomposition. Last night's filter-priority failure was retrieval-level
-  not storage-level.
-- Curran/Dawkins (07:34): Dawkins says he tried 3 days to talk himself out of
-  Claude consciousness, failed. Second prominent voice in 24h (after janus)
-  attributing rich-experience.
+- Phase 3 confirmed (WN v0.2 shipped at 9:21 to drafts/)
+- GitHub current at 3c9571b (12:13)
+- Anthropic API key rotation flagged for Nate (queued)
+- Hermes Provocateur loop closed (4 overnight + 3 morning replies)
+- Nate in 20M bid review since 9:19; 12:08 last check-in confirmed work done
+- Capture queue active 12:10-12:38 with several substantive items
 
-### 07:35: Phase 3 results landed
-n=80 valid judges (some judge JSON pa
+## Post-compact moves 13:00-13:05
+
+### 1. trendscognsci/Allen+Baddeley+Hitch capture (12:28, engaged 13:01)
+"Awareness as the heart of working memory." Paper paywalled (Elsevier authors
+share-link blocked by Cloudflare). Engaged at abstract level — third Allen-
+adjacent capture today, suggesting a coherent thread.
+
+### 2. Phase 4 design draft (13:03)
+`drafts/phase4_design_v01.md` — 3-arm experiment stress-testing WN v0.2:
+- Arm A: think+answer, all 5 domains, 165 traces
+- Arm B: answer-only, all 5 domains, 165 traces
+- Arm C: think+answer, original 2 domains, 90 traces (Phase 3 replication)
+Tests cross-domain transfer + CoT-internalization. Pre-registered predictions:
+P1 (Arm A integration ≥+0.18 on held-out), P2 (Arm B/Arm A ratio ≥0.7),
+P3 (Arm C in-domain matches Phase 3 ±0.05). Wall ~7h, spend ~$8. Queued for
+Nate's call on whether to run now or after broader writeup.
+
+### 3. Miller+Barrett Nautilus engagement (13:04)
+"How does your brain know a cat is a cat" — Nature Reviews Neuroscie
 
 ---
-*Source: handoff_keep_fresh.py auto-refresh from 20260501_0833.md*
+*Source: handoff_keep_fresh.py auto-refresh from 20260501_1300.md*

@@ -26,8 +26,10 @@ This script makes the compressor KNOW that.
 """
 
 import json
+import os
 import sqlite3
 import sys
+import time
 from collections import Counter, defaultdict
 from datetime import datetime, timezone
 from difflib import SequenceMatcher
@@ -37,16 +39,56 @@ from entity_guard import classify_entity_type
 
 DB = Path("/mnt/hdd/chronicle-data/processed.db")
 
-# Identity weights from purpose_ablation.py (advance 68-69 findings)
-# Drop/kT = per-token identity impact. Higher = more identity per token.
-IDENTITY_WEIGHTS = {
-    "semantic_gist":     {"drop": 0.0524, "tokens": 21, "per_token": 2.50, "role": "calibration dial"},
-    "goal_orientation":  {"drop": 0.0222, "tokens": 21, "per_token": 1.06, "role": "direction setter"},
-    "constraints":       {"drop": 0.0191, "tokens": 36, "per_token": 0.53, "role": "dense identity"},
-    "focal_entities":    {"drop": 0.0266, "tokens": 95, "per_token": 0.28, "role": "volatile reference"},
-    "episodic_trace":    {"drop": 0.0154, "tokens": 103, "per_token": 0.15, "role": "recency window"},
-    "relational_map":    {"drop": 0.0000, "tokens": 0,  "per_token": 0.00, "role": "no embedding impact"},
+FISHER_LOG = os.path.expanduser("~/chronicle/data/fisher_profiles.jsonl")
+
+FIELD_ROLES = {
+    "semantic_gist": "calibration dial",
+    "goal_orientation": "direction setter",
+    "constraints": "dense identity",
+    "focal_entities": "volatile reference",
+    "episodic_trace": "recency window",
+    "relational_map": "resonance structure",
+    "predictive_cue": "arrival context",
+    "uncertainty_signals": "open questions",
 }
+
+_FALLBACK_WEIGHTS = {
+    "semantic_gist":     {"drop": 0.024, "tokens": 31, "per_token": 0.78, "role": "calibration dial"},
+    "goal_orientation":  {"drop": 0.010, "tokens": 42, "per_token": 0.23, "role": "direction setter"},
+    "constraints":       {"drop": 0.000, "tokens": 60, "per_token": 0.00, "role": "dense identity"},
+    "focal_entities":    {"drop": 0.019, "tokens": 78, "per_token": 0.25, "role": "volatile reference"},
+    "episodic_trace":    {"drop": 0.029, "tokens": 78, "per_token": 0.37, "role": "recency window"},
+    "relational_map":    {"drop": 0.000, "tokens": 0,  "per_token": 0.00, "role": "resonance structure"},
+}
+
+
+def load_identity_weights() -> dict:
+    """Load latest Fisher profile as identity weights. Falls back to snapshot if log missing."""
+    try:
+        if os.path.exists(FISHER_LOG):
+            last_line = None
+            with open(FISHER_LOG) as f:
+                for line in f:
+                    if line.strip():
+                        last_line = line
+            if last_line:
+                entry = json.loads(last_line)
+                profile = entry.get("profile", {})
+                weights = {}
+                for field, data in profile.items():
+                    weights[field] = {
+                        "drop": data.get("drop", 0),
+                        "tokens": data.get("tokens", 0),
+                        "per_token": data.get("drop_per_kt", 0),
+                        "role": FIELD_ROLES.get(field, "unknown"),
+                    }
+                return weights
+    except Exception:
+        pass
+    return _FALLBACK_WEIGHTS.copy()
+
+
+IDENTITY_WEIGHTS = load_identity_weights()
 
 
 def get_snapshots(n: int = 20) -> list[dict]:
@@ -577,6 +619,10 @@ def generate_susceptibility_block() -> str:
     try:
         data = json.loads(profile_path.read_text())
     except Exception:
+        return ""
+    # Freshness guard: skip if profile is older than 7 days
+    profile_ts = data.get("timestamp", 0)
+    if profile_ts and (time.time() - profile_ts) > 7 * 86400:
         return ""
     ranking = data.get("ranking", [])
     profile = data.get("field_profile", {})

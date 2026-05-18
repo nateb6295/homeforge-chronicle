@@ -1,0 +1,10 @@
+[Unit]
+Description=Opus Nudge — Send cycle context to persistent session
+After=opus-session.service
+
+[Service]
+Type=oneshot
+EnvironmentFile=%h/chronicle/chronicle.env
+Environment=HOME=/home/nate-agx
+Environment=PATH=/home/nate-agx/.local/bin:/usr/local/bin:/usr/bin:/bin
+ExecStart=/home/nate-agx/chronicle/bin/opus-nudge

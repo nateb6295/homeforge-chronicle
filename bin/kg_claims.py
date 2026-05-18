@@ -47,7 +47,7 @@ def get_unprocessed_capsules(db, limit=50):
           AND length(kc.restatement) > 300
           AND kc.topic NOT LIKE 'threads/%'
           AND kc.topic NOT LIKE 'self/%'
-          AND kc.topic NOT LIKE 'sprout/%'
+          AND kc.topic NOT LIKE 'hermes/%'
           AND kc.topic NOT LIKE 'chronicle/reflection%'
           AND kc.id NOT IN (
               SELECT DISTINCT source_id FROM kg_mentions

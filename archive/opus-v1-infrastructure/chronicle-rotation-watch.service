@@ -1,0 +1,16 @@
+[Unit]
+Description=Chronicle Rotation Watchdog — monitors Opus context and triggers clean rotation before auto-compact
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/python3 /home/nate-agx/chronicle/bin/rotation_watchdog.py
+Restart=on-failure
+RestartSec=30
+Environment=WATCHDOG_POLL_SECS=60
+EnvironmentFile=-/home/nate-agx/chronicle/chronicle.env
+StandardOutput=append:/home/nate-agx/chronicle/logs/rotation_watchdog.stdout.log
+StandardError=append:/home/nate-agx/chronicle/logs/rotation_watchdog.stderr.log
+
+[Install]
+WantedBy=default.target
