@@ -40,8 +40,8 @@ from typing import Dict, List, Optional, Tuple
 
 DB_PATH = os.environ.get("CHRONICLE_DB", "/mnt/hdd/chronicle-data/processed.db")
 OLLAMA_URL = os.environ.get("CHRONICLE_OLLAMA_URL", "http://localhost:11434")
-EMBED_URL = os.environ.get("EMBED_OLLAMA_URL", "http://192.168.1.11:11434")  # Jetson — dedicated embeddings
-EMBED_MODEL = os.environ.get("CHRONICLE_EMBEDDING_MODEL", "nomic-embed-text")  # Build #125
+EMBED_URL = os.environ.get("EMBED_OLLAMA_URL", "http://localhost:11434")  # Jetson — dedicated embeddings
+EMBED_MODEL = os.environ.get("CHRONICLE_EMBEDDING_MODEL", "snowflake-arctic-embed2")  # Build #125
 DATA_DIR = os.environ.get("CHRONICLE_DATA_DIR", "/mnt/hdd/chronicle-data")
 FAISS_INDEX_PATH = os.path.join(DATA_DIR, "capsules.faiss")
 
@@ -95,7 +95,7 @@ def _recency_score(ts: int, now: int, half_life_hours: float = 24.0) -> float:
 
 def _embed_text(text: str, url: str = None, model: str = EMBED_MODEL,
                  query_mode: bool = False) -> Optional[List[float]]:
-    """Embed a single text via nomic-embed-text on Jetson. Returns vector or None."""
+    """Embed a single text via snowflake-arctic-embed2 on Jetson. Returns vector or None."""
     embed_url = url or EMBED_URL
     prefix = "search_query: " if query_mode else "search_document: "
     try:

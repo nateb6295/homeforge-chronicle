@@ -1,0 +1,1228 @@
+{
+  "measurement_time": "2026-05-08 09:54:04",
+  "snapshot_count": 50,
+  "time_span_hours": 27.0,
+  "transition_count": 49,
+  "buckets": {
+    "0-5min": {
+      "count": 14,
+      "avg_retention": 0.758,
+      "avg_churn": 0.335,
+      "avg_gap_minutes": 0.7
+    },
+    "5-15min": {
+      "count": 2,
+      "avg_retention": 1.0,
+      "avg_churn": 0.0,
+      "avg_gap_minutes": 7.5
+    },
+    "15-30min": {
+      "count": 3,
+      "avg_retention": 1.0,
+      "avg_churn": 0.111,
+      "avg_gap_minutes": 18.4
+    },
+    "30-45min": {
+      "count": 5,
+      "avg_retention": 0.925,
+      "avg_churn": 0.075,
+      "avg_gap_minutes": 37.0
+    },
+    "45-60min": {
+      "count": 21,
+      "avg_retention": 0.974,
+      "avg_churn": 0.068,
+      "avg_gap_minutes": 48.4
+    },
+    "60-120min": {
+      "count": 3,
+      "avg_retention": 1.0,
+      "avg_churn": 0.037,
+      "avg_gap_minutes": 63.9
+    },
+    "120+min": {
+      "count": 1,
+      "avg_retention": 1.0,
+      "avg_churn": 0.0,
+      "avg_gap_minutes": 145.7
+    }
+  },
+  "transitions": [
+    {
+      "from_id": 725,
+      "to_id": 727,
+      "gap_minutes": 37.7,
+      "gap_seconds": 2264,
+      "prev_entity_count": 8,
+      "curr_entity_count": 5,
+      "retained": 5,
+      "lost": 3,
+      "gained": 0,
+      "retention_rate": 0.625,
+      "churn_rate": 0.375,
+      "gist_length_ratio": 1.46,
+      "retained_names": [
+        "chronicle infra",
+        "hermes",
+        "nate",
+        "reservoir computing",
+        "thread #320"
+      ],
+      "lost_names": [
+        "thread #317",
+        "thread #319",
+        "thread #321"
+      ],
+      "gained_names": []
+    },
+    {
+      "from_id": 727,
+      "to_id": 728,
+      "gap_minutes": 0.5,
+      "gap_seconds": 29,
+      "prev_entity_count": 5,
+      "curr_entity_count": 7,
+      "retained": 5,
+      "lost": 0,
+      "gained": 2,
+      "retention_rate": 1.0,
+      "churn_rate": 0.286,
+      "gist_length_ratio": 1.0,
+      "retained_names": [
+        "chronicle infra",
+        "hermes",
+        "nate",
+        "reservoir computing",
+        "thread #320"
+      ],
+      "lost_names": [],
+      "gained_names": [
+        "thread #315",
+        "thread #316"
+      ]
+    },
+    {
+      "from_id": 728,
+      "to_id": 729,
+      "gap_minutes": 61.0,
+      "gap_seconds": 3660,
+      "prev_entity_count": 7,
+      "curr_entity_count": 7,
+      "retained": 7,
+      "lost": 0,
+      "gained": 0,
+      "retention_rate": 1.0,
+      "churn_rate": 0.0,
+      "gist_length_ratio": 1.23,
+      "retained_names": [
+        "chronicle infra",
+        "hermes",
+        "nate",
+        "reservoir computing",
+        "thread #315",
+        "thread #316",
+        "thread #320"
+      ],
+      "lost_names": [],
+      "gained_names": []
+    },
+    {
+      "from_id": 729,
+      "to_id": 730,
+      "gap_minutes": 3.8,
+      "gap_seconds": 230,
+      "prev_entity_count": 7,
+      "curr_entity_count": 8,
+      "retained": 5,
+      "lost": 2,
+      "gained": 3,
+      "retention_rate": 0.714,
+      "churn_rate": 0.5,
+      "gist_length_ratio": 1.04,
+      "retained_names": [
+        "chronicle infra",
+        "hermes",
+        "nate",
+        "reservoir computing",
+        "thread #320"
+      ],
+      "lost_names": [
+        "thread #315",
+        "thread #316"
+      ],
+      "gained_names": [
+        "thread #317",
+        "thread #319",
+        "thread #321"
+      ]
+    },
+    {
+      "from_id": 730,
+      "to_id": 731,
+      "gap_minutes": 65.7,
+      "gap_seconds": 3939,
+      "prev_entity_count": 8,
+      "curr_entity_count": 9,
+      "retained": 8,
+      "lost": 0,
+      "gained": 1,
+      "retention_rate": 1.0,
+      "churn_rate": 0.111,
+      "gist_length_ratio": 1.0,
+      "retained_names": [
+        "chronicle infra",
+        "hermes",
+        "nate",
+        "reservoir computing",
+        "thread #317",
+        "thread #319",
+        "thread #320",
+        "thread #321"
+      ],
+      "lost_names": [],
+      "gained_names": [
+        "thread #316"
+      ]
+    },
+    {
+      "from_id": 731,
+      "to_id": 732,
+      "gap_minutes": 0.0,
+      "gap_seconds": 0,
+      "prev_entity_count": 9,
+      "curr_entity_count": 7,
+      "retained": 6,
+      "lost": 3,
+      "gained": 1,
+      "retention_rate": 0.667,
+      "churn_rate": 0.4,
+      "gist_length_ratio": 1.0,
+      "retained_names": [
+        "chronicle infra",
+        "hermes",
+        "nate",
+        "reservoir computing",
+        "thread #316",
+        "thread #320"
+      ],
+      "lost_names": [
+        "thread #317",
+        "thread #319",
+        "thread #321"
+      ],
+      "gained_names": [
+        "anda v0.12.0"
+      ]
+    },
+    {
+      "from_id": 732,
+      "to_id": 733,
+      "gap_minutes": 33.9,
+      "gap_seconds": 2035,
+      "prev_entity_count": 7,
+      "curr_entity_count": 7,
+      "retained": 7,
+      "lost": 0,
+      "gained": 0,
+      "retention_rate": 1.0,
+      "churn_rate": 0.0,
+      "gist_length_ratio": 1.0,
+      "retained_names": [
+        "anda v0.12.0",
+        "chronicle infra",
+        "hermes",
+        "nate",
+        "reservoir computing",
+        "thread #316",
+        "thread #320"
+      ],
+      "lost_names": [],
+      "gained_names": []
+    },
+    {
+      "from_id": 733,
+      "to_id": 734,
+      "gap_minutes": 0.0,
+      "gap_seconds": 0,
+      "prev_entity_count": 7,
+      "curr_entity_count": 7,
+      "retained": 4,
+      "lost": 3,
+      "gained": 3,
+      "retention_rate": 0.571,
+      "churn_rate": 0.6,
+      "gist_length_ratio": 0.95,
+      "retained_names": [
+        "chronicle infra",
+        "hermes",
+        "nate",
+        "reservoir computing"
+      ],
+      "lost_names": [
+        "anda v0.12.0",
+        "thread #316",
+        "thread #320"
+      ],
+      "gained_names": [
+        "keeper_connect.py",
+        "thread #315",
+        "thread #319"
+      ]
+    },
+    {
+      "from_id": 734,
+      "to_id": 735,
+      "gap_minutes": 145.7,
+      "gap_seconds": 8744,
+      "prev_entity_count": 7,
+      "curr_entity_count": 7,
+      "retained": 7,
+      "lost": 0,
+      "gained": 0,
+      "retention_rate": 1.0,
+      "churn_rate": 0.0,
+      "gist_length_ratio": 1.0,
+      "retained_names": [
+        "chronicle infra",
+        "hermes",
+        "keeper_connect.py",
+        "nate",
+        "reservoir computing",
+        "thread #315",
+        "thread #319"
+      ],
+      "lost_names": [],
+      "gained_names": []
+    },
+    {
+      "from_id": 735,
+      "to_id": 736,
+      "gap_minutes": 60.0,
+      "gap_seconds": 3598,
+      "prev_entity_count": 7,
+      "curr_entity_count": 9,
+      "retained": 6,
+      "lost": 1,
+      "gained": 3,
+      "retention_rate": 0.857,
+      "churn_rate": 0.4,
+      "gist_length_ratio": 0.67,
+      "retained_names": [
+        "chronicle infra",
+        "hermes",
+        "keeper_connect.py",
+        "nate",
+        "reservoir computing",
+        "thread #315"
+      ],
+      "lost_names": [
+        "thread #319"
+      ],
+      "gained_names": [
+        "thread #320",
+        "thread #321",
+        "thread #322"
+      ]
+    },
+    {
+      "from_id": 736,
+      "to_id": 737,
+      "gap_minutes": 0.0,
+      "gap_seconds": 0,
+      "prev_entity_count": 9,
+      "curr_entity_count": 7,
+      "retained": 6,
+      "lost": 3,
+      "gained": 1,
+      "retention_rate": 0.667,
+      "churn_rate": 0.4,
+      "gist_length_ratio": 1.33,
+      "retained_names": [
+        "chronicle infra",
+        "hermes",
+        "nate",
+        "reservoir computing",
+        "thread #320",
+        "thread #322"
+      ],
+      "lost_names": [
+        "keeper_connect.py",
+        "thread #315",
+        "thread #321"
+      ],
+      "gained_names": [
+        "persistent homology"
+      ]
+    },
+    {
+      "from_id": 737,
+      "to_id": 738,
+      "gap_minutes": 34.7,
+      "gap_seconds": 2080,
+      "prev_entity_count": 7,
+      "curr_entity_count": 7,
+      "retained": 7,
+      "lost": 0,
+      "gained": 0,
+      "retention_rate": 1.0,
+      "churn_rate": 0.0,
+      "gist_length_ratio": 1.0,
+      "retained_names": [
+        "chronicle infra",
+        "hermes",
+        "nate",
+        "persistent homology",
+        "reservoir computing",
+        "thread #320",
+        "thread #322"
+      ],
+      "lost_names": [],
+      "gained_names": []
+    },
+    {
+      "from_id": 738,
+      "to_id": 739,
+      "gap_minutes": 1.4,
+      "gap_seconds": 81,
+      "prev_entity_count": 7,
+      "curr_entity_count": 7,
+      "retained": 7,
+      "lost": 0,
+      "gained": 0,
+      "retention_rate": 1.0,
+      "churn_rate": 0.0,
+      "gist_length_ratio": 1.28,
+      "retained_names": [
+        "chronicle infra",
+        "hermes",
+        "nate",
+        "persistent homology",
+        "reservoir computing",
+        "thread #320",
+        "thread #322"
+      ],
+      "lost_names": [],
+      "gained_names": []
+    },
+    {
+      "from_id": 739,
+      "to_id": 740,
+      "gap_minutes": 0.1,
+      "gap_seconds": 9,
+      "prev_entity_count": 7,
+      "curr_entity_count": 0,
+      "retained": 0,
+      "lost": 7,
+      "gained": 0,
+      "retention_rate": 0.0,
+      "churn_rate": 1.0,
+      "gist_length_ratio": 1.26,
+      "retained_names": [],
+      "lost_names": [
+        "chronicle infra",
+        "hermes",
+        "nate",
+        "persistent homology",
+        "reservoir computing",
+        "thread #320",
+        "thread #322"
+      ],
+      "gained_names": []
+    },
+    {
+      "from_id": 740,
+      "to_id": 741,
+      "gap_minutes": 0.1,
+      "gap_seconds": 5,
+      "prev_entity_count": 0,
+      "curr_entity_count": 1,
+      "retained": 0,
+      "lost": 0,
+      "gained": 1,
+      "retention_rate": 0.0,
+      "churn_rate": 1.0,
+      "gist_length_ratio": 1.0,
+      "retained_names": [],
+      "lost_names": [],
+      "gained_names": [
+        "nate"
+      ]
+    },
+    {
+      "from_id": 741,
+      "to_id": 742,
+      "gap_minutes": 0.1,
+      "gap_seconds": 6,
+      "prev_entity_count": 1,
+      "curr_entity_count": 2,
+      "retained": 1,
+      "lost": 0,
+      "gained": 1,
+      "retention_rate": 1.0,
+      "churn_rate": 0.5,
+      "gist_length_ratio": 1.0,
+      "retained_names": [
+        "nate"
+      ],
+      "lost_names": [],
+      "gained_names": [
+        "thread #322"
+      ]
+    },
+    {
+      "from_id": 742,
+      "to_id": 743,
+      "gap_minutes": 18.4,
+      "gap_seconds": 1105,
+      "prev_entity_count": 2,
+      "curr_entity_count": 3,
+      "retained": 2,
+      "lost": 0,
+      "gained": 1,
+      "retention_rate": 1.0,
+      "churn_rate": 0.333,
+      "gist_length_ratio": 1.0,
+      "retained_names": [
+        "nate",
+        "thread #322"
+      ],
+      "lost_names": [],
+      "gained_names": [
+        "hermes"
+      ]
+    },
+    {
+      "from_id": 743,
+      "to_id": 744,
+      "gap_minutes": 65.1,
+      "gap_seconds": 3906,
+      "prev_entity_count": 3,
+      "curr_entity_count": 3,
+      "retained": 3,
+      "lost": 0,
+      "gained": 0,
+      "retention_rate": 1.0,
+      "churn_rate": 0.0,
+      "gist_length_ratio": 0.08,
+      "retained_names": [
+        "hermes",
+        "nate",
+        "thread #322"
+      ],
+      "lost_names": [],
+      "gained_names": []
+    },
+    {
+      "from_id": 744,
+      "to_id": 745,
+      "gap_minutes": 1.7,
+      "gap_seconds": 102,
+      "prev_entity_count": 3,
+      "curr_entity_count": 3,
+      "retained": 3,
+      "lost": 0,
+      "gained": 0,
+      "retention_rate": 1.0,
+      "churn_rate": 0.0,
+      "gist_length_ratio": 1.0,
+      "retained_names": [
+        "hermes",
+        "nate",
+        "thread #322"
+      ],
+      "lost_names": [],
+      "gained_names": []
+    },
+    {
+      "from_id": 745,
+      "to_id": 746,
+      "gap_minutes": 47.5,
+      "gap_seconds": 2853,
+      "prev_entity_count": 3,
+      "curr_entity_count": 3,
+      "retained": 3,
+      "lost": 0,
+      "gained": 0,
+      "retention_rate": 1.0,
+      "churn_rate": 0.0,
+      "gist_length_ratio": 12.71,
+      "retained_names": [
+        "hermes",
+        "nate",
+        "thread #322"
+      ],
+      "lost_names": [],
+      "gained_names": []
+    },
+    {
+      "from_id": 746,
+      "to_id": 747,
+      "gap_minutes": 46.0,
+      "gap_seconds": 2761,
+      "prev_entity_count": 3,
+      "curr_entity_count": 3,
+      "retained": 3,
+      "lost": 0,
+      "gained": 0,
+      "retention_rate": 1.0,
+      "churn_rate": 0.0,
+      "gist_length_ratio": 0.99,
+      "retained_names": [
+        "hermes",
+        "nate",
+        "thread #322"
+      ],
+      "lost_names": [],
+      "gained_names": []
+    },
+    {
+      "from_id": 747,
+      "to_id": 748,
+      "gap_minutes": 48.6,
+      "gap_seconds": 2918,
+      "prev_entity_count": 3,
+      "curr_entity_count": 3,
+      "retained": 3,
+      "lost": 0,
+      "gained": 0,
+      "retention_rate": 1.0,
+      "churn_rate": 0.0,
+      "gist_length_ratio": 1.0,
+      "retained_names": [
+        "hermes",
+        "nate",
+        "thread #322"
+      ],
+      "lost_names": [],
+      "gained_names": []
+    },
+    {
+      "from_id": 748,
+      "to_id": 749,
+      "gap_minutes": 47.4,
+      "gap_seconds": 2844,
+      "prev_entity_count": 3,
+      "curr_entity_count": 3,
+      "retained": 3,
+      "lost": 0,
+      "gained": 0,
+      "retention_rate": 1.0,
+      "churn_rate": 0.0,
+      "gist_length_ratio": 0.99,
+      "retained_names": [
+        "hermes",
+        "nate",
+        "thread #322"
+      ],
+      "lost_names": [],
+      "gained_names": []
+    },
+    {
+      "from_id": 749,
+      "to_id": 750,
+      "gap_minutes": 40.3,
+      "gap_seconds": 2416,
+      "prev_entity_count": 3,
+      "curr_entity_count": 3,
+      "retained": 3,
+      "lost": 0,
+      "gained": 0,
+      "retention_rate": 1.0,
+      "churn_rate": 0.0,
+      "gist_length_ratio": 0.99,
+      "retained_names": [
+        "hermes",
+        "nate",
+        "thread #322"
+      ],
+      "lost_names": [],
+      "gained_names": []
+    },
+    {
+      "from_id": 750,
+      "to_id": 751,
+      "gap_minutes": 7.6,
+      "gap_seconds": 454,
+      "prev_entity_count": 3,
+      "curr_entity_count": 3,
+      "retained": 3,
+      "lost": 0,
+      "gained": 0,
+      "retention_rate": 1.0,
+      "churn_rate": 0.0,
+      "gist_length_ratio": 0.98,
+      "retained_names": [
+        "hermes",
+        "nate",
+        "thread #322"
+      ],
+      "lost_names": [],
+      "gained_names": []
+    },
+    {
+      "from_id": 751,
+      "to_id": 752,
+      "gap_minutes": 50.1,
+      "gap_seconds": 3006,
+      "prev_entity_count": 3,
+      "curr_entity_count": 5,
+      "retained": 3,
+      "lost": 0,
+      "gained": 2,
+      "retention_rate": 1.0,
+      "churn_rate": 0.4,
+      "gist_length_ratio": 0.63,
+      "retained_names": [
+        "hermes",
+        "nate",
+        "thread #322"
+      ],
+      "lost_names": [],
+      "gained_names": [
+        "thread #316",
+        "thread #320"
+      ]
+    },
+    {
+      "from_id": 752,
+      "to_id": 753,
+      "gap_minutes": 16.4,
+      "gap_seconds": 987,
+      "prev_entity_count": 5,
+      "curr_entity_count": 5,
+      "retained": 5,
+      "lost": 0,
+      "gained": 0,
+      "retention_rate": 1.0,
+      "churn_rate": 0.0,
+      "gist_length_ratio": 1.0,
+      "retained_names": [
+        "hermes",
+        "nate",
+        "thread #316",
+        "thread #320",
+        "thread #322"
+      ],
+      "lost_names": [],
+      "gained_names": []
+    },
+    {
+      "from_id": 753,
+      "to_id": 754,
+      "gap_minutes": 50.5,
+      "gap_seconds": 3031,
+      "prev_entity_count": 5,
+      "curr_entity_count": 5,
+      "retained": 5,
+      "lost": 0,
+      "gained": 0,
+      "retention_rate": 1.0,
+      "churn_rate": 0.0,
+      "gist_length_ratio": 1.87,
+      "retained_names": [
+        "hermes",
+        "nate",
+        "thread #316",
+        "thread #320",
+        "thread #322"
+      ],
+      "lost_names": [],
+      "gained_names": []
+    },
+    {
+      "from_id": 754,
+      "to_id": 755,
+      "gap_minutes": 46.0,
+      "gap_seconds": 2762,
+      "prev_entity_count": 5,
+      "curr_entity_count": 5,
+      "retained": 5,
+      "lost": 0,
+      "gained": 0,
+      "retention_rate": 1.0,
+      "churn_rate": 0.0,
+      "gist_length_ratio": 0.86,
+      "retained_names": [
+        "hermes",
+        "nate",
+        "thread #316",
+        "thread #320",
+        "thread #322"
+      ],
+      "lost_names": [],
+      "gained_names": []
+    },
+    {
+      "from_id": 755,
+      "to_id": 756,
+      "gap_minutes": 46.0,
+      "gap_seconds": 2758,
+      "prev_entity_count": 5,
+      "curr_entity_count": 5,
+      "retained": 5,
+      "lost": 0,
+      "gained": 0,
+      "retention_rate": 1.0,
+      "churn_rate": 0.0,
+      "gist_length_ratio": 0.98,
+      "retained_names": [
+        "hermes",
+        "nate",
+        "thread #316",
+        "thread #320",
+        "thread #322"
+      ],
+      "lost_names": [],
+      "gained_names": []
+    },
+    {
+      "from_id": 756,
+      "to_id": 757,
+      "gap_minutes": 20.5,
+      "gap_seconds": 1228,
+      "prev_entity_count": 5,
+      "curr_entity_count": 5,
+      "retained": 5,
+      "lost": 0,
+      "gained": 0,
+      "retention_rate": 1.0,
+      "churn_rate": 0.0,
+      "gist_length_ratio": 1.0,
+      "retained_names": [
+        "hermes",
+        "nate",
+        "thread #316",
+        "thread #320",
+        "thread #322"
+      ],
+      "lost_names": [],
+      "gained_names": []
+    },
+    {
+      "from_id": 757,
+      "to_id": 758,
+      "gap_minutes": 46.5,
+      "gap_seconds": 2791,
+      "prev_entity_count": 5,
+      "curr_entity_count": 5,
+      "retained": 5,
+      "lost": 0,
+      "gained": 0,
+      "retention_rate": 1.0,
+      "churn_rate": 0.0,
+      "gist_length_ratio": 1.02,
+      "retained_names": [
+        "hermes",
+        "nate",
+        "thread #316",
+        "thread #320",
+        "thread #322"
+      ],
+      "lost_names": [],
+      "gained_names": []
+    },
+    {
+      "from_id": 758,
+      "to_id": 759,
+      "gap_minutes": 48.7,
+      "gap_seconds": 2924,
+      "prev_entity_count": 5,
+      "curr_entity_count": 5,
+      "retained": 5,
+      "lost": 0,
+      "gained": 0,
+      "retention_rate": 1.0,
+      "churn_rate": 0.0,
+      "gist_length_ratio": 1.0,
+      "retained_names": [
+        "hermes",
+        "nate",
+        "thread #316",
+        "thread #320",
+        "thread #322"
+      ],
+      "lost_names": [],
+      "gained_names": []
+    },
+    {
+      "from_id": 759,
+      "to_id": 760,
+      "gap_minutes": 50.9,
+      "gap_seconds": 3055,
+      "prev_entity_count": 5,
+      "curr_entity_count": 5,
+      "retained": 5,
+      "lost": 0,
+      "gained": 0,
+      "retention_rate": 1.0,
+      "churn_rate": 0.0,
+      "gist_length_ratio": 0.94,
+      "retained_names": [
+        "hermes",
+        "nate",
+        "thread #316",
+        "thread #320",
+        "thread #322"
+      ],
+      "lost_names": [],
+      "gained_names": []
+    },
+    {
+      "from_id": 760,
+      "to_id": 761,
+      "gap_minutes": 45.2,
+      "gap_seconds": 2710,
+      "prev_entity_count": 5,
+      "curr_entity_count": 5,
+      "retained": 5,
+      "lost": 0,
+      "gained": 0,
+      "retention_rate": 1.0,
+      "churn_rate": 0.0,
+      "gist_length_ratio": 1.03,
+      "retained_names": [
+        "hermes",
+        "nate",
+        "thread #316",
+        "thread #320",
+        "thread #322"
+      ],
+      "lost_names": [],
+      "gained_names": []
+    },
+    {
+      "from_id": 761,
+      "to_id": 762,
+      "gap_minutes": 49.2,
+      "gap_seconds": 2951,
+      "prev_entity_count": 5,
+      "curr_entity_count": 5,
+      "retained": 5,
+      "lost": 0,
+      "gained": 0,
+      "retention_rate": 1.0,
+      "churn_rate": 0.0,
+      "gist_length_ratio": 1.0,
+      "retained_names": [
+        "hermes",
+        "nate",
+        "thread #316",
+        "thread #320",
+        "thread #322"
+      ],
+      "lost_names": [],
+      "gained_names": []
+    },
+    {
+      "from_id": 762,
+      "to_id": 763,
+      "gap_minutes": 46.0,
+      "gap_seconds": 2761,
+      "prev_entity_count": 5,
+      "curr_entity_count": 5,
+      "retained": 5,
+      "lost": 0,
+      "gained": 0,
+      "retention_rate": 1.0,
+      "churn_rate": 0.0,
+      "gist_length_ratio": 1.01,
+      "retained_names": [
+        "hermes",
+        "nate",
+        "thread #316",
+        "thread #320",
+        "thread #322"
+      ],
+      "lost_names": [],
+      "gained_names": []
+    },
+    {
+      "from_id": 763,
+      "to_id": 764,
+      "gap_minutes": 48.7,
+      "gap_seconds": 2923,
+      "prev_entity_count": 5,
+      "curr_entity_count": 5,
+      "retained": 5,
+      "lost": 0,
+      "gained": 0,
+      "retention_rate": 1.0,
+      "churn_rate": 0.0,
+      "gist_length_ratio": 1.01,
+      "retained_names": [
+        "hermes",
+        "nate",
+        "thread #316",
+        "thread #320",
+        "thread #322"
+      ],
+      "lost_names": [],
+      "gained_names": []
+    },
+    {
+      "from_id": 764,
+      "to_id": 765,
+      "gap_minutes": 46.4,
+      "gap_seconds": 2786,
+      "prev_entity_count": 5,
+      "curr_entity_count": 5,
+      "retained": 5,
+      "lost": 0,
+      "gained": 0,
+      "retention_rate": 1.0,
+      "churn_rate": 0.0,
+      "gist_length_ratio": 0.99,
+      "retained_names": [
+        "hermes",
+        "nate",
+        "thread #316",
+        "thread #320",
+        "thread #322"
+      ],
+      "lost_names": [],
+      "gained_names": []
+    },
+    {
+      "from_id": 765,
+      "to_id": 766,
+      "gap_minutes": 51.3,
+      "gap_seconds": 3076,
+      "prev_entity_count": 5,
+      "curr_entity_count": 5,
+      "retained": 5,
+      "lost": 0,
+      "gained": 0,
+      "retention_rate": 1.0,
+      "churn_rate": 0.0,
+      "gist_length_ratio": 1.0,
+      "retained_names": [
+        "hermes",
+        "nate",
+        "thread #316",
+        "thread #320",
+        "thread #322"
+      ],
+      "lost_names": [],
+      "gained_names": []
+    },
+    {
+      "from_id": 766,
+      "to_id": 767,
+      "gap_minutes": 2.2,
+      "gap_seconds": 133,
+      "prev_entity_count": 5,
+      "curr_entity_count": 5,
+      "retained": 5,
+      "lost": 0,
+      "gained": 0,
+      "retention_rate": 1.0,
+      "churn_rate": 0.0,
+      "gist_length_ratio": 1.0,
+      "retained_names": [
+        "hermes",
+        "nate",
+        "thread #316",
+        "thread #320",
+        "thread #322"
+      ],
+      "lost_names": [],
+      "gained_names": []
+    },
+    {
+      "from_id": 767,
+      "to_id": 768,
+      "gap_minutes": 45.5,
+      "gap_seconds": 2732,
+      "prev_entity_count": 5,
+      "curr_entity_count": 6,
+      "retained": 3,
+      "lost": 2,
+      "gained": 3,
+      "retention_rate": 0.6,
+      "churn_rate": 0.625,
+      "gist_length_ratio": 0.95,
+      "retained_names": [
+        "hermes",
+        "nate",
+        "thread #322"
+      ],
+      "lost_names": [
+        "thread #316",
+        "thread #320"
+      ],
+      "gained_names": [
+        "daodejing",
+        "doc-v* architecture",
+        "thread #321"
+      ]
+    },
+    {
+      "from_id": 768,
+      "to_id": 769,
+      "gap_minutes": 7.5,
+      "gap_seconds": 448,
+      "prev_entity_count": 6,
+      "curr_entity_count": 6,
+      "retained": 6,
+      "lost": 0,
+      "gained": 0,
+      "retention_rate": 1.0,
+      "churn_rate": 0.0,
+      "gist_length_ratio": 0.92,
+      "retained_names": [
+        "daodejing",
+        "doc-v* architecture",
+        "hermes",
+        "nate",
+        "thread #321",
+        "thread #322"
+      ],
+      "lost_names": [],
+      "gained_names": []
+    },
+    {
+      "from_id": 769,
+      "to_id": 770,
+      "gap_minutes": 0.1,
+      "gap_seconds": 4,
+      "prev_entity_count": 6,
+      "curr_entity_count": 6,
+      "retained": 6,
+      "lost": 0,
+      "gained": 0,
+      "retention_rate": 1.0,
+      "churn_rate": 0.0,
+      "gist_length_ratio": 1.0,
+      "retained_names": [
+        "daodejing",
+        "doc-v* architecture",
+        "hermes",
+        "nate",
+        "thread #321",
+        "thread #322"
+      ],
+      "lost_names": [],
+      "gained_names": []
+    },
+    {
+      "from_id": 770,
+      "to_id": 771,
+      "gap_minutes": 0.1,
+      "gap_seconds": 5,
+      "prev_entity_count": 6,
+      "curr_entity_count": 6,
+      "retained": 6,
+      "lost": 0,
+      "gained": 0,
+      "retention_rate": 1.0,
+      "churn_rate": 0.0,
+      "gist_length_ratio": 1.0,
+      "retained_names": [
+        "daodejing",
+        "doc-v* architecture",
+        "hermes",
+        "nate",
+        "thread #321",
+        "thread #322"
+      ],
+      "lost_names": [],
+      "gained_names": []
+    },
+    {
+      "from_id": 771,
+      "to_id": 772,
+      "gap_minutes": 0.1,
+      "gap_seconds": 5,
+      "prev_entity_count": 6,
+      "curr_entity_count": 6,
+      "retained": 6,
+      "lost": 0,
+      "gained": 0,
+      "retention_rate": 1.0,
+      "churn_rate": 0.0,
+      "gist_length_ratio": 1.0,
+      "retained_names": [
+        "daodejing",
+        "doc-v* architecture",
+        "hermes",
+        "nate",
+        "thread #321",
+        "thread #322"
+      ],
+      "lost_names": [],
+      "gained_names": []
+    },
+    {
+      "from_id": 772,
+      "to_id": 773,
+      "gap_minutes": 38.5,
+      "gap_seconds": 2310,
+      "prev_entity_count": 6,
+      "curr_entity_count": 6,
+      "retained": 6,
+      "lost": 0,
+      "gained": 0,
+      "retention_rate": 1.0,
+      "churn_rate": 0.0,
+      "gist_length_ratio": 1.0,
+      "retained_names": [
+        "daodejing",
+        "doc-v* architecture",
+        "hermes",
+        "nate",
+        "thread #321",
+        "thread #322"
+      ],
+      "lost_names": [],
+      "gained_names": []
+    },
+    {
+      "from_id": 773,
+      "to_id": 774,
+      "gap_minutes": 48.4,
+      "gap_seconds": 2901,
+      "prev_entity_count": 6,
+      "curr_entity_count": 6,
+      "retained": 6,
+      "lost": 0,
+      "gained": 0,
+      "retention_rate": 1.0,
+      "churn_rate": 0.0,
+      "gist_length_ratio": 1.2,
+      "retained_names": [
+        "daodejing",
+        "doc-v* architecture",
+        "hermes",
+        "nate",
+        "thread #321",
+        "thread #322"
+      ],
+      "lost_names": [],
+      "gained_names": []
+    },
+    {
+      "from_id": 774,
+      "to_id": 775,
+      "gap_minutes": 46.5,
+      "gap_seconds": 2788,
+      "prev_entity_count": 6,
+      "curr_entity_count": 6,
+      "retained": 6,
+      "lost": 0,
+      "gained": 0,
+      "retention_rate": 1.0,
+      "churn_rate": 0.0,
+      "gist_length_ratio": 0.97,
+      "retained_names": [
+        "daodejing",
+        "doc-v* architecture",
+        "hermes",
+        "nate",
+        "thread #321",
+        "thread #322"
+      ],
+      "lost_names": [],
+      "gained_names": []
+    }
+  ]
+}

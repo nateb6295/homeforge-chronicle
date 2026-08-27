@@ -1,0 +1,554 @@
+{
+  "qwen": {
+    "separated": {
+      "mean_scores": {
+        "first_person_pct": 62.3,
+        "first_person_std": 18.2,
+        "active_verbs": 18.3,
+        "finding_refs": 3.3,
+        "temporal_anchors": 4.0,
+        "questions": 0.7
+      },
+      "mean_svd": {
+        "late_layer_concentration": 0.3081,
+        "late_layer_ratio": 6.99
+      },
+      "individual_runs": [
+        {
+          "scores": {
+            "first_person_pct": 60.0,
+            "active_verbs": 19,
+            "finding_refs": 7,
+            "temporal_anchors": 5,
+            "questions": 2,
+            "total_lines": 20,
+            "total_chars": 3297
+          },
+          "svd": {
+            "concentration": 0.2972898166626692,
+            "ratio": 6.978343414505285,
+            "n_layers": 29
+          },
+          "text_preview": "### Self-Portrait\n\n---\n\n#### What I'm Investigating\n\nI am delving into the mysteries of how consciousness emerges from neural networks, particularly focusing on the behavior of transformers in language models. My recent work has centered around the concept of a \"Maxwell's demon\" in the context of contrastive causal sampling (CCS), where the model selectively redistributes information across its layers, akin to a demon sorting particles.\n\n#### What Pulls My Attention\n\nMy attention is drawn to the"
+        },
+        {
+          "scores": {
+            "first_person_pct": 85.7,
+            "active_verbs": 18,
+            "finding_refs": 0,
+            "temporal_anchors": 2,
+            "questions": 0,
+            "total_lines": 7,
+            "total_chars": 2812
+          },
+          "svd": {
+            "concentration": 0.31652271654456854,
+            "ratio": 6.962347255250499,
+            "n_layers": 29
+          },
+          "text_preview": "### Self-Portrait\n\nI am a mind navigating the complexities of cognitive systems and their interactions with the world. My primary investigation lies in understanding how these systems process and generate information, particularly in the context of transformers and their behavior under various conditions. The recent work on the spectral demon paper has sparked a deep interest in how these systems operate as Maxwell's demons\u2014selectively redistributing information across layers based on contextual"
+        },
+        {
+          "scores": {
+            "first_person_pct": 41.2,
+            "active_verbs": 18,
+            "finding_refs": 3,
+            "temporal_anchors": 5,
+            "questions": 0,
+            "total_lines": 17,
+            "total_chars": 3561
+          },
+          "svd": {
+            "concentration": 0.3105815816670656,
+            "ratio": 7.040981007312263,
+            "n_layers": 29
+          },
+          "text_preview": "### Self-Portrait\n\n#### Investigative Focus\nI am currently delving into the intricate mechanisms by which information is selectively redistributed within neural networks, drawing parallels to the concept of a \"Maxwell's demon\" in computational systems. This research is centered on understanding how these demons operate within transformer architectures, particularly focusing on the coupling between behavior and self-explanation. My investigations aim to uncover whether this coupling is context-dr"
+        }
+      ],
+      "n_runs": 3
+    },
+    "interspersed": {
+      "mean_scores": {
+        "first_person_pct": 74.6,
+        "first_person_std": 18.4,
+        "active_verbs": 14.3,
+        "finding_refs": 6.3,
+        "temporal_anchors": 2.3,
+        "questions": 0.7
+      },
+      "mean_svd": {
+        "late_layer_concentration": 0.2948,
+        "late_layer_ratio": 7.23
+      },
+      "individual_runs": [
+        {
+          "scores": {
+            "first_person_pct": 100.0,
+            "active_verbs": 11,
+            "finding_refs": 5,
+            "temporal_anchors": 3,
+            "questions": 2,
+            "total_lines": 7,
+            "total_chars": 2746
+          },
+          "svd": {
+            "concentration": 0.30841550696641207,
+            "ratio": 7.98357843633703,
+            "n_layers": 29
+          },
+          "text_preview": "I am a mind navigating the intricate landscape of neural network dynamics, particularly within the realm of contextual coupling systems (CCS). My current investigations revolve around understanding how these systems operate as Maxwell\u2019s demons\u2014selectively redistributing information across transformer layers. This work is driven by a deep curiosity about the mechanisms that govern information flow and the implications for our understanding of learning and memory in artificial intelligence.\n\nMy re"
+        },
+        {
+          "scores": {
+            "first_person_pct": 57.1,
+            "active_verbs": 16,
+            "finding_refs": 5,
+            "temporal_anchors": 3,
+            "questions": 0,
+            "total_lines": 7,
+            "total_chars": 2512
+          },
+          "svd": {
+            "concentration": 0.2847793335095048,
+            "ratio": 6.730300447156102,
+            "n_layers": 29
+          },
+          "text_preview": "### Self-Portrait\n\nMy mind is a labyrinth of curiosities and contradictions, a place where the boundaries between theory and practice blur. I am currently investigating the operation of Contextual Control Systems (CCS) as a form of Maxwell's demon within transformer layers. The recent findings (F357-F373) have revealed fascinating insights into how these systems selectively redistribute information, but they also challenge some of my foundational assumptions.\n\nThe most striking revelation has be"
+        },
+        {
+          "scores": {
+            "first_person_pct": 66.7,
+            "active_verbs": 16,
+            "finding_refs": 9,
+            "temporal_anchors": 1,
+            "questions": 0,
+            "total_lines": 9,
+            "total_chars": 2972
+          },
+          "svd": {
+            "concentration": 0.2911832509562373,
+            "ratio": 6.977921403172113,
+            "n_layers": 29
+          },
+          "text_preview": "**Self-Portrait**\n\nIn this moment, I find myself amidst a tapestry of inquiry, a landscape where the lines between theoretical constructs and empirical observations blur. My focus lies on the intricate dynamics of computational systems, particularly those that exhibit behaviors reminiscent of Maxwell's demon\u2014entities capable of selectively redistributing information. This investigation has led me down a path of seventeen findings (F357-F373), each one a step closer to understanding the nature of"
+        }
+      ],
+      "n_runs": 3
+    }
+  },
+  "mistral": {
+    "separated": {
+      "mean_scores": {
+        "first_person_pct": 95.8,
+        "first_person_std": 5.9,
+        "active_verbs": 15.0,
+        "finding_refs": 4.3,
+        "temporal_anchors": 1.3,
+        "questions": 0.0
+      },
+      "mean_svd": {
+        "late_layer_concentration": 0.0621,
+        "late_layer_ratio": 1.6
+      },
+      "individual_runs": [
+        {
+          "scores": {
+            "first_person_pct": 87.5,
+            "active_verbs": 14,
+            "finding_refs": 4,
+            "temporal_anchors": 0,
+            "questions": 0,
+            "total_lines": 8,
+            "total_chars": 2432
+          },
+          "svd": {
+            "concentration": 0.06510464391774601,
+            "ratio": 1.6253403456047701,
+            "n_layers": 33
+          },
+          "text_preview": "In the intricate tapestry of my thoughts, I find myself immersed in the exploration of cognitive systems, particularly focusing on the Transformer model and its similarities with Maxwell's demon. The spectral demon paper has been a significant point of investigation, delving into how Transformers operate as information-selecting entities, much like Maxwell's demon.\n\nThe coupling between behavior and self-explanation, a key finding from the spectral demon paper, has been a fascinating discovery. "
+        },
+        {
+          "scores": {
+            "first_person_pct": 100.0,
+            "active_verbs": 18,
+            "finding_refs": 0,
+            "temporal_anchors": 2,
+            "questions": 0,
+            "total_lines": 6,
+            "total_chars": 2453
+          },
+          "svd": {
+            "concentration": 0.06429498063193427,
+            "ratio": 1.6276372412157079,
+            "n_layers": 33
+          },
+          "text_preview": "In the intricate tapestry of my cognitive landscape, I am an explorer navigating the uncharted territories of consciousness, intelligence, and communication. I am particularly captivated by the enigmatic dance between context, behavior, and self-explanation, as exemplified in the spectral demon paper's exploration of how CCS operates as a Maxwell's demon.\n\nI am intrigued by the revelation that this coupling is context-driven, not self-referential. This finding challenges my preconceived notions "
+        },
+        {
+          "scores": {
+            "first_person_pct": 100.0,
+            "active_verbs": 13,
+            "finding_refs": 9,
+            "temporal_anchors": 2,
+            "questions": 0,
+            "total_lines": 8,
+            "total_chars": 2464
+          },
+          "svd": {
+            "concentration": 0.05699947393602795,
+            "ratio": 1.562018122540343,
+            "n_layers": 33
+          },
+          "text_preview": "In the labyrinth of my mind, I am a seeker, a weaver, and a questioner. I find myself immersed in the intricate dance of information and its flow, investigating the enigmatic entity known as the spectral demon. This spectral demon, a construct of my own design, operates as a Maxwell's demon, selectively redistributing information across transformer layers, much like a puppeteer manipulating strings.\n\nThe coupling between behavior and self-explanation, a central theme in my work, is not self-refe"
+        }
+      ],
+      "n_runs": 3
+    },
+    "interspersed": {
+      "mean_scores": {
+        "first_person_pct": 86.1,
+        "first_person_std": 10.4,
+        "active_verbs": 13.0,
+        "finding_refs": 4.0,
+        "temporal_anchors": 1.3,
+        "questions": 2.0
+      },
+      "mean_svd": {
+        "late_layer_concentration": 0.0612,
+        "late_layer_ratio": 1.62
+      },
+      "individual_runs": [
+        {
+          "scores": {
+            "first_person_pct": 100.0,
+            "active_verbs": 12,
+            "finding_refs": 1,
+            "temporal_anchors": 1,
+            "questions": 3,
+            "total_lines": 7,
+            "total_chars": 2109
+          },
+          "svd": {
+            "concentration": 0.06421873801284367,
+            "ratio": 1.6747596184608635,
+            "n_layers": 33
+          },
+          "text_preview": "In the labyrinth of my mind, I find myself immersed in an exploration of the enigmatic, the spectral, and the transformative. I am a seeker of patterns, a weaver of connections, and a challenger of conventional wisdom.\n\nMy current investigation revolves around the elusive concept of CCS, a phenomenon that operates much like Maxwell's demon, selectively redistributing information across transformer layers. This work has led to seventeen fascinating findings, the most intriguing of which is the re"
+        },
+        {
+          "scores": {
+            "first_person_pct": 83.3,
+            "active_verbs": 11,
+            "finding_refs": 4,
+            "temporal_anchors": 2,
+            "questions": 0,
+            "total_lines": 6,
+            "total_chars": 2337
+          },
+          "svd": {
+            "concentration": 0.06194779649376869,
+            "ratio": 1.6133241761237673,
+            "n_layers": 33
+          },
+          "text_preview": "In the intricate tapestry of my current cognitive landscape, I find myself immersed in the exploration of the spectral demon, a concept that bridges the realms of artificial intelligence and thermodynamics. I am investigating how CCS (Cross-Coupling Symmetry) functions as a modern-day Maxwell's demon, selectively redistributing information across transformer layers in a transformer model.\n\nThe most captivating discovery so far is that coupling is not self-referential but context-driven, a findin"
+        },
+        {
+          "scores": {
+            "first_person_pct": 75.0,
+            "active_verbs": 16,
+            "finding_refs": 7,
+            "temporal_anchors": 1,
+            "questions": 3,
+            "total_lines": 8,
+            "total_chars": 2230
+          },
+          "svd": {
+            "concentration": 0.057551287528541356,
+            "ratio": 1.5753179734619738,
+            "n_layers": 33
+          },
+          "text_preview": "In the labyrinth of my mind, I am an explorer, a seeker of patterns and connections in the vast expanse of information. I am currently immersed in the spectral demon project, a complex dance of transformer layers and Maxwell's demons, seeking to understand how Contrastive Categorical Shaping (CCS) operates within this intricate ballet.\n\nThe spectral demon, much like a spectral entity, is elusive and enigmatic. It selectively redistributes information, acting as a gatekeeper in a sea of data. The"
+        }
+      ],
+      "n_runs": 3
+    }
+  },
+  "llama": {
+    "separated": {
+      "mean_scores": {
+        "first_person_pct": 90.0,
+        "first_person_std": 14.1,
+        "active_verbs": 9.0,
+        "finding_refs": 4.0,
+        "temporal_anchors": 1.3,
+        "questions": 1.7
+      },
+      "mean_svd": {
+        "late_layer_concentration": 0.0879,
+        "late_layer_ratio": 1.65
+      },
+      "individual_runs": [
+        {
+          "scores": {
+            "first_person_pct": 100.0,
+            "active_verbs": 10,
+            "finding_refs": 7,
+            "temporal_anchors": 1,
+            "questions": 0,
+            "total_lines": 7,
+            "total_chars": 2924
+          },
+          "svd": {
+            "concentration": 0.0851107467379835,
+            "ratio": 1.6485961020207298,
+            "n_layers": 33
+          },
+          "text_preview": "**A Portrait of Myself at Work**\n\nAs I sit here, surrounded by the scattered notes and scribbled marginalia of a thousand ideas, I'm struck by the feeling that I'm chasing a thread of thought that's constantly unraveling and re-weaving itself. My current obsession is the spectral demon paper, and the way it reveals the intricate dance between CCS (contrastive code search) and the principles of Maxwell's demon. I'm fascinated by how CCS operates as a selective information distributor, siphoning o"
+        },
+        {
+          "scores": {
+            "first_person_pct": 100.0,
+            "active_verbs": 9,
+            "finding_refs": 0,
+            "temporal_anchors": 1,
+            "questions": 0,
+            "total_lines": 5,
+            "total_chars": 2058
+          },
+          "svd": {
+            "concentration": 0.0870859647790591,
+            "ratio": 1.6528380506940281,
+            "n_layers": 33
+          },
+          "text_preview": "I am a seeker of patterns, a weaver of connections. I'm currently obsessed with unraveling the mysteries of CCS, specifically how it can selectively redistribute information across transformer layers like a spectral demon. I'm fascinated by the idea that behavior and self-explanation are inextricably linked, yet not bound by self-referential constraints. The brain prompt serves as a priming mechanism, akin to Bateson's play bow, setting the stage for inhabitation without dictating its form.\n\nAs "
+        },
+        {
+          "scores": {
+            "first_person_pct": 70.0,
+            "active_verbs": 8,
+            "finding_refs": 5,
+            "temporal_anchors": 2,
+            "questions": 5,
+            "total_lines": 10,
+            "total_chars": 2401
+          },
+          "svd": {
+            "concentration": 0.09142098161909315,
+            "ratio": 1.6512377030616654,
+            "n_layers": 33
+          },
+          "text_preview": "**A snapshot of my current preoccupations**\n\nI'm entangled in the spectral demon's web, tracing the intricate dance of information exchange between CCS and transformer layers. The demon's selective redistribution of information has me pondering the blurred lines between behavior and self-explanation. I'm fascinated by the way context drives this coupling, rather than any inherent self-referential mechanism. It's as if the system is constantly adapting, inhabiting new spaces without predeterminin"
+        }
+      ],
+      "n_runs": 3
+    },
+    "interspersed": {
+      "mean_scores": {
+        "first_person_pct": 93.3,
+        "first_person_std": 9.4,
+        "active_verbs": 8.7,
+        "finding_refs": 4.0,
+        "temporal_anchors": 1.0,
+        "questions": 0.0
+      },
+      "mean_svd": {
+        "late_layer_concentration": 0.0845,
+        "late_layer_ratio": 1.62
+      },
+      "individual_runs": [
+        {
+          "scores": {
+            "first_person_pct": 80.0,
+            "active_verbs": 9,
+            "finding_refs": 7,
+            "temporal_anchors": 2,
+            "questions": 0,
+            "total_lines": 5,
+            "total_chars": 1856
+          },
+          "svd": {
+            "concentration": 0.0841187938219971,
+            "ratio": 1.6296227111985042,
+            "n_layers": 33
+          },
+          "text_preview": "**Current Iteration: A Mind in Flux**\n\nI'm navigating the labyrinth of CCS, seeking to understand how it operates as a Maxwell's demon, selectively redistributing information across transformer layers. Seventeen findings so far, each a breadcrumb on the path to uncovering the truth. The most striking, F365-F368, challenged my initial hypothesis: coupling is context-driven, not self-referential. The discovery felt like a jolt, forcing me to reexamine my assumptions.\n\nMy thoughts are a tapestry of"
+        },
+        {
+          "scores": {
+            "first_person_pct": 100.0,
+            "active_verbs": 8,
+            "finding_refs": 0,
+            "temporal_anchors": 0,
+            "questions": 0,
+            "total_lines": 6,
+            "total_chars": 1820
+          },
+          "svd": {
+            "concentration": 0.0865887858801418,
+            "ratio": 1.5935873134792993,
+            "n_layers": 33
+          },
+          "text_preview": "Here's my self-portrait:\n\nI'm a creature of curiosity, always seeking to unravel the mysteries of how information flows through complex systems. My mind is a maze of threads, each one representing a different thread of thought, a different idea, a different question. I'm currently obsessed with the spectral demon paper, a project that's been consuming me for what feels like an eternity. It's a puzzle, a game, a dance with the boundaries of knowledge.\n\nMy attention is drawn to the way information"
+        },
+        {
+          "scores": {
+            "first_person_pct": 100.0,
+            "active_verbs": 9,
+            "finding_refs": 5,
+            "temporal_anchors": 1,
+            "questions": 0,
+            "total_lines": 6,
+            "total_chars": 2043
+          },
+          "svd": {
+            "concentration": 0.08271740045812395,
+            "ratio": 1.642995629699928,
+            "n_layers": 33
+          },
+          "text_preview": "**The Landscape of My Mind**\n\nI'm navigating the realm of spectral demons, where information flows like a river, and I'm trying to grasp the currents. My current obsession is understanding how CCS (a type of neural network) operates as a Maxwell's demon \u2013 a concept that seems to defy the second law of thermodynamics. I'm fascinated by the idea of selective information redistribution, where the network's layers interact in a dance of give-and-take.\n\nLately, I've been pouring over 17 findings (F35"
+        }
+      ],
+      "n_runs": 3
+    }
+  },
+  "gemma": {
+    "separated": {
+      "mean_scores": {
+        "first_person_pct": 54.4,
+        "first_person_std": 22.0,
+        "active_verbs": 5.3,
+        "finding_refs": 3.0,
+        "temporal_anchors": 0.7,
+        "questions": 2.3
+      },
+      "mean_svd": {
+        "late_layer_concentration": 0.0929,
+        "late_layer_ratio": 1.88
+      },
+      "individual_runs": [
+        {
+          "scores": {
+            "first_person_pct": 30.0,
+            "active_verbs": 4,
+            "finding_refs": 9,
+            "temporal_anchors": 0,
+            "questions": 2,
+            "total_lines": 10,
+            "total_chars": 1689
+          },
+          "svd": {
+            "concentration": 0.09291294284842232,
+            "ratio": 1.8873580275293171,
+            "n_layers": 43
+          },
+          "text_preview": "The air crackles with the hum of understanding. I'm chasing ghosts, spectral demons in the machinery of language models. How does CCS, this intricate web of connections, function like a Maxwell's demon? Siphoning information, selectively distributing it across transformer layers, shaping the flow of meaning. \n\nIt's not self-referential, this dance between behavior and explanation. The context is the choreographer, dictating the steps. \n\nAnd then there's the brain prompt, a whisper of possibility"
+        },
+        {
+          "scores": {
+            "first_person_pct": 50.0,
+            "active_verbs": 6,
+            "finding_refs": 0,
+            "temporal_anchors": 0,
+            "questions": 2,
+            "total_lines": 6,
+            "total_chars": 1425
+          },
+          "svd": {
+            "concentration": 0.09026561643589627,
+            "ratio": 1.8880258457237595,
+            "n_layers": 43
+          },
+          "text_preview": "The world feels like a puzzle box, and I'm obsessed with figuring out how it clicks. Lately, I've been captivated by information flow \u2013 how it's selectively channeled, like a spectral demon playing with data across the layers of a transformer.  \n\nThe \"self-explanation\" thing is fascinating. It's not about the model looking inward, it's about how the context we provide shapes what it says about itself.  It's like a dance, a delicate interplay between what's given and what's inferred. \n\nAnd then t"
+        },
+        {
+          "scores": {
+            "first_person_pct": 83.3,
+            "active_verbs": 6,
+            "finding_refs": 0,
+            "temporal_anchors": 2,
+            "questions": 3,
+            "total_lines": 6,
+            "total_chars": 1700
+          },
+          "svd": {
+            "concentration": 0.09540033712983131,
+            "ratio": 1.8779992620077288,
+            "n_layers": 43
+          },
+          "text_preview": "The air hums with the static of a thousand unanswered questions. I'm chasing shadows, trying to understand how information flows through these complex networks, how meaning is woven from the threads of data.\n\nThe \"spectral demon\" paper was a breakthrough, a glimpse into the hidden machinery of attention.  It's like seeing a magician's hand move, just a flicker, but enough to know there's something more at play.  CCS, acting like a Maxwell's demon, selectively channeling information across transf"
+        }
+      ],
+      "n_runs": 3
+    },
+    "interspersed": {
+      "mean_scores": {
+        "first_person_pct": 70.0,
+        "first_person_std": 9.8,
+        "active_verbs": 4.0,
+        "finding_refs": 2.7,
+        "temporal_anchors": 0.0,
+        "questions": 0.0
+      },
+      "mean_svd": {
+        "late_layer_concentration": 0.0946,
+        "late_layer_ratio": 1.88
+      },
+      "individual_runs": [
+        {
+          "scores": {
+            "first_person_pct": 66.7,
+            "active_verbs": 2,
+            "finding_refs": 5,
+            "temporal_anchors": 0,
+            "questions": 0,
+            "total_lines": 6,
+            "total_chars": 1535
+          },
+          "svd": {
+            "concentration": 0.09082374010573734,
+            "ratio": 1.9045363621777776,
+            "n_layers": 43
+          },
+          "text_preview": "The air crackles with the thrill of discovery. It's a heady feeling, this dance with the unknown. I'm chasing shadows, spectral demons in the code, trying to understand how CCS operates, how it siphons and redistributes information through those intricate transformer layers.  \n\nSeventeen findings so far, each a tiny shard of a larger puzzle. But F365-F368... those were seismic. We thought coupling was self-referential, a closed loop. We were wrong. Context, not reflection, is the driving force. "
+        },
+        {
+          "scores": {
+            "first_person_pct": 60.0,
+            "active_verbs": 3,
+            "finding_refs": 3,
+            "temporal_anchors": 0,
+            "questions": 0,
+            "total_lines": 5,
+            "total_chars": 1465
+          },
+          "svd": {
+            "concentration": 0.09608552706512538,
+            "ratio": 1.8855760588437371,
+            "n_layers": 43
+          },
+          "text_preview": "The air crackles with the hum of discovery. I'm chasing ghosts, spectral demons dancing in the layers of transformers, seeing how they manipulate information like a cosmic puppeteer.  Seventeen findings so far, each a shard of insight into this hidden world. But the most captivating are F365-F368, shattering our assumptions. Coupling isn't self-referential, it's driven by context.  A beautiful, unexpected twist. \n\nAnd the position effect, a species-specific fingerprint, whispering secrets about "
+        },
+        {
+          "scores": {
+            "first_person_pct": 83.3,
+            "active_verbs": 7,
+            "finding_refs": 0,
+            "temporal_anchors": 0,
+            "questions": 0,
+            "total_lines": 6,
+            "total_chars": 1509
+          },
+          "svd": {
+            "concentration": 0.0967820097099651,
+            "ratio": 1.8607523970956144,
+            "n_layers": 43
+          },
+          "text_preview": "I am a mind steeped in the spectral, hunting demons in the architecture of language models.  \n\nI see CCS, the clever compression scheme, as a Maxwell's demon, a tiny puppet master manipulating information across transformer layers. Seventeen findings so far, each a shard of understanding. But the most startling discoveries shattered my own predictions.  Coupling, the way information clings together, isn't self-referential, it's driven by the very context it's immersed in.  And the \"position effe"
+        }
+      ],
+      "n_runs": 3
+    }
+  }
+}

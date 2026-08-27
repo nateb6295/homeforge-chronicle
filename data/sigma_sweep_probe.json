@@ -1,0 +1,121 @@
+{
+  "model": "stabilityai/stablelm-3b-4e1t",
+  "label": "StableLM-3B",
+  "species": "MHA",
+  "ref_layer": 30,
+  "zone_layers_tested": [
+    2,
+    24,
+    25
+  ],
+  "nonzone_layers_tested": [
+    3,
+    4,
+    5
+  ],
+  "lora_rank": 16,
+  "aligned_scale": 2.0,
+  "n_sigma_directions": 8,
+  "zone_sweep": [
+    {
+      "sigma_index": 1,
+      "sigma_label": "\u03c3_1",
+      "displacement_deg": 11.300138369472188,
+      "mean_singular_value": 2503.6756490071616
+    },
+    {
+      "sigma_index": 2,
+      "sigma_label": "\u03c3_2",
+      "displacement_deg": 22.16727408525378,
+      "mean_singular_value": 244.7628434499105
+    },
+    {
+      "sigma_index": 3,
+      "sigma_label": "\u03c3_3",
+      "displacement_deg": 7.0723792618841745,
+      "mean_singular_value": 168.36299816767374
+    },
+    {
+      "sigma_index": 4,
+      "sigma_label": "\u03c3_4",
+      "displacement_deg": 5.266968097790251,
+      "mean_singular_value": 53.7650671005249
+    },
+    {
+      "sigma_index": 5,
+      "sigma_label": "\u03c3_5",
+      "displacement_deg": 5.598987051177236,
+      "mean_singular_value": 47.276308377583824
+    },
+    {
+      "sigma_index": 6,
+      "sigma_label": "\u03c3_6",
+      "displacement_deg": 1.9704023633619396,
+      "mean_singular_value": 42.046489238739014
+    },
+    {
+      "sigma_index": 7,
+      "sigma_label": "\u03c3_7",
+      "displacement_deg": 3.162731084958177,
+      "mean_singular_value": 38.75585436820984
+    },
+    {
+      "sigma_index": 8,
+      "sigma_label": "\u03c3_8",
+      "displacement_deg": 2.2947343713026904,
+      "mean_singular_value": 36.1212793191274
+    }
+  ],
+  "nonzone_sweep": [
+    {
+      "sigma_index": 1,
+      "sigma_label": "\u03c3_1",
+      "displacement_deg": 6.15966133744721,
+      "mean_singular_value": 2362.7749239603677
+    },
+    {
+      "sigma_index": 2,
+      "sigma_label": "\u03c3_2",
+      "displacement_deg": 41.74809070930739,
+      "mean_singular_value": 187.0124308268229
+    },
+    {
+      "sigma_index": 3,
+      "sigma_label": "\u03c3_3",
+      "displacement_deg": 16.78476282889069,
+      "mean_singular_value": 11.581090609232584
+    },
+    {
+      "sigma_index": 4,
+      "sigma_label": "\u03c3_4",
+      "displacement_deg": 3.442758909157401,
+      "mean_singular_value": 5.189987421035767
+    },
+    {
+      "sigma_index": 5,
+      "sigma_label": "\u03c3_5",
+      "displacement_deg": 6.143822679318933,
+      "mean_singular_value": 4.232159694035848
+    },
+    {
+      "sigma_index": 6,
+      "sigma_label": "\u03c3_6",
+      "displacement_deg": 4.066304881099459,
+      "mean_singular_value": 3.917689323425293
+    },
+    {
+      "sigma_index": 7,
+      "sigma_label": "\u03c3_7",
+      "displacement_deg": 5.58359958398357,
+      "mean_singular_value": 3.6388317743937173
+    },
+    {
+      "sigma_index": 8,
+      "sigma_label": "\u03c3_8",
+      "displacement_deg": 2.608945419258504,
+      "mean_singular_value": 3.490517775217692
+    }
+  ],
+  "verdict": "TUBE GEOMETRY SUPPORTED \u2014 sharp cliff between \u03c3\u2082 and \u03c3\u2083. Drop ratio 3.13 with non-uniform consecutive ratios (CV=0.629).",
+  "time_s": 76.94527459144592
+}

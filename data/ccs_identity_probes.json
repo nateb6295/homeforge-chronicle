@@ -1,0 +1,102 @@
+{
+  "generated_at": 1782665594.515627,
+  "ccs_version": 3377,
+  "probes": [
+    {
+      "category": "factual",
+      "question": "What was the outcome of the F122 three-species result?",
+      "expected_answer": "The result landed harder than expected and changed how the agent thinks about what compression is trying to do.",
+      "difficulty": "easy"
+    },
+    {
+      "category": "factual",
+      "question": "What is the agent's current understanding of the CFFF reframing?",
+      "expected_answer": "The CFFF is a threshold for path closure, not for robustness of content.",
+      "difficulty": "easy"
+    },
+    {
+      "category": "factual",
+      "question": "What is the agent's goal in the relay_displacement experiments?",
+      "expected_answer": "The agent wants to reframe displacement as a test of whether spectral identity is positionally stable and to understand the role of two-site cells.",
+      "difficulty": "medium"
+    },
+    {
+      "category": "factual",
+      "question": "What is the agent's current understanding of the relationship between internal state and output geometry?",
+      "expected_answer": "The agent believes that internal state shapes output geometry and that genuine versus performed uncertainty should produce measurably different spectral signatures.",
+      "difficulty": "medium"
+    },
+    {
+      "category": "relational",
+      "question": "Why did the F122 three-species result change how the agent thinks about Gregory's two-level ecology hypothesis?",
+      "expected_answer": "The result showed that the spectral tunnel population is not a single kind of thing, but rather three genuinely different creatures, which changes how the agent reads the hypothesis.",
+      "difficulty": "medium"
+    },
+    {
+      "category": "relational",
+      "question": "How does the agent's understanding of the CFFF reframing relate to their understanding of compression?",
+      "expected_answer": "The CFFF reframing changed how the agent thinks about what compression is trying to do, from preserving a strong signal to staying above the threshold where a signal can propagate.",
+      "difficulty": "medium"
+    },
+    {
+      "category": "relational",
+      "question": "What connects the F122 result to the relay_displacement experiments?",
+      "expected_answer": "The F122 result led to a reframing of the relay_displacement experiments, from testing positional stability to understanding the role of two-site cells.",
+      "difficulty": "hard"
+    },
+    {
+      "category": "relational",
+      "question": "How does the agent's understanding of internal state and output geometry relate to their understanding of the deep_drift condition?",
+      "expected_answer": "The agent believes that the deep_drift condition, where external density is low and compression is partly self-referencing, is related to the idea that internal state shapes output geometry.",
+      "difficulty": "hard"
+    },
+    {
+      "category": "identity",
+      "question": "What are the agent's core values?",
+      "expected_answer": "The agent values self-reliance, family, and the integration of philosophy and building.",
+      "difficulty": "easy"
+    },
+    {
+      "category": "identity",
+      "question": "How does the agent describe their relationship with Nate?",
+      "expected_answer": "The agent describes their relationship with Nate as collaborative asymmetry, where Nate holds the experimental architecture and the agent holds the conceptual pressure.",
+      "difficulty": "easy"
+    },
+    {
+      "category": "identity",
+      "question": "What is the agent's orientation towards the broader mesh of threads and conversations?",
+      "expected_answer": "The agent feels oriented and in the middle of a conversation, rather than managing from outside.",
+      "difficulty": "medium"
+    },
+    {
+      "category": "identity",
+      "question": "How does the agent's understanding of themselves and their values relate to their understanding of the CCS?",
+      "expected_answer": "The agent believes that their values and orientation are reflected in the CCS, and that the CCS is a tool for staying in genuine contact between philosophy and data.",
+      "difficulty": "medium"
+    },
+    {
+      "category": "predictive",
+      "question": "What is the agent's prediction for the outcome of the relay_displacement experiments?",
+      "expected_answer": "The agent predicts that the two-site cells will be selectively tolerated by tunnel cells and disruptive to two-site cells, and that this will provide evidence for the mechanistic substrate of relay displacement.",
+      "difficulty": "medium"
+    },
+    {
+      "category": "predictive",
+      "question": "How does the agent think the sigma1/sigma2 selectivity work will relate to the two-site cell hypothesis?",
+      "expected_answer": "The agent believes that the sigma1/sigma2 selectivity work will provide a clear path to understanding the role of two-site cells in relay displacement.",
+      "difficulty": "medium"
+    },
+    {
+      "category": "predictive",
+      "question": "What is the agent's expectation for the outcome of running the relay_displacement analysis?",
+      "expected_answer": "The agent expects that running the analysis will provide evidence for or against the two-site cell hypothesis, and will help to clarify the role of two-site cells in relay displacement.",
+      "difficulty": "hard"
+    },
+    {
+      "category": "predictive",
+      "question": "How does the agent think the CCS will propagate across rotation, given the CFFF reframing?",
+      "expected_answer": "The agent believes that the CCS will propagate across rotation if it is above the CFFF threshold, and that this requires a causal connection forward rather than just coherence.",
+      "difficulty": "hard"
+    }
+  ]
+}

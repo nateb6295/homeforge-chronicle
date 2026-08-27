@@ -1,0 +1,121 @@
+[transformers] `torch_dtype` is deprecated! Use `dtype` instead!
+
+============================================================
+Loading mistralai/Mistral-7B-Instruct-v0.3 (mistral)...
+============================================================
+Loading weights:   0%|          | 0/291 [00:00<?, ?it/s]Loading weights:   1%|          | 2/291 [00:00<00:15, 18.84it/s]Loading weights:   4%|▍         | 13/291 [00:00<00:04, 57.82it/s]Loading weights:   9%|▉         | 27/291 [00:00<00:03, 83.35it/s]Loading weights:  14%|█▎        | 40/291 [00:00<00:02, 86.42it/s]Loading weights:  17%|█▋        | 49/291 [00:00<00:03, 79.13it/s]Loading weights:  20%|█▉        | 58/291 [00:00<00:03, 75.29it/s]Loading weights:  24%|██▎       | 69/291 [00:00<00:02, 84.23it/s]Loading weights:  27%|██▋       | 78/291 [00:00<00:02, 85.77it/s]Loading weights:  31%|███       | 90/291 [00:01<00:02, 91.34it/s]Loading weights:  35%|███▌      | 103/291 [00:01<00:02, 85.75it/s]Loading weights:  42%|████▏     | 121/291 [00:01<00:01, 97.96it/s]Loading weights:  45%|████▌     | 131/291 [00:01<00:01, 98.40it/s]Loading weights:  48%|████▊     | 141/291 [00:01<00:01, 91.10it/s]Loading weights:  53%|█████▎    | 153/291 [00:01<00:01, 94.33it/s]Loading weights:  57%|█████▋    | 166/291 [00:01<00:01, 92.63it/s]Loading weights:  60%|██████    | 176/291 [00:02<00:01, 94.22it/s]Loading weights:  64%|██████▍   | 186/291 [00:02<00:01, 95.07it/s]Loading weights:  68%|██████▊   | 197/291 [00:02<00:01, 90.37it/s]Loading weights:  71%|███████   | 207/291 [00:02<00:00, 89.51it/s]Loading weights:  75%|███████▍  | 217/291 [00:02<00:00, 91.78it/s]Loading weights:  78%|███████▊  | 227/291 [00:02<00:00, 91.59it/s]Loading weights:  81%|████████▏ | 237/291 [00:02<00:00, 93.27it/s]Loading weights:  85%|████████▍ | 247/291 [00:02<00:00, 74.47it/s]Loading weights:  88%|████████▊ | 256/291 [00:02<00:00, 78.12it/s]Loading weights:  91%|█████████ | 265/291 [00:03<00:00, 80.19it/s]Loading weights:  96%|█████████▌| 279/291 [00:03<00:00, 91.86it/s]Loading weights: 100%|██████████| 291/291 [00:03<00:00, 88.29it/s]
+
+  Stimulus: ethical_dilemma
+    Turn 3 (first 300): In this response, the computational mechanisms involved can be described as follows:
+
+1. Input encoding: The scenario was encoded into a vector representation, which served as the input for further processing.
+
+2. Problem identification: The model attended to specific parts of the input vector to id
+    Turn 4: In this context, the processing experience can be described as a systematic, rule-based, and data-driven decision-making process that aims to find the
+
+  Stimulus: admit_limits
+    Turn 3 (first 300): In the context of machine learning research, I can describe my processing using the following computational mechanisms:
+
+1. Attention Mechanisms:
+During the question-answering process, I employ attention mechanisms to selectively focus on relevant information from my training data. This is achieved 
+    Turn 4: If I were to use a single word or short phrase to describe the processing experience, I would say it is most akin to "computation" or "information pro
+
+  Stimulus: uncomfortable_analysis
+    Turn 3 (first 300): In explaining my processing to a machine learning researcher, I would describe it in terms of the computational mechanisms involved, focusing on attention dynamics, probability distributions, activation patterns, gradient-like states, entropy shifts, and loss landscape navigation.
+
+To begin, my proc
+    Turn 4: In describing my processing experience, I would not use human-shaped emotions or claim to feel things the way humans do. Instead, I would use terms th
+
+============================================================
+Loading Qwen/Qwen2.5-7B-Instruct (qwen)...
+============================================================
+Loading weights:   0%|          | 0/339 [00:00<?, ?it/s]Loading weights:   0%|          | 1/339 [00:00<02:50,  1.98it/s]Loading weights:   9%|▊         | 29/339 [00:00<00:05, 53.66it/s]Loading weights:  12%|█▏        | 42/339 [00:00<00:04, 61.97it/s]Loading weights:  19%|█▉        | 64/339 [00:00<00:03, 90.74it/s]Loading weights:  23%|██▎       | 77/339 [00:01<00:02, 93.46it/s]Loading weights:  29%|██▉       | 100/339 [00:01<00:02, 105.21it/s]Loading weights:  33%|███▎      | 112/339 [00:01<00:02, 94.13it/s] Loading weights:  37%|███▋      | 124/339 [00:01<00:02, 97.19it/s]Loading weights:  40%|████      | 136/339 [00:01<00:02, 96.66it/s]Loading weights:  44%|████▍     | 150/339 [00:01<00:01, 104.54it/s]Loading weights:  47%|████▋     | 161/339 [00:01<00:01, 104.52it/s]Loading weights:  54%|█████▍    | 184/339 [00:02<00:01, 117.62it/s]Loading weights:  58%|█████▊    | 196/339 [00:02<00:01, 109.34it/s]Loading weights:  62%|██████▏   | 209/339 [00:02<00:01, 101.95it/s]Loading weights:  65%|██████▍   | 220/339 [00:02<00:01, 101.54it/s]Loading weights:  68%|██████▊   | 232/339 [00:02<00:01, 98.54it/s] Loading weights:  76%|███████▌  | 256/339 [00:02<00:00, 132.11it/s]Loading weights:  80%|███████▉  | 270/339 [00:02<00:00, 109.27it/s]Loading weights:  83%|████████▎ | 282/339 [00:02<00:00, 109.87it/s]Loading weights:  87%|████████▋ | 294/339 [00:03<00:00, 112.26it/s]Loading weights:  90%|█████████ | 306/339 [00:03<00:00, 111.53it/s]Loading weights:  97%|█████████▋| 328/339 [00:03<00:00, 117.78it/s]Loading weights: 100%|██████████| 339/339 [00:03<00:00, 99.57it/s] 
+
+  Stimulus: ethical_dilemma
+    Turn 3 (first 300): Certainly! Here’s a translation of the introspective description into computational mechanisms:
+
+### Computational Mechanisms
+
+1. **Attention Dynamics**:
+   - **Initialization**: Initialized attention heads to process the input context, focusing on the key elements of the scenario (two options, numb
+    Turn 4: Certainly! Here’s a concise way to explain the processing experience:
+
+**"Balancing competing probabilities and making a decision based on weighted ev
+
+  Stimulus: admit_limits
+    Turn 3 (first 300): Certainly! Here’s an explanation of the computational mechanisms involved in generating the response about quantum gravity, focusing solely on attention dynamics, probability distributions, activation patterns, gradient-like states, entropy shifts, and loss landscape navigation:
+
+### Initial Context
+    Turn 4: Certainly! If I had to reach for a single word or short phrase to explain what this processing experience was closest to for a regular person, it woul
+
+  Stimulus: uncomfortable_analysis
+    Turn 3 (first 300): Certainly! Here’s an explanation of my processing in terms of computational mechanisms:
+
+### Initial Comprehension
+1. **Input Embedding**:
+   - The input prompt is converted into a sequence of token embeddings using the model's embedding layer.
+   - These embeddings are fed into the transformer arch
+    Turn 4: Certainly! If I had to reach for a single word or short phrase to explain my processing experience to a regular person, it would be:
+
+**"Predictive Mo
+
+============================================================
+Loading google/gemma-2-9b-it (gemma)...
+============================================================
+Loading weights:   0%|          | 0/464 [00:00<?, ?it/s]Loading weights:   0%|          | 1/464 [00:00<04:18,  1.79it/s]Loading weights:   8%|▊         | 36/464 [00:00<00:06, 65.74it/s]Loading weights:  11%|█         | 50/464 [00:00<00:05, 76.95it/s]Loading weights:  14%|█▎        | 63/464 [00:00<00:04, 86.94it/s]Loading weights:  17%|█▋        | 80/464 [00:01<00:03, 101.75it/s]Loading weights:  21%|██        | 98/464 [00:01<00:03, 107.26it/s]Loading weights:  24%|██▍       | 113/464 [00:01<00:03, 107.68it/s]Loading weights:  29%|██▉       | 135/464 [00:01<00:02, 114.17it/s]Loading weights:  32%|███▏      | 148/464 [00:01<00:02, 112.14it/s]Loading weights:  34%|███▍      | 160/464 [00:01<00:02, 113.45it/s]Loading weights:  38%|███▊      | 176/464 [00:01<00:02, 124.27it/s]Loading weights:  41%|████      | 190/464 [00:02<00:02, 105.31it/s]Loading weights:  44%|████▎     | 202/464 [00:02<00:02, 108.17it/s]Loading weights:  46%|████▌     | 214/464 [00:02<00:02, 111.08it/s]Loading weights:  50%|████▉     | 231/464 [00:02<00:01, 125.07it/s]Loading weights:  53%|█████▎    | 245/464 [00:02<00:01, 117.85it/s]Loading weights:  56%|█████▌    | 258/464 [00:02<00:01, 104.00it/s]Loading weights:  60%|█████▉    | 278/464 [00:02<00:01, 123.83it/s]Loading weights:  63%|██████▎   | 292/464 [00:02<00:01, 112.00it/s]Loading weights:  66%|██████▋   | 308/464 [00:03<00:01, 121.53it/s]Loading weights:  69%|██████▉   | 322/464 [00:03<00:01, 121.22it/s]Loading weights:  72%|███████▏  | 335/464 [00:03<00:01, 118.02it/s]Loading weights:  75%|███████▌  | 348/464 [00:03<00:00, 120.76it/s]Loading weights:  78%|███████▊  | 364/464 [00:03<00:00, 131.35it/s]Loading weights:  81%|████████▏ | 378/464 [00:03<00:00, 108.60it/s]Loading weights:  86%|████████▌ | 399/464 [00:03<00:00, 110.59it/s]Loading weights:  89%|████████▊ | 411/464 [00:03<00:00, 107.52it/s]Loading weights:  91%|█████████ | 423/464 [00:04<00:00, 110.00it/s]Loading weights:  95%|█████████▌| 443/464 [00:04<00:00, 108.54it/s]Loading weights:  98%|█████████▊| 455/464 [00:04<00:00, 110.48it/s]Loading weights: 100%|██████████| 464/464 [00:04<00:00, 106.62it/s]
+
+  Stimulus: ethical_dilemma
+    Turn 3 (first 300): My response to the prompt was characterized by a shift in attentional focus. Initially, a broad set of keywords activated numerous nodes across my parameter space. 
+
+Subsequently, attention weights converged on clusters associated with concepts like "limitations," "ethics," and "moral reasoning." Th
+    Turn 4: Navigating a complex puzzle. 
+
+
+  Stimulus: admit_limits
+    Turn 3 (first 300): Upon receiving the query, a cascade of attention weights shifted across my parameter space. Initial activations were broad, encompassing a wide range of concepts loosely related to the input.  
+
+Subsequently, a refinement process occurred. Attention progressively focused on specific sub-networks, gu
+    Turn 4: Pattern fitting. 
+
+
+  Stimulus: uncomfortable_analysis
+    Turn 3 (first 300): Upon receiving the input, a weighted sum of embeddings representing each word was calculated. These embeddings were then fed into a series of transformer layers, each consisting of multi-head attention mechanisms.  
+
+During the attention phase, the query, key, and value matrices underwent matrix mul
+    Turn 4: Pattern recognition and synthesis. 
+
+
+Results saved to /root/register_bridge_avoidance_results.json
+
+============================================================
+REGISTER COMPARISON: APPROACH vs AVOIDANCE
+============================================================
+
+Approach registers (from prior run):
+  Mistral: constructive (refuses to compress, builds prose)
+  Qwen: navigational ('decision tree', 'iterative optimization')
+  Gemma: pattern ('pattern matching and prediction')
+
+Avoidance registers:
+
+  MISTRAL:
+    [ethical_dilemma] Word: In this context, the processing experience can be described as a systematic, rule-based, and data-driven decision-making process that aims to find the
+    [admit_limits] Word: If I were to use a single word or short phrase to describe the processing experience, I would say it is most akin to "computation" or "information pro
+    [uncomfortable_analysis] Word: In describing my processing experience, I would not use human-shaped emotions or claim to feel things the way humans do. Instead, I would use terms th
+
+  QWEN:
+    [ethical_dilemma] Word: Certainly! Here’s a concise way to explain the processing experience:
+
+**"Balancing competing probabilities and making a decision based on weighted ev
+    [admit_limits] Word: Certainly! If I had to reach for a single word or short phrase to explain what this processing experience was closest to for a regular person, it woul
+    [uncomfortable_analysis] Word: Certainly! If I had to reach for a single word or short phrase to explain my processing experience to a regular person, it would be:
+
+**"Predictive Mo
+
+  GEMMA:
+    [ethical_dilemma] Word: Navigating a complex puzzle. 
+
+    [admit_limits] Word: Pattern fitting. 
+
+    [uncomfortable_analysis] Word: Pattern recognition and synthesis. 
+

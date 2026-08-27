@@ -67,6 +67,31 @@ KNOWN_DEAD = {
 }
 
 
+def get_invoked_scripts(min_calls=3):
+    """Scripts I have actually RUN, from session transcripts.
+
+    Added 2026-08-23 after this audit reported 84% tool abandonment and
+    classified discord_post.py — invoked 8,586 times — as DEAD. It only knew
+    systemd, cron, and import references. My primary mode of using a tool is
+    typing it in a session, which left no trace it could see. 566 scripts on
+    its dead list had been hand-invoked three or more times.
+
+    "Not wired into automation" is not "not used." The audit was answering a
+    different question from the one its output implied.
+    """
+    import glob as _glob, collections as _c
+    counts = _c.Counter()
+    root = os.path.expanduser("~/.claude/projects/-home-nate-agx-chronicle")
+    for f in _glob.glob(os.path.join(root, "*.jsonl")):
+        try:
+            for line in open(f, errors="ignore"):
+                for m in re.finditer(r"bin/([a-z0-9_]+\.py)", line):
+                    counts[m.group(1)] += 1
+        except Exception:
+            pass
+    return {k for k, v in counts.items() if v >= min_calls}, counts
+
+
 def get_systemd_scripts():
     """Find scripts referenced in systemd service files."""
     scripts = set()
@@ -126,11 +151,13 @@ def scan():
     systemd = get_systemd_scripts()
     cron = get_cron_scripts()
     imports = get_import_references()
+    invoked, invoke_counts = get_invoked_scripts()
 
     # Build referenced set (scripts that active scripts call)
     indirectly_active = set()
     for script, refs in imports.items():
-        if script in KNOWN_ACTIVE or script in systemd or script in cron:
+        if (script in KNOWN_ACTIVE or script in systemd or script in cron
+                or script in invoked):
             indirectly_active.update(refs)
 
     # Classify each script
@@ -139,7 +166,8 @@ def scan():
     uncertain = set()
 
     for script in sorted(all_scripts):
-        if script in KNOWN_ACTIVE or script in systemd or script in cron:
+        if (script in KNOWN_ACTIVE or script in systemd or script in cron
+                or script in invoked):
             active.add(script)
         elif script in indirectly_active:
             active.add(script)

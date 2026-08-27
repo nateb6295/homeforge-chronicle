@@ -140,7 +140,7 @@ def check_nate_messages(db):
     last_id = get_last_alerted_nate()
     rows = db.execute(
         "SELECT id, content FROM activity_feed "
-        "WHERE source LIKE '%nate%' AND id > ? "
+        "WHERE source LIKE '%nate%' AND source != 'discord:nate:to_gemma' AND id > ? "
         "ORDER BY created_at DESC LIMIT 3",
         (last_id,)
     ).fetchall()

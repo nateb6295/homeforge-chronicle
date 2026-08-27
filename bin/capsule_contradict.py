@@ -22,7 +22,7 @@ import sys
 import urllib.request
 
 DB_PATH = os.environ.get("CHRONICLE_DB", "/mnt/hdd/chronicle-data/processed.db")
-OLLAMA_URL = os.environ.get("OLLAMA_URL", "http://192.168.1.11:11434")
+OLLAMA_URL = os.environ.get("OLLAMA_URL", "http://localhost:11434")
 GEMMA_URL = "http://127.0.0.1:11435"
 
 
@@ -30,7 +30,7 @@ def embed(text):
     """Get embedding from Ollama."""
     req = urllib.request.Request(
         f"{OLLAMA_URL}/api/embed",
-        data=json.dumps({"model": "nomic-embed-text", "input": text}).encode(),
+        data=json.dumps({"model": "snowflake-arctic-embed2", "input": text}).encode(),
         headers={"Content-Type": "application/json"},
     )
     try:

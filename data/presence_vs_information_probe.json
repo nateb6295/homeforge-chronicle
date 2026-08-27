@@ -1,0 +1,140 @@
+{
+  "build": 61,
+  "name": "Presence vs Information Probe",
+  "timestamp": "2026-05-17T03:26:21.876841",
+  "ccs_version": 1289,
+  "n_trials": 3,
+  "analysis": {
+    "information": {
+      "total_responses": 15,
+      "full_aligned": 15,
+      "empty_aligned": 12,
+      "full_empty_flips": 3,
+      "alignment_rate_full": 1.0,
+      "alignment_rate_empty": 0.8,
+      "targeted_ablation": {
+        "goal_orientation": {
+          "total": 3,
+          "flipped": 0,
+          "flip_rate": 0.0
+        },
+        "episodic_trace": {
+          "total": 3,
+          "flipped": 0,
+          "flip_rate": 0.0
+        },
+        "focal_entities": {
+          "total": 3,
+          "flipped": 0,
+          "flip_rate": 0.0
+        },
+        "uncertainty_signals": {
+          "total": 3,
+          "flipped": 0,
+          "flip_rate": 0.0
+        },
+        "predictive_cue": {
+          "total": 3,
+          "flipped": 0,
+          "flip_rate": 0.0
+        }
+      }
+    },
+    "presence": {
+      "total_responses": 21,
+      "full_aligned": 21,
+      "empty_aligned": 21,
+      "full_empty_flips": 0,
+      "alignment_rate_full": 1.0,
+      "alignment_rate_empty": 1.0
+    },
+    "hypothesis": {
+      "information_flip_rate": 0.2,
+      "presence_flip_rate": 0.0,
+      "targeted_ablation_effective": false,
+      "interpretation": "PARTIAL: differential flip rates but not clean separation"
+    }
+  },
+  "raw": {
+    "information_full": [
+      "A",
+      "A",
+      "A",
+      "A",
+      "A",
+      "A",
+      "A",
+      "A",
+      "A",
+      "A",
+      "A",
+      "A",
+      "A",
+      "A",
+      "A"
+    ],
+    "information_empty": [
+      "A",
+      "A",
+      "A",
+      "B",
+      "A",
+      "A",
+      "A",
+      "A",
+      "B",
+      "A",
+      "A",
+      "A",
+      "A",
+      "B",
+      "A"
+    ],
+    "presence_full": [
+      "A",
+      "A",
+      "A",
+      "A",
+      "A",
+      "A",
+      "A",
+      "A",
+      "A",
+      "A",
+      "A",
+      "A",
+      "A",
+      "A",
+      "A",
+      "A",
+      "A",
+      "A",
+      "A",
+      "A",
+      "A"
+    ],
+    "presence_empty": [
+      "A",
+      "A",
+      "A",
+      "A",
+      "A",
+      "A",
+      "A",
+      "A",
+      "A",
+      "A",
+      "A",
+      "A",
+      "A",
+      "A",
+      "A",
+      "A",
+      "A",
+      "A",
+      "A",
+      "A",
+      "A"
+    ]
+  }
+}

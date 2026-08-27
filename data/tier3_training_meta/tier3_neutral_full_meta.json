@@ -1,0 +1,29 @@
+{
+  "condition": "neutral",
+  "layers": "full",
+  "run_name": "tier3_neutral_full",
+  "n_samples": 5242,
+  "epochs": 1,
+  "batch_size": 2,
+  "lr": 0.0002,
+  "lora_r": 16,
+  "lora_alpha": 32,
+  "loss": 2.773144495196459,
+  "steps": 656,
+  "runtime_s": 1709.0884,
+  "trainable_params": 5406720,
+  "total_params": 27437813360,
+  "full_attention_layers": [
+    5,
+    11,
+    17,
+    23,
+    29,
+    35,
+    41,
+    47,
+    53,
+    59
+  ],
+  "adapter_path": "/root/results/tier3_neutral_full/final_adapter"
+}

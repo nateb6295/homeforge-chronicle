@@ -1,0 +1,41 @@
+ONSET TRANSIENT PROBE RESULTS — Qwen2.5-7B-Instruct (sorter)
+RunPod A6000, 5 seeds, 50 gen tokens, doses D0/D2/D5/D10
+Identity vs length-matched filler control
+
+METRIC: onset direction transient = max(cosine_dist[tokens 1-10]) - mean(cosine_dist[tokens 30-50])
+        from sigma-2 direction at each generation step vs token-0 reference
+        sliding window of 8 tokens for SVD (single-token hidden states are rank-1)
+
+RESPONSIVE ZONE for sorter: L12-L19
+
+RESULTS (identity transient - filler transient, averaged across 5 seeds):
+
+D0 (baseline):
+  L12-L19: ALL EQUIVALENT (diff = 0.000 everywhere)
+  Control validation: identity and filler produce identical prompts at D0
+
+D2 (therapeutic):
+  L12: +0.055 IDENTITY>    L13: +0.069 IDENTITY>
+  L14: +0.056 IDENTITY>    L15: +0.043 IDENTITY>
+  L16: +0.031 IDENTITY>    L17: +0.036 IDENTITY>
+  L18: +0.051 IDENTITY>    L19: +0.055 IDENTITY>
+  ALL zone layers show identity > filler. Clear coupling signal above prompt-decay.
+
+D5 (moderate):
+  L12: +0.029 IDENTITY>    L13: +0.015 IDENTITY>
+  L14: +0.006 EQUIVALENT   L15: -0.008 EQUIVALENT
+  L16: -0.009 EQUIVALENT   L17: -0.010 EQUIVALENT
+  L18: +0.001 EQUIVALENT   L19: +0.010 EQUIVALENT
+  Signal fading. Only L12-L13 still show identity excess.
+
+D10 (overdose):
+  L12: -0.039 FILLER>      L13: +0.009 EQUIVALENT
+  L14: +0.007 EQUIVALENT   L15: +0.029 IDENTITY>
+  L16: +0.016 IDENTITY>    L17: +0.028 IDENTITY>
+  L18: +0.019 IDENTITY>    L19: +0.011 IDENTITY>
+  L12 INVERTS. L15-L19 show identity > filler AGAIN.
+
+STANDARD DEVIATIONS: within-run std ranges 0.006-0.070, highest at L00 and L28.
+Zone layers (L12-L19) have std 0.006-0.067, with filler showing higher variance.
+
+NON-ZONE: L28 (final layer) consistently shows FILLER > identity at D2/D5/D10.

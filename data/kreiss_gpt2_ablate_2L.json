@@ -1,0 +1,62 @@
+{
+  "model": "gpt2-medium",
+  "n_layers": 24,
+  "block_size": 6,
+  "sample_dim": 64,
+  "conditions": {
+    "vanilla": [
+      {
+        "block": "L0-L5",
+        "start_layer": 0,
+        "end_layer": 5,
+        "kreiss_constant": 8.4265,
+        "henrici_number": 0.9968500137329102,
+        "spectral_radius": 13205.9336,
+        "operator_norm": 166498.2812,
+        "condition_number": 90218456.0,
+        "transient_ratio": 0.0006,
+        "elapsed_sec": 16.5
+      },
+      {
+        "block": "L6-L11",
+        "start_layer": 6,
+        "end_layer": 11,
+        "kreiss_constant": 395.4358,
+        "henrici_number": 0.9963690042495728,
+        "spectral_radius": 59846.5273,
+        "operator_norm": 702896.375,
+        "condition_number": 91126424.0,
+        "transient_ratio": 0.0066,
+        "elapsed_sec": 15.3
+      },
+      {
+        "block": "L12-L17",
+        "start_layer": 12,
+        "end_layer": 17,
+        "kreiss_constant": 53.3369,
+        "henrici_number": 0.9833679795265198,
+        "spectral_radius": 40209.6758,
+        "operator_norm": 221386.8906,
+        "condition_number": 1395527.0,
+        "transient_ratio": 0.0013,
+        "elapsed_sec": 14.7
+      },
+      {
+        "block": "L18-L23",
+        "start_layer": 18,
+        "end_layer": 23,
+        "kreiss_constant": 289.0311,
+        "henrici_number": 0.2652190029621124,
+        "spectral_radius": 1.8824,
+        "operator_norm": 2.318,
+        "condition_number": 3.5,
+        "transient_ratio": 153.5449,
+        "elapsed_sec": 15.4
+      }
+    ]
+  },
+  "ablate_sigma1_at": [
+    6,
+    12
+  ]
+}

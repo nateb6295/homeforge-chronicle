@@ -1,0 +1,126 @@
+[
+  {
+    "name": "EleutherAI/pythia-1.4b",
+    "params": "1.4B",
+    "attn": "MHA",
+    "prompts": [
+      {
+        "prompt_idx": 0,
+        "prompt": "The relationship between spectral analysis and identity in t",
+        "angle": 83.16
+      },
+      {
+        "prompt_idx": 1,
+        "prompt": "Once upon a time in a small village by the sea, there lived ",
+        "angle": 83.05
+      },
+      {
+        "prompt_idx": 2,
+        "prompt": "def fibonacci(n): return n if n < 2 else fibonacci(n-1) + fi",
+        "angle": 83.04
+      },
+      {
+        "prompt_idx": 3,
+        "prompt": "The capital of France is Paris. The capital of Germany is Be",
+        "angle": 83.08
+      },
+      {
+        "prompt_idx": 4,
+        "prompt": "I disagree with the premise of your argument because the evi",
+        "angle": 83.07
+      },
+      {
+        "prompt_idx": 5,
+        "prompt": "BREAKING: Scientists discover new species of deep-sea creatu",
+        "angle": 83.2
+      },
+      {
+        "prompt_idx": 6,
+        "prompt": "Step 1: Preheat the oven to 375 degrees. Step 2: Mix flour, ",
+        "angle": 83.05
+      },
+      {
+        "prompt_idx": 7,
+        "prompt": "The quantum mechanical wave function collapses upon measurem",
+        "angle": 83.16
+      },
+      {
+        "prompt_idx": 8,
+        "prompt": "She walked into the room and immediately noticed something w",
+        "angle": 83.09
+      },
+      {
+        "prompt_idx": 9,
+        "prompt": "According to recent polling data, voter sentiment has shifte",
+        "angle": 83.14
+      }
+    ],
+    "mean": 83.1,
+    "std": 0.05,
+    "min": 83.04,
+    "max": 83.2,
+    "range": 0.16
+  },
+  {
+    "name": "Qwen/Qwen2.5-3B-Instruct",
+    "params": "3B",
+    "attn": "GQA",
+    "prompts": [
+      {
+        "prompt_idx": 0,
+        "prompt": "The relationship between spectral analysis and identity in t",
+        "angle": 86.69
+      },
+      {
+        "prompt_idx": 1,
+        "prompt": "Once upon a time in a small village by the sea, there lived ",
+        "angle": 86.73
+      },
+      {
+        "prompt_idx": 2,
+        "prompt": "def fibonacci(n): return n if n < 2 else fibonacci(n-1) + fi",
+        "angle": 86.66
+      },
+      {
+        "prompt_idx": 3,
+        "prompt": "The capital of France is Paris. The capital of Germany is Be",
+        "angle": 86.69
+      },
+      {
+        "prompt_idx": 4,
+        "prompt": "I disagree with the premise of your argument because the evi",
+        "angle": 86.69
+      },
+      {
+        "prompt_idx": 5,
+        "prompt": "BREAKING: Scientists discover new species of deep-sea creatu",
+        "angle": 86.73
+      },
+      {
+        "prompt_idx": 6,
+        "prompt": "Step 1: Preheat the oven to 375 degrees. Step 2: Mix flour, ",
+        "angle": 86.73
+      },
+      {
+        "prompt_idx": 7,
+        "prompt": "The quantum mechanical wave function collapses upon measurem",
+        "angle": 86.69
+      },
+      {
+        "prompt_idx": 8,
+        "prompt": "She walked into the room and immediately noticed something w",
+        "angle": 86.72
+      },
+      {
+        "prompt_idx": 9,
+        "prompt": "According to recent polling data, voter sentiment has shifte",
+        "angle": 86.75
+      }
+    ],
+    "mean": 86.71,
+    "std": 0.03,
+    "min": 86.66,
+    "max": 86.75,
+    "range": 0.09
+  }
+]

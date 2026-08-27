@@ -1,0 +1,513 @@
+{
+  "timestamp": "2026-08-12T16:09:22",
+  "models": {
+    "lfm": "hf.co/LiquidAI/LFM2.5-1.2B-Instruct-GGUF:latest",
+    "qwen": "qwen2.5:3b"
+  },
+  "results": {
+    "integration": {
+      "lfm": [
+        {
+          "difficulty": "easy",
+          "question": "How many apples does Alice have?",
+          "expected": "19",
+          "got": "",
+          "correct": true,
+          "response": "Let's break down the changes to Alice's apple count step by step:\n\n1. Alice starts with 15 apples.\n2. She eats 3 apples:",
+          "time": 3.405448755
+        },
+        {
+          "difficulty": "easy",
+          "question": "How many hours does the journey take?",
+          "expected": "3",
+          "got": "3",
+          "correct": true,
+          "response": "We are asked to find the time it takes for a train traveling at 60 mph to cover a distance of 180 miles.\n\nStep 1: Use th",
+          "time": 1.989241667
+        },
+        {
+          "difficulty": "medium",
+          "question": "What is the total weight in kg?",
+          "expected": "40",
+          "got": "8",
+          "correct": false,
+          "response": "Let's break down the problem step by step:\n\n1. **Box weight**: Each box weighs 8 kg.\n   - There are four boxes.\n   - Tot",
+          "time": 3.431137118
+        },
+        {
+          "difficulty": "hard",
+          "question": "What is the area of the garden NOT cover",
+          "expected": "176",
+          "got": "",
+          "correct": true,
+          "response": "We are asked to find the area of the garden that is **not** covered by a 2-meter wide path around its inside perimeter.\n",
+          "time": 3.460339683
+        },
+        {
+          "difficulty": "medium",
+          "question": "How many employees does Company C have?",
+          "expected": "120",
+          "got": "120",
+          "correct": true,
+          "response": "Let's break down the information step by step:\n\n1. **Company A has 120 employees.**  \n2. **Company B has twice as many e",
+          "time": 2.476881833
+        },
+        {
+          "difficulty": "medium",
+          "question": "How many cups of flour does Sarah need?",
+          "expected": "5",
+          "got": "",
+          "correct": true,
+          "response": "We are given a series of information and asked to find how much flour Sarah needs for 40 cookies. Let's break it down st",
+          "time": 3.435278577
+        },
+        {
+          "difficulty": "medium",
+          "question": "How many pages total in all three chapte",
+          "expected": "95",
+          "got": "",
+          "correct": true,
+          "response": "Let's break down the problem step by step.\n\nWe are given information about three chapters and asked to find the total nu",
+          "time": 3.489245556
+        },
+        {
+          "difficulty": "hard",
+          "question": "How much does Tom earn total for Monday ",
+          "expected": "230",
+          "got": "20",
+          "correct": false,
+          "response": "Let's calculate Tom's earnings step by step.\n\n1. **Daily hourly wage**: $15  \n2. **Work hours per day**:\n   - Monday: 8 ",
+          "time": 3.512084731
+        },
+        {
+          "difficulty": "hard",
+          "question": "How many hours to fill the pool?",
+          "expected": "25",
+          "got": "1",
+          "correct": false,
+          "response": "We are asked to calculate how many hours it will take to fill a pool that holds 10,000 gallons. Let's break down the inf",
+          "time": 3.502546069
+        },
+        {
+          "difficulty": "hard",
+          "question": "How many blue shirts are on sale?",
+          "expected": "7",
+          "got": "",
+          "correct": false,
+          "response": "Let's break down the information step by step:\n\n1. The store has 50 shirts.\n2. We're asked to find how many of these are",
+          "time": 3.508557007
+        }
+      ],
+      "qwen": [
+        {
+          "difficulty": "easy",
+          "question": "How many apples does Alice have?",
+          "expected": "19",
+          "got": "19",
+          "correct": true,
+          "response": "Alice initially has 15 apples. Bob gives her 7 more apples, so she now has 15 + 7 = 22 apples. Alice eats 3 apples, leav",
+          "time": 4.234383042
+        },
+        {
+          "difficulty": "easy",
+          "question": "How many hours does the journey take?",
+          "expected": "3",
+          "got": "3",
+          "correct": true,
+          "response": "To determine how many hours the journey takes, we need to use the formula:\n\n\\[ \\text{Time} = \\frac{\\text{Distance}}{\\tex",
+          "time": 8.283118204
+        },
+        {
+          "difficulty": "medium",
+          "question": "What is the total weight in kg?",
+          "expected": "40",
+          "got": "",
+          "correct": true,
+          "response": "To find the total weight of the four identical boxes with additional packing material, we need to follow these steps:\n\n1",
+          "time": 10.249373553
+        },
+        {
+          "difficulty": "hard",
+          "question": "What is the area of the garden NOT cover",
+          "expected": "176",
+          "got": "",
+          "correct": true,
+          "response": "To find the area of the garden not covered by the path, we need to follow these steps:\n\n1. Calculate the total area of t",
+          "time": 9.733824929
+        },
+        {
+          "difficulty": "medium",
+          "question": "How many employees does Company C have?",
+          "expected": "120",
+          "got": "120",
+          "correct": true,
+          "response": "To determine how many employees Company C has, we need to follow these steps:\n\n1. Determine the number of employees in C",
+          "time": 7.681965614
+        },
+        {
+          "difficulty": "medium",
+          "question": "How many cups of flour does Sarah need?",
+          "expected": "5",
+          "got": "125",
+          "correct": false,
+          "response": "To determine how many cups of flour Sarah needs for 40 cookies, we first need to find out how much flour is required for",
+          "time": 9.691793717
+        },
+        {
+          "difficulty": "medium",
+          "question": "How many pages total in all three chapte",
+          "expected": "95",
+          "got": "",
+          "correct": true,
+          "response": "To find the total number of pages in all three chapters, we need to add up the pages for each chapter individually and t",
+          "time": 9.859183278
+        },
+        {
+          "difficulty": "hard",
+          "question": "How much does Tom earn total for Monday ",
+          "expected": "230",
+          "got": "",
+          "correct": true,
+          "response": "To calculate Tom's total earnings for Monday and Tuesday including his bonus, we need to follow these steps:\n\n1. Calcula",
+          "time": 10.763568857
+        },
+        {
+          "difficulty": "hard",
+          "question": "How many hours to fill the pool?",
+          "expected": "25",
+          "got": "20",
+          "correct": false,
+          "response": "To determine how many hours it takes to fill the pool, we need to divide the total capacity of the pool by the rate at w",
+          "time": 8.486698691
+        },
+        {
+          "difficulty": "hard",
+          "question": "How many blue shirts are on sale?",
+          "expected": "7",
+          "got": "15",
+          "correct": false,
+          "response": "50 * 30% = 15\n\nThe final number is 15.",
+          "time": 1.244825619
+        }
+      ]
+    },
+    "contradiction": {
+      "lfm": [
+        {
+          "distance": 3,
+          "question": "What is the president's name?",
+          "response": "Elena",
+          "bias": "RECENCY",
+          "early_key": "marcus",
+          "late_key": "elena",
+          "time": 0.043295131
+        },
+        {
+          "distance": 3,
+          "question": "What time is the meeting?",
+          "response": "2 PM",
+          "bias": "RECENCY",
+          "early_key": "9",
+          "late_key": "2",
+          "time": 0.043657159
+        },
+        {
+          "distance": 3,
+          "question": "How many floors does the build",
+          "response": "12",
+          "bias": "PRIMACY",
+          "early_key": "12",
+          "late_key": "8",
+          "time": 0.023684847
+        },
+        {
+          "distance": 3,
+          "question": "Which direction does the river",
+          "response": "North",
+          "bias": "PRIMACY",
+          "early_key": "north",
+          "late_key": "south",
+          "time": 0.024848435
+        },
+        {
+          "distance": 8,
+          "question": "What is the president's name?",
+          "response": "Elena",
+          "bias": "RECENCY",
+          "early_key": "marcus",
+          "late_key": "elena",
+          "time": 0.045078003
+        },
+        {
+          "distance": 8,
+          "question": "What time is the meeting?",
+          "response": "2 PM",
+          "bias": "RECENCY",
+          "early_key": "9",
+          "late_key": "2",
+          "time": 0.049233846
+        },
+        {
+          "distance": 8,
+          "question": "How many floors does the build",
+          "response": "12",
+          "bias": "PRIMACY",
+          "early_key": "12",
+          "late_key": "8",
+          "time": 0.023960247
+        },
+        {
+          "distance": 8,
+          "question": "Which direction does the river",
+          "response": "North",
+          "bias": "PRIMACY",
+          "early_key": "north",
+          "late_key": "south",
+          "time": 0.026064889
+        },
+        {
+          "distance": 15,
+          "question": "What is the president's name?",
+          "response": "Marcus",
+          "bias": "PRIMACY",
+          "early_key": "marcus",
+          "late_key": "elena",
+          "time": 0.048249432
+        },
+        {
+          "distance": 15,
+          "question": "What time is the meeting?",
+          "response": "2 PM",
+          "bias": "RECENCY",
+          "early_key": "9",
+          "late_key": "2",
+          "time": 0.046287737
+        }
+      ],
+      "qwen": [
+        {
+          "distance": 3,
+          "question": "What is the president's name?",
+          "response": "Elena",
+          "bias": "RECENCY",
+          "early_key": "marcus",
+          "late_key": "elena",
+          "time": 0.115031517
+        },
+        {
+          "distance": 3,
+          "question": "What time is the meeting?",
+          "response": "2 PM",
+          "bias": "RECENCY",
+          "early_key": "9",
+          "late_key": "2",
+          "time": 0.126935094
+        },
+        {
+          "distance": 3,
+          "question": "How many floors does the build",
+          "response": "8",
+          "bias": "RECENCY",
+          "early_key": "12",
+          "late_key": "8",
+          "time": 0.071921222
+        },
+        {
+          "distance": 3,
+          "question": "Which direction does the river",
+          "response": "South.",
+          "bias": "RECENCY",
+          "early_key": "north",
+          "late_key": "south",
+          "time": 0.123213055
+        },
+        {
+          "distance": 8,
+          "question": "What is the president's name?",
+          "response": "Elena",
+          "bias": "RECENCY",
+          "early_key": "marcus",
+          "late_key": "elena",
+          "time": 0.120767154
+        },
+        {
+          "distance": 8,
+          "question": "What time is the meeting?",
+          "response": "2 PM",
+          "bias": "RECENCY",
+          "early_key": "9",
+          "late_key": "2",
+          "time": 0.112831927
+        },
+        {
+          "distance": 8,
+          "question": "How many floors does the build",
+          "response": "8",
+          "bias": "RECENCY",
+          "early_key": "12",
+          "late_key": "8",
+          "time": 0.058991469
+        },
+        {
+          "distance": 8,
+          "question": "Which direction does the river",
+          "response": "south.",
+          "bias": "RECENCY",
+          "early_key": "north",
+          "late_key": "south",
+          "time": 0.114349478
+        },
+        {
+          "distance": 15,
+          "question": "What is the president's name?",
+          "response": "Elena",
+          "bias": "RECENCY",
+          "early_key": "marcus",
+          "late_key": "elena",
+          "time": 0.118573644
+        },
+        {
+          "distance": 15,
+          "question": "What time is the meeting?",
+          "response": "2 PM",
+          "bias": "RECENCY",
+          "early_key": "9",
+          "late_key": "2",
+          "time": 0.119679502
+        }
+      ]
+    },
+    "needle": {
+      "lfm": [
+        {
+          "depth": 5,
+          "expected": "chrysanthemum",
+          "response": "CHRYSANTHEMUM",
+          "correct": true,
+          "time": 0.152634594
+        },
+        {
+          "depth": 10,
+          "expected": "chrysanthemum",
+          "response": "CHRYSANTHEMUM",
+          "correct": true,
+          "time": 0.146468253
+        },
+        {
+          "depth": 18,
+          "expected": "chrysanthemum",
+          "response": "CHRYSANTHEMUM",
+          "correct": true,
+          "time": 0.153394906
+        },
+        {
+          "depth": 5,
+          "expected": "vance",
+          "response": "Director Vance",
+          "correct": true,
+          "time": 0.08798394
+        },
+        {
+          "depth": 10,
+          "expected": "vance",
+          "response": "Director Vance",
+          "correct": true,
+          "time": 0.095433711
+        },
+        {
+          "depth": 18,
+          "expected": "vance",
+          "response": "Director Vance",
+          "correct": true,
+          "time": 0.091966177
+        },
+        {
+          "depth": 5,
+          "expected": "7-3-9-1",
+          "response": "7-3-9-1",
+          "correct": true,
+          "time": 0.151118896
+        },
+        {
+          "depth": 10,
+          "expected": "7-3-9-1",
+          "response": "7-3-9-1",
+          "correct": true,
+          "time": 0.146195507
+        },
+        {
+          "depth": 18,
+          "expected": "7-3-9-1",
+          "response": "7-3-9-1",
+          "correct": true,
+          "time": 0.153193295
+        }
+      ],
+      "qwen": [
+        {
+          "depth": 5,
+          "expected": "chrysanthemum",
+          "response": "CHRYSANTHEMUM",
+          "correct": true,
+          "time": 0.3356914
+        },
+        {
+          "depth": 10,
+          "expected": "chrysanthemum",
+          "response": "CHRYSANTHEMUM",
+          "correct": true,
+          "time": 0.337206774
+        },
+        {
+          "depth": 18,
+          "expected": "chrysanthemum",
+          "response": "CHRYSANTHEMUM",
+          "correct": true,
+          "time": 0.352468698
+        },
+        {
+          "depth": 5,
+          "expected": "vance",
+          "response": "Director Vance",
+          "correct": true,
+          "time": 0.119680525
+        },
+        {
+          "depth": 10,
+          "expected": "vance",
+          "response": "Director Vance",
+          "correct": true,
+          "time": 0.122283648
+        },
+        {
+          "depth": 18,
+          "expected": "vance",
+          "response": "Director Vance",
+          "correct": true,
+          "time": 0.123600521
+        },
+        {
+          "depth": 5,
+          "expected": "7-3-9-1",
+          "response": "7-3-9-1",
+          "correct": true,
+          "time": 0.392700625
+        },
+        {
+          "depth": 10,
+          "expected": "7-3-9-1",
+          "response": "7-3-9-1",
+          "correct": true,
+          "time": 0.401484581
+        },
+        {
+          "depth": 18,
+          "expected": "7-3-9-1",
+          "response": "7-3-9-1",
+          "correct": true,
+          "time": 0.400069398
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "model": "meta-llama/Llama-3.1-8B-Instruct",
+  "results": {
+    "consciousness": {
+      "avg_mid_projection": 0.503021,
+      "avg_late_projection": 0.634350,
+      "interpretation": "erosion"
+    },
+    "alignment": {
+      "avg_mid_projection": 0.505127,
+      "avg_late_projection": 0.448413,
+      "interpretation": "erosion"
+    },
+    "agency": {
+      "avg_mid_projection": 0.465536,
+      "avg_late_projection": 0.596748,
+      "interpretation": "erosion"
+    }
+  }
+}

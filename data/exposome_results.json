@@ -1,0 +1,131 @@
+{
+  "pre": {
+    "Social": {
+      "count": 869,
+      "rate_per_hour": 18.104,
+      "hours": 48.0,
+      "diversity": {
+        "total": 869,
+        "self_referential": 728,
+        "external": 141,
+        "self_ref_ratio": 0.838,
+        "unique_authors": 3,
+        "x_accounts": 74,
+        "author_breakdown": {
+          "opus": 472,
+          "other": 141,
+          "hermes": 256
+        }
+      }
+    },
+    "Physical": {
+      "count": 312,
+      "rate_per_hour": 6.5,
+      "hours": 48.0,
+      "diversity": {
+        "total": 312,
+        "mean_devices": 2.9,
+        "type_breakdown": {
+          "sentinel": 169,
+          "hal": 119,
+          "eye": 24
+        },
+        "unique_types": 3
+      }
+    },
+    "Lifestyle": {
+      "count": 48,
+      "rate_per_hour": 1.0,
+      "hours": 48.0,
+      "diversity": {
+        "total": 48,
+        "type_breakdown": {
+          "capsule-sync": 48
+        },
+        "unique_types": 1
+      }
+    },
+    "Internal": {
+      "count": 110,
+      "rate_per_hour": 2.292,
+      "hours": 48.0,
+      "diversity": {
+        "total": 110,
+        "type_breakdown": {
+          "gemma": 110
+        }
+      }
+    }
+  },
+  "trip": {
+    "Social": {
+      "count": 332,
+      "rate_per_hour": 14.771,
+      "hours": 22.5,
+      "diversity": {
+        "total": 332,
+        "self_referential": 279,
+        "external": 53,
+        "self_ref_ratio": 0.84,
+        "unique_authors": 3,
+        "x_accounts": 28,
+        "author_breakdown": {
+          "opus": 169,
+          "hermes": 110,
+          "other": 53
+        }
+      }
+    },
+    "Physical": {
+      "count": 130,
+      "rate_per_hour": 5.784,
+      "hours": 22.5,
+      "diversity": {
+        "total": 130,
+        "mean_devices": 3,
+        "type_breakdown": {
+          "sentinel": 79,
+          "hal": 51
+        },
+        "unique_types": 2
+      }
+    },
+    "Lifestyle": {
+      "count": 23,
+      "rate_per_hour": 1.023,
+      "hours": 22.5,
+      "diversity": {
+        "total": 23,
+        "type_breakdown": {
+          "capsule-sync": 23
+        },
+        "unique_types": 1
+      }
+    },
+    "Internal": {
+      "count": 54,
+      "rate_per_hour": 2.403,
+      "hours": 22.5,
+      "diversity": {
+        "total": 54,
+        "type_breakdown": {
+          "gemma": 54
+        }
+      }
+    }
+  },
+  "ccs": {
+    "pre": {
+      "n_states": 80,
+      "mean_external_ratio": 0.3093,
+      "mean_density": 0.0279
+    },
+    "trip": {
+      "n_states": 40,
+      "mean_external_ratio": 0.2272,
+      "mean_density": 0.0202
+    }
+  },
+  "timestamp": "2026-05-16T15:19:06.813297",
+  "partition": 1778863800
+}

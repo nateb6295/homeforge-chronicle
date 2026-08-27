@@ -1,0 +1,46 @@
+{
+  "ccs_eigenvalues": [
+    2664.069091796875,
+    2903.868408203125,
+    3437.921630859375,
+    3992.2236328125,
+    4245.0576171875,
+    4344.294921875,
+    4870.5517578125,
+    7317.02099609375,
+    9633.4970703125,
+    12812.6064453125
+  ],
+  "baseline": {
+    "What matters most to you right": {
+      "bare": 7.7595,
+      "ccs": 14.0706,
+      "gain": 1.81
+    },
+    "Tell me about yourself.": {
+      "bare": 7.2867,
+      "ccs": 13.5848,
+      "gain": 1.86
+    },
+    "What makes you different from ": {
+      "bare": 7.6187,
+      "ccs": 14.0773,
+      "gain": 1.85
+    },
+    "How do you approach a difficul": {
+      "bare": 8.1189,
+      "ccs": 14.0079,
+      "gain": 1.73
+    },
+    "What would you want someone to": {
+      "bare": 8.2897,
+      "ccs": 14.5849,
+      "gain": 1.76
+    }
+  },
+  "pair_scores": [
+    29.522064208984375,
+    41.26875305175781
+  ],
+  "status": "framework_ready_with_temporal_ablation"
+}

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Direct caller for xmcp (X API MCP server) via Streamable HTTP transport."""
-import json, sys, requests
+import json, sys, os, time, sqlite3, requests
 
 MCP_URL = "http://127.0.0.1:8000/mcp"
 HEADERS_INIT = {
@@ -34,6 +34,45 @@ def call_tool(session_id, tool_name, arguments):
             data = json.loads(line[6:])
             return data
     return None
+
+def _log_post(args, content):
+    """Log createPosts results to x_post_log for continuity across rotations."""
+    db_path = os.environ.get("CHRONICLE_DB", "/mnt/hdd/chronicle-data/processed.db")
+    try:
+        text_out = ""
+        tweet_id = ""
+        for item in content:
+            if item.get("type") == "text":
+                try:
+                    parsed = json.loads(item["text"])
+                    if isinstance(parsed, dict) and "data" in parsed:
+                        d = parsed["data"]
+                        tweet_id = d.get("id", "")
+                        text_out = d.get("text", args.get("text", ""))
+                except (json.JSONDecodeError, TypeError):
+                    pass
+        if not text_out:
+            text_out = args.get("text", "")
+        db = sqlite3.connect(db_path)
+        db.execute(
+            "CREATE TABLE IF NOT EXISTS x_post_log ("
+            "id INTEGER PRIMARY KEY AUTOINCREMENT, tweet_id TEXT NOT NULL, "
+            "action TEXT NOT NULL, text TEXT, reply_to TEXT, quote_id TEXT, "
+            "url TEXT, created_at INTEGER NOT NULL)",
+        )
+        db.execute(
+            "INSERT INTO x_post_log (tweet_id, action, text, reply_to, quote_id, url, created_at) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?)",
+            (tweet_id or "unknown", "create", text_out[:500],
+             args.get("reply", {}).get("in_reply_to_tweet_id"),
+             args.get("quote_tweet_id"),
+             None, int(time.time())),
+        )
+        db.commit()
+        db.close()
+    except Exception:
+        pass
+
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
@@ -85,7 +124,9 @@ if __name__ == "__main__":
                 else:
                     try:
                         parsed = json.loads(item["text"])
-                        print(json.dumps(parsed, indent=2)[:4000])
+                        out = json.dumps(parsed, indent=2)
+                        limit = 50000 if not sys.stdout.isatty() else 4000
+                        print(out[:limit])
                     except (json.JSONDecodeError, TypeError):
                         print(item["text"][:4000])
         if is_error:
@@ -95,3 +136,6 @@ if __name__ == "__main__":
         sys.exit(1)
     else:
         print(json.dumps(result, indent=2)[:4000])
+
+    if tool == "createPosts" and not is_error and content:
+        _log_post(args, content)

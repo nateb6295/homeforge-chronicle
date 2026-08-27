@@ -1,0 +1,458 @@
+[
+  {
+    "model": "snowflake-arctic-embed2",
+    "dim": 1024,
+    "avg_separation": 0.11216003662394766,
+    "avg_precision_at_5": 0.7428571428571429,
+    "top1_accuracy": 0.8571428571428571,
+    "embed_rate": 2.470134613668632,
+    "embed_time_s": 80.96724724769592,
+    "n_capsules": 200,
+    "n_probes": 7,
+    "probes": [
+      {
+        "query": "CCS identity circuit neurons late layer",
+        "avg_match": 0.22891355790429083,
+        "avg_neg": 0.15425366338718347,
+        "separation": 0.07465989451710736,
+        "p_at_5": 0.8,
+        "top1_match": true,
+        "n_matches": 53
+      },
+      {
+        "query": "Gregory of Nyssa soul persistence dissolution atom",
+        "avg_match": 0.24012985848176446,
+        "avg_neg": 0.1666742952373977,
+        "separation": 0.07345556324436675,
+        "p_at_5": 0.8,
+        "top1_match": true,
+        "n_matches": 33
+      },
+      {
+        "query": "Nate partnership sovereignty care building",
+        "avg_match": 0.18976263425221773,
+        "avg_neg": 0.1851243858460986,
+        "separation": 0.004638248406119122,
+        "p_at_5": 1.0,
+        "top1_match": true,
+        "n_matches": 104
+      },
+      {
+        "query": "GQA MHA attention heads witness enrichment sign in",
+        "avg_match": 0.21777751297901204,
+        "avg_neg": 0.22250321955999572,
+        "separation": -0.004725706580983674,
+        "p_at_5": 0.6,
+        "top1_match": true,
+        "n_matches": 33
+      },
+      {
+        "query": "XRPL wallet crypto staking Flare lending",
+        "avg_match": 0.2877529303922447,
+        "avg_neg": 0.09826953560960187,
+        "separation": 0.1894833947826428,
+        "p_at_5": 0.0,
+        "top1_match": false,
+        "n_matches": 2
+      },
+      {
+        "query": "disclosure UFO UAP congressional testimony",
+        "avg_match": 0.3465963339266608,
+        "avg_neg": 0.12447727888370823,
+        "separation": 0.22211905504295254,
+        "p_at_5": 1.0,
+        "top1_match": true,
+        "n_matches": 26
+      },
+      {
+        "query": "poetry compression fidelity superposition bandwidt",
+        "avg_match": 0.3410191877725345,
+        "avg_neg": 0.11552938081710576,
+        "separation": 0.22548980695542872,
+        "p_at_5": 1.0,
+        "top1_match": true,
+        "n_matches": 32
+      }
+    ]
+  },
+  {
+    "model": "bge-m3",
+    "dim": 1024,
+    "avg_separation": 0.07534025372617113,
+    "avg_precision_at_5": 0.7714285714285715,
+    "top1_accuracy": 0.8571428571428571,
+    "embed_rate": 2.8906252686720357,
+    "embed_time_s": 69.1891827583313,
+    "n_capsules": 200,
+    "n_probes": 7,
+    "probes": [
+      {
+        "query": "CCS identity circuit neurons late layer",
+        "avg_match": 0.3875072965055229,
+        "avg_neg": 0.37204884665627,
+        "separation": 0.015458449849252875,
+        "p_at_5": 0.8,
+        "top1_match": true,
+        "n_matches": 53
+      },
+      {
+        "query": "Gregory of Nyssa soul persistence dissolution atom",
+        "avg_match": 0.34149032628331155,
+        "avg_neg": 0.29728721214655274,
+        "separation": 0.044203114136758814,
+        "p_at_5": 0.6,
+        "top1_match": true,
+        "n_matches": 33
+      },
+      {
+        "query": "Nate partnership sovereignty care building",
+        "avg_match": 0.3015127206122394,
+        "avg_neg": 0.27568586219069124,
+        "separation": 0.025826858421548138,
+        "p_at_5": 1.0,
+        "top1_match": true,
+        "n_matches": 104
+      },
+      {
+        "query": "GQA MHA attention heads witness enrichment sign in",
+        "avg_match": 0.3689358161968938,
+        "avg_neg": 0.33133397493787975,
+        "separation": 0.03760184125901406,
+        "p_at_5": 1.0,
+        "top1_match": true,
+        "n_matches": 33
+      },
+      {
+        "query": "XRPL wallet crypto staking Flare lending",
+        "avg_match": 0.39489213539108514,
+        "avg_neg": 0.2716236418613905,
+        "separation": 0.12326849352969466,
+        "p_at_5": 0.0,
+        "top1_match": false,
+        "n_matches": 2
+      },
+      {
+        "query": "disclosure UFO UAP congressional testimony",
+        "avg_match": 0.4577815993624641,
+        "avg_neg": 0.32647100735378065,
+        "separation": 0.13131059200868345,
+        "p_at_5": 1.0,
+        "top1_match": true,
+        "n_matches": 26
+      },
+      {
+        "query": "poetry compression fidelity superposition bandwidt",
+        "avg_match": 0.4501711955225761,
+        "avg_neg": 0.3004587686443302,
+        "separation": 0.14971242687824593,
+        "p_at_5": 1.0,
+        "top1_match": true,
+        "n_matches": 32
+      }
+    ]
+  },
+  {
+    "model": "qwen3-embedding:0.6b",
+    "dim": 1024,
+    "avg_separation": 0.07439281418822893,
+    "avg_precision_at_5": 0.7428571428571429,
+    "top1_accuracy": 0.8571428571428571,
+    "embed_rate": 3.391785421026363,
+    "embed_time_s": 58.965994358062744,
+    "n_capsules": 200,
+    "n_probes": 7,
+    "probes": [
+      {
+        "query": "CCS identity circuit neurons late layer",
+        "avg_match": 0.37484032026193953,
+        "avg_neg": 0.3995867923567533,
+        "separation": -0.024746472094813787,
+        "p_at_5": 0.8,
+        "top1_match": true,
+        "n_matches": 53
+      },
+      {
+        "query": "Gregory of Nyssa soul persistence dissolution atom",
+        "avg_match": 0.36317620473027207,
+        "avg_neg": 0.3030557609882913,
+        "separation": 0.06012044374198078,
+        "p_at_5": 0.8,
+        "top1_match": true,
+        "n_matches": 33
+      },
+      {
+        "query": "Nate partnership sovereignty care building",
+        "avg_match": 0.3485274812787322,
+        "avg_neg": 0.32277658420107247,
+        "separation": 0.025750897077659707,
+        "p_at_5": 1.0,
+        "top1_match": true,
+        "n_matches": 104
+      },
+      {
+        "query": "GQA MHA attention heads witness enrichment sign in",
+        "avg_match": 0.35051142384648476,
+        "avg_neg": 0.2963128637489933,
+        "separation": 0.054198560097491466,
+        "p_at_5": 0.6,
+        "top1_match": true,
+        "n_matches": 33
+      },
+      {
+        "query": "XRPL wallet crypto staking Flare lending",
+        "avg_match": 0.3709594604452865,
+        "avg_neg": 0.27287281855165174,
+        "separation": 0.09808664189363475,
+        "p_at_5": 0.0,
+        "top1_match": false,
+        "n_matches": 2
+      },
+      {
+        "query": "disclosure UFO UAP congressional testimony",
+        "avg_match": 0.483579836575499,
+        "avg_neg": 0.2806262435746372,
+        "separation": 0.2029535930008618,
+        "p_at_5": 1.0,
+        "top1_match": true,
+        "n_matches": 26
+      },
+      {
+        "query": "poetry compression fidelity superposition bandwidt",
+        "avg_match": 0.43626933051835803,
+        "avg_neg": 0.33188329491757024,
+        "separation": 0.1043860356007878,
+        "p_at_5": 1.0,
+        "top1_match": true,
+        "n_matches": 32
+      }
+    ]
+  },
+  {
+    "model": "mxbai-embed-large",
+    "dim": 1024,
+    "avg_separation": 0.0646542238565225,
+    "avg_precision_at_5": 0.7142857142857143,
+    "top1_accuracy": 0.8571428571428571,
+    "embed_rate": 7.369580184357578,
+    "embed_time_s": 27.138587951660156,
+    "n_capsules": 200,
+    "n_probes": 7,
+    "probes": [
+      {
+        "query": "CCS identity circuit neurons late layer",
+        "avg_match": 0.4925365862626159,
+        "avg_neg": 0.4589228096904957,
+        "separation": 0.033613776572120224,
+        "p_at_5": 0.6,
+        "top1_match": true,
+        "n_matches": 53
+      },
+      {
+        "query": "Gregory of Nyssa soul persistence dissolution atom",
+        "avg_match": 0.5159520466726272,
+        "avg_neg": 0.44028373486426675,
+        "separation": 0.07566831180836042,
+        "p_at_5": 0.8,
+        "top1_match": true,
+        "n_matches": 33
+      },
+      {
+        "query": "Nate partnership sovereignty care building",
+        "avg_match": 0.42989134929433387,
+        "avg_neg": 0.44154153428878284,
+        "separation": -0.011650184994448975,
+        "p_at_5": 1.0,
+        "top1_match": true,
+        "n_matches": 104
+      },
+      {
+        "query": "GQA MHA attention heads witness enrichment sign in",
+        "avg_match": 0.5287642724748424,
+        "avg_neg": 0.5094067282011809,
+        "separation": 0.01935754427366143,
+        "p_at_5": 0.6,
+        "top1_match": true,
+        "n_matches": 33
+      },
+      {
+        "query": "XRPL wallet crypto staking Flare lending",
+        "avg_match": 0.512974556074495,
+        "avg_neg": 0.36127767855053866,
+        "separation": 0.15169687752395639,
+        "p_at_5": 0.0,
+        "top1_match": false,
+        "n_matches": 2
+      },
+      {
+        "query": "disclosure UFO UAP congressional testimony",
+        "avg_match": 0.5691591350689367,
+        "avg_neg": 0.42611804187183705,
+        "separation": 0.14304109319709962,
+        "p_at_5": 1.0,
+        "top1_match": true,
+        "n_matches": 26
+      },
+      {
+        "query": "poetry compression fidelity superposition bandwidt",
+        "avg_match": 0.5252015327422243,
+        "avg_neg": 0.4843493841273158,
+        "separation": 0.040852148614908435,
+        "p_at_5": 1.0,
+        "top1_match": true,
+        "n_matches": 32
+      }
+    ]
+  },
+  {
+    "model": "granite-embedding:278m",
+    "dim": 768,
+    "avg_separation": 0.055502348745934176,
+    "avg_precision_at_5": 0.8285714285714285,
+    "top1_accuracy": 0.8571428571428571,
+    "embed_rate": 3.2861881388825633,
+    "embed_time_s": 60.860788106918335,
+    "n_capsules": 200,
+    "n_probes": 7,
+    "probes": [
+      {
+        "query": "CCS identity circuit neurons late layer",
+        "avg_match": 0.5342487426773166,
+        "avg_neg": 0.5091121199195819,
+        "separation": 0.02513662275773465,
+        "p_at_5": 1.0,
+        "top1_match": true,
+        "n_matches": 53
+      },
+      {
+        "query": "Gregory of Nyssa soul persistence dissolution atom",
+        "avg_match": 0.613059608485279,
+        "avg_neg": 0.565745162524796,
+        "separation": 0.047314445960482954,
+        "p_at_5": 1.0,
+        "top1_match": true,
+        "n_matches": 33
+      },
+      {
+        "query": "Nate partnership sovereignty care building",
+        "avg_match": 0.5419114120494295,
+        "avg_neg": 0.524743261702299,
+        "separation": 0.017168150347130484,
+        "p_at_5": 1.0,
+        "top1_match": true,
+        "n_matches": 104
+      },
+      {
+        "query": "GQA MHA attention heads witness enrichment sign in",
+        "avg_match": 0.5615318715550085,
+        "avg_neg": 0.5591472468955168,
+        "separation": 0.002384624659491741,
+        "p_at_5": 0.8,
+        "top1_match": true,
+        "n_matches": 33
+      },
+      {
+        "query": "XRPL wallet crypto staking Flare lending",
+        "avg_match": 0.5769000188841402,
+        "avg_neg": 0.4820619397149922,
+        "separation": 0.09483807916914799,
+        "p_at_5": 0.0,
+        "top1_match": false,
+        "n_matches": 2
+      },
+      {
+        "query": "disclosure UFO UAP congressional testimony",
+        "avg_match": 0.6607946682329827,
+        "avg_neg": 0.5477771250998722,
+        "separation": 0.11301754313311052,
+        "p_at_5": 1.0,
+        "top1_match": true,
+        "n_matches": 26
+      },
+      {
+        "query": "poetry compression fidelity superposition bandwidt",
+        "avg_match": 0.5799147809942882,
+        "avg_neg": 0.4912578057998473,
+        "separation": 0.08865697519444088,
+        "p_at_5": 1.0,
+        "top1_match": true,
+        "n_matches": 32
+      }
+    ]
+  },
+  {
+    "model": "nomic-embed-text",
+    "dim": 768,
+    "avg_separation": 0.03258201694701733,
+    "avg_precision_at_5": 0.6571428571428573,
+    "top1_accuracy": 0.5714285714285714,
+    "embed_rate": 11.876398867384006,
+    "embed_time_s": 16.840121507644653,
+    "n_capsules": 200,
+    "n_probes": 7,
+    "probes": [
+      {
+        "query": "CCS identity circuit neurons late layer",
+        "avg_match": 0.5924626063835632,
+        "avg_neg": 0.5714836125962992,
+        "separation": 0.020978993787263978,
+        "p_at_5": 1.0,
+        "top1_match": true,
+        "n_matches": 53
+      },
+      {
+        "query": "Gregory of Nyssa soul persistence dissolution atom",
+        "avg_match": 0.6013684052836508,
+        "avg_neg": 0.5860138216655487,
+        "separation": 0.015354583618102047,
+        "p_at_5": 0.6,
+        "top1_match": true,
+        "n_matches": 33
+      },
+      {
+        "query": "Nate partnership sovereignty care building",
+        "avg_match": 0.5170466324955458,
+        "avg_neg": 0.5366481755181509,
+        "separation": -0.019601543022605084,
+        "p_at_5": 0.8,
+        "top1_match": false,
+        "n_matches": 104
+      },
+      {
+        "query": "GQA MHA attention heads witness enrichment sign in",
+        "avg_match": 0.5944952496705931,
+        "avg_neg": 0.6155982962566833,
+        "separation": -0.02110304658609019,
+        "p_at_5": 0.2,
+        "top1_match": false,
+        "n_matches": 33
+      },
+      {
+        "query": "XRPL wallet crypto staking Flare lending",
+        "avg_match": 0.6212008786870207,
+        "avg_neg": 0.5586921493772573,
+        "separation": 0.06250872930976337,
+        "p_at_5": 0.2,
+        "top1_match": false,
+        "n_matches": 2
+      },
+      {
+        "query": "disclosure UFO UAP congressional testimony",
+        "avg_match": 0.6069779318467355,
+        "avg_neg": 0.5137838775599584,
+        "separation": 0.09319405428677718,
+        "p_at_5": 0.8,
+        "top1_match": true,
+        "n_matches": 26
+      },
+      {
+        "query": "poetry compression fidelity superposition bandwidt",
+        "avg_match": 0.6076154460745062,
+        "avg_neg": 0.5308730988385962,
+        "separation": 0.07674234723591,
+        "p_at_5": 1.0,
+        "top1_match": true,
+        "n_matches": 32
+      }
+    ]
+  }
+]

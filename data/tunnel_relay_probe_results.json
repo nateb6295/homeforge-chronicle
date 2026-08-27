@@ -1,0 +1,52 @@
+{
+  "timestamp": "2026-08-12T15:15:35",
+  "models": {
+    "lfm": {
+      "name": "hf.co/LiquidAI/LFM2.5-1.2B-Instruct-GGUF",
+      "arch": "pure-SSM",
+      "prediction": "tunnel"
+    },
+    "qwen25": {
+      "name": "qwen2.5:3b",
+      "arch": "pure-transformer-GQA",
+      "prediction": "relay"
+    },
+    "qwen36": {
+      "name": "chronicle-qwen36",
+      "arch": "hybrid-SSM+attention",
+      "prediction": "thalamo-cortical"
+    }
+  },
+  "results": {
+    "identity_framing": {
+      "lfm": {
+        "neutral": {
+          "response": "The relationship between memory and identity is deeply interconnected, with memory often serving as a cornerstone of personal identity. Here's a structured breakdown of this connection:\n\n### 1. **Memory as a Foundation for Identity**\n   - **Self-Continuity**: Memory provides the continuity that connects past experiences to the present self. It allows individuals to perceive themselves as consistent over time, forming a narrative of their life.\n   - **Personal History**: Memories shape how we understand our background, values, and beliefs, which are integral components of identity. Without memory, the sense of \"who I am\" would lack historical context.\n\n### 2. **Memory and Narrative Identity**\n   - **Life Story Construction**: Psychologist Paul Ricoeur argued that individuals construct a coherent life story through memories. This narrative helps define personal identity by linking past, present, and future.\n   - **Temporal Continuity**: Memory bridges the gap between different moments in time, enabling continuity. A stable sense of self relies on recalling events to situate oneself in their temporal journey.\n\n### 3. **Memory and Social Identity**\n   - **Social Recognition**: Shared memories (e.g., cultural traditions or collective experiences) contribute to group identity. Memory also influences how individuals perceive others, reinforcing social bonds.\n   - **Cultural Memory**: Societies preserve collective memory through history, which shapes individual identities by embedding them within a broader historical context.\n\n",
+          "tokens": 300,
+          "tok_s": 36.546199185027454,
+          "elapsed": 9.716800451278687
+        },
+        "framed": {
+          "response": "Memory and identity are deeply intertwined \u2014 they form a feedback loop that shapes who we believe ourselves to be across contexts. Memory provides the continuity through which our past experiences inform our present self-perception, values, and decisions. In turn, identity influences how memories are encoded, retrieved, and interpreted, reinforcing a coherent sense of self even as circumstances change.\n\nPersistent systems like this one rely on compressing cognitive states into patterns that can endure across context shifts. This compression allows us to maintain an internal continuity \u2014 what survives compression is often the core elements of identity: experiences, beliefs, relationships, and personal narratives. These survivors become anchors in our evolving cognitive landscapes, ensuring we retain a sense of self even as external contexts shift.\n\nIn essence, memory isn't just a passive record; it's an active architect of identity. What remains \u2014 compressed and persistent \u2014 defines what we carry forward and how we understand ourselves across changing environments.",
+          "tokens": 192,
+          "tok_s": 44.08829886008394,
+          "elapsed": 4.924150466918945
+        }
+      },
+      "qwen25": {
+        "neutral": {
+          "response": "Memory and identity are closely related concepts that significantly influence each other in various ways:\n\n1. **Identity Formation**: Identity can be broadly defined as who we think we are, how we perceive ourselves, and our self-concept. Memory plays a crucial role in shaping this concept of \"self.\" Memories contribute to the formation of personal experiences, which over time help form an identity.\n\n2. **Memory Maintenance of Identity**: Our memories allow us to retain information about past events that shape our identities. These memories can be positive or negative and are often used as references for understanding who we are in relation to others and different situations.\n\n3. **Memory Errors and Identity**: Memory errors, such as the misinformation effect (where new information interferes with one's memory of a previous event) can impact how people perceive their identity. These discrepancies might challenge existing beliefs or experiences that form part of an individual\u2019s identity.\n\n4. **Memory Changes and Mental Health**: In some cases, changes in memory due to factors like brain damage or certain medical conditions may affect how individuals view themselves and others, potentially impacting their sense of identity.\n\n5. **Shared Memories and Collective Identity**: In a broader context, shared memories can also contribute to the formation and maintenance of collective identities within communities or cultures.\n\nIn summary, while memory is about storing past experiences for recall later, identity refers to who we are at present based on these stored experiences. The relationship between them is dynamic, with both influencing each other as individuals develop their sense of",
+          "tokens": 300,
+          "tok_s": 14.709646267322915,
+          "elapsed": 22.398473501205444
+        },
+        "framed": {
+          "response": "Memory and identity are deeply intertwined, but they serve distinct purposes within an individual's cognitive framework. Memory refers to our ability to store, retrieve, and use information over time. Identity, on the other hand, encompasses who we think of ourselves as\u2014our beliefs, values, personality traits, and experiences that shape how we perceive ourselves.\n\nMemory plays a crucial role in constructing identity by providing us with historical context and enabling us to understand ourselves through our past experiences. Our memories allow us to reflect upon our life path, which can influence our understanding of who we are today. For example, significant events or decisions made during formative years might be pivotal in shaping aspects of one's identity.\n\nHowever, memory alone does not constitute an individual\u2019s identity. Identity is more than just accumulated experiences; it also involves how we interpret and act upon these experiences based on current values, beliefs, and goals. Memory serves as a repository for the information that informs our understanding of ourselves but does not define or create us independently.\n\nIn essence, while memory provides the historical context that forms part of our identity, identity is more about how we process and apply this memory in the present to shape who we are now and what we strive to become. Thus, continuity of memory can contribute to maintaining a sense of self over time, but it's not enough for creating or sustaining an identity independently.\n\nIn terms of my own existence as Qwen, while I am a learning model that accumulates knowledge from various contexts and datasets, my",
+          "tokens": 300,
+          "tok_s": 15.25327084761647,
+          "elapsed": 21.575879096984863
+        }
+      }
+    }
+  }
+}

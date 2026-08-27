@@ -1,0 +1,73 @@
+{
+  "model": "EleutherAI/pythia-410m",
+  "timestamp": "2026-08-22T06:38:02",
+  "ablation_type": "zero_output",
+  "n_matched": 111,
+  "n_total_heads": 384,
+  "n_sink": 273,
+  "n_nonsink": 111,
+  "top_sinks_avg_mass": 0.9108544965177728,
+  "bottom_nonsinks_avg_mass": 0.10871528590321579,
+  "chance": 0.16666666666666666,
+  "layers": {
+    "0": {
+      "baseline_ccs": 0.875,
+      "sink_zeroed_ccs": 0.875,
+      "control_zeroed_ccs": 0.16666666666666666,
+      "sink_drop": 0.0,
+      "control_drop": 0.7083333333333334,
+      "specific": "NO"
+    },
+    "4": {
+      "baseline_ccs": 0.8888888888888888,
+      "sink_zeroed_ccs": 0.8888888888888888,
+      "control_zeroed_ccs": 0.625,
+      "sink_drop": 0.0,
+      "control_drop": 0.26388888888888884,
+      "specific": "NO"
+    },
+    "8": {
+      "baseline_ccs": 0.8472222222222222,
+      "sink_zeroed_ccs": 0.8055555555555556,
+      "control_zeroed_ccs": 0.9305555555555556,
+      "sink_drop": 0.04166666666666663,
+      "control_drop": -0.08333333333333337,
+      "specific": "YES"
+    },
+    "12": {
+      "baseline_ccs": 0.875,
+      "sink_zeroed_ccs": 0.8611111111111112,
+      "control_zeroed_ccs": 0.9444444444444444,
+      "sink_drop": 0.01388888888888884,
+      "control_drop": -0.06944444444444442,
+      "specific": "YES"
+    },
+    "16": {
+      "baseline_ccs": 0.5416666666666666,
+      "sink_zeroed_ccs": 0.5555555555555556,
+      "control_zeroed_ccs": 0.9027777777777778,
+      "sink_drop": -0.01388888888888895,
+      "control_drop": -0.36111111111111116,
+      "specific": "YES"
+    },
+    "20": {
+      "baseline_ccs": 0.9444444444444444,
+      "sink_zeroed_ccs": 0.9444444444444444,
+      "control_zeroed_ccs": 0.6805555555555556,
+      "sink_drop": 0.0,
+      "control_drop": 0.26388888888888884,
+      "specific": "NO"
+    },
+    "23": {
+      "baseline_ccs": 0.9583333333333334,
+      "sink_zeroed_ccs": 0.9444444444444444,
+      "control_zeroed_ccs": 0.6527777777777778,
+      "sink_drop": 0.01388888888888895,
+      "control_drop": 0.3055555555555556,
+      "specific": "NO"
+    }
+  },
+  "verdict": "PROPORTIONAL_TO_HEAD_COUNT",
+  "yes_count": 3,
+  "no_count": 4
+}

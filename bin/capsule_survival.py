@@ -98,13 +98,28 @@ def recall_signal(c, cap_id, tokens):
     if not row:
         return 0
     since = row["created_at"]
-    # Join tokens for LIKE — need all to appear
-    like_clauses = " AND ".join(["content LIKE ?"] * len(tokens))
-    params = [f"%{t}%" for t in tokens] + [since]
-    q = f"""
+    # FTS5 instead of ANDed leading-wildcard LIKEs (2026-08-25).
+    #
+    # This used to be `content LIKE '%tok%' AND content LIKE '%tok%' ...` over
+    # all 160,651 activity_feed rows, once per capsule — unindexable, ~0.35s
+    # each, 23 minutes for a full pass, and every background run was killed
+    # before finishing. activity_fts is built once in ~7s and answers the same
+    # question directly, since FTS5 ANDs bare terms by default.
+    #
+    # NOT identical semantics, and the difference matters: FTS matches whole
+    # tokens with porter stemming, LIKE matched substrings. "relay" no longer
+    # matches "relayed" as a substring but does match via stemming; it will no
+    # longer match inside "correlays". Recall counts may shift slightly against
+    # the April scores — that is a method change, not drift, and any
+    # before/after comparison across it is invalid.
+    match = " ".join(f'"{t}"' for t in tokens if t.isalnum())
+    if not match:
+        return 0
+    params = [match, since]
+    q = """
         SELECT DISTINCT date(created_at, 'unixepoch') d
-          FROM activity_feed
-         WHERE {like_clauses}
+          FROM activity_fts
+         WHERE activity_fts MATCH ?
            AND created_at > ?
          LIMIT 30
     """
@@ -116,16 +131,37 @@ def recall_signal(c, cap_id, tokens):
 
 
 def contradiction_signal(c, cap_id):
-    """Count contradictions where this capsule is the loser. Applied rows
-    count double (judge was confirmed), unapplied count single."""
+    """Count contradictions where this capsule is the loser.
+
+    REPAIRED 2026-08-25. This read a `capsule_contradictions` join table that
+    no longer exists — supersession moved onto knowledge_capsules itself as
+    superseded_at / superseded_by, and capsule_survival was never updated. It
+    has raised OperationalError on every `compute` since, which is almost
+    certainly why the last scores in this table are dated 2026-04-15.
+
+    The mapping: losing a contradiction is now recorded as being superseded.
+
+    MEASURED, not assumed (2026-08-25, and the first version of this comment
+    was wrong):
+      - The double weight is UNREACHABLE. cmd_compute's eligibility filter
+        requires `superseded_by IS NULL`, which is the exact condition for
+        weight 2. No scored capsule can ever return it. Kept as dead-but-
+        documented rather than deleted, so the next reader sees the constraint
+        instead of rediscovering it.
+      - The single weight reaches 37 of 5,494 eligible capsules — 0.67%.
+        11,481 capsules carry superseded_at without a named winner, but almost
+        none are claim/prediction type above the confidence floor.
+    So this signal is real but nearly inert, and the survival score is in
+    practice age_decay + recall_bonus. Do not describe a rank list as
+    contradiction-aware; it is age-and-recall-aware with a rare tiebreak.
+    """
     row = c.execute("""
-        SELECT
-          SUM(CASE WHEN applied=1 THEN 2 ELSE 1 END) as weighted
-        FROM capsule_contradictions
-        WHERE verdict='contradicts'
-          AND ((loser='older' AND older_id=?) OR (loser='newer' AND newer_id=?))
-    """, (cap_id, cap_id)).fetchone()
-    return int(row["weighted"] or 0)
+        SELECT superseded_at, superseded_by
+        FROM knowledge_capsules WHERE id = ?
+    """, (cap_id,)).fetchone()
+    if not row or row["superseded_at"] is None:
+        return 0
+    return 2 if row["superseded_by"] is not None else 1
 
 
 def compute_score(c, cap):
@@ -165,40 +201,118 @@ def cmd_compute(args):
     cutoff = now - MIN_AGE_SECONDS
 
     type_placeholders = ",".join("?" * len(ELIGIBLE_TYPES))
+
+    # RESUMABLE, added 2026-08-25 after three runs died partway.
+    #
+    # Cost is dominated by recall_signal(), which scans activity_feed
+    # (160,634 rows) with several leading-wildcard LIKE clauses — unindexable —
+    # once per capsule. 5,494 capsules against that is on the order of 10^9 row
+    # comparisons, and the process was killed every time before finishing.
+    #
+    # A killed run used to leave the table holding fresh rows beside
+    # four-month-old ones, which `stats` then averaged into a single
+    # distribution that looked like a measurement. That is the worst possible
+    # failure: not an error, a plausible number.
+    #
+    # So: skip capsules already scored in this era. Repeated bounded runs now
+    # CONVERGE instead of churning, --stale-days sets the era, and `stats`
+    # refuses to report while epochs are mixed.
+    stale_before = now - int(getattr(args, "stale_days", 7) * 86400)
     rows = c.execute(f"""
-        SELECT id, restatement, confidence_score, memory_type, created_at
-          FROM knowledge_capsules
-         WHERE superseded_by IS NULL
-           AND memory_type IN ({type_placeholders})
-           AND created_at <= ?
-           AND confidence_score >= 0.5
-    """, (*ELIGIBLE_TYPES, cutoff)).fetchall()
+        SELECT k.id, k.restatement, k.confidence_score, k.memory_type, k.created_at
+          FROM knowledge_capsules k
+          LEFT JOIN capsule_survival s ON s.capsule_id = k.id
+         WHERE k.superseded_by IS NULL
+           AND k.memory_type IN ({type_placeholders})
+           AND k.created_at <= ?
+           AND k.confidence_score >= 0.5
+           AND (s.computed_at IS NULL OR s.computed_at < ?)
+         ORDER BY k.id
+    """, (*ELIGIBLE_TYPES, cutoff, stale_before)).fetchall()
+
+    if not rows:
+        print("all eligible capsules already scored in this era — nothing to do",
+              file=sys.stderr)
+        return
+    cap_n = getattr(args, "max", 0)
+    if cap_n and len(rows) > cap_n:
+        print(f"{len(rows)} stale; taking {cap_n} this pass (run again to continue)",
+              file=sys.stderr)
+        rows = rows[:cap_n]
 
     print(f"Scoring {len(rows)} eligible capsules...", file=sys.stderr)
     t0 = time.time()
-    batched = 0
-    for cap in rows:
+
+    # PHASE 1 — compute, no write transaction open.
+    #
+    # This used to interleave: INSERT, then compute_score (2-3 SELECTs), then
+    # INSERT, committing every 500. Because the SELECTs ran on the same
+    # connection, they sat INSIDE the write transaction, so the DB stayed
+    # write-locked across 500 scoring passes. On a box where the sentinel,
+    # ccs_touch, capsule_sync and discord-to-capsule all write the same file,
+    # that loses the lock race — two runs on 2026-08-25 died with
+    # "database is locked" at 1,000 and 1,500 rows, each leaving the table a
+    # mix of fresh and four-month-old rows that `stats` reports as one number.
+    # A partial recompute is worse than no recompute: it looks complete.
+    scored = []
+    for i, cap in enumerate(rows, 1):
         score, components = compute_score(c, cap)
-        c.execute("""
-            INSERT INTO capsule_survival (capsule_id, score, components, computed_at)
-            VALUES (?, ?, ?, ?)
-            ON CONFLICT(capsule_id) DO UPDATE SET
-              score=excluded.score,
-              components=excluded.components,
-              computed_at=excluded.computed_at
-        """, (cap["id"], score, json.dumps(components), now))
-        batched += 1
-        if batched % 500 == 0:
-            c.commit()
-            print(f"  {batched}/{len(rows)}...", file=sys.stderr)
-    c.commit()
+        scored.append((cap["id"], score, json.dumps(components), now))
+        if i % 1000 == 0:
+            print(f"  computed {i}/{len(rows)}...", file=sys.stderr)
+
+    # PHASE 2 — write in short bursts, retrying the lock instead of dying.
+    written = 0
+    for start in range(0, len(scored), 200):
+        chunk = scored[start:start + 200]
+        for attempt in range(6):
+            try:
+                c.executemany("""
+                    INSERT INTO capsule_survival (capsule_id, score, components, computed_at)
+                    VALUES (?, ?, ?, ?)
+                    ON CONFLICT(capsule_id) DO UPDATE SET
+                      score=excluded.score,
+                      components=excluded.components,
+                      computed_at=excluded.computed_at
+                """, chunk)
+                c.commit()
+                written += len(chunk)
+                break
+            except sqlite3.OperationalError as e:
+                if "locked" not in str(e).lower() or attempt == 5:
+                    raise
+                time.sleep(2 * (attempt + 1))
+        else:
+            raise RuntimeError("could not acquire write lock")
+
     elapsed = time.time() - t0
-    print(f"scored {batched} capsules in {elapsed:.1f}s", file=sys.stderr)
+    print(f"scored {written} capsules in {elapsed:.1f}s", file=sys.stderr)
+    if written != len(rows):
+        print(f"WARNING: wrote {written} of {len(rows)} — table now mixes "
+              f"epochs, treat stats as invalid until a clean run", file=sys.stderr)
 
 
 def cmd_stats(_args):
     c = conn()
     ensure_schema(c)
+
+    # Refuse to average across epochs. A half-finished recompute leaves fresh
+    # rows next to months-old ones, and every summary over that mixture is a
+    # number with no referent. On 2026-08-25 I reported one such distribution
+    # to Nate as a finding before noticing.
+    epochs = c.execute("""
+        SELECT date(computed_at,'unixepoch') d, COUNT(*) n
+          FROM capsule_survival GROUP BY d ORDER BY d
+    """).fetchall()
+    if len(epochs) > 1:
+        span = [(e["d"], e["n"]) for e in epochs]
+        print("REFUSING TO REPORT — scores span multiple compute epochs:")
+        for d, n in span:
+            print(f"    {d}   {n:,} rows")
+        print("Any distribution over this mixture is meaningless. Finish the")
+        print("recompute (`compute`, repeatedly — it resumes) and try again.")
+        return 1
+
     total = c.execute("SELECT COUNT(*) n FROM capsule_survival").fetchone()["n"]
     if total == 0:
         print("no survival scores computed yet — run `compute` first")
@@ -308,7 +422,11 @@ def main():
     ap = argparse.ArgumentParser()
     sub = ap.add_subparsers(dest="cmd", required=True)
 
-    sub.add_parser("compute", help="compute/refresh survival scores")
+    comp = sub.add_parser("compute", help="compute/refresh survival scores (resumable)")
+    comp.add_argument("--stale-days", type=float, default=7,
+                      help="rescore anything older than this many days (default 7)")
+    comp.add_argument("--max", type=int, default=0,
+                      help="stop after N capsules; run again to continue")
     sub.add_parser("stats", help="score distribution")
 
     rank = sub.add_parser("rank", help="lowest-scoring capsules first")

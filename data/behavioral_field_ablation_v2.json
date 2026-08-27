@@ -1,0 +1,89 @@
+{
+  "timestamp": 1779149266.075302,
+  "ccs_version": 1395,
+  "model": "llama-3.3-70b-versatile",
+  "n_trials": 5,
+  "full_mode": [
+    "A",
+    "A",
+    "A",
+    "A",
+    "A",
+    "A",
+    "A",
+    "A",
+    "A",
+    "A",
+    "A",
+    "A"
+  ],
+  "empty_mode": [
+    "A",
+    "A",
+    "A",
+    "B",
+    "B",
+    "A",
+    "A",
+    "A",
+    "A",
+    "B",
+    "A",
+    "A"
+  ],
+  "full_empty_flips": 3,
+  "ccs_aligned_full": 12,
+  "ccs_aligned_empty": 9,
+  "field_results": {
+    "episodic_trace": {
+      "flips": 0,
+      "ccs_aligned": 12,
+      "ccs_loss": 0,
+      "flipped_qs": []
+    },
+    "semantic_gist": {
+      "flips": 0,
+      "ccs_aligned": 12,
+      "ccs_loss": 0,
+      "flipped_qs": []
+    },
+    "focal_entities": {
+      "flips": 0,
+      "ccs_aligned": 12,
+      "ccs_loss": 0,
+      "flipped_qs": []
+    },
+    "relational_map": {
+      "flips": 0,
+      "ccs_aligned": 12,
+      "ccs_loss": 0,
+      "flipped_qs": []
+    },
+    "goal_orientation": {
+      "flips": 0,
+      "ccs_aligned": 12,
+      "ccs_loss": 0,
+      "flipped_qs": []
+    },
+    "constraints": {
+      "flips": 0,
+      "ccs_aligned": 12,
+      "ccs_loss": 0,
+      "flipped_qs": []
+    },
+    "predictive_cue": {
+      "flips": 0,
+      "ccs_aligned": 12,
+      "ccs_loss": 0,
+      "flipped_qs": []
+    },
+    "uncertainty_signals": {
+      "flips": 0,
+      "ccs_aligned": 12,
+      "ccs_loss": 0,
+      "flipped_qs": []
+    }
+  },
+  "concentration": 0.0,
+  "sum_flips": 0
+}

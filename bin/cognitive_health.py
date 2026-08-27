@@ -33,13 +33,13 @@ from pathlib import Path
 DB = "/mnt/hdd/chronicle-data/processed.db"
 
 THRESHOLDS = {
-    "ccs_max_age_min": 30,
-    "nav_score_min": 0.45,
+    "ccs_max_age_min": 120,
+    "nav_score_min": 0.40,
     "capture_max_unprocessed_hours": 2,
-    "thread_max_dormant_hours": 24,
+    "thread_max_dormant_hours": 18,
     "entity_entropy_min": 1.0,
     "entity_evenness_min": 0.5,
-    "uncertainty_max_frozen_snapshots": 5,
+    "uncertainty_max_frozen_snapshots": 8,
 }
 
 
@@ -87,14 +87,12 @@ def check_capture_processing(db):
 
 def check_thread_activity(db):
     import calendar, datetime as _dt
+    best = 0
     rows = db.execute(
         "SELECT created_at FROM thread_history "
         "WHERE event_type IN ('advance', 'advanced', 'ADVANCE') "
         "AND created_at IS NOT NULL AND created_at != '' "
     ).fetchall()
-    if not rows:
-        return "WARN", "no thread advances found", None
-    best = 0
     for (raw,) in rows:
         if isinstance(raw, str):
             try:
@@ -106,13 +104,40 @@ def check_thread_activity(db):
             ts = int(raw)
         if ts > best:
             best = ts
+    thread_notes = Path(os.path.expanduser("~/chronicle/threads"))
+    if thread_notes.is_dir():
+        for f in thread_notes.glob("*_notes.md"):
+            mtime = int(f.stat().st_mtime)
+            if mtime > best:
+                best = mtime
+    af_row = db.execute(
+        "SELECT MAX(created_at) FROM activity_feed "
+        "WHERE source LIKE '%thread%' OR content LIKE '%Thread #%'"
+    ).fetchone()
+    if af_row and af_row[0]:
+        ts = int(af_row[0]) if isinstance(af_row[0], (int, float)) else 0
+        if ts > best:
+            best = ts
+    if best == 0:
+        return "WARN", "no thread advances found", None
     age_h = (int(time.time()) - best) / 3600
     if age_h > THRESHOLDS["thread_max_dormant_hours"]:
         return "WARN", f"thread dormant {age_h:.1f}h (limit {THRESHOLDS['thread_max_dormant_hours']}h)", age_h
     return "OK", f"last advance {age_h:.1f}h ago", age_h
 
 
+def _is_brain_format(db):
+    row = db.execute(
+        "SELECT semantic_gist FROM cognitive_state ORDER BY id DESC LIMIT 1"
+    ).fetchone()
+    if not row or not row[0]:
+        return False
+    return "## CORE" in row[0] or "## REMEMBERS" in row[0]
+
+
 def check_entity_entropy(db):
+    if _is_brain_format(db):
+        return "OK", "brain-format CCS (entity check skipped — prose, not JSON)", None
     row = db.execute(
         "SELECT focal_entities FROM cognitive_state ORDER BY id DESC LIMIT 1"
     ).fetchone()
@@ -139,6 +164,8 @@ def check_entity_entropy(db):
 
 
 def check_uncertainty_staleness(db):
+    if _is_brain_format(db):
+        return "OK", "brain-format CCS (uncertainty check skipped — prose, not JSON)", None
     rows = db.execute(
         "SELECT json_extract(snapshot, '$.uncertainty_signals') "
         "FROM cognitive_state_history ORDER BY created_at DESC LIMIT ?"

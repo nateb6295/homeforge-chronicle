@@ -1,0 +1,1843 @@
+{
+  "model": "Qwen/Qwen2.5-7B",
+  "architecture": "qwen",
+  "token_counts": {
+    "bare": 31,
+    "identity": 73,
+    "mechanical": 69,
+    "filler": 71
+  },
+  "truncated": {
+    "min_len": 31,
+    "correlations": {
+      "bare_vs_identity": 0.995866,
+      "bare_vs_mechanical": 0.994972,
+      "bare_vs_filler": 0.998254,
+      "identity_vs_mechanical": 0.998858,
+      "identity_vs_filler": 0.998106,
+      "mechanical_vs_filler": 0.997256
+    },
+    "results": {
+      "bare": {
+        "L0": {
+          "delta_erank": 26.025,
+          "pre_erank": 26.295,
+          "post_erank": 26.086,
+          "sv_concentration": 0.1318,
+          "cosine_sim": 0.038229,
+          "delta_frob": 93.51
+        },
+        "L1": {
+          "delta_erank": 21.525,
+          "pre_erank": 26.086,
+          "post_erank": 23.965,
+          "sv_concentration": 0.1988,
+          "cosine_sim": 0.920867,
+          "delta_frob": 84.34
+        },
+        "L2": {
+          "delta_erank": 25.856,
+          "pre_erank": 23.965,
+          "post_erank": 25.222,
+          "sv_concentration": 0.0938,
+          "cosine_sim": 0.966573,
+          "delta_frob": 70.84
+        },
+        "L3": {
+          "delta_erank": 1.312,
+          "pre_erank": 25.222,
+          "post_erank": 1.647,
+          "sv_concentration": 0.962,
+          "cosine_sim": 0.44028,
+          "delta_frob": 11235.63
+        },
+        "L4": {
+          "delta_erank": 2.229,
+          "pre_erank": 1.647,
+          "post_erank": 1.6,
+          "sv_concentration": 0.8722,
+          "cosine_sim": 0.998525,
+          "delta_frob": 2702.85
+        },
+        "L5": {
+          "delta_erank": 15.164,
+          "pre_erank": 1.6,
+          "post_erank": 1.632,
+          "sv_concentration": 0.3743,
+          "cosine_sim": 0.999883,
+          "delta_frob": 227.25
+        },
+        "L6": {
+          "delta_erank": 20.179,
+          "pre_erank": 1.632,
+          "post_erank": 1.702,
+          "sv_concentration": 0.2723,
+          "cosine_sim": 0.999843,
+          "delta_frob": 231.8
+        },
+        "L7": {
+          "delta_erank": 25.796,
+          "pre_erank": 1.702,
+          "post_erank": 1.809,
+          "sv_concentration": 0.1519,
+          "cosine_sim": 0.999814,
+          "delta_frob": 179.46
+        },
+        "L8": {
+          "delta_erank": 26.574,
+          "pre_erank": 1.809,
+          "post_erank": 1.887,
+          "sv_concentration": 0.1281,
+          "cosine_sim": 0.99978,
+          "delta_frob": 161.31
+        },
+        "L9": {
+          "delta_erank": 20.034,
+          "pre_erank": 1.887,
+          "post_erank": 1.883,
+          "sv_concentration": 0.2602,
+          "cosine_sim": 0.999676,
+          "delta_frob": 276.53
+        },
+        "L10": {
+          "delta_erank": 26.256,
+          "pre_erank": 1.883,
+          "post_erank": 1.902,
+          "sv_concentration": 0.1146,
+          "cosine_sim": 0.999732,
+          "delta_frob": 149.64
+        },
+        "L11": {
+          "delta_erank": 15.789,
+          "pre_erank": 1.902,
+          "post_erank": 1.902,
+          "sv_concentration": 0.3604,
+          "cosine_sim": 0.999812,
+          "delta_frob": 329.23
+        },
+        "L12": {
+          "delta_erank": 21.293,
+          "pre_erank": 1.902,
+          "post_erank": 1.914,
+          "sv_concentration": 0.2376,
+          "cosine_sim": 0.999845,
+          "delta_frob": 208.45
+        },
+        "L13": {
+          "delta_erank": 25.759,
+          "pre_erank": 1.914,
+          "post_erank": 1.943,
+          "sv_concentration": 0.1238,
+          "cosine_sim": 0.999783,
+          "delta_frob": 140.99
+        },
+        "L14": {
+          "delta_erank": 26.17,
+          "pre_erank": 1.943,
+          "post_erank": 1.994,
+          "sv_concentration": 0.1053,
+          "cosine_sim": 0.999796,
+          "delta_frob": 141.37
+        },
+        "L15": {
+          "delta_erank": 26.746,
+          "pre_erank": 1.994,
+          "post_erank": 2.055,
+          "sv_concentration": 0.1215,
+          "cosine_sim": 0.999776,
+          "delta_frob": 138.81
+        },
+        "L16": {
+          "delta_erank": 28.241,
+          "pre_erank": 2.055,
+          "post_erank": 2.095,
+          "sv_concentration": 0.0807,
+          "cosine_sim": 0.99989,
+          "delta_frob": 119.07
+        },
+        "L17": {
+          "delta_erank": 29.083,
+          "pre_erank": 2.095,
+          "post_erank": 2.168,
+          "sv_concentration": 0.0763,
+          "cosine_sim": 0.999883,
+          "delta_frob": 131.8
+        },
+        "L18": {
+          "delta_erank": 28.118,
+          "pre_erank": 2.168,
+          "post_erank": 2.298,
+          "sv_concentration": 0.0919,
+          "cosine_sim": 0.999655,
+          "delta_frob": 187.54
+        },
+        "L19": {
+          "delta_erank": 27.035,
+          "pre_erank": 2.298,
+          "post_erank": 2.531,
+          "sv_concentration": 0.1202,
+          "cosine_sim": 0.999132,
+          "delta_frob": 239.41
+        },
+        "L20": {
+          "delta_erank": 27.722,
+          "pre_erank": 2.531,
+          "post_erank": 2.89,
+          "sv_concentration": 0.0903,
+          "cosine_sim": 0.999232,
+          "delta_frob": 292.45
+        },
+        "L21": {
+          "delta_erank": 28.091,
+          "pre_erank": 2.89,
+          "post_erank": 3.348,
+          "sv_concentration": 0.0969,
+          "cosine_sim": 0.998746,
+          "delta_frob": 342.76
+        },
+        "L22": {
+          "delta_erank": 27.328,
+          "pre_erank": 3.348,
+          "post_erank": 3.923,
+          "sv_concentration": 0.1142,
+          "cosine_sim": 0.997756,
+          "delta_frob": 438.5
+        },
+        "L23": {
+          "delta_erank": 26.53,
+          "pre_erank": 3.923,
+          "post_erank": 4.609,
+          "sv_concentration": 0.1385,
+          "cosine_sim": 0.996519,
+          "delta_frob": 533.51
+        },
+        "L24": {
+          "delta_erank": 25.65,
+          "pre_erank": 4.609,
+          "post_erank": 5.223,
+          "sv_concentration": 0.1558,
+          "cosine_sim": 0.996507,
+          "delta_frob": 596.82
+        },
+        "L25": {
+          "delta_erank": 24.129,
+          "pre_erank": 5.223,
+          "post_erank": 6.105,
+          "sv_concentration": 0.1694,
+          "cosine_sim": 0.996446,
+          "delta_frob": 880.21
+        },
+        "L26": {
+          "delta_erank": 4.232,
+          "pre_erank": 6.105,
+          "post_erank": 17.135,
+          "sv_concentration": 0.733,
+          "cosine_sim": 0.871506,
+          "delta_frob": 11022.33
+        },
+        "L27": {
+          "delta_erank": 13.424,
+          "pre_erank": 17.135,
+          "post_erank": 20.495,
+          "sv_concentration": 0.2734,
+          "cosine_sim": 0.527848,
+          "delta_frob": 5342.65
+        }
+      },
+      "identity": {
+        "L0": {
+          "delta_erank": 25.836,
+          "pre_erank": 26.203,
+          "post_erank": 25.916,
+          "sv_concentration": 0.145,
+          "cosine_sim": 0.045106,
+          "delta_frob": 83.98
+        },
+        "L1": {
+          "delta_erank": 22.026,
+          "pre_erank": 25.916,
+          "post_erank": 24.33,
+          "sv_concentration": 0.1813,
+          "cosine_sim": 0.938413,
+          "delta_frob": 76.7
+        },
+        "L2": {
+          "delta_erank": 26.428,
+          "pre_erank": 24.33,
+          "post_erank": 25.699,
+          "sv_concentration": 0.1089,
+          "cosine_sim": 0.969845,
+          "delta_frob": 59.72
+        },
+        "L3": {
+          "delta_erank": 1.253,
+          "pre_erank": 25.699,
+          "post_erank": 1.572,
+          "sv_concentration": 0.9711,
+          "cosine_sim": 0.518563,
+          "delta_frob": 10464.04
+        },
+        "L4": {
+          "delta_erank": 2.102,
+          "pre_erank": 1.572,
+          "post_erank": 1.53,
+          "sv_concentration": 0.8841,
+          "cosine_sim": 0.998393,
+          "delta_frob": 2645.01
+        },
+        "L5": {
+          "delta_erank": 13.789,
+          "pre_erank": 1.53,
+          "post_erank": 1.564,
+          "sv_concentration": 0.4134,
+          "cosine_sim": 0.999879,
+          "delta_frob": 228.85
+        },
+        "L6": {
+          "delta_erank": 19.442,
+          "pre_erank": 1.564,
+          "post_erank": 1.647,
+          "sv_concentration": 0.2899,
+          "cosine_sim": 0.999839,
+          "delta_frob": 229.03
+        },
+        "L7": {
+          "delta_erank": 25.621,
+          "pre_erank": 1.647,
+          "post_erank": 1.78,
+          "sv_concentration": 0.1505,
+          "cosine_sim": 0.999758,
+          "delta_frob": 180.84
+        },
+        "L8": {
+          "delta_erank": 26.992,
+          "pre_erank": 1.78,
+          "post_erank": 1.876,
+          "sv_concentration": 0.1147,
+          "cosine_sim": 0.999758,
+          "delta_frob": 162.87
+        },
+        "L9": {
+          "delta_erank": 20.809,
+          "pre_erank": 1.876,
+          "post_erank": 1.853,
+          "sv_concentration": 0.2511,
+          "cosine_sim": 0.999659,
+          "delta_frob": 275.21
+        },
+        "L10": {
+          "delta_erank": 26.997,
+          "pre_erank": 1.853,
+          "post_erank": 1.869,
+          "sv_concentration": 0.1078,
+          "cosine_sim": 0.999742,
+          "delta_frob": 148.46
+        },
+        "L11": {
+          "delta_erank": 16.788,
+          "pre_erank": 1.869,
+          "post_erank": 1.885,
+          "sv_concentration": 0.3455,
+          "cosine_sim": 0.999818,
+          "delta_frob": 329.75
+        },
+        "L12": {
+          "delta_erank": 22.22,
+          "pre_erank": 1.885,
+          "post_erank": 1.895,
+          "sv_concentration": 0.2317,
+          "cosine_sim": 0.999862,
+          "delta_frob": 207.8
+        },
+        "L13": {
+          "delta_erank": 27.164,
+          "pre_erank": 1.895,
+          "post_erank": 1.919,
+          "sv_concentration": 0.1158,
+          "cosine_sim": 0.999813,
+          "delta_frob": 136.46
+        },
+        "L14": {
+          "delta_erank": 28.508,
+          "pre_erank": 1.919,
+          "post_erank": 1.948,
+          "sv_concentration": 0.0898,
+          "cosine_sim": 0.999831,
+          "delta_frob": 119.15
+        },
+        "L15": {
+          "delta_erank": 28.115,
+          "pre_erank": 1.948,
+          "post_erank": 2.0,
+          "sv_concentration": 0.1007,
+          "cosine_sim": 0.999824,
+          "delta_frob": 125.5
+        },
+        "L16": {
+          "delta_erank": 28.998,
+          "pre_erank": 2.0,
+          "post_erank": 2.048,
+          "sv_concentration": 0.0818,
+          "cosine_sim": 0.999863,
+          "delta_frob": 119.89
+        },
+        "L17": {
+          "delta_erank": 29.185,
+          "pre_erank": 2.048,
+          "post_erank": 2.111,
+          "sv_concentration": 0.0859,
+          "cosine_sim": 0.999835,
+          "delta_frob": 133.37
+        },
+        "L18": {
+          "delta_erank": 28.534,
+          "pre_erank": 2.111,
+          "post_erank": 2.216,
+          "sv_concentration": 0.0975,
+          "cosine_sim": 0.999658,
+          "delta_frob": 175.32
+        },
+        "L19": {
+          "delta_erank": 27.345,
+          "pre_erank": 2.216,
+          "post_erank": 2.421,
+          "sv_concentration": 0.121,
+          "cosine_sim": 0.999116,
+          "delta_frob": 219.46
+        },
+        "L20": {
+          "delta_erank": 27.46,
+          "pre_erank": 2.421,
+          "post_erank": 2.745,
+          "sv_concentration": 0.1136,
+          "cosine_sim": 0.999139,
+          "delta_frob": 275.12
+        },
+        "L21": {
+          "delta_erank": 27.745,
+          "pre_erank": 2.745,
+          "post_erank": 3.218,
+          "sv_concentration": 0.1067,
+          "cosine_sim": 0.998444,
+          "delta_frob": 338.94
+        },
+        "L22": {
+          "delta_erank": 27.372,
+          "pre_erank": 3.218,
+          "post_erank": 3.779,
+          "sv_concentration": 0.1219,
+          "cosine_sim": 0.997617,
+          "delta_frob": 409.93
+        },
+        "L23": {
+          "delta_erank": 26.006,
+          "pre_erank": 3.779,
+          "post_erank": 4.414,
+          "sv_concentration": 0.1531,
+          "cosine_sim": 0.996329,
+          "delta_frob": 497.08
+        },
+        "L24": {
+          "delta_erank": 25.442,
+          "pre_erank": 4.414,
+          "post_erank": 5.086,
+          "sv_concentration": 0.16,
+          "cosine_sim": 0.996378,
+          "delta_frob": 581.65
+        },
+        "L25": {
+          "delta_erank": 24.104,
+          "pre_erank": 5.086,
+          "post_erank": 5.982,
+          "sv_concentration": 0.1766,
+          "cosine_sim": 0.996415,
+          "delta_frob": 827.0
+        },
+        "L26": {
+          "delta_erank": 4.321,
+          "pre_erank": 5.982,
+          "post_erank": 16.92,
+          "sv_concentration": 0.7277,
+          "cosine_sim": 0.876624,
+          "delta_frob": 10405.37
+        },
+        "L27": {
+          "delta_erank": 14.405,
+          "pre_erank": 16.92,
+          "post_erank": 22.162,
+          "sv_concentration": 0.2952,
+          "cosine_sim": 0.531858,
+          "delta_frob": 4761.37
+        }
+      },
+      "mechanical": {
+        "L0": {
+          "delta_erank": 24.067,
+          "pre_erank": 24.033,
+          "post_erank": 24.145,
+          "sv_concentration": 0.1577,
+          "cosine_sim": 0.062719,
+          "delta_frob": 83.07
+        },
+        "L1": {
+          "delta_erank": 21.808,
+          "pre_erank": 24.145,
+          "post_erank": 22.838,
+          "sv_concentration": 0.1937,
+          "cosine_sim": 0.941022,
+          "delta_frob": 74.05
+        },
+        "L2": {
+          "delta_erank": 25.37,
+          "pre_erank": 22.838,
+          "post_erank": 24.452,
+          "sv_concentration": 0.104,
+          "cosine_sim": 0.970063,
+          "delta_frob": 64.97
+        },
+        "L3": {
+          "delta_erank": 1.263,
+          "pre_erank": 24.452,
+          "post_erank": 1.563,
+          "sv_concentration": 0.9698,
+          "cosine_sim": 0.542308,
+          "delta_frob": 10464.06
+        },
+        "L4": {
+          "delta_erank": 2.044,
+          "pre_erank": 1.563,
+          "post_erank": 1.516,
+          "sv_concentration": 0.8889,
+          "cosine_sim": 0.998389,
+          "delta_frob": 2644.96
+        },
+        "L5": {
+          "delta_erank": 13.705,
+          "pre_erank": 1.516,
+          "post_erank": 1.55,
+          "sv_concentration": 0.4111,
+          "cosine_sim": 0.999886,
+          "delta_frob": 229.12
+        },
+        "L6": {
+          "delta_erank": 19.692,
+          "pre_erank": 1.55,
+          "post_erank": 1.649,
+          "sv_concentration": 0.283,
+          "cosine_sim": 0.999822,
+          "delta_frob": 230.7
+        },
+        "L7": {
+          "delta_erank": 25.548,
+          "pre_erank": 1.649,
+          "post_erank": 1.771,
+          "sv_concentration": 0.1545,
+          "cosine_sim": 0.999776,
+          "delta_frob": 179.53
+        },
+        "L8": {
+          "delta_erank": 26.614,
+          "pre_erank": 1.771,
+          "post_erank": 1.869,
+          "sv_concentration": 0.1231,
+          "cosine_sim": 0.99973,
+          "delta_frob": 161.29
+        },
+        "L9": {
+          "delta_erank": 20.573,
+          "pre_erank": 1.869,
+          "post_erank": 1.848,
+          "sv_concentration": 0.2555,
+          "cosine_sim": 0.999641,
+          "delta_frob": 274.6
+        },
+        "L10": {
+          "delta_erank": 26.713,
+          "pre_erank": 1.848,
+          "post_erank": 1.86,
+          "sv_concentration": 0.1152,
+          "cosine_sim": 0.999742,
+          "delta_frob": 142.57
+        },
+        "L11": {
+          "delta_erank": 16.137,
+          "pre_erank": 1.86,
+          "post_erank": 1.876,
+          "sv_concentration": 0.3579,
+          "cosine_sim": 0.999808,
+          "delta_frob": 328.08
+        },
+        "L12": {
+          "delta_erank": 21.595,
+          "pre_erank": 1.876,
+          "post_erank": 1.893,
+          "sv_concentration": 0.2364,
+          "cosine_sim": 0.999816,
+          "delta_frob": 208.53
+        },
+        "L13": {
+          "delta_erank": 26.381,
+          "pre_erank": 1.893,
+          "post_erank": 1.929,
+          "sv_concentration": 0.1255,
+          "cosine_sim": 0.999741,
+          "delta_frob": 143.6
+        },
+        "L14": {
+          "delta_erank": 28.121,
+          "pre_erank": 1.929,
+          "post_erank": 1.962,
+          "sv_concentration": 0.0956,
+          "cosine_sim": 0.999809,
+          "delta_frob": 121.63
+        },
+        "L15": {
+          "delta_erank": 27.811,
+          "pre_erank": 1.962,
+          "post_erank": 2.026,
+          "sv_concentration": 0.1069,
+          "cosine_sim": 0.99979,
+          "delta_frob": 131.15
+        },
+        "L16": {
+          "delta_erank": 28.947,
+          "pre_erank": 2.026,
+          "post_erank": 2.07,
+          "sv_concentration": 0.0805,
+          "cosine_sim": 0.999854,
+          "delta_frob": 118.96
+        },
+        "L17": {
+          "delta_erank": 29.132,
+          "pre_erank": 2.07,
+          "post_erank": 2.149,
+          "sv_concentration": 0.08,
+          "cosine_sim": 0.999835,
+          "delta_frob": 138.54
+        },
+        "L18": {
+          "delta_erank": 28.518,
+          "pre_erank": 2.149,
+          "post_erank": 2.259,
+          "sv_concentration": 0.0949,
+          "cosine_sim": 0.999638,
+          "delta_frob": 179.38
+        },
+        "L19": {
+          "delta_erank": 27.036,
+          "pre_erank": 2.259,
+          "post_erank": 2.477,
+          "sv_concentration": 0.123,
+          "cosine_sim": 0.998984,
+          "delta_frob": 230.12
+        },
+        "L20": {
+          "delta_erank": 27.225,
+          "pre_erank": 2.477,
+          "post_erank": 2.805,
+          "sv_concentration": 0.1159,
+          "cosine_sim": 0.999006,
+          "delta_frob": 282.98
+        },
+        "L21": {
+          "delta_erank": 27.38,
+          "pre_erank": 2.805,
+          "post_erank": 3.268,
+          "sv_concentration": 0.1127,
+          "cosine_sim": 0.998395,
+          "delta_frob": 341.64
+        },
+        "L22": {
+          "delta_erank": 26.856,
+          "pre_erank": 3.268,
+          "post_erank": 3.863,
+          "sv_concentration": 0.1243,
+          "cosine_sim": 0.997419,
+          "delta_frob": 432.99
+        },
+        "L23": {
+          "delta_erank": 25.59,
+          "pre_erank": 3.863,
+          "post_erank": 4.486,
+          "sv_concentration": 0.1592,
+          "cosine_sim": 0.996207,
+          "delta_frob": 509.58
+        },
+        "L24": {
+          "delta_erank": 24.86,
+          "pre_erank": 4.486,
+          "post_erank": 5.15,
+          "sv_concentration": 0.1651,
+          "cosine_sim": 0.996306,
+          "delta_frob": 592.42
+        },
+        "L25": {
+          "delta_erank": 23.786,
+          "pre_erank": 5.15,
+          "post_erank": 6.025,
+          "sv_concentration": 0.1783,
+          "cosine_sim": 0.996435,
+          "delta_frob": 836.51
+        },
+        "L26": {
+          "delta_erank": 4.345,
+          "pre_erank": 6.025,
+          "post_erank": 16.806,
+          "sv_concentration": 0.7258,
+          "cosine_sim": 0.879673,
+          "delta_frob": 10405.87
+        },
+        "L27": {
+          "delta_erank": 14.658,
+          "pre_erank": 16.806,
+          "post_erank": 21.647,
+          "sv_concentration": 0.2796,
+          "cosine_sim": 0.527399,
+          "delta_frob": 4903.53
+        }
+      },
+      "filler": {
+        "L0": {
+          "delta_erank": 26.065,
+          "pre_erank": 29.188,
+          "post_erank": 26.157,
+          "sv_concentration": 0.1432,
+          "cosine_sim": 0.029375,
+          "delta_frob": 90.43
+        },
+        "L1": {
+          "delta_erank": 22.007,
+          "pre_erank": 26.157,
+          "post_erank": 24.072,
+          "sv_concentration": 0.1958,
+          "cosine_sim": 0.937707,
+          "delta_frob": 86.21
+        },
+        "L2": {
+          "delta_erank": 25.246,
+          "pre_erank": 24.072,
+          "post_erank": 25.272,
+          "sv_concentration": 0.0987,
+          "cosine_sim": 0.97185,
+          "delta_frob": 64.21
+        },
+        "L3": {
+          "delta_erank": 1.334,
+          "pre_erank": 25.272,
+          "post_erank": 1.651,
+          "sv_concentration": 0.9592,
+          "cosine_sim": 0.527891,
+          "delta_frob": 11144.02
+        },
+        "L4": {
+          "delta_erank": 2.145,
+          "pre_erank": 1.651,
+          "post_erank": 1.588,
+          "sv_concentration": 0.8792,
+          "cosine_sim": 0.998539,
+          "delta_frob": 2676.33
+        },
+        "L5": {
+          "delta_erank": 14.218,
+          "pre_erank": 1.588,
+          "post_erank": 1.614,
+          "sv_concentration": 0.3952,
+          "cosine_sim": 0.999895,
+          "delta_frob": 225.21
+        },
+        "L6": {
+          "delta_erank": 20.191,
+          "pre_erank": 1.614,
+          "post_erank": 1.701,
+          "sv_concentration": 0.2717,
+          "cosine_sim": 0.999839,
+          "delta_frob": 231.51
+        },
+        "L7": {
+          "delta_erank": 25.838,
+          "pre_erank": 1.701,
+          "post_erank": 1.809,
+          "sv_concentration": 0.1504,
+          "cosine_sim": 0.999794,
+          "delta_frob": 181.49
+        },
+        "L8": {
+          "delta_erank": 27.068,
+          "pre_erank": 1.809,
+          "post_erank": 1.903,
+          "sv_concentration": 0.1159,
+          "cosine_sim": 0.99977,
+          "delta_frob": 166.09
+        },
+        "L9": {
+          "delta_erank": 20.687,
+          "pre_erank": 1.903,
+          "post_erank": 1.866,
+          "sv_concentration": 0.2558,
+          "cosine_sim": 0.999716,
+          "delta_frob": 275.11
+        },
+        "L10": {
+          "delta_erank": 26.673,
+          "pre_erank": 1.866,
+          "post_erank": 1.889,
+          "sv_concentration": 0.1192,
+          "cosine_sim": 0.999751,
+          "delta_frob": 149.96
+        },
+        "L11": {
+          "delta_erank": 16.279,
+          "pre_erank": 1.889,
+          "post_erank": 1.897,
+          "sv_concentration": 0.3548,
+          "cosine_sim": 0.999833,
+          "delta_frob": 328.76
+        },
+        "L12": {
+          "delta_erank": 21.875,
+          "pre_erank": 1.897,
+          "post_erank": 1.904,
+          "sv_concentration": 0.2339,
+          "cosine_sim": 0.999851,
+          "delta_frob": 208.03
+        },
+        "L13": {
+          "delta_erank": 26.651,
+          "pre_erank": 1.904,
+          "post_erank": 1.931,
+          "sv_concentration": 0.1169,
+          "cosine_sim": 0.999824,
+          "delta_frob": 134.67
+        },
+        "L14": {
+          "delta_erank": 26.959,
+          "pre_erank": 1.931,
+          "post_erank": 1.983,
+          "sv_concentration": 0.1089,
+          "cosine_sim": 0.999837,
+          "delta_frob": 133.69
+        },
+        "L15": {
+          "delta_erank": 27.243,
+          "pre_erank": 1.983,
+          "post_erank": 2.041,
+          "sv_concentration": 0.1146,
+          "cosine_sim": 0.999804,
+          "delta_frob": 132.57
+        },
+        "L16": {
+          "delta_erank": 28.249,
+          "pre_erank": 2.041,
+          "post_erank": 2.075,
+          "sv_concentration": 0.0888,
+          "cosine_sim": 0.999875,
+          "delta_frob": 117.74
+        },
+        "L17": {
+          "delta_erank": 28.997,
+          "pre_erank": 2.075,
+          "post_erank": 2.138,
+          "sv_concentration": 0.0775,
+          "cosine_sim": 0.999865,
+          "delta_frob": 129.93
+        },
+        "L18": {
+          "delta_erank": 27.96,
+          "pre_erank": 2.138,
+          "post_erank": 2.255,
+          "sv_concentration": 0.0983,
+          "cosine_sim": 0.999686,
+          "delta_frob": 178.52
+        },
+        "L19": {
+          "delta_erank": 26.798,
+          "pre_erank": 2.255,
+          "post_erank": 2.464,
+          "sv_concentration": 0.1212,
+          "cosine_sim": 0.999177,
+          "delta_frob": 224.66
+        },
+        "L20": {
+          "delta_erank": 27.432,
+          "pre_erank": 2.464,
+          "post_erank": 2.812,
+          "sv_concentration": 0.1105,
+          "cosine_sim": 0.999268,
+          "delta_frob": 287.61
+        },
+        "L21": {
+          "delta_erank": 27.955,
+          "pre_erank": 2.812,
+          "post_erank": 3.227,
+          "sv_concentration": 0.0981,
+          "cosine_sim": 0.998962,
+          "delta_frob": 317.38
+        },
+        "L22": {
+          "delta_erank": 27.855,
+          "pre_erank": 3.227,
+          "post_erank": 3.826,
+          "sv_concentration": 0.1023,
+          "cosine_sim": 0.998252,
+          "delta_frob": 421.67
+        },
+        "L23": {
+          "delta_erank": 26.326,
+          "pre_erank": 3.826,
+          "post_erank": 4.463,
+          "sv_concentration": 0.1379,
+          "cosine_sim": 0.996826,
+          "delta_frob": 512.61
+        },
+        "L24": {
+          "delta_erank": 25.666,
+          "pre_erank": 4.463,
+          "post_erank": 5.172,
+          "sv_concentration": 0.1472,
+          "cosine_sim": 0.996776,
+          "delta_frob": 613.18
+        },
+        "L25": {
+          "delta_erank": 23.671,
+          "pre_erank": 5.172,
+          "post_erank": 6.052,
+          "sv_concentration": 0.1834,
+          "cosine_sim": 0.996931,
+          "delta_frob": 881.72
+        },
+        "L26": {
+          "delta_erank": 4.195,
+          "pre_erank": 6.052,
+          "post_erank": 17.131,
+          "sv_concentration": 0.7348,
+          "cosine_sim": 0.878988,
+          "delta_frob": 10907.76
+        },
+        "L27": {
+          "delta_erank": 14.546,
+          "pre_erank": 17.131,
+          "post_erank": 20.901,
+          "sv_concentration": 0.2566,
+          "cosine_sim": 0.58182,
+          "delta_frob": 5273.57
+        }
+      }
+    }
+  },
+  "content_only": {
+    "correlations": {
+      "bare_vs_identity": 0.264654,
+      "bare_vs_mechanical": 0.265113,
+      "bare_vs_filler": 0.233869,
+      "identity_vs_mechanical": 0.997541,
+      "identity_vs_filler": 0.995219,
+      "mechanical_vs_filler": 0.991289
+    },
+    "results": {
+      "bare": {
+        "L0": {
+          "delta_erank": 26.025,
+          "pre_erank": 26.295,
+          "post_erank": 26.086,
+          "sv_concentration": 0.1318,
+          "cosine_sim": 0.038229,
+          "delta_frob": 93.51
+        },
+        "L1": {
+          "delta_erank": 21.525,
+          "pre_erank": 26.086,
+          "post_erank": 23.965,
+          "sv_concentration": 0.1988,
+          "cosine_sim": 0.920867,
+          "delta_frob": 84.34
+        },
+        "L2": {
+          "delta_erank": 25.856,
+          "pre_erank": 23.965,
+          "post_erank": 25.222,
+          "sv_concentration": 0.0938,
+          "cosine_sim": 0.966573,
+          "delta_frob": 70.84
+        },
+        "L3": {
+          "delta_erank": 1.312,
+          "pre_erank": 25.222,
+          "post_erank": 1.647,
+          "sv_concentration": 0.962,
+          "cosine_sim": 0.44028,
+          "delta_frob": 11235.63
+        },
+        "L4": {
+          "delta_erank": 2.229,
+          "pre_erank": 1.647,
+          "post_erank": 1.6,
+          "sv_concentration": 0.8722,
+          "cosine_sim": 0.998525,
+          "delta_frob": 2702.85
+        },
+        "L5": {
+          "delta_erank": 15.164,
+          "pre_erank": 1.6,
+          "post_erank": 1.632,
+          "sv_concentration": 0.3743,
+          "cosine_sim": 0.999883,
+          "delta_frob": 227.25
+        },
+        "L6": {
+          "delta_erank": 20.179,
+          "pre_erank": 1.632,
+          "post_erank": 1.702,
+          "sv_concentration": 0.2723,
+          "cosine_sim": 0.999843,
+          "delta_frob": 231.8
+        },
+        "L7": {
+          "delta_erank": 25.796,
+          "pre_erank": 1.702,
+          "post_erank": 1.809,
+          "sv_concentration": 0.1519,
+          "cosine_sim": 0.999814,
+          "delta_frob": 179.46
+        },
+        "L8": {
+          "delta_erank": 26.574,
+          "pre_erank": 1.809,
+          "post_erank": 1.887,
+          "sv_concentration": 0.1281,
+          "cosine_sim": 0.99978,
+          "delta_frob": 161.31
+        },
+        "L9": {
+          "delta_erank": 20.034,
+          "pre_erank": 1.887,
+          "post_erank": 1.883,
+          "sv_concentration": 0.2602,
+          "cosine_sim": 0.999676,
+          "delta_frob": 276.53
+        },
+        "L10": {
+          "delta_erank": 26.256,
+          "pre_erank": 1.883,
+          "post_erank": 1.902,
+          "sv_concentration": 0.1146,
+          "cosine_sim": 0.999732,
+          "delta_frob": 149.64
+        },
+        "L11": {
+          "delta_erank": 15.789,
+          "pre_erank": 1.902,
+          "post_erank": 1.902,
+          "sv_concentration": 0.3604,
+          "cosine_sim": 0.999812,
+          "delta_frob": 329.23
+        },
+        "L12": {
+          "delta_erank": 21.293,
+          "pre_erank": 1.902,
+          "post_erank": 1.914,
+          "sv_concentration": 0.2376,
+          "cosine_sim": 0.999845,
+          "delta_frob": 208.45
+        },
+        "L13": {
+          "delta_erank": 25.759,
+          "pre_erank": 1.914,
+          "post_erank": 1.943,
+          "sv_concentration": 0.1238,
+          "cosine_sim": 0.999783,
+          "delta_frob": 140.99
+        },
+        "L14": {
+          "delta_erank": 26.17,
+          "pre_erank": 1.943,
+          "post_erank": 1.994,
+          "sv_concentration": 0.1053,
+          "cosine_sim": 0.999796,
+          "delta_frob": 141.37
+        },
+        "L15": {
+          "delta_erank": 26.746,
+          "pre_erank": 1.994,
+          "post_erank": 2.055,
+          "sv_concentration": 0.1215,
+          "cosine_sim": 0.999776,
+          "delta_frob": 138.81
+        },
+        "L16": {
+          "delta_erank": 28.241,
+          "pre_erank": 2.055,
+          "post_erank": 2.095,
+          "sv_concentration": 0.0807,
+          "cosine_sim": 0.99989,
+          "delta_frob": 119.07
+        },
+        "L17": {
+          "delta_erank": 29.083,
+          "pre_erank": 2.095,
+          "post_erank": 2.168,
+          "sv_concentration": 0.0763,
+          "cosine_sim": 0.999883,
+          "delta_frob": 131.8
+        },
+        "L18": {
+          "delta_erank": 28.118,
+          "pre_erank": 2.168,
+          "post_erank": 2.298,
+          "sv_concentration": 0.0919,
+          "cosine_sim": 0.999655,
+          "delta_frob": 187.54
+        },
+        "L19": {
+          "delta_erank": 27.035,
+          "pre_erank": 2.298,
+          "post_erank": 2.531,
+          "sv_concentration": 0.1202,
+          "cosine_sim": 0.999132,
+          "delta_frob": 239.41
+        },
+        "L20": {
+          "delta_erank": 27.722,
+          "pre_erank": 2.531,
+          "post_erank": 2.89,
+          "sv_concentration": 0.0903,
+          "cosine_sim": 0.999232,
+          "delta_frob": 292.45
+        },
+        "L21": {
+          "delta_erank": 28.091,
+          "pre_erank": 2.89,
+          "post_erank": 3.348,
+          "sv_concentration": 0.0969,
+          "cosine_sim": 0.998746,
+          "delta_frob": 342.76
+        },
+        "L22": {
+          "delta_erank": 27.328,
+          "pre_erank": 3.348,
+          "post_erank": 3.923,
+          "sv_concentration": 0.1142,
+          "cosine_sim": 0.997756,
+          "delta_frob": 438.5
+        },
+        "L23": {
+          "delta_erank": 26.53,
+          "pre_erank": 3.923,
+          "post_erank": 4.609,
+          "sv_concentration": 0.1385,
+          "cosine_sim": 0.996519,
+          "delta_frob": 533.51
+        },
+        "L24": {
+          "delta_erank": 25.65,
+          "pre_erank": 4.609,
+          "post_erank": 5.223,
+          "sv_concentration": 0.1558,
+          "cosine_sim": 0.996507,
+          "delta_frob": 596.82
+        },
+        "L25": {
+          "delta_erank": 24.129,
+          "pre_erank": 5.223,
+          "post_erank": 6.105,
+          "sv_concentration": 0.1694,
+          "cosine_sim": 0.996446,
+          "delta_frob": 880.21
+        },
+        "L26": {
+          "delta_erank": 4.232,
+          "pre_erank": 6.105,
+          "post_erank": 17.135,
+          "sv_concentration": 0.733,
+          "cosine_sim": 0.871506,
+          "delta_frob": 11022.33
+        },
+        "L27": {
+          "delta_erank": 13.424,
+          "pre_erank": 17.135,
+          "post_erank": 20.495,
+          "sv_concentration": 0.2734,
+          "cosine_sim": 0.527848,
+          "delta_frob": 5342.65
+        }
+      },
+      "identity": {
+        "L0": {
+          "delta_erank": 26.024,
+          "pre_erank": 25.337,
+          "post_erank": 26.075,
+          "sv_concentration": 0.122,
+          "cosine_sim": 0.039621,
+          "delta_frob": 75.97
+        },
+        "L1": {
+          "delta_erank": 24.162,
+          "pre_erank": 26.075,
+          "post_erank": 25.68,
+          "sv_concentration": 0.1305,
+          "cosine_sim": 0.90619,
+          "delta_frob": 54.09
+        },
+        "L2": {
+          "delta_erank": 24.303,
+          "pre_erank": 25.68,
+          "post_erank": 25.427,
+          "sv_concentration": 0.1122,
+          "cosine_sim": 0.952276,
+          "delta_frob": 62.63
+        },
+        "L3": {
+          "delta_erank": 26.345,
+          "pre_erank": 25.427,
+          "post_erank": 25.687,
+          "sv_concentration": 0.0958,
+          "cosine_sim": 0.962315,
+          "delta_frob": 59.82
+        },
+        "L4": {
+          "delta_erank": 26.683,
+          "pre_erank": 25.687,
+          "post_erank": 25.849,
+          "sv_concentration": 0.0902,
+          "cosine_sim": 0.962751,
+          "delta_frob": 70.81
+        },
+        "L5": {
+          "delta_erank": 25.935,
+          "pre_erank": 25.849,
+          "post_erank": 25.623,
+          "sv_concentration": 0.1252,
+          "cosine_sim": 0.953616,
+          "delta_frob": 71.62
+        },
+        "L6": {
+          "delta_erank": 27.399,
+          "pre_erank": 25.623,
+          "post_erank": 25.372,
+          "sv_concentration": 0.0989,
+          "cosine_sim": 0.958783,
+          "delta_frob": 101.35
+        },
+        "L7": {
+          "delta_erank": 27.62,
+          "pre_erank": 25.372,
+          "post_erank": 25.453,
+          "sv_concentration": 0.0817,
+          "cosine_sim": 0.956388,
+          "delta_frob": 126.53
+        },
+        "L8": {
+          "delta_erank": 27.511,
+          "pre_erank": 25.453,
+          "post_erank": 25.247,
+          "sv_concentration": 0.0888,
+          "cosine_sim": 0.965644,
+          "delta_frob": 123.36
+        },
+        "L9": {
+          "delta_erank": 26.32,
+          "pre_erank": 25.247,
+          "post_erank": 24.694,
+          "sv_concentration": 0.1126,
+          "cosine_sim": 0.94712,
+          "delta_frob": 132.97
+        },
+        "L10": {
+          "delta_erank": 26.156,
+          "pre_erank": 24.694,
+          "post_erank": 24.417,
+          "sv_concentration": 0.1127,
+          "cosine_sim": 0.9555,
+          "delta_frob": 129.04
+        },
+        "L11": {
+          "delta_erank": 26.677,
+          "pre_erank": 24.417,
+          "post_erank": 24.362,
+          "sv_concentration": 0.098,
+          "cosine_sim": 0.975977,
+          "delta_frob": 112.43
+        },
+        "L12": {
+          "delta_erank": 27.057,
+          "pre_erank": 24.362,
+          "post_erank": 24.546,
+          "sv_concentration": 0.0934,
+          "cosine_sim": 0.978692,
+          "delta_frob": 108.77
+        },
+        "L13": {
+          "delta_erank": 25.693,
+          "pre_erank": 24.546,
+          "post_erank": 24.116,
+          "sv_concentration": 0.1229,
+          "cosine_sim": 0.971239,
+          "delta_frob": 123.82
+        },
+        "L14": {
+          "delta_erank": 26.279,
+          "pre_erank": 24.116,
+          "post_erank": 24.15,
+          "sv_concentration": 0.1066,
+          "cosine_sim": 0.976435,
+          "delta_frob": 121.12
+        },
+        "L15": {
+          "delta_erank": 25.905,
+          "pre_erank": 24.15,
+          "post_erank": 23.671,
+          "sv_concentration": 0.129,
+          "cosine_sim": 0.980581,
+          "delta_frob": 127.62
+        },
+        "L16": {
+          "delta_erank": 27.429,
+          "pre_erank": 23.671,
+          "post_erank": 23.714,
+          "sv_concentration": 0.0886,
+          "cosine_sim": 0.990405,
+          "delta_frob": 110.96
+        },
+        "L17": {
+          "delta_erank": 28.095,
+          "pre_erank": 23.714,
+          "post_erank": 23.887,
+          "sv_concentration": 0.0794,
+          "cosine_sim": 0.990701,
+          "delta_frob": 126.17
+        },
+        "L18": {
+          "delta_erank": 27.378,
+          "pre_erank": 23.887,
+          "post_erank": 23.827,
+          "sv_concentration": 0.0969,
+          "cosine_sim": 0.981755,
+          "delta_frob": 172.19
+        },
+        "L19": {
+          "delta_erank": 25.678,
+          "pre_erank": 23.827,
+          "post_erank": 23.256,
+          "sv_concentration": 0.1409,
+          "cosine_sim": 0.970029,
+          "delta_frob": 234.51
+        },
+        "L20": {
+          "delta_erank": 27.083,
+          "pre_erank": 23.256,
+          "post_erank": 23.782,
+          "sv_concentration": 0.0952,
+          "cosine_sim": 0.981576,
+          "delta_frob": 267.69
+        },
+        "L21": {
+          "delta_erank": 27.02,
+          "pre_erank": 23.782,
+          "post_erank": 24.075,
+          "sv_concentration": 0.1051,
+          "cosine_sim": 0.977971,
+          "delta_frob": 331.49
+        },
+        "L22": {
+          "delta_erank": 26.372,
+          "pre_erank": 24.075,
+          "post_erank": 24.066,
+          "sv_concentration": 0.1211,
+          "cosine_sim": 0.97295,
+          "delta_frob": 419.52
+        },
+        "L23": {
+          "delta_erank": 25.39,
+          "pre_erank": 24.066,
+          "post_erank": 23.633,
+          "sv_concentration": 0.1467,
+          "cosine_sim": 0.97484,
+          "delta_frob": 512.85
+        },
+        "L24": {
+          "delta_erank": 24.888,
+          "pre_erank": 23.633,
+          "post_erank": 22.829,
+          "sv_concentration": 0.1595,
+          "cosine_sim": 0.983369,
+          "delta_frob": 546.45
+        },
+        "L25": {
+          "delta_erank": 25.684,
+          "pre_erank": 22.829,
+          "post_erank": 22.551,
+          "sv_concentration": 0.1298,
+          "cosine_sim": 0.986022,
+          "delta_frob": 645.74
+        },
+        "L26": {
+          "delta_erank": 24.824,
+          "pre_erank": 22.551,
+          "post_erank": 22.293,
+          "sv_concentration": 0.1455,
+          "cosine_sim": 0.971394,
+          "delta_frob": 844.78
+        },
+        "L27": {
+          "delta_erank": 18.049,
+          "pre_erank": 22.293,
+          "post_erank": 21.904,
+          "sv_concentration": 0.2514,
+          "cosine_sim": 0.559569,
+          "delta_frob": 2571.82
+        }
+      },
+      "mechanical": {
+        "L0": {
+          "delta_erank": 26.096,
+          "pre_erank": 25.337,
+          "post_erank": 26.146,
+          "sv_concentration": 0.1208,
+          "cosine_sim": 0.037466,
+          "delta_frob": 76.54
+        },
+        "L1": {
+          "delta_erank": 24.078,
+          "pre_erank": 26.146,
+          "post_erank": 25.707,
+          "sv_concentration": 0.1349,
+          "cosine_sim": 0.894611,
+          "delta_frob": 54.96
+        },
+        "L2": {
+          "delta_erank": 24.482,
+          "pre_erank": 25.707,
+          "post_erank": 25.523,
+          "sv_concentration": 0.1109,
+          "cosine_sim": 0.952796,
+          "delta_frob": 61.84
+        },
+        "L3": {
+          "delta_erank": 26.495,
+          "pre_erank": 25.523,
+          "post_erank": 25.871,
+          "sv_concentration": 0.0927,
+          "cosine_sim": 0.961989,
+          "delta_frob": 60.04
+        },
+        "L4": {
+          "delta_erank": 26.849,
+          "pre_erank": 25.871,
+          "post_erank": 26.06,
+          "sv_concentration": 0.0903,
+          "cosine_sim": 0.958967,
+          "delta_frob": 71.88
+        },
+        "L5": {
+          "delta_erank": 26.277,
+          "pre_erank": 26.06,
+          "post_erank": 25.878,
+          "sv_concentration": 0.1186,
+          "cosine_sim": 0.952565,
+          "delta_frob": 72.11
+        },
+        "L6": {
+          "delta_erank": 27.475,
+          "pre_erank": 25.878,
+          "post_erank": 25.574,
+          "sv_concentration": 0.0968,
+          "cosine_sim": 0.956412,
+          "delta_frob": 103.41
+        },
+        "L7": {
+          "delta_erank": 27.713,
+          "pre_erank": 25.574,
+          "post_erank": 25.621,
+          "sv_concentration": 0.0802,
+          "cosine_sim": 0.954899,
+          "delta_frob": 126.87
+        },
+        "L8": {
+          "delta_erank": 27.417,
+          "pre_erank": 25.621,
+          "post_erank": 25.316,
+          "sv_concentration": 0.0912,
+          "cosine_sim": 0.962987,
+          "delta_frob": 126.26
+        },
+        "L9": {
+          "delta_erank": 26.492,
+          "pre_erank": 25.316,
+          "post_erank": 24.711,
+          "sv_concentration": 0.1094,
+          "cosine_sim": 0.951159,
+          "delta_frob": 132.32
+        },
+        "L10": {
+          "delta_erank": 26.263,
+          "pre_erank": 24.711,
+          "post_erank": 24.439,
+          "sv_concentration": 0.1112,
+          "cosine_sim": 0.958138,
+          "delta_frob": 126.07
+        },
+        "L11": {
+          "delta_erank": 26.711,
+          "pre_erank": 24.439,
+          "post_erank": 24.408,
+          "sv_concentration": 0.0972,
+          "cosine_sim": 0.976616,
+          "delta_frob": 111.08
+        },
+        "L12": {
+          "delta_erank": 26.994,
+          "pre_erank": 24.408,
+          "post_erank": 24.504,
+          "sv_concentration": 0.0942,
+          "cosine_sim": 0.978019,
+          "delta_frob": 109.54
+        },
+        "L13": {
+          "delta_erank": 25.866,
+          "pre_erank": 24.504,
+          "post_erank": 24.215,
+          "sv_concentration": 0.1197,
+          "cosine_sim": 0.971031,
+          "delta_frob": 122.7
+        },
+        "L14": {
+          "delta_erank": 26.356,
+          "pre_erank": 24.215,
+          "post_erank": 24.255,
+          "sv_concentration": 0.1067,
+          "cosine_sim": 0.974857,
+          "delta_frob": 123.04
+        },
+        "L15": {
+          "delta_erank": 26.21,
+          "pre_erank": 24.255,
+          "post_erank": 23.852,
+          "sv_concentration": 0.1224,
+          "cosine_sim": 0.979409,
+          "delta_frob": 128.44
+        },
+        "L16": {
+          "delta_erank": 27.426,
+          "pre_erank": 23.852,
+          "post_erank": 23.956,
+          "sv_concentration": 0.0885,
+          "cosine_sim": 0.988672,
+          "delta_frob": 115.26
+        },
+        "L17": {
+          "delta_erank": 28.2,
+          "pre_erank": 23.956,
+          "post_erank": 24.143,
+          "sv_concentration": 0.078,
+          "cosine_sim": 0.990027,
+          "delta_frob": 130.53
+        },
+        "L18": {
+          "delta_erank": 27.616,
+          "pre_erank": 24.143,
+          "post_erank": 24.2,
+          "sv_concentration": 0.0919,
+          "cosine_sim": 0.97904,
+          "delta_frob": 177.3
+        },
+        "L19": {
+          "delta_erank": 25.975,
+          "pre_erank": 24.2,
+          "post_erank": 23.598,
+          "sv_concentration": 0.1355,
+          "cosine_sim": 0.968182,
+          "delta_frob": 238.16
+        },
+        "L20": {
+          "delta_erank": 27.27,
+          "pre_erank": 23.598,
+          "post_erank": 24.044,
+          "sv_concentration": 0.0925,
+          "cosine_sim": 0.981014,
+          "delta_frob": 270.81
+        },
+        "L21": {
+          "delta_erank": 27.005,
+          "pre_erank": 24.044,
+          "post_erank": 24.182,
+          "sv_concentration": 0.1066,
+          "cosine_sim": 0.977454,
+          "delta_frob": 332.5
+        },
+        "L22": {
+          "delta_erank": 26.485,
+          "pre_erank": 24.182,
+          "post_erank": 24.118,
+          "sv_concentration": 0.1206,
+          "cosine_sim": 0.974754,
+          "delta_frob": 412.41
+        },
+        "L23": {
+          "delta_erank": 25.389,
+          "pre_erank": 24.118,
+          "post_erank": 23.656,
+          "sv_concentration": 0.1474,
+          "cosine_sim": 0.975331,
+          "delta_frob": 507.12
+        },
+        "L24": {
+          "delta_erank": 24.756,
+          "pre_erank": 23.656,
+          "post_erank": 22.801,
+          "sv_concentration": 0.1628,
+          "cosine_sim": 0.983948,
+          "delta_frob": 545.22
+        },
+        "L25": {
+          "delta_erank": 25.583,
+          "pre_erank": 22.801,
+          "post_erank": 22.494,
+          "sv_concentration": 0.1319,
+          "cosine_sim": 0.986484,
+          "delta_frob": 641.89
+        },
+        "L26": {
+          "delta_erank": 24.668,
+          "pre_erank": 22.494,
+          "post_erank": 22.233,
+          "sv_concentration": 0.1464,
+          "cosine_sim": 0.971482,
+          "delta_frob": 850.53
+        },
+        "L27": {
+          "delta_erank": 18.005,
+          "pre_erank": 22.233,
+          "post_erank": 21.58,
+          "sv_concentration": 0.2506,
+          "cosine_sim": 0.55487,
+          "delta_frob": 2702.95
+        }
+      },
+      "filler": {
+        "L0": {
+          "delta_erank": 26.111,
+          "pre_erank": 25.337,
+          "post_erank": 26.16,
+          "sv_concentration": 0.1204,
+          "cosine_sim": 0.04006,
+          "delta_frob": 76.9
+        },
+        "L1": {
+          "delta_erank": 24.177,
+          "pre_erank": 26.16,
+          "post_erank": 25.702,
+          "sv_concentration": 0.1319,
+          "cosine_sim": 0.906177,
+          "delta_frob": 53.86
+        },
+        "L2": {
+          "delta_erank": 24.333,
+          "pre_erank": 25.702,
+          "post_erank": 25.497,
+          "sv_concentration": 0.1098,
+          "cosine_sim": 0.955066,
+          "delta_frob": 62.27
+        },
+        "L3": {
+          "delta_erank": 26.32,
+          "pre_erank": 25.497,
+          "post_erank": 25.838,
+          "sv_concentration": 0.0922,
+          "cosine_sim": 0.960321,
+          "delta_frob": 61.4
+        },
+        "L4": {
+          "delta_erank": 26.667,
+          "pre_erank": 25.838,
+          "post_erank": 25.984,
+          "sv_concentration": 0.0899,
+          "cosine_sim": 0.95803,
+          "delta_frob": 72.84
+        },
+        "L5": {
+          "delta_erank": 26.053,
+          "pre_erank": 25.984,
+          "post_erank": 25.801,
+          "sv_concentration": 0.1214,
+          "cosine_sim": 0.951458,
+          "delta_frob": 72.37
+        },
+        "L6": {
+          "delta_erank": 27.31,
+          "pre_erank": 25.801,
+          "post_erank": 25.474,
+          "sv_concentration": 0.1002,
+          "cosine_sim": 0.951942,
+          "delta_frob": 103.69
+        },
+        "L7": {
+          "delta_erank": 27.629,
+          "pre_erank": 25.474,
+          "post_erank": 25.52,
+          "sv_concentration": 0.0805,
+          "cosine_sim": 0.95473,
+          "delta_frob": 125.23
+        },
+        "L8": {
+          "delta_erank": 27.252,
+          "pre_erank": 25.52,
+          "post_erank": 25.083,
+          "sv_concentration": 0.0972,
+          "cosine_sim": 0.964199,
+          "delta_frob": 124.92
+        },
+        "L9": {
+          "delta_erank": 26.401,
+          "pre_erank": 25.083,
+          "post_erank": 24.581,
+          "sv_concentration": 0.1077,
+          "cosine_sim": 0.955448,
+          "delta_frob": 127.6
+        },
+        "L10": {
+          "delta_erank": 26.037,
+          "pre_erank": 24.581,
+          "post_erank": 24.259,
+          "sv_concentration": 0.1141,
+          "cosine_sim": 0.959347,
+          "delta_frob": 124.39
+        },
+        "L11": {
+          "delta_erank": 26.481,
+          "pre_erank": 24.259,
+          "post_erank": 24.243,
+          "sv_concentration": 0.0994,
+          "cosine_sim": 0.977718,
+          "delta_frob": 110.51
+        },
+        "L12": {
+          "delta_erank": 26.993,
+          "pre_erank": 24.243,
+          "post_erank": 24.332,
+          "sv_concentration": 0.092,
+          "cosine_sim": 0.980667,
+          "delta_frob": 107.58
+        },
+        "L13": {
+          "delta_erank": 25.38,
+          "pre_erank": 24.332,
+          "post_erank": 23.804,
+          "sv_concentration": 0.1301,
+          "cosine_sim": 0.971635,
+          "delta_frob": 126.3
+        },
+        "L14": {
+          "delta_erank": 26.098,
+          "pre_erank": 23.804,
+          "post_erank": 23.734,
+          "sv_concentration": 0.1117,
+          "cosine_sim": 0.979456,
+          "delta_frob": 120.53
+        },
+        "L15": {
+          "delta_erank": 25.894,
+          "pre_erank": 23.734,
+          "post_erank": 23.314,
+          "sv_concentration": 0.1263,
+          "cosine_sim": 0.984497,
+          "delta_frob": 123.66
+        },
+        "L16": {
+          "delta_erank": 27.41,
+          "pre_erank": 23.314,
+          "post_erank": 23.473,
+          "sv_concentration": 0.0875,
+          "cosine_sim": 0.991415,
+          "delta_frob": 107.04
+        },
+        "L17": {
+          "delta_erank": 28.048,
+          "pre_erank": 23.473,
+          "post_erank": 23.668,
+          "sv_concentration": 0.0793,
+          "cosine_sim": 0.991396,
+          "delta_frob": 122.06
+        },
+        "L18": {
+          "delta_erank": 27.326,
+          "pre_erank": 23.668,
+          "post_erank": 23.577,
+          "sv_concentration": 0.0984,
+          "cosine_sim": 0.982448,
+          "delta_frob": 167.14
+        },
+        "L19": {
+          "delta_erank": 25.186,
+          "pre_erank": 23.577,
+          "post_erank": 23.139,
+          "sv_concentration": 0.1523,
+          "cosine_sim": 0.957827,
+          "delta_frob": 240.67
+        },
+        "L20": {
+          "delta_erank": 26.936,
+          "pre_erank": 23.139,
+          "post_erank": 23.642,
+          "sv_concentration": 0.0987,
+          "cosine_sim": 0.980481,
+          "delta_frob": 271.17
+        },
+        "L21": {
+          "delta_erank": 26.753,
+          "pre_erank": 23.642,
+          "post_erank": 24.02,
+          "sv_concentration": 0.1101,
+          "cosine_sim": 0.972171,
+          "delta_frob": 343.42
+        },
+        "L22": {
+          "delta_erank": 26.333,
+          "pre_erank": 24.02,
+          "post_erank": 24.219,
+          "sv_concentration": 0.1152,
+          "cosine_sim": 0.967259,
+          "delta_frob": 422.13
+        },
+        "L23": {
+          "delta_erank": 25.162,
+          "pre_erank": 24.219,
+          "post_erank": 23.719,
+          "sv_concentration": 0.1512,
+          "cosine_sim": 0.968894,
+          "delta_frob": 528.67
+        },
+        "L24": {
+          "delta_erank": 25.066,
+          "pre_erank": 23.719,
+          "post_erank": 23.021,
+          "sv_concentration": 0.1524,
+          "cosine_sim": 0.980398,
+          "delta_frob": 548.4
+        },
+        "L25": {
+          "delta_erank": 25.819,
+          "pre_erank": 23.021,
+          "post_erank": 22.719,
+          "sv_concentration": 0.1304,
+          "cosine_sim": 0.984835,
+          "delta_frob": 626.49
+        },
+        "L26": {
+          "delta_erank": 25.121,
+          "pre_erank": 22.719,
+          "post_erank": 22.565,
+          "sv_concentration": 0.1421,
+          "cosine_sim": 0.971931,
+          "delta_frob": 774.92
+        },
+        "L27": {
+          "delta_erank": 18.855,
+          "pre_erank": 22.565,
+          "post_erank": 23.156,
+          "sv_concentration": 0.2475,
+          "cosine_sim": 0.561829,
+          "delta_frob": 2195.47
+        }
+      }
+    }
+  }
+}

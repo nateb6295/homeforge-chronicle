@@ -633,8 +633,7 @@ def run_convergence_check(db: sqlite3.Connection):
         db.commit()
 
         # Post to Discord #alerts via webhook (not #opus — Opus voice only)
-        _opus_wh = os.environ.get("ALERTS_WEBHOOK",
-            "https://discord.com/api/webhooks/1489300749308395611/zlZZH3QzXqEDxznmNelK3mlkLF0IeZqoxwNUnrL0no_jfeZnDMvwvD_7XhYcCyQzq78I")
+        _opus_wh = os.environ.get("ALERTS_WEBHOOK", "")
         try:
             msg = "\n".join(lines)[:1900]
             requests.post(_opus_wh, json={"content": msg}, timeout=10)

@@ -1,0 +1,29 @@
+{
+  "condition": "identity",
+  "layers": "all",
+  "run_name": "tier3_identity_all",
+  "n_samples": 7604,
+  "epochs": 1,
+  "batch_size": 2,
+  "lr": 0.0002,
+  "lora_r": 16,
+  "lora_alpha": 32,
+  "loss": 2.507612277029942,
+  "steps": 951,
+  "runtime_s": 3142.717,
+  "trainable_params": 36507648,
+  "total_params": 27468914288,
+  "full_attention_layers": [
+    5,
+    11,
+    17,
+    23,
+    29,
+    35,
+    41,
+    47,
+    53,
+    59
+  ],
+  "adapter_path": "/root/results/tier3_identity_all/final_adapter"
+}

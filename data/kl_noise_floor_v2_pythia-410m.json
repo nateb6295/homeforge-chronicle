@@ -1,0 +1,188 @@
+{
+  "model": "EleutherAI/pythia-410m",
+  "n_layers": 25,
+  "layers": {
+    "0": {
+      "ownership_kl": 0.0,
+      "topic_kl": 0.0,
+      "paraphrase_kl": 0.0,
+      "own_topic_ratio": 999,
+      "own_para_ratio": 999
+    },
+    "1": {
+      "ownership_kl": 0.007996015173072616,
+      "topic_kl": 0.055364697550733886,
+      "paraphrase_kl": 0.031703947422405086,
+      "own_topic_ratio": 0.1444244351871588,
+      "own_para_ratio": 0.2522088201364432
+    },
+    "2": {
+      "ownership_kl": 0.012048545992001891,
+      "topic_kl": 0.03523272182792425,
+      "paraphrase_kl": 0.022498367819935083,
+      "own_topic_ratio": 0.341970343672189,
+      "own_para_ratio": 0.5355297810237621
+    },
+    "3": {
+      "ownership_kl": 0.00894330651499331,
+      "topic_kl": 0.026487859897315502,
+      "paraphrase_kl": 0.017502233075598877,
+      "own_topic_ratio": 0.3376379424258318,
+      "own_para_ratio": 0.510980883202945
+    },
+    "4": {
+      "ownership_kl": 0.031072839473684628,
+      "topic_kl": 0.07317859803636868,
+      "paraphrase_kl": 0.04918137068549792,
+      "own_topic_ratio": 0.4246164904422176,
+      "own_para_ratio": 0.6318010059619396
+    },
+    "5": {
+      "ownership_kl": 0.08774767816066742,
+      "topic_kl": 0.12192828580737114,
+      "paraphrase_kl": 0.11353945235411327,
+      "own_topic_ratio": 0.7196662987561059,
+      "own_para_ratio": 0.7728386595259857
+    },
+    "6": {
+      "ownership_kl": 0.3341332326332728,
+      "topic_kl": 0.6592641274134318,
+      "paraphrase_kl": 0.4146814246972402,
+      "own_topic_ratio": 0.5068275653708277,
+      "own_para_ratio": 0.8057588614614803
+    },
+    "7": {
+      "ownership_kl": 0.2686980615059535,
+      "topic_kl": 0.6970887780189514,
+      "paraphrase_kl": 0.3449730972448985,
+      "own_topic_ratio": 0.38545744814536165,
+      "own_para_ratio": 0.778895698394716
+    },
+    "8": {
+      "ownership_kl": 0.33335769673188526,
+      "topic_kl": 0.8357553879419962,
+      "paraphrase_kl": 0.41987066467603046,
+      "own_topic_ratio": 0.39886993436292534,
+      "own_para_ratio": 0.7939532927100348
+    },
+    "9": {
+      "ownership_kl": 0.39567773292462033,
+      "topic_kl": 0.7696172197659811,
+      "paraphrase_kl": 0.5786768098672231,
+      "own_topic_ratio": 0.5141227648790587,
+      "own_para_ratio": 0.6837628986988579
+    },
+    "10": {
+      "ownership_kl": 0.485629824300607,
+      "topic_kl": 0.6780669887860616,
+      "paraphrase_kl": 0.766433189312617,
+      "own_topic_ratio": 0.7161974146094717,
+      "own_para_ratio": 0.6336231664708425
+    },
+    "11": {
+      "ownership_kl": 0.38527945677439374,
+      "topic_kl": 0.7106494009494781,
+      "paraphrase_kl": 0.4944767355918884,
+      "own_topic_ratio": 0.5421512440025039,
+      "own_para_ratio": 0.7791659931446813
+    },
+    "12": {
+      "ownership_kl": 0.3819747020800908,
+      "topic_kl": 0.4456591208775838,
+      "paraphrase_kl": 0.4289294282595317,
+      "own_topic_ratio": 0.8571006048926211,
+      "own_para_ratio": 0.8905304157610048
+    },
+    "13": {
+      "ownership_kl": 0.4421139930685361,
+      "topic_kl": 0.41060587763786316,
+      "paraphrase_kl": 0.34946120778719586,
+      "own_topic_ratio": 1.0767356658699898,
+      "own_para_ratio": 1.2651303870550379
+    },
+    "14": {
+      "ownership_kl": 0.8404779012004534,
+      "topic_kl": 0.5170392195383707,
+      "paraphrase_kl": 0.3924494783083598,
+      "own_topic_ratio": 1.6255592795278841,
+      "own_para_ratio": 2.1416206356632324
+    },
+    "15": {
+      "ownership_kl": 1.2906878689924877,
+      "topic_kl": 0.37475936859846115,
+      "paraphrase_kl": 0.3153475522994995,
+      "own_topic_ratio": 3.4440443045345326,
+      "own_para_ratio": 4.092905936896774
+    },
+    "16": {
+      "ownership_kl": 0.636310238391161,
+      "topic_kl": 0.39578236142794293,
+      "paraphrase_kl": 0.4305575688680013,
+      "own_topic_ratio": 1.607727631154197,
+      "own_para_ratio": 1.4778749333430916
+    },
+    "17": {
+      "ownership_kl": 0.1473691879461209,
+      "topic_kl": 0.14651848872502646,
+      "paraphrase_kl": 0.2594783852497737,
+      "own_topic_ratio": 1.0058060878766704,
+      "own_para_ratio": 0.5679439842523432
+    },
+    "18": {
+      "ownership_kl": 0.06278617943947513,
+      "topic_kl": 0.09361161043246587,
+      "paraphrase_kl": 0.1629786416888237,
+      "own_topic_ratio": 0.6707093185280784,
+      "own_para_ratio": 0.3852417641285368
+    },
+    "19": {
+      "ownership_kl": 0.041309626772999763,
+      "topic_kl": 0.05271713466693958,
+      "paraphrase_kl": 0.10733170186479886,
+      "own_topic_ratio": 0.7836091061092175,
+      "own_para_ratio": 0.3848781492818937
+    },
+    "20": {
+      "ownership_kl": 0.1669165746619304,
+      "topic_kl": 0.12665057058135668,
+      "paraphrase_kl": 0.19545747339725494,
+      "own_topic_ratio": 1.3179299066379493,
+      "own_para_ratio": 0.8539789845880338
+    },
+    "21": {
+      "ownership_kl": 0.14361035265028477,
+      "topic_kl": 0.16325080767273903,
+      "paraphrase_kl": 0.21098759273687998,
+      "own_topic_ratio": 0.8796915292338,
+      "own_para_ratio": 0.6806578092455866
+    },
+    "22": {
+      "ownership_kl": 0.22013999273379645,
+      "topic_kl": 0.25747128079334897,
+      "paraphrase_kl": 0.2909346669912338,
+      "own_topic_ratio": 0.8550079529471278,
+      "own_para_ratio": 0.7566647007399414
+    },
+    "23": {
+      "ownership_kl": 0.26719415312012035,
+      "topic_kl": 0.3383604933818181,
+      "paraphrase_kl": 0.3485378424326579,
+      "own_topic_ratio": 0.7896730213672105,
+      "own_para_ratio": 0.7666144693362695
+    },
+    "24": {
+      "ownership_kl": 0.10108931424717109,
+      "topic_kl": 0.13244165355960527,
+      "paraphrase_kl": 0.1660984829068184,
+      "own_topic_ratio": 0.7632743289608349,
+      "own_para_ratio": 0.6086107017839676
+    }
+  },
+  "profile": {
+    "own_peak_layer": 15,
+    "topic_peak_layer": 8,
+    "own_attenuation": 0.07832204569031978,
+    "topic_attenuation": 0.15846939842737465,
+    "profile_correlation": 0.543055277283452
+  }
+}

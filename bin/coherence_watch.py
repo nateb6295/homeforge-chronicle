@@ -37,9 +37,8 @@ DROP_THRESHOLD = 0.40
 # Look this many seconds back for converging signals.
 PRE_WINDOW_SEC = 30 * 60
 
-# Ollama embedding endpoint (mxbai-embed-large, 1024-dim).
-OLLAMA_URL = "http://192.168.1.11:11434/api/embeddings"
-EMBED_MODEL = "mxbai-embed-large"
+sys.path.insert(0, str(Path(__file__).parent))
+from embed_config import EMBED_URL, EMBED_MODEL
 # Cosine threshold for semantic coherence match. Calibrated 2026-04-13 across
 # 10 known flush events: activity-feed text against survivor name+context
 # focus tops out around 0.72, floors around 0.36. High-coherence events (#436)
@@ -114,7 +113,7 @@ def embed(text: str) -> list[float] | None:
         return _EMBED_CACHE[text]
     payload = json.dumps({"model": EMBED_MODEL, "prompt": text[:4000]}).encode()
     req = urllib.request.Request(
-        OLLAMA_URL, data=payload, headers={"Content-Type": "application/json"}
+        f"{EMBED_URL}/api/embeddings", data=payload, headers={"Content-Type": "application/json"}
     )
     try:
         with urllib.request.urlopen(req, timeout=10) as resp:

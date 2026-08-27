@@ -93,11 +93,11 @@ def measure_dh_b(persona_text):
     return sum(dh_bs) / len(dh_bs), dh_bs
 
 
-OLLAMA_EMBED = "http://192.168.1.11:11434/api/embeddings"
-EMBED_MODEL = "mxbai-embed-large"
+OLLAMA_EMBED = "http://localhost:11434/api/embeddings"
+EMBED_MODEL = "snowflake-arctic-embed2"
 
 
-_EMBED_CHUNK_CHARS = 1400  # safe under mxbai-embed-large 512-token context
+_EMBED_CHUNK_CHARS = 1400  # safe under snowflake-arctic-embed2 512-token context
 
 
 def _embed_one(prompt, _max_attempts=4):
@@ -118,7 +118,7 @@ def _embed_one(prompt, _max_attempts=4):
 
 
 def embed(text):
-    """Embed text via mxbai-embed-large.
+    """Embed text via snowflake-arctic-embed2.
 
     Inputs over ~512 tokens (~1700 chars) cause Ollama 500s on this model.
     We chunk long inputs into _EMBED_CHUNK_CHARS-sized pieces and average

@@ -1,0 +1,83 @@
+{
+  "build": 45,
+  "n_states": 117,
+  "info_trends": {
+    "total_tokens": {
+      "first20": 714.25,
+      "last20": 865.95,
+      "change_pct": 21.23906195309766,
+      "direction": "INCREASING"
+    },
+    "unique_tokens": {
+      "first20": 392.15,
+      "last20": 426.6,
+      "change_pct": 8.784903735815389,
+      "direction": "INCREASING"
+    },
+    "type_token_ratio": {
+      "first20": 0.5512495090279047,
+      "last20": 0.4935982877403965,
+      "change_pct": -10.458280750067726,
+      "direction": "DECREASING"
+    },
+    "entropy": {
+      "first20": 8.08819756378708,
+      "last20": 8.189426297925428,
+      "change_pct": 1.2515610967711044,
+      "direction": "STABLE"
+    },
+    "n_entities": {
+      "first20": 14.65,
+      "last20": 19.05,
+      "change_pct": 30.034129692832767,
+      "direction": "INCREASING"
+    },
+    "n_rel_edges": {
+      "first20": 4.05,
+      "last20": 4.65,
+      "change_pct": 14.814814814814827,
+      "direction": "INCREASING"
+    },
+    "n_uncertainty": {
+      "first20": 3.1,
+      "last20": 4.0,
+      "change_pct": 29.032258064516125,
+      "direction": "INCREASING"
+    },
+    "gist_len": {
+      "first20": 413.5,
+      "last20": 341.9,
+      "change_pct": -17.315598548972194,
+      "direction": "DECREASING"
+    },
+    "total_text_len": {
+      "first20": 5489.5,
+      "last20": 6749.25,
+      "change_pct": 22.94835595227252,
+      "direction": "INCREASING"
+    }
+  },
+  "basin_width": {
+    "first20_mean": 2.965936380294374,
+    "last20_mean": 1.4511489802322386,
+    "change_pct": -51.07282172761205
+  },
+  "correlations": {
+    "total_tokens": -0.1831005578206448,
+    "unique_tokens": 0.05084406428526394,
+    "type_token_ratio": 0.2802601067188502,
+    "entropy": 0.060765619943653294,
+    "n_entities": -0.1787296998930448,
+    "n_rel_edges": -0.509004049478957,
+    "n_uncertainty": 0.0,
+    "gist_len": 0.07580599507517191,
+    "total_text_len": -0.2360079393275755
+  },
+  "semantic_convergence": {
+    "early_20_cosine": 0.849429252543812,
+    "late_20_cosine": 0.7889608878582103,
+    "delta": -0.06046836468560168
+  },
+  "pc1_slope": 0.054156451524368675,
+  "verdict": "MIXED SIGNAL: Information and basin trends don't cleanly separate."
+}

@@ -1,0 +1,345 @@
+{
+  "timestamp": 1778713410.3610413,
+  "results": [
+    {
+      "model": "mxbai",
+      "cosine": {
+        "full_gap": 0.497591,
+        "sum_individual": 0.174525,
+        "interaction_pct": 64.9,
+        "field_pcts": {
+          "semantic_gist": 10.2,
+          "episodic_trace": 10.1,
+          "goal_orientation": 8.1,
+          "constraints": 4.4,
+          "focal_entities": 1.2,
+          "relational_map": 1.1,
+          "predictive_cue": 0.0,
+          "uncertainty_signals": 0.0
+        }
+      },
+      "l2": {
+        "full_gap": 16.58004,
+        "sum_individual": 20.706821,
+        "interaction_pct": -24.9,
+        "field_pcts": {
+          "episodic_trace": 29.7,
+          "semantic_gist": 29.6,
+          "goal_orientation": 26.2,
+          "constraints": 19.5,
+          "focal_entities": 10.2,
+          "relational_map": 9.7,
+          "predictive_cue": 0.0,
+          "uncertainty_signals": 0.0
+        }
+      },
+      "ccs_version": 1063
+    },
+    {
+      "model": "hash",
+      "cosine": {
+        "full_gap": 1.0,
+        "sum_individual": 0.246662,
+        "interaction_pct": 75.3,
+        "field_pcts": {
+          "episodic_trace": 7.0,
+          "uncertainty_signals": 4.3,
+          "relational_map": 2.9,
+          "goal_orientation": 2.4,
+          "predictive_cue": 2.4,
+          "constraints": 2.3,
+          "semantic_gist": 1.9,
+          "focal_entities": 1.5
+        }
+      },
+      "l2": {
+        "full_gap": 37.094474,
+        "sum_individual": 73.983295,
+        "interaction_pct": -99.4,
+        "field_pcts": {
+          "episodic_trace": 39.6,
+          "uncertainty_signals": 30.5,
+          "relational_map": 24.1,
+          "goal_orientation": 23.5,
+          "predictive_cue": 22.2,
+          "constraints": 21.9,
+          "semantic_gist": 20.5,
+          "focal_entities": 17.0
+        }
+      },
+      "ccs_version": 1063
+    },
+    {
+      "model": "mxbai",
+      "cosine": {
+        "full_gap": 0.475073,
+        "sum_individual": 0.217974,
+        "interaction_pct": 54.1,
+        "field_pcts": {
+          "episodic_trace": 14.0,
+          "semantic_gist": 13.7,
+          "goal_orientation": 7.0,
+          "constraints": 7.0,
+          "focal_entities": 2.1,
+          "relational_map": 2.0,
+          "predictive_cue": 0.0,
+          "uncertainty_signals": 0.0
+        }
+      },
+      "l2": {
+        "full_gap": 16.468199,
+        "sum_individual": 24.26616,
+        "interaction_pct": -47.4,
+        "field_pcts": {
+          "episodic_trace": 35.4,
+          "semantic_gist": 34.7,
+          "goal_orientation": 25.0,
+          "constraints": 24.9,
+          "focal_entities": 13.8,
+          "relational_map": 13.4,
+          "predictive_cue": 0.0,
+          "uncertainty_signals": 0.0
+        }
+      },
+      "ccs_version": 1055
+    },
+    {
+      "model": "hash",
+      "cosine": {
+        "full_gap": 1.0,
+        "sum_individual": 0.271122,
+        "interaction_pct": 72.9,
+        "field_pcts": {
+          "episodic_trace": 7.1,
+          "uncertainty_signals": 4.5,
+          "relational_map": 3.7,
+          "predictive_cue": 2.9,
+          "constraints": 2.6,
+          "goal_orientation": 2.4,
+          "semantic_gist": 2.2,
+          "focal_entities": 1.6
+        }
+      },
+      "l2": {
+        "full_gap": 35.298725,
+        "sum_individual": 73.27316,
+        "interaction_pct": -107.6,
+        "field_pcts": {
+          "episodic_trace": 38.4,
+          "uncertainty_signals": 30.8,
+          "relational_map": 27.5,
+          "predictive_cue": 25.0,
+          "goal_orientation": 23.0,
+          "constraints": 23.0,
+          "semantic_gist": 21.9,
+          "focal_entities": 17.9
+        }
+      },
+      "ccs_version": 1055
+    },
+    {
+      "model": "mxbai",
+      "cosine": {
+        "full_gap": 0.501149,
+        "sum_individual": 0.173351,
+        "interaction_pct": 65.4,
+        "field_pcts": {
+          "semantic_gist": 10.5,
+          "episodic_trace": 8.0,
+          "goal_orientation": 7.0,
+          "constraints": 5.0,
+          "relational_map": 2.8,
+          "focal_entities": 1.3,
+          "predictive_cue": 0.0,
+          "uncertainty_signals": 0.0
+        }
+      },
+      "l2": {
+        "full_gap": 16.519895,
+        "sum_individual": 20.970773,
+        "interaction_pct": -26.9,
+        "field_pcts": {
+          "semantic_gist": 29.7,
+          "episodic_trace": 26.8,
+          "goal_orientation": 24.0,
+          "constraints": 20.6,
+          "relational_map": 15.4,
+          "focal_entities": 10.5,
+          "predictive_cue": 0.0,
+          "uncertainty_signals": 0.0
+        }
+      },
+      "ccs_version": 1053
+    },
+    {
+      "model": "hash",
+      "cosine": {
+        "full_gap": 0.986875,
+        "sum_individual": 0.290097,
+        "interaction_pct": 70.6,
+        "field_pcts": {
+          "episodic_trace": 7.7,
+          "uncertainty_signals": 4.7,
+          "relational_map": 3.6,
+          "predictive_cue": 3.1,
+          "goal_orientation": 2.9,
+          "constraints": 2.9,
+          "semantic_gist": 2.6,
+          "focal_entities": 1.8
+        }
+      },
+      "l2": {
+        "full_gap": 34.117444,
+        "sum_individual": 73.043798,
+        "interaction_pct": -114.1,
+        "field_pcts": {
+          "episodic_trace": 40.4,
+          "uncertainty_signals": 31.3,
+          "relational_map": 26.9,
+          "predictive_cue": 25.2,
+          "goal_orientation": 24.5,
+          "constraints": 23.8,
+          "semantic_gist": 23.4,
+          "focal_entities": 18.5
+        }
+      },
+      "ccs_version": 1053
+    },
+    {
+      "model": "mxbai",
+      "cosine": {
+        "full_gap": 0.52585,
+        "sum_individual": 0.149158,
+        "interaction_pct": 71.6,
+        "field_pcts": {
+          "semantic_gist": 9.2,
+          "goal_orientation": 6.6,
+          "episodic_trace": 5.4,
+          "constraints": 4.1,
+          "relational_map": 1.9,
+          "focal_entities": 1.2,
+          "predictive_cue": 0.0,
+          "uncertainty_signals": 0.0
+        }
+      },
+      "l2": {
+        "full_gap": 17.239352,
+        "sum_individual": 20.219289,
+        "interaction_pct": -17.3,
+        "field_pcts": {
+          "semantic_gist": 28.3,
+          "goal_orientation": 24.0,
+          "episodic_trace": 22.3,
+          "constraints": 19.1,
+          "relational_map": 13.1,
+          "focal_entities": 10.5,
+          "predictive_cue": 0.0,
+          "uncertainty_signals": 0.0
+        }
+      },
+      "ccs_version": 1050
+    },
+    {
+      "model": "hash",
+      "cosine": {
+        "full_gap": 1.0,
+        "sum_individual": 0.270424,
+        "interaction_pct": 73.0,
+        "field_pcts": {
+          "episodic_trace": 7.7,
+          "uncertainty_signals": 4.5,
+          "goal_orientation": 3.2,
+          "relational_map": 3.1,
+          "predictive_cue": 2.5,
+          "constraints": 2.4,
+          "semantic_gist": 2.1,
+          "focal_entities": 1.5
+        }
+      },
+      "l2": {
+        "full_gap": 36.30427,
+        "sum_individual": 74.982985,
+        "interaction_pct": -106.5,
+        "field_pcts": {
+          "episodic_trace": 41.6,
+          "uncertainty_signals": 30.2,
+          "goal_orientation": 26.7,
+          "relational_map": 24.9,
+          "predictive_cue": 22.7,
+          "constraints": 22.4,
+          "semantic_gist": 20.6,
+          "focal_entities": 17.4
+        }
+      },
+      "ccs_version": 1050
+    },
+    {
+      "model": "mxbai",
+      "cosine": {
+        "full_gap": 0.53881,
+        "sum_individual": 0.110064,
+        "interaction_pct": 79.6,
+        "field_pcts": {
+          "semantic_gist": 6.0,
+          "goal_orientation": 5.1,
+          "episodic_trace": 4.5,
+          "constraints": 2.8,
+          "focal_entities": 1.1,
+          "relational_map": 1.0,
+          "predictive_cue": 0.0,
+          "uncertainty_signals": 0.0
+        }
+      },
+      "l2": {
+        "full_gap": 17.436139,
+        "sum_individual": 17.326141,
+        "interaction_pct": 0.6,
+        "field_pcts": {
+          "semantic_gist": 22.9,
+          "goal_orientation": 21.1,
+          "episodic_trace": 20.4,
+          "constraints": 15.8,
+          "focal_entities": 9.8,
+          "relational_map": 9.3,
+          "predictive_cue": 0.0,
+          "uncertainty_signals": 0.0
+        }
+      },
+      "ccs_version": 1049
+    },
+    {
+      "model": "hash",
+      "cosine": {
+        "full_gap": 1.0,
+        "sum_individual": 0.241563,
+        "interaction_pct": 75.8,
+        "field_pcts": {
+          "episodic_trace": 6.9,
+          "uncertainty_signals": 4.0,
+          "goal_orientation": 2.8,
+          "relational_map": 2.8,
+          "constraints": 2.2,
+          "predictive_cue": 2.2,
+          "semantic_gist": 1.9,
+          "focal_entities": 1.4
+        }
+      },
+      "l2": {
+        "full_gap": 38.052595,
+        "sum_individual": 75.245637,
+        "interaction_pct": -97.7,
+        "field_pcts": {
+          "episodic_trace": 39.7,
+          "uncertainty_signals": 28.8,
+          "goal_orientation": 25.5,
+          "relational_map": 23.8,
+          "predictive_cue": 21.7,
+          "constraints": 21.3,
+          "semantic_gist": 20.4,
+          "focal_entities": 16.6
+        }
+      },
+      "ccs_version": 1049
+    }
+  ]
+}

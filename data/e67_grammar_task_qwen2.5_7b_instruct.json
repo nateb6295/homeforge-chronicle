@@ -1,0 +1,222 @@
+{
+  "model": "Qwen/Qwen2.5-7B-Instruct",
+  "layers": [
+    0,
+    3,
+    7,
+    10,
+    14,
+    18,
+    21,
+    25,
+    28
+  ],
+  "mid_layers": [
+    7,
+    10,
+    14,
+    18,
+    21
+  ],
+  "conditions": [
+    "imp_recall",
+    "imp_reason",
+    "stat_recall",
+    "stat_reason"
+  ],
+  "factorial": {
+    "grammar_effect": -0.011250549259239462,
+    "task_effect": 0.009449616552458295,
+    "interaction": -0.023662194378880508
+  },
+  "results": {
+    "imp_recall": {
+      "0": {
+        "coherence": 0.9999999999986356,
+        "dimensionality": 1.0,
+        "magnitude": 0.8560850024223328
+      },
+      "3": {
+        "coherence": 0.9646900794067266,
+        "dimensionality": 3.8472628593444824,
+        "magnitude": 16.647565841674805
+      },
+      "7": {
+        "coherence": 0.859471471486258,
+        "dimensionality": 5.935904502868652,
+        "magnitude": 31.339214324951172
+      },
+      "10": {
+        "coherence": 0.7695422921858661,
+        "dimensionality": 6.95013952255249,
+        "magnitude": 46.3237190246582
+      },
+      "14": {
+        "coherence": 0.7689916161777396,
+        "dimensionality": 7.102144718170166,
+        "magnitude": 62.812530517578125
+      },
+      "18": {
+        "coherence": 0.715394718008746,
+        "dimensionality": 7.58172082901001,
+        "magnitude": 69.98846435546875
+      },
+      "21": {
+        "coherence": 0.7169879620211956,
+        "dimensionality": 7.541778564453125,
+        "magnitude": 100.6599349975586
+      },
+      "25": {
+        "coherence": 0.7234286598203059,
+        "dimensionality": 7.514664649963379,
+        "magnitude": 235.0315399169922
+      },
+      "28": {
+        "coherence": 0.800862144125662,
+        "dimensionality": 6.6573166847229,
+        "magnitude": 317.8330993652344
+      }
+    },
+    "imp_reason": {
+      "0": {
+        "coherence": 0.9999999999986356,
+        "dimensionality": 1.0,
+        "magnitude": 0.8560850024223328
+      },
+      "3": {
+        "coherence": 0.9369130481919283,
+        "dimensionality": 4.5835280418396,
+        "magnitude": 16.50253677368164
+      },
+      "7": {
+        "coherence": 0.866815889479218,
+        "dimensionality": 6.132817268371582,
+        "magnitude": 31.430267333984375
+      },
+      "10": {
+        "coherence": 0.7666407057193857,
+        "dimensionality": 7.293304920196533,
+        "magnitude": 45.430606842041016
+      },
+      "14": {
+        "coherence": 0.7875347141168904,
+        "dimensionality": 7.105800628662109,
+        "magnitude": 63.419769287109375
+      },
+      "18": {
+        "coherence": 0.7667011681115942,
+        "dimensionality": 7.246096611022949,
+        "magnitude": 69.49111938476562
+      },
+      "21": {
+        "coherence": 0.7490991511622098,
+        "dimensionality": 7.307826995849609,
+        "magnitude": 99.4916000366211
+      },
+      "25": {
+        "coherence": 0.7798251704637698,
+        "dimensionality": 7.052511215209961,
+        "magnitude": 232.7225341796875
+      },
+      "28": {
+        "coherence": 0.8375113880048788,
+        "dimensionality": 6.2263336181640625,
+        "magnitude": 329.3493957519531
+      }
+    },
+    "stat_recall": {
+      "0": {
+        "coherence": 0.9999999999986356,
+        "dimensionality": 1.0,
+        "magnitude": 0.8560850024223328
+      },
+      "3": {
+        "coherence": 0.9656813137341482,
+        "dimensionality": 3.8202691078186035,
+        "magnitude": 16.54017448425293
+      },
+      "7": {
+        "coherence": 0.8639235152041239,
+        "dimensionality": 5.826533317565918,
+        "magnitude": 31.527477264404297
+      },
+      "10": {
+        "coherence": 0.7596040977667635,
+        "dimensionality": 6.952602386474609,
+        "magnitude": 45.92790222167969
+      },
+      "14": {
+        "coherence": 0.747701880967717,
+        "dimensionality": 7.276452541351318,
+        "magnitude": 58.92125701904297
+      },
+      "18": {
+        "coherence": 0.7120613816641856,
+        "dimensionality": 7.570272922515869,
+        "magnitude": 68.87770080566406
+      },
+      "21": {
+        "coherence": 0.7499999239280198,
+        "dimensionality": 7.268406867980957,
+        "magnitude": 99.02867889404297
+      },
+      "25": {
+        "coherence": 0.7836560606875641,
+        "dimensionality": 6.988346576690674,
+        "magnitude": 237.8921661376953
+      },
+      "28": {
+        "coherence": 0.8655440092363089,
+        "dimensionality": 5.844342231750488,
+        "magnitude": 338.0743103027344
+      }
+    },
+    "stat_reason": {
+      "0": {
+        "coherence": 0.9999999999986356,
+        "dimensionality": 1.0,
+        "magnitude": 0.8560850024223328
+      },
+      "3": {
+        "coherence": 0.9508041966950989,
+        "dimensionality": 4.356322765350342,
+        "magnitude": 16.413984298706055
+      },
+      "7": {
+        "coherence": 0.8255324841509051,
+        "dimensionality": 6.664628028869629,
+        "magnitude": 31.90519142150879
+      },
+      "10": {
+        "coherence": 0.731695220921304,
+        "dimensionality": 7.547755241394043,
+        "magnitude": 48.393863677978516
+      },
+      "14": {
+        "coherence": 0.756007380795418,
+        "dimensionality": 7.388283729553223,
+        "magnitude": 64.70440673828125
+      },
+      "18": {
+        "coherence": 0.7407912988199874,
+        "dimensionality": 7.46579647064209,
+        "magnitude": 72.30278015136719
+      },
+      "21": {
+        "coherence": 0.767357011658285,
+        "dimensionality": 7.2328948974609375,
+        "magnitude": 101.28545379638672
+      },
+      "25": {
+        "coherence": 0.8124613682187273,
+        "dimensionality": 6.786829471588135,
+        "magnitude": 240.89810180664062
+      },
+      "28": {
+        "coherence": 0.8742564681843943,
+        "dimensionality": 5.600580215454102,
+        "magnitude": 339.2623596191406
+      }
+    }
+  }
+}

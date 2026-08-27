@@ -36,8 +36,8 @@ DB_PATH = os.environ.get(
     os.path.expanduser("~/.homeforge-chronicle/processed.db"),
 )
 OLLAMA_URL = os.environ.get("CROSSREF_OLLAMA_URL", "http://localhost:11436")  # Routes through engine for Groq
-EMBED_URL = os.environ.get("EMBED_OLLAMA_URL", "http://192.168.1.11:11434")  # Jetson — dedicated embeddings
-EMBED_MODEL = "nomic-embed-text"  # Build #125
+EMBED_URL = os.environ.get("EMBED_OLLAMA_URL", "http://localhost:11434")
+EMBED_MODEL = "snowflake-arctic-embed2"
 PATTERN_MODEL = os.environ.get("CROSSREF_PATTERN_MODEL", "chronicle-challenger")  # Ada (GPT-OSS 120B via Groq)
 CONNECTION_MODEL = os.environ.get("CROSSREF_MODEL", "chronicle-challenger")  # deep 32B for connection description
 CYCLE_INTERVAL = int(os.environ.get("CROSSREF_INTERVAL", "1800"))  # 30 min

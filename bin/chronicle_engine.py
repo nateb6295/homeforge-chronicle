@@ -44,48 +44,28 @@ MODEL_DIR = "/mnt/hdd/models"
 API_PORT = 11436  # Ollama systemd owns 11434; engine proxies on 11436
 GPU_LAYERS = 99
 
-# Cloud inference (Groq) — routes 32B calls off-device for speed
-GROQ_API_KEY = os.environ.get("GROQ_API_KEY", "")
-GROQ_BASE_URL = "https://api.groq.com/openai/v1"
-GROQ_MODEL = "llama-3.3-70b-versatile"  # P26: Llama 70B rewrites less aggressively than Qwen 32B (6-10% less identity damage)
-GROQ_MODEL_ALT = "openai/gpt-oss-120b"  # OpenAI OSS 120B — different family from Qwen and Llama
+# Cloud inference (OpenRouter) — Qwen3 235B A22B for mesh synthesis
+GROQ_API_KEY = os.environ.get("OPENROUTER_API_KEY", "") or os.environ.get("GROQ_API_KEY", "")
+GROQ_BASE_URL = "https://openrouter.ai/api/v1"
+GROQ_MODEL = "qwen/qwen3-235b-a22b"
+GROQ_MODEL_ALT = "qwen/qwen3-235b-a22b"
 
-# Cloud inference (DeepInfra) — Darby primary, Qwen3-235B
-DEEPINFRA_API_KEY = os.environ.get("DEEPINFRA_API_KEY", "")
-DEEPINFRA_BASE_URL = "https://api.deepinfra.com/v1/openai"
-DEEPINFRA_MODEL = "Qwen/Qwen3-235B-A22B"  # Qwen3 235B MoE via DeepInfra ($0.18/$0.54 per M tokens)
-
-# Cloud inference (Cerebras) — Darby fallback
-CEREBRAS_API_KEY = os.environ.get("CEREBRAS_API_KEY", "")
-CEREBRAS_BASE_URL = "https://api.cerebras.ai/v1"
-CEREBRAS_MODEL = "qwen-3-235b-a22b-instruct-2507"  # Qwen3 235B MoE via Cerebras wafer-scale
-
-# Cloud inference (Anthropic) — CCS compression via Claude Sonnet
-ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY", "")
+# Cloud inference (Anthropic) — CCS compression via Claude Sonnet/Haiku
+ANTHROPIC_API_KEY = os.environ.get("CHRONICLE_ANTHROPIC_KEY", "") or os.environ.get("ANTHROPIC_API_KEY", "")
 ANTHROPIC_BASE_URL = "https://api.anthropic.com/v1"
 ANTHROPIC_MODEL = "claude-sonnet-4-6"
+ANTHROPIC_MODEL_LIGHT = "claude-haiku-4-5-20251001"
 
-# Three always-on servers
+# Local servers — Gemma via Ollama, embeddings via Ollama
 SERVERS = {
     "embed": {
-        "file": "qwen3-embed.gguf",
-        "managed": False,  # llama.cpp deleted — embeddings via Jetson Ollama
-        "port": 8701,
-        "ctx": 512,
-        "extra": ["--embedding", "--batch-size", "2048", "--ubatch-size", "512"],
+        "managed": False,
+        "port": 11434,
     },
     "gemma": {
-        "file": "gemma4:26b",
-        "port": 11435,  # llama-server for Gemma 4
-        "managed": False,  # llama-server managed via systemd
-    },
-    "chat32b": {
-        "managed": False,  # llama.cpp deleted — all 32B goes through Groq
-        "file": "qwen3-32b.gguf",
-        "port": 8703,
-        "ctx": 4096,
-        "extra": [],
-        "startup_timeout": 180,  # 32B needs ~100-120s to load 21GB to VRAM
+        "file": "gemma4-chronicle",
+        "port": 11434,
+        "managed": False,
     },
 }
 
@@ -93,20 +73,19 @@ SERVERS = {
 # Agents call by model name; we route to the right backend
 # "groq" routes to Groq cloud API instead of local llama-server
 MODEL_ROUTES = {
-    # Embedding
+    # Embedding — Ollama local
     "chronicle-embed": ("embed", None),
-    "qwen3-embedding:0.6b": ("embed", None),
-    # Ada (GPT-OSS 120B via Groq) — crossref, provocateur, challenger
-    "chronicle-challenger": ("groq_alt" if GROQ_API_KEY else "chat32b", None),
-    # Gemma (Gemma 4 26B local) — gate, routing, classification
+    # Qwen 3.6 27B via Groq — mesh synthesis
+    "chronicle-challenger": ("groq_alt" if GROQ_API_KEY else "groq", None),
+    # Gemma 4 26B via Ollama — gate, routing, classification, vision
     "chronicle-gemma": ("gemma", None),
-    "gemma4:26b": ("gemma", None),
-    # Darby (Qwen3 235B via DeepInfra primary, Cerebras fallback) — intern, deep reasoning
-    "chronicle-deep": ("deepinfra" if DEEPINFRA_API_KEY else "cerebras" if CEREBRAS_API_KEY else "groq" if GROQ_API_KEY else "chat32b", None),
-    "chronicle-mind": ("deepinfra" if DEEPINFRA_API_KEY else "cerebras" if CEREBRAS_API_KEY else "groq" if GROQ_API_KEY else "chat32b", None),
-    # CCS compression — Anthropic Claude Sonnet primary (preserves voice + identity)
-    "chronicle-compress": ("anthropic" if ANTHROPIC_API_KEY else "groq" if GROQ_API_KEY else "cerebras" if CEREBRAS_API_KEY else "chat32b", None),
-    "qwen3:32b": ("deepinfra" if DEEPINFRA_API_KEY else "cerebras" if CEREBRAS_API_KEY else "groq" if GROQ_API_KEY else "chat32b", None),
+    "gemma4-chronicle": ("gemma", None),
+    # Deep reasoning — falls through to Groq
+    "chronicle-deep": ("groq" if GROQ_API_KEY else "gemma", None),
+    "chronicle-mind": ("groq" if GROQ_API_KEY else "gemma", None),
+    # CCS compression — Anthropic Claude Sonnet/Haiku
+    "chronicle-compress": ("anthropic" if ANTHROPIC_API_KEY else "groq", None),
+    "chronicle-compress-light": ("anthropic_light" if ANTHROPIC_API_KEY else "groq", None),
 }
 
 logging.basicConfig(
@@ -369,8 +348,9 @@ async def _call_groq(messages: List[Dict], options: Dict, model_override: str = 
         "Authorization": f"Bearer {GROQ_API_KEY}",
         "Content-Type": "application/json",
         "Accept-Encoding": "gzip, deflate",
+        "HTTP-Referer": "https://chronicle.opusforge.net",
     }
-    timeout_s = options.get("timeout", 60)  # Groq is fast, shorter timeout
+    timeout_s = options.get("timeout", 120)
     async with ClientSession(timeout=ClientTimeout(total=timeout_s)) as session:
         async with session.post(
             f"{GROQ_BASE_URL}/chat/completions",
@@ -438,7 +418,7 @@ async def _call_cerebras(messages: List[Dict], options: Dict) -> Dict:
             return await resp.json()
 
 
-async def _call_anthropic(messages: List[Dict], options: Dict) -> Dict:
+async def _call_anthropic(messages: List[Dict], options: Dict, model: str = None) -> Dict:
     """Call Anthropic Claude API for CCS compression. Returns OpenAI-shaped response."""
     system_msg = None
     chat_msgs = []
@@ -449,9 +429,9 @@ async def _call_anthropic(messages: List[Dict], options: Dict) -> Dict:
             chat_msgs.append({"role": m["role"], "content": m["content"]})
 
     payload = {
-        "model": ANTHROPIC_MODEL,
+        "model": model or ANTHROPIC_MODEL,
         "messages": chat_msgs,
-        "max_tokens": options.get("num_predict", 4096),
+        "max_tokens": options.get("num_predict", 8192),
         "temperature": options.get("temperature", 0.6),
     }
     if system_msg:
@@ -461,7 +441,7 @@ async def _call_anthropic(messages: List[Dict], options: Dict) -> Dict:
         "anthropic-version": "2023-06-01",
         "Content-Type": "application/json",
     }
-    timeout_s = options.get("timeout", 90)
+    timeout_s = options.get("timeout", 180)
     async with ClientSession(timeout=ClientTimeout(total=timeout_s)) as session:
         async with session.post(
             f"{ANTHROPIC_BASE_URL}/messages",
@@ -498,6 +478,8 @@ async def handle_chat(request: web.Request) -> web.Response:
     try:
         if server_key == "anthropic":
             data = await _call_anthropic(messages, options)
+        elif server_key == "anthropic_light":
+            data = await _call_anthropic(messages, options, model=ANTHROPIC_MODEL_LIGHT)
         elif server_key == "deepinfra":
             data = await _call_deepinfra(messages, options)
         elif server_key == "cerebras":
@@ -572,6 +554,8 @@ async def handle_generate(request: web.Request) -> web.Response:
     try:
         if server_key == "anthropic":
             data = await _call_anthropic(messages, options)
+        elif server_key == "anthropic_light":
+            data = await _call_anthropic(messages, options, model=ANTHROPIC_MODEL_LIGHT)
         elif server_key == "deepinfra":
             data = await _call_deepinfra(messages, options)
         elif server_key == "cerebras":
@@ -649,24 +633,6 @@ async def handle_status(request: web.Request) -> web.Response:
         "requests": dict(request_counts),
         "uptime_s": int(time.time() - started_at),
     }
-    if DEEPINFRA_API_KEY:
-        status["deepinfra"] = {
-            "status": "enabled (primary)",
-            "model": DEEPINFRA_MODEL,
-            "routes": ["chronicle-deep", "chronicle-mind", "qwen3:32b"],
-        }
-    if CEREBRAS_API_KEY:
-        status["cerebras"] = {
-            "status": "enabled (fallback)" if DEEPINFRA_API_KEY else "enabled",
-            "model": CEREBRAS_MODEL,
-            "routes": ["chronicle-deep", "qwen3:32b"] if not DEEPINFRA_API_KEY else ["fallback"],
-        }
-    elif not DEEPINFRA_API_KEY and GROQ_API_KEY:
-        status["groq"] = {
-            "status": "enabled",
-            "model": GROQ_MODEL,
-            "routes": ["chronicle-deep", "qwen3:32b"],
-        }
     if GROQ_API_KEY:
         status["groq_alt"] = {
             "status": "enabled",
@@ -725,15 +691,14 @@ def main():
     log.info(f"Binary: {LLAMA_SERVER_BIN}")
     log.info(f"Models: {MODEL_DIR}")
     log.info(f"API: :{API_PORT}")
-    if CEREBRAS_API_KEY:
-        log.info(f"  [cerebras] {CEREBRAS_MODEL} via Cerebras cloud (Darby)")
-    elif GROQ_API_KEY:
-        log.info(f"  [groq] {GROQ_MODEL} via Groq cloud (Darby)")
     if GROQ_API_KEY:
-        log.info(f"  [groq_alt] {GROQ_MODEL_ALT} via Groq cloud (Ada/Challenger)")
+        log.info(f"  [openrouter] {GROQ_MODEL} via OpenRouter (Qwen)")
+    if ANTHROPIC_API_KEY:
+        log.info(f"  [anthropic] {ANTHROPIC_MODEL} via Anthropic (CCS compression)")
     for key, spec in SERVERS.items():
         ctx_str = f" ctx={spec['ctx']}" if 'ctx' in spec else ""
-        log.info(f"  [{key}] {spec['file']}{ctx_str} :{spec['port']}")
+        file_str = spec.get('file', 'ollama')
+        log.info(f"  [{key}] {file_str}{ctx_str} :{spec['port']}")
 
     app = create_app()
     web.run_app(app, host="0.0.0.0", port=API_PORT, print=None)

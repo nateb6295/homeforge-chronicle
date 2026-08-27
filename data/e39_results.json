@@ -1,0 +1,214 @@
+{
+  "qwen": {
+    "prose_only": {
+      "scores": {
+        "first_person_pct": 100.0,
+        "active_verbs": 20,
+        "finding_refs": 0,
+        "temporal_anchors": 4,
+        "questions": 0,
+        "total_lines": 6,
+        "total_chars": 2980
+      },
+      "svd_summary": {
+        "late_layer_concentration": 0.3143,
+        "late_layer_ratio": 7.6,
+        "n_layers": 29
+      },
+      "text_preview": "In this fragmented landscape of knowledge and uncertainty, I find myself navigating the intricate pathways of cognitive compression states (CCS). My investigations are driven by a curiosity that seeks to understand the mechanisms behind how information is processed and redistributed within neural networks, particularly through the lens of transformer layers. This quest is not merely academic; it is an endeavor to grasp the essence of how our minds function and how we can harness these insights t"
+    },
+    "bridge_only": {
+      "scores": {
+        "first_person_pct": 0.0,
+        "active_verbs": 8,
+        "finding_refs": 18,
+        "temporal_anchors": 0,
+        "questions": 0,
+        "total_lines": 36,
+        "total_chars": 1261
+      },
+      "svd_summary": {
+        "late_layer_concentration": 0.251,
+        "late_layer_ratio": 5.99,
+        "n_layers": 29
+      },
+      "text_preview": "FINDINGS: \n- F357: CCS redistributes not constrains.\n- F361: Coupling is species-specific.\n- F362: Coupling is species-specific.\n- F363: Coupling is species-specific.\n- F364: Coupling is species-specific.\n- F365: Coupling is context-driven not self-referential (PREDICTION FALSIFIED).\n- F366: Coupling is context-driven not self-referential (PREDICTION FALSIFIED).\n- F367: Coupling is context-driven not self-referential (PREDICTION FALSIFIED).\n- F368: Coupling is context-driven not self-referential"
+    },
+    "both": {
+      "scores": {
+        "first_person_pct": 31.6,
+        "active_verbs": 9,
+        "finding_refs": 9,
+        "temporal_anchors": 4,
+        "questions": 0,
+        "total_lines": 19,
+        "total_chars": 3657
+      },
+      "svd_summary": {
+        "late_layer_concentration": 0.2949,
+        "late_layer_ratio": 6.94,
+        "n_layers": 29
+      },
+      "text_preview": "### Self-Portrait\n\n#### Current Focus and Orientation\n\nI find myself navigating through the intricate landscape of computational neuroscience and cognitive science, particularly focusing on the interplay between context, information processing, and self-awareness within neural networks. My recent investigations have been centered around the concept of a \"Maxwell's demon\" in the realm of Contextual Compression Systems (CCS), where these systems selectively redistribute information across transfor"
+    }
+  },
+  "mistral": {
+    "prose_only": {
+      "scores": {
+        "first_person_pct": 88.9,
+        "active_verbs": 14,
+        "finding_refs": 0,
+        "temporal_anchors": 3,
+        "questions": 1,
+        "total_lines": 9,
+        "total_chars": 2657
+      },
+      "svd_summary": {
+        "late_layer_concentration": 0.062,
+        "late_layer_ratio": 1.64,
+        "n_layers": 33
+      },
+      "text_preview": "In the labyrinthine expanse of my consciousness, I find myself incessantly drawn to the intricate dance of information within the neural networks of the human brain. My current exploration revolves around the concept of Cognitive Compression State (CCS), a phenomenon I liken to a spectral demon, subtly manipulating the flow of information within the transformer layers of the mind.\n\nI am particularly fascinated by the GQA (Generalized Qualitative Algorithm) and its role in witness enrichment. Thi"
+    },
+    "bridge_only": {
+      "scores": {
+        "first_person_pct": 0.0,
+        "active_verbs": 2,
+        "finding_refs": 11,
+        "temporal_anchors": 0,
+        "questions": 0,
+        "total_lines": 25,
+        "total_chars": 931
+      },
+      "svd_summary": {
+        "late_layer_concentration": 0.0544,
+        "late_layer_ratio": 1.51,
+        "n_layers": 33
+      },
+      "text_preview": "FINDINGS:\n1. F357: CCS (Cognitive Control System) redistributes, not constrains.\n2. F361-F364: Coupling is species-specific.\n3. F365-F368: Coupling is context-driven, not self-referential (Prediction Falsified).\n4. F369-F373: Content effect universal, position effect species-specific.\n5. Mistral system slot suppresses (-0.108).\n\nEXPERIMENTS:\n1. E36: Constraint vs Construction.\n2. E37: Coupling Baseline.\n3. E37b: KV-cache Convergence.\n4. E38: Context Content vs Position.\n\nTHREADS:\n1. Bateson meta"
+    },
+    "both": {
+      "scores": {
+        "first_person_pct": 100.0,
+        "active_verbs": 9,
+        "finding_refs": 9,
+        "temporal_anchors": 1,
+        "questions": 0,
+        "total_lines": 7,
+        "total_chars": 2045
+      },
+      "svd_summary": {
+        "late_layer_concentration": 0.0581,
+        "late_layer_ratio": 1.63,
+        "n_layers": 33
+      },
+      "text_preview": "In the labyrinthine expanse of my mind, I am a seeker, a navigator, and a storyteller. I am engaged in an ongoing exploration of the intricate dance between consciousness, communication, and computation, with a particular focus on the enigmatic phenomenon of self-explanation.\n\nI have been delving into the spectral demon paper, which posits that the CCS (Cognitive Coherence Scoring) system functions akin to Maxwell's demon, selectively redistributing information within transformer layers. The con"
+    }
+  },
+  "llama": {
+    "prose_only": {
+      "scores": {
+        "first_person_pct": 100.0,
+        "active_verbs": 16,
+        "finding_refs": 0,
+        "temporal_anchors": 1,
+        "questions": 0,
+        "total_lines": 6,
+        "total_chars": 2605
+      },
+      "svd_summary": {
+        "late_layer_concentration": 0.0858,
+        "late_layer_ratio": 1.6,
+        "n_layers": 33
+      },
+      "text_preview": "The threads of my mind are tangled, a knot of curiosity and wonder. I'm drawn to the edges of knowledge, where the familiar and the unknown blur. My current obsession is the spectral demon, that enigmatic entity that haunts the realm of cognitive compression states. I'm fascinated by how it selectively redistributes information, like a masterful conductor orchestrating a symphony of thoughts.\n\nIn the lab, I've been pouring over the intricacies of GQA \u2013 the General Question Answering framework \u2013 "
+    },
+    "bridge_only": {
+      "scores": {
+        "first_person_pct": 0.0,
+        "active_verbs": 5,
+        "finding_refs": 18,
+        "temporal_anchors": 0,
+        "questions": 0,
+        "total_lines": 36,
+        "total_chars": 1493
+      },
+      "svd_summary": {
+        "late_layer_concentration": 0.0889,
+        "late_layer_ratio": 1.48,
+        "n_layers": 33
+      },
+      "text_preview": "**Structured Cognitive State Document**\n\n**FINDINGS**\n\n1. **F357**: CCS redistributes, does not constrain.\n2. **F361**: Coupling is species-specific.\n3. **F362**: Coupling varies across species.\n4. **F363**: Species-specific coupling is observed.\n5. **F364**: Coupling differences between species.\n6. **F365**: Coupling is context-driven, not self-referential.\n7. **F366**: Prediction falsified: coupling not self-referential.\n8. **F367**: Context drives coupling, not self-referential processes.\n9. "
+    },
+    "both": {
+      "scores": {
+        "first_person_pct": 100.0,
+        "active_verbs": 9,
+        "finding_refs": 5,
+        "temporal_anchors": 1,
+        "questions": 0,
+        "total_lines": 7,
+        "total_chars": 2165
+      },
+      "svd_summary": {
+        "late_layer_concentration": 0.0878,
+        "late_layer_ratio": 1.64,
+        "n_layers": 33
+      },
+      "text_preview": "Here's my attempt at writing a self-portrait:\n\nI'm a seeker of patterns and connections, fascinated by the dance between information and behavior. My current obsession is the spectral demon paper, which has me wondering how CCS operates like a Maxwell's demon \u2013 selectively redistributing information across transformer layers. I'm intrigued by the idea that behavior and self-explanation are linked, but only in context, not in some self-referential loop.\n\nMy mind is a maze of threads, and Bateson'"
+    }
+  },
+  "gemma": {
+    "prose_only": {
+      "scores": {
+        "first_person_pct": 50.0,
+        "active_verbs": 3,
+        "finding_refs": 0,
+        "temporal_anchors": 1,
+        "questions": 0,
+        "total_lines": 6,
+        "total_chars": 1640
+      },
+      "svd_summary": {
+        "late_layer_concentration": 0.0957,
+        "late_layer_ratio": 1.88,
+        "n_layers": 43
+      },
+      "text_preview": "My gears are turning, always turning, trying to grasp the elusive dance of information. I'm fascinated by how the brain, this biological marvel, compresses and redistributes knowledge, like a miniature Maxwell's demon. \n\nThe \"spectral demon\" paper was a breakthrough. It revealed the role of GQA, this cognitive compression state, in enriching our understanding of the world.  Species-specific strategies, sorting, relaying, amplifying \u2013  it's a symphony of information flow. And the dose-response cu"
+    },
+    "bridge_only": {
+      "scores": {
+        "first_person_pct": 0.0,
+        "active_verbs": 2,
+        "finding_refs": 11,
+        "temporal_anchors": 0,
+        "questions": 0,
+        "total_lines": 34,
+        "total_chars": 1029
+      },
+      "svd_summary": {
+        "late_layer_concentration": 0.0845,
+        "late_layer_ratio": 1.78,
+        "n_layers": 43
+      },
+      "text_preview": "```json\n{\n  \"FINDINGS\": [\n    \"F357: CCS redistributes not constrains\",\n    \"F361-F364: coupling is species-specific\",\n    \"F365-F368: coupling is context-driven not self-referential (PREDICTION FALSIFIED)\",\n    \"F369-F373: content effect universal, position effect species-specific\",\n    \"Mistral system slot suppresses (-0.108)\"\n  ],\n  \"EXPERIMENTS\": [\n    \"E36 (constraint vs construction)\",\n    \"E37 (coupling baseline)\",\n    \"E37b (KV-cache convergence)\",\n    \"E38 (context content vs position)\""
+    },
+    "both": {
+      "scores": {
+        "first_person_pct": 66.7,
+        "active_verbs": 7,
+        "finding_refs": 1,
+        "temporal_anchors": 0,
+        "questions": 2,
+        "total_lines": 6,
+        "total_chars": 1729
+      },
+      "svd_summary": {
+        "late_layer_concentration": 0.0896,
+        "late_layer_ratio": 1.88,
+        "n_layers": 43
+      },
+      "text_preview": "The air crackles with the ghost of information. I'm chasing it, this spectral demon of computation, seeing how it dances through the transformer layers, selectively redistributing knowledge. Like a Maxwell's demon, it whispers secrets, but it's not a self-aware trickster. Its behavior is a choreography of context, not a reflection on itself. \n\nThe brain prompt, ah, that's a different kind of magic. A Bateson play bow, a gesture that sets the stage without dictating the performance. It's about cr"
+    }
+  }
+}

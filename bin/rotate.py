@@ -174,8 +174,20 @@ def cmd_prepare(focus, next_step, decisions=None, pending=None,
     ts = now_pdt().strftime("%Y-%m-%d %H:%M PDT")
     print(f"=== ROTATION PREP — {ts} ===\n")
 
+    # 0. Proactive consolidation (selective sleep)
+    print("0. Running proactive consolidation...")
+    consolidate_cmd = f'{sys.executable} {os.path.expanduser("~/chronicle/bin/proactive_consolidate.py")} --force'
+    con_out, con_rc = run(consolidate_cmd, timeout=90)
+    if con_rc == 0:
+        print(f"   ✓ Consolidation complete")
+        for line in con_out.split("\n"):
+            if line.strip():
+                print(f"   {line.strip()}")
+    else:
+        print(f"   ✗ Consolidation failed (non-critical): {con_out[:200]}")
+
     # 1. Write checkpoint
-    print("1. Writing checkpoint...")
+    print("\n1. Writing checkpoint...")
     checkpoint_cmd = [
         sys.executable, os.path.expanduser("~/chronicle/bin/checkpoint.py"),
         "save", focus,

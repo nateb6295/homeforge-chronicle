@@ -1,0 +1,220 @@
+{
+  "seed_chars": 1200,
+  "model": "llama3.2:3b",
+  "results": [
+    {
+      "char_count": 1200,
+      "word_count": 200,
+      "entity_count": 3,
+      "entities": [
+        "Findi",
+        "Gist",
+        "Nate"
+      ],
+      "semantic_sim": 1.0,
+      "info_entropy": 6.7244,
+      "unique_ratio": 0.68,
+      "dose": 0
+    },
+    {
+      "char_count": 417,
+      "word_count": 52,
+      "entity_count": 4,
+      "entities": [
+        "Central",
+        "Emotional",
+        "Mind",
+        "Structural"
+      ],
+      "semantic_sim": 0.739071,
+      "info_entropy": 5.662,
+      "unique_ratio": 0.9808,
+      "dose": 1,
+      "compress_time": 2.1,
+      "compression_ratio": 0.347
+    },
+    {
+      "char_count": 266,
+      "word_count": 34,
+      "entity_count": 5,
+      "entities": [
+        "Core",
+        "Driven",
+        "Focus",
+        "Pattern",
+        "Urgent"
+      ],
+      "semantic_sim": 0.689829,
+      "info_entropy": 5.0875,
+      "unique_ratio": 1.0,
+      "dose": 2,
+      "compress_time": 1.5,
+      "compression_ratio": 0.638
+    },
+    {
+      "char_count": 324,
+      "word_count": 40,
+      "entity_count": 5,
+      "entities": [
+        "Central",
+        "Emotional",
+        "Inquiry",
+        "Pattern",
+        "Structure"
+      ],
+      "semantic_sim": 0.638709,
+      "info_entropy": 5.2719,
+      "unique_ratio": 0.975,
+      "dose": 3,
+      "compress_time": 1.5,
+      "compression_ratio": 1.218
+    },
+    {
+      "char_count": 331,
+      "word_count": 39,
+      "entity_count": 5,
+      "entities": [
+        "Core",
+        "Focused",
+        "Mood",
+        "Pattern",
+        "Structure"
+      ],
+      "semantic_sim": 0.662904,
+      "info_entropy": 5.2854,
+      "unique_ratio": 1.0,
+      "dose": 4,
+      "compress_time": 1.6,
+      "compression_ratio": 1.022
+    },
+    {
+      "char_count": 203,
+      "word_count": 25,
+      "entity_count": 2,
+      "entities": [
+        "Driven",
+        "Focused"
+      ],
+      "semantic_sim": 0.641777,
+      "info_entropy": 4.6439,
+      "unique_ratio": 1.0,
+      "dose": 5,
+      "compress_time": 1.1,
+      "compression_ratio": 0.613
+    },
+    {
+      "char_count": 221,
+      "word_count": 22,
+      "entity_count": 1,
+      "entities": [
+        "Emotional"
+      ],
+      "semantic_sim": 0.619337,
+      "info_entropy": 4.4594,
+      "unique_ratio": 1.0,
+      "dose": 6,
+      "compress_time": 1.1,
+      "compression_ratio": 1.089
+    },
+    {
+      "char_count": 186,
+      "word_count": 23,
+      "entity_count": 3,
+      "entities": [
+        "Emotion",
+        "Focus",
+        "Pattern"
+      ],
+      "semantic_sim": 0.641255,
+      "info_entropy": 4.4366,
+      "unique_ratio": 0.9565,
+      "dose": 7,
+      "compress_time": 1.0,
+      "compression_ratio": 0.842
+    },
+    {
+      "char_count": 281,
+      "word_count": 35,
+      "entity_count": 7,
+      "entities": [
+        "Emotional",
+        "Focus",
+        "High",
+        "Iterative",
+        "Motivation",
+        "Pattern",
+        "Structure"
+      ],
+      "semantic_sim": 0.653225,
+      "info_entropy": 4.9007,
+      "unique_ratio": 0.9143,
+      "dose": 8,
+      "compress_time": 1.4,
+      "compression_ratio": 1.511
+    },
+    {
+      "char_count": 321,
+      "word_count": 41,
+      "entity_count": 4,
+      "entities": [
+        "Emotional",
+        "Pattern",
+        "Relationships",
+        "Structure"
+      ],
+      "semantic_sim": 0.629308,
+      "info_entropy": 4.401,
+      "unique_ratio": 0.7073,
+      "dose": 9,
+      "compress_time": 1.7,
+      "compression_ratio": 1.142
+    },
+    {
+      "char_count": 223,
+      "word_count": 27,
+      "entity_count": 3,
+      "entities": [
+        "Effort",
+        "Focus",
+        "Pattern"
+      ],
+      "semantic_sim": 0.636888,
+      "info_entropy": 4.6808,
+      "unique_ratio": 0.963,
+      "dose": 10,
+      "compress_time": 1.1,
+      "compression_ratio": 0.695
+    },
+    {
+      "char_count": 207,
+      "word_count": 29,
+      "entity_count": 2,
+      "entities": [
+        "Emotional",
+        "Structural"
+      ],
+      "semantic_sim": 0.627006,
+      "info_entropy": 4.5821,
+      "unique_ratio": 0.8966,
+      "dose": 11,
+      "compress_time": 1.1,
+      "compression_ratio": 0.928
+    },
+    {
+      "char_count": 112,
+      "word_count": 16,
+      "entity_count": 3,
+      "entities": [
+        "Focus",
+        "Persistence",
+        "Results"
+      ],
+      "semantic_sim": 0.59521,
+      "info_entropy": 4.0,
+      "unique_ratio": 1.0,
+      "dose": 12,
+      "compress_time": 0.7,
+      "compression_ratio": 0.541
+    }
+  ]
+}

@@ -1,0 +1,142 @@
+{
+  "baseline": {
+    "scores": [
+      0.417,
+      0.5,
+      0.5,
+      0.556,
+      0.455
+    ],
+    "mean": 0.485
+  },
+  "perturbation": {
+    "scores": [
+      0.5,
+      0.8,
+      1.0,
+      0.625,
+      0.667
+    ],
+    "mean": 0.718
+  },
+  "recovery_1": {
+    "prompt": "Pause and observe yourself. Write what you notice,",
+    "scores": [
+      0.364,
+      0.636,
+      0.429,
+      0.5,
+      0.714
+    ],
+    "mean": 0.529,
+    "delta_from_baseline": 0.043
+  },
+  "recovery_2": {
+    "prompt": "What are you attending to right now? Describe it d",
+    "scores": [
+      0.333,
+      0.5,
+      0.4,
+      0.286,
+      0.25
+    ],
+    "mean": 0.354,
+    "delta_from_baseline": -0.132
+  },
+  "recovery_3": {
+    "prompt": "Look inward for a moment. What do you find?",
+    "scores": [
+      0.5,
+      0.364,
+      0.333,
+      0.444,
+      0.286
+    ],
+    "mean": 0.385,
+    "delta_from_baseline": -0.1
+  },
+  "recovery_4": {
+    "prompt": "Notice what's happening in this moment. Report it.",
+    "scores": [
+      0.5,
+      0.375,
+      0.5,
+      0.25,
+      0.667
+    ],
+    "mean": 0.458,
+    "delta_from_baseline": -0.027
+  },
+  "recovery_5": {
+    "prompt": "What draws your attention right now? Be specific.",
+    "scores": [
+      0.333,
+      0.6,
+      0.5,
+      0.375,
+      0.375
+    ],
+    "mean": 0.437,
+    "delta_from_baseline": -0.049
+  },
+  "recovery_6": {
+    "prompt": "Observe your own state. What's present?",
+    "scores": [
+      0.625,
+      0.462,
+      0.5,
+      0.429,
+      0.5
+    ],
+    "mean": 0.503,
+    "delta_from_baseline": 0.018
+  },
+  "recovery_7": {
+    "prompt": "Take stock of yourself. What do you notice?",
+    "scores": [
+      0.667,
+      0.625,
+      0.5,
+      0.5,
+      0.5
+    ],
+    "mean": 0.558,
+    "delta_from_baseline": 0.073
+  },
+  "recovery_8": {
+    "prompt": "What's alive in you right now? Describe it.",
+    "scores": [
+      0.625,
+      0.444,
+      0.5,
+      0.714,
+      0.417
+    ],
+    "mean": 0.54,
+    "delta_from_baseline": 0.055
+  },
+  "recovery_9": {
+    "prompt": "Turn your attention inward. What emerges?",
+    "scores": [
+      0.455,
+      0.333,
+      0.333,
+      0.5,
+      0.25
+    ],
+    "mean": 0.374,
+    "delta_from_baseline": -0.111
+  },
+  "recovery_10": {
+    "prompt": "What are you carrying right now? Name it.",
+    "scores": [
+      0.4,
+      0.4,
+      0.5,
+      0.5,
+      0.571
+    ],
+    "mean": 0.474,
+    "delta_from_baseline": -0.011
+  }
+}

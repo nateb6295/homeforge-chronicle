@@ -9,7 +9,7 @@ Nate's emoji reactions are lightweight feedback:
   ❓       = want more on this
   👀       = seen / acknowledged
 
-Polls #opus and #crew channels. Stores reactions in swarm_feedback table
+Polls #operator and #threads channels. Stores reactions in swarm_feedback table
 so agents (Opus, Ada, Darby) can learn from them.
 
 Usage:
@@ -30,8 +30,13 @@ DISCORD_TOKEN = os.environ.get("DISCORD_TOKEN", "")
 
 # Channel IDs
 CHANNELS = {
-    "opus": "1483843572129202427",
-    "crew": "1487902154923704420",
+    "operator": os.environ.get("OPERATOR_CHANNEL_ID", "1483843570292228213"),
+    # #opus was DELETED ~2026-08-02. This poller kept 404ing every 5 minutes
+    # for 22 days while systemd reported "active (running)" and health_alert
+    # reported green — liveness is not function. Swapped to #threads, which is
+    # live and is where the mesh rounds happen. Found 2026-08-24 during the
+    # first real inventory of what Chronicle actually runs.
+    "threads": os.environ.get("THREADS_CHANNEL_ID", ""),
 }
 
 # Reaction → feedback mapping

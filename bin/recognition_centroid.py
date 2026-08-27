@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Recognition centroid — single 768-d vector representing the system's current
+Recognition centroid — single 1024-d vector representing the system's current
 attention pattern. Capsule alignment = cosine similarity to this vector.
 
 Commands:
@@ -15,23 +15,19 @@ import sqlite3
 import sys
 import os
 import time
-import requests
 import subprocess
 import numpy as np
 from pathlib import Path
 
+sys.path.insert(0, os.path.dirname(__file__))
+from embed_config import EMBED_URL, EMBED_MODEL, EMBED_DIM, embed as _embed_raw
+
 DB_PATH = "/mnt/hdd/chronicle-data/processed.db"
 CENTROID_PATH = "/home/nate-agx/chronicle/data/recognition_centroid.json"
-OLLAMA_URL = os.environ.get("CHRONICLE_OLLAMA_URL", "http://localhost:11434")
-EMBED_MODEL = "nomic-embed-text"
 MCP_BINARY = "/home/bradf/projects/homeforge-chronicle/target/release/chronicle-mcp"
-EMBED_DIM = 768
 
 def embed_text(text: str) -> list[float]:
-    r = requests.post(f"{OLLAMA_URL}/api/embed",
-                      json={"model": EMBED_MODEL, "input": text}, timeout=30)
-    r.raise_for_status()
-    return r.json()["embeddings"][0]
+    return _embed_raw(text)
 
 def unpack_embedding(blob: bytes) -> np.ndarray:
     n = len(blob) // 4

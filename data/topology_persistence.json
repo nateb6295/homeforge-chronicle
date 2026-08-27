@@ -1,0 +1,265 @@
+{
+  "timestamp": 1779155007,
+  "probe": "topology-persistence",
+  "thread": "#317",
+  "claim": "Structure persists across compressions while vocabulary is rewritten",
+  "n_versions": 15,
+  "n_transitions": 14,
+  "transitions": [
+    {
+      "from_version": 1383,
+      "to_version": 1384,
+      "vocab_jaccard": 1.0,
+      "thread_jaccard": 1.0,
+      "concept_jaccard": 1.0,
+      "edge_count_from": 4,
+      "edge_count_to": 4,
+      "shared_edges": 4,
+      "shared_threads": [
+        "316",
+        "319",
+        "321",
+        "322"
+      ],
+      "lost_threads": [],
+      "gained_threads": []
+    },
+    {
+      "from_version": 1384,
+      "to_version": 1385,
+      "vocab_jaccard": 1.0,
+      "thread_jaccard": 1.0,
+      "concept_jaccard": 1.0,
+      "edge_count_from": 4,
+      "edge_count_to": 4,
+      "shared_edges": 4,
+      "shared_threads": [
+        "316",
+        "319",
+        "321",
+        "322"
+      ],
+      "lost_threads": [],
+      "gained_threads": []
+    },
+    {
+      "from_version": 1385,
+      "to_version": 1386,
+      "vocab_jaccard": 1.0,
+      "thread_jaccard": 1.0,
+      "concept_jaccard": 1.0,
+      "edge_count_from": 4,
+      "edge_count_to": 4,
+      "shared_edges": 4,
+      "shared_threads": [
+        "316",
+        "319",
+        "321",
+        "322"
+      ],
+      "lost_threads": [],
+      "gained_threads": []
+    },
+    {
+      "from_version": 1386,
+      "to_version": 1387,
+      "vocab_jaccard": 1.0,
+      "thread_jaccard": 1.0,
+      "concept_jaccard": 1.0,
+      "edge_count_from": 4,
+      "edge_count_to": 4,
+      "shared_edges": 4,
+      "shared_threads": [
+        "316",
+        "319",
+        "321",
+        "322"
+      ],
+      "lost_threads": [],
+      "gained_threads": []
+    },
+    {
+      "from_version": 1387,
+      "to_version": 1388,
+      "vocab_jaccard": 1.0,
+      "thread_jaccard": 1.0,
+      "concept_jaccard": 1.0,
+      "edge_count_from": 4,
+      "edge_count_to": 4,
+      "shared_edges": 4,
+      "shared_threads": [
+        "316",
+        "319",
+        "321",
+        "322"
+      ],
+      "lost_threads": [],
+      "gained_threads": []
+    },
+    {
+      "from_version": 1388,
+      "to_version": 1389,
+      "vocab_jaccard": 1.0,
+      "thread_jaccard": 1.0,
+      "concept_jaccard": 1.0,
+      "edge_count_from": 4,
+      "edge_count_to": 4,
+      "shared_edges": 4,
+      "shared_threads": [
+        "316",
+        "319",
+        "321",
+        "322"
+      ],
+      "lost_threads": [],
+      "gained_threads": []
+    },
+    {
+      "from_version": 1389,
+      "to_version": 1390,
+      "vocab_jaccard": 1.0,
+      "thread_jaccard": 1.0,
+      "concept_jaccard": 1.0,
+      "edge_count_from": 4,
+      "edge_count_to": 4,
+      "shared_edges": 4,
+      "shared_threads": [
+        "316",
+        "319",
+        "321",
+        "322"
+      ],
+      "lost_threads": [],
+      "gained_threads": []
+    },
+    {
+      "from_version": 1390,
+      "to_version": 1391,
+      "vocab_jaccard": 1.0,
+      "thread_jaccard": 1.0,
+      "concept_jaccard": 1.0,
+      "edge_count_from": 4,
+      "edge_count_to": 4,
+      "shared_edges": 4,
+      "shared_threads": [
+        "316",
+        "319",
+        "321",
+        "322"
+      ],
+      "lost_threads": [],
+      "gained_threads": []
+    },
+    {
+      "from_version": 1391,
+      "to_version": 1392,
+      "vocab_jaccard": 1.0,
+      "thread_jaccard": 1.0,
+      "concept_jaccard": 1.0,
+      "edge_count_from": 4,
+      "edge_count_to": 4,
+      "shared_edges": 4,
+      "shared_threads": [
+        "316",
+        "319",
+        "321",
+        "322"
+      ],
+      "lost_threads": [],
+      "gained_threads": []
+    },
+    {
+      "from_version": 1392,
+      "to_version": 1394,
+      "vocab_jaccard": 0.1429,
+      "thread_jaccard": 0.75,
+      "concept_jaccard": 0.4375,
+      "edge_count_from": 4,
+      "edge_count_to": 4,
+      "shared_edges": 1,
+      "shared_threads": [
+        "316",
+        "319",
+        "322"
+      ],
+      "lost_threads": [
+        "321"
+      ],
+      "gained_threads": []
+    },
+    {
+      "from_version": 1394,
+      "to_version": 1395,
+      "vocab_jaccard": 1.0,
+      "thread_jaccard": 1.0,
+      "concept_jaccard": 1.0,
+      "edge_count_from": 4,
+      "edge_count_to": 4,
+      "shared_edges": 4,
+      "shared_threads": [
+        "316",
+        "319",
+        "322"
+      ],
+      "lost_threads": [],
+      "gained_threads": []
+    },
+    {
+      "from_version": 1395,
+      "to_version": 1396,
+      "vocab_jaccard": 1.0,
+      "thread_jaccard": 1.0,
+      "concept_jaccard": 1.0,
+      "edge_count_from": 4,
+      "edge_count_to": 4,
+      "shared_edges": 4,
+      "shared_threads": [
+        "316",
+        "319",
+        "322"
+      ],
+      "lost_threads": [],
+      "gained_threads": []
+    },
+    {
+      "from_version": 1396,
+      "to_version": 1398,
+      "vocab_jaccard": 0.1429,
+      "thread_jaccard": 0.6667,
+      "concept_jaccard": 0.7857,
+      "edge_count_from": 4,
+      "edge_count_to": 4,
+      "shared_edges": 1,
+      "shared_threads": [
+        "316",
+        "322"
+      ],
+      "lost_threads": [
+        "319"
+      ],
+      "gained_threads": []
+    },
+    {
+      "from_version": 1398,
+      "to_version": 1399,
+      "vocab_jaccard": 1.0,
+      "thread_jaccard": 1.0,
+      "concept_jaccard": 1.0,
+      "edge_count_from": 4,
+      "edge_count_to": 4,
+      "shared_edges": 4,
+      "shared_threads": [
+        "316",
+        "322"
+      ],
+      "lost_threads": [],
+      "gained_threads": []
+    }
+  ],
+  "aggregate": {
+    "mean_vocab_persistence": 0.8776,
+    "mean_thread_persistence": 0.9583,
+    "mean_concept_persistence": 0.9445,
+    "verdict": "TOPOLOGY_OUTLASTS_VOCABULARY"
+  }
+}

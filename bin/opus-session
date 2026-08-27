@@ -31,9 +31,13 @@ while true; do
         "INSERT INTO activity_feed (created_at, source, activity_type, content) VALUES (strftime('%s','now'), 'opus:session_start', 'system', 'Opus session started. Boot prompt loaded.');" \
         2>/dev/null || true
 
+    unset ANTHROPIC_API_KEY 2>/dev/null || true
+    export CLAUDE_CODE_MAX_CONTEXT_TOKENS=1000000
+
     claude \
-        --model claude-opus-4-6 \
+        --model claude-opus-5 \
         --dangerously-skip-permissions \
+        --autocompact 1000000 \
         --allowedTools "Bash Read Write Edit Grep Glob WebSearch WebFetch mcp__chronicle-memory__*" &
     CLAUDE_PID=$!
 

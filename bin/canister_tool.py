@@ -47,6 +47,9 @@ import time
 import urllib.request
 import urllib.error
 from datetime import datetime, timezone, timedelta
+import os as _os, sys as _sys
+_sys.path.insert(0, _os.path.dirname(_os.path.abspath(__file__)))
+from dfx_path import DFX_BIN
 
 PDT = timezone(timedelta(hours=-7))
 
@@ -138,7 +141,7 @@ def _dfx_query(method, args="()"):
     env = {**os.environ, "DFX_WARNING": "-mainnet_plaintext_identity"}
     try:
         r = subprocess.run(
-            ["dfx", "canister", "call", CANISTER_ID, method, args,
+            [DFX_BIN, "canister", "call", CANISTER_ID, method, args,
              "--network", "ic", "--identity", IDENTITY, "--query"],
             capture_output=True, text=True, timeout=15, env=env,
         )
@@ -152,7 +155,7 @@ def _dfx_update(method, args="()"):
     env = {**os.environ, "DFX_WARNING": "-mainnet_plaintext_identity"}
     try:
         r = subprocess.run(
-            ["dfx", "canister", "call", CANISTER_ID, method, args,
+            [DFX_BIN, "canister", "call", CANISTER_ID, method, args,
              "--network", "ic", "--identity", IDENTITY],
             capture_output=True, text=True, timeout=30, env=env,
         )
@@ -304,7 +307,7 @@ def cmd_balance():
     env = {**os.environ, "DFX_WARNING": "-mainnet_plaintext_identity"}
     try:
         r = subprocess.run(
-            ["dfx", "canister", "status", CANISTER_ID,
+            [DFX_BIN, "canister", "status", CANISTER_ID,
              "--network", "ic", "--identity", IDENTITY],
             capture_output=True, text=True, timeout=15, env=env,
         )

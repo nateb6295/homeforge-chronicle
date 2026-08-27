@@ -1,0 +1,108 @@
+{
+  "model": "EleutherAI/pythia-1.4b",
+  "n_layers": 24,
+  "block_size": 6,
+  "sample_dim": 64,
+  "conditions": {
+    "vanilla": [
+      {
+        "block": "L0-L5",
+        "start_layer": 0,
+        "end_layer": 5,
+        "kreiss_constant": 6.696,
+        "henrici_number": 0.9949179887771606,
+        "spectral_radius": 2229.6394,
+        "operator_norm": 22143.709,
+        "condition_number": 2505350.0,
+        "transient_ratio": 0.003,
+        "elapsed_sec": 58.8
+      },
+      {
+        "block": "L6-L11",
+        "start_layer": 6,
+        "end_layer": 11,
+        "kreiss_constant": 10.343,
+        "henrici_number": 0.9978229999542236,
+        "spectral_radius": 1538.1952,
+        "operator_norm": 23325.4102,
+        "condition_number": 8070180.5,
+        "transient_ratio": 0.0067,
+        "elapsed_sec": 56.0
+      },
+      {
+        "block": "L12-L17",
+        "start_layer": 12,
+        "end_layer": 17,
+        "kreiss_constant": 29.9359,
+        "henrici_number": 0.9995660185813904,
+        "spectral_radius": 1078.7198,
+        "operator_norm": 36639.9961,
+        "condition_number": 1895100.75,
+        "transient_ratio": 0.0278,
+        "elapsed_sec": 56.3
+      },
+      {
+        "block": "L18-L23",
+        "start_layer": 18,
+        "end_layer": 23,
+        "kreiss_constant": 86.8476,
+        "henrici_number": 0.4034009873867035,
+        "spectral_radius": 1.7138,
+        "operator_norm": 2.6973,
+        "condition_number": 8.04,
+        "transient_ratio": 50.6743,
+        "elapsed_sec": 56.0
+      }
+    ],
+    "ccs": [
+      {
+        "block": "L0-L5",
+        "start_layer": 0,
+        "end_layer": 5,
+        "kreiss_constant": 4.4642,
+        "henrici_number": 0.9883379936218262,
+        "spectral_radius": 3613.1104,
+        "operator_norm": 23727.7793,
+        "condition_number": 2409209.75,
+        "transient_ratio": 0.0012,
+        "elapsed_sec": 84.5
+      },
+      {
+        "block": "L6-L11",
+        "start_layer": 6,
+        "end_layer": 11,
+        "kreiss_constant": 4.609,
+        "henrici_number": 0.9867650270462036,
+        "spectral_radius": 4329.8984,
+        "operator_norm": 26702.1641,
+        "condition_number": 886083.19,
+        "transient_ratio": 0.0011,
+        "elapsed_sec": 82.6
+      },
+      {
+        "block": "L12-L17",
+        "start_layer": 12,
+        "end_layer": 17,
+        "kreiss_constant": 3.4422,
+        "henrici_number": 0.9614250063896179,
+        "spectral_radius": 13762.209,
+        "operator_norm": 50032.375,
+        "condition_number": 247388.97,
+        "transient_ratio": 0.0003,
+        "elapsed_sec": 82.8
+      },
+      {
+        "block": "L18-L23",
+        "start_layer": 18,
+        "end_layer": 23,
+        "kreiss_constant": 164.3851,
+        "henrici_number": 0.5875939726829529,
+        "spectral_radius": 1.692,
+        "operator_norm": 5.7154,
+        "condition_number": 47.57,
+        "transient_ratio": 97.1525,
+        "elapsed_sec": 81.6
+      }
+    ]
+  }
+}

@@ -1,0 +1,24 @@
+[
+  {
+    "model": "EleutherAI/pythia-2.8b",
+    "n_layers": 32,
+    "peak_layer": 11,
+    "peak_frac": 0.34375,
+    "delta": 0.10519300043096362,
+    "kl_identity": 0.2895631507659952,
+    "kl_echo": 0.17927782175441584,
+    "ratio": 1.6151643741112272,
+    "perm_p": 0.4062968515742129
+  },
+  {
+    "model": "meta-llama/Llama-3.1-8B",
+    "n_layers": 32,
+    "peak_layer": 19,
+    "peak_frac": 0.59375,
+    "delta": 0.25269457164141523,
+    "kl_identity": 1.244199424982071,
+    "kl_echo": 0.5015231656531492,
+    "ratio": 2.4808413851864874,
+    "perm_p": 0.0004997501249375312
+  }
+]

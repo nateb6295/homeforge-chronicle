@@ -16,6 +16,9 @@ import os
 import subprocess
 import sys
 import time
+import os as _os, sys as _sys
+_sys.path.insert(0, _os.path.dirname(_os.path.abspath(__file__)))
+from dfx_path import DFX_BIN
 
 # Add mind modules
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -45,7 +48,7 @@ def dfx_call(method, args, is_update=True):
     """Call a canister method via dfx."""
     env = {**os.environ, **DFX_ENV}
     cmd = [
-        "dfx", "canister", "--network", "ic",
+        DFX_BIN, "canister", "--network", "ic",
         "--identity", IDENTITY,
         "call", CANISTER_ID, method, args,
     ]

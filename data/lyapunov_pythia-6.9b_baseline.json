@@ -1,0 +1,2037 @@
+{
+  "model": "EleutherAI/pythia-6.9b",
+  "n_layers": 32,
+  "n_heads_probed": 8,
+  "epsilon": 0.001,
+  "n_repeats": 3,
+  "n_prompts": 4,
+  "landscape": {
+    "L00": {
+      "kv0": {
+        "mean_lambda": 11.443591263950355,
+        "std_lambda": 0.3733725681336975,
+        "contractive": false,
+        "n_contractive_prompts": 0
+      },
+      "kv1": {
+        "mean_lambda": 11.454621814020108,
+        "std_lambda": 0.35691771678912937,
+        "contractive": false,
+        "n_contractive_prompts": 0
+      },
+      "kv2": {
+        "mean_lambda": 11.44260426822931,
+        "std_lambda": 0.3684866902435431,
+        "contractive": false,
+        "n_contractive_prompts": 0
+      },
+      "kv3": {
+        "mean_lambda": 11.425567263178847,
+        "std_lambda": 0.36130059661089065,
+        "contractive": false,
+        "n_contractive_prompts": 0
+      },
+      "kv4": {
+        "mean_lambda": 11.438937731669231,
+        "std_lambda": 0.3705361815911464,
+        "contractive": false,
+        "n_contractive_prompts": 0
+      },
+      "kv5": {
+        "mean_lambda": 11.436257466337292,
+        "std_lambda": 0.3673729000122719,
+        "contractive": false,
+        "n_contractive_prompts": 0
+      },
+      "kv6": {
+        "mean_lambda": 11.44907179698374,
+        "std_lambda": 0.3466245579795862,
+        "contractive": false,
+        "n_contractive_prompts": 0
+      },
+      "kv7": {
+        "mean_lambda": 11.469338175156656,
+        "std_lambda": 0.37100837685936267,
+        "contractive": false,
+        "n_contractive_prompts": 0
+      }
+    },
+    "L04": {
+      "kv0": {
+        "mean_lambda": 11.435445212343682,
+        "std_lambda": 0.37423243519090776,
+        "contractive": false,
+        "n_contractive_prompts": 0
+      },
+      "kv1": {
+        "mean_lambda": 11.418988913306029,
+        "std_lambda": 0.394028580606993,
+        "contractive": false,
+        "n_contractive_prompts": 0
+      },
+      "kv2": {
+        "mean_lambda": 11.47118002725885,
+        "std_lambda": 0.3697465787538264,
+        "contractive": false,
+        "n_contractive_prompts": 0
+      },
+      "kv3": {
+        "mean_lambda": 11.446921093119528,
+        "std_lambda": 0.36327277590248186,
+        "contractive": false,
+        "n_contractive_prompts": 0
+      },
+      "kv4": {
+        "mean_lambda": 11.442090640839512,
+        "std_lambda": 0.3651761762809151,
+        "contractive": false,
+        "n_contractive_prompts": 0
+      },
+      "kv5": {
+        "mean_lambda": 11.42812238507231,
+        "std_lambda": 0.393512622241194,
+        "contractive": false,
+        "n_contractive_prompts": 0
+      },
+      "kv6": {
+        "mean_lambda": 11.451711199368635,
+        "std_lambda": 0.3686595793971551,
+        "contractive": false,
+        "n_contractive_prompts": 0
+      },
+      "kv7": {
+        "mean_lambda": 11.452415359509345,
+        "std_lambda": 0.36769513124604647,
+        "contractive": false,
+        "n_contractive_prompts": 0
+      }
+    },
+    "L08": {
+      "kv0": {
+        "mean_lambda": 11.46705260796034,
+        "std_lambda": 0.3577749137792494,
+        "contractive": false,
+        "n_contractive_prompts": 0
+      },
+      "kv1": {
+        "mean_lambda": 11.435771837216866,
+        "std_lambda": 0.3747288356493607,
+        "contractive": false,
+        "n_contractive_prompts": 0
+      },
+      "kv2": {
+        "mean_lambda": 11.449992812103362,
+        "std_lambda": 0.37401577624672844,
+        "contractive": false,
+        "n_contractive_prompts": 0
+      },
+      "kv3": {
+        "mean_lambda": 11.443068807380618,
+        "std_lambda": 0.3593555857654501,
+        "contractive": false,
+        "n_contractive_prompts": 0
+      },
+      "kv4": {
+        "mean_lambda": 11.461935112498239,
+        "std_lambda": 0.3618702894829575,
+        "contractive": false,
+        "n_contractive_prompts": 0
+      },
+      "kv5": {
+        "mean_lambda": 11.459553996873272,
+        "std_lambda": 0.3632942364992371,
+        "contractive": false,
+        "n_contractive_prompts": 0
+      },
+      "kv6": {
+        "mean_lambda": 11.452996754400305,
+        "std_lambda": 0.3638722959914728,
+        "contractive": false,
+        "n_contractive_prompts": 0
+      },
+      "kv7": {
+        "mean_lambda": 11.430693146686632,
+        "std_lambda": 0.37449901442366096,
+        "contractive": false,
+        "n_contractive_prompts": 0
+      }
+    },
+    "L12": {
+      "kv0": {
+        "mean_lambda": 11.443417779381027,
+        "std_lambda": 0.37533563214015164,
+        "contractive": false,
+        "n_contractive_prompts": 0
+      },
+      "kv1": {
+        "mean_lambda": 11.46124970202988,
+        "std_lambda": 0.37186206620830886,
+        "contractive": false,
+        "n_contractive_prompts": 0
+      },
+      "kv2": {
+        "mean_lambda": 11.44111018164254,
+        "std_lambda": 0.3747095144547013,
+        "contractive": false,
+        "n_contractive_prompts": 0
+      },
+      "kv3": {
+        "mean_lambda": 11.448400919490377,
+        "std_lambda": 0.360576723208377,
+        "contractive": false,
+        "n_contractive_prompts": 0
+      },
+      "kv4": {
+        "mean_lambda": 11.457454468591289,
+        "std_lambda": 0.3578007106330998,
+        "contractive": false,
+        "n_contractive_prompts": 0
+      },
+      "kv5": {
+        "mean_lambda": 11.454585385429116,
+        "std_lambda": 0.3605953063340253,
+        "contractive": false,
+        "n_contractive_prompts": 0
+      },
+      "kv6": {
+        "mean_lambda": 11.458793674703177,
+        "std_lambda": 0.35310015918401055,
+        "contractive": false,
+        "n_contractive_prompts": 0
+      },
+      "kv7": {
+        "mean_lambda": 11.453368675377364,
+        "std_lambda": 0.3727798131226734,
+        "contractive": false,
+        "n_contractive_prompts": 0
+      }
+    },
+    "L16": {
+      "kv0": {
+        "mean_lambda": 11.455097470313547,
+        "std_lambda": 0.338120660543698,
+        "contractive": false,
+        "n_contractive_prompts": 0
+      },
+      "kv1": {
+        "mean_lambda": 11.46491411466588,
+        "std_lambda": 0.3540813707419354,
+        "contractive": false,
+        "n_contractive_prompts": 0
+      },
+      "kv2": {
+        "mean_lambda": 11.468102365980263,
+        "std_lambda": 0.35595382789946844,
+        "contractive": false,
+        "n_contractive_prompts": 0
+      },
+      "kv3": {
+        "mean_lambda": 11.448802682441958,
+        "std_lambda": 0.3564481368497828,
+        "contractive": false,
+        "n_contractive_prompts": 0
+      },
+      "kv4": {
+        "mean_lambda": 11.460749690211337,
+        "std_lambda": 0.3520248179880919,
+        "contractive": false,
+        "n_contractive_prompts": 0
+      },
+      "kv5": {
+        "mean_lambda": 11.453810897124796,
+        "std_lambda": 0.3565263112320235,
+        "contractive": false,
+        "n_contractive_prompts": 0
+      },
+      "kv6": {
+        "mean_lambda": 11.467186545915132,
+        "std_lambda": 0.362232678675421,
+        "contractive": false,
+        "n_contractive_prompts": 0
+      },
+      "kv7": {
+        "mean_lambda": 11.45835311380862,
+        "std_lambda": 0.3537787544103296,
+        "contractive": false,
+        "n_contractive_prompts": 0
+      }
+    },
+    "L20": {
+      "kv0": {
+        "mean_lambda": 11.459589680266143,
+        "std_lambda": 0.35215913873617605,
+        "contractive": false,
+        "n_contractive_prompts": 0
+      },
+      "kv1": {
+        "mean_lambda": 11.466913282236897,
+        "std_lambda": 0.3602545436362264,
+        "contractive": false,
+        "n_contractive_prompts": 0
+      },
+      "kv2": {
+        "mean_lambda": 11.466548271082964,
+        "std_lambda": 0.36077144319728727,
+        "contractive": false,
+        "n_contractive_prompts": 0
+      },
+      "kv3": {
+        "mean_lambda": 11.460196652475648,
+        "std_lambda": 0.35212690688006276,
+        "contractive": false,
+        "n_contractive_prompts": 0
+      },
+      "kv4": {
+        "mean_lambda": 11.459397488021825,
+        "std_lambda": 0.3502602992006646,
+        "contractive": false,
+        "n_contractive_prompts": 0
+      },
+      "kv5": {
+        "mean_lambda": 11.462775260835894,
+        "std_lambda": 0.3575671500220444,
+        "contractive": false,
+        "n_contractive_prompts": 0
+      },
+      "kv6": {
+        "mean_lambda": 11.47289614966497,
+        "std_lambda": 0.35739046945144864,
+        "contractive": false,
+        "n_contractive_prompts": 0
+      },
+      "kv7": {
+        "mean_lambda": 11.451615735481942,
+        "std_lambda": 0.36031317434256266,
+        "contractive": false,
+        "n_contractive_prompts": 0
+      }
+    },
+    "L24": {
+      "kv0": {
+        "mean_lambda": 11.459438226905188,
+        "std_lambda": 0.3612777666039931,
+        "contractive": false,
+        "n_contractive_prompts": 0
+      },
+      "kv1": {
+        "mean_lambda": 11.464583522527763,
+        "std_lambda": 0.3599595103965162,
+        "contractive": false,
+        "n_contractive_prompts": 0
+      },
+      "kv2": {
+        "mean_lambda": 11.457051299208258,
+        "std_lambda": 0.3597132040828233,
+        "contractive": false,
+        "n_contractive_prompts": 0
+      },
+      "kv3": {
+        "mean_lambda": 11.466044220972776,
+        "std_lambda": 0.35614640906621914,
+        "contractive": false,
+        "n_contractive_prompts": 0
+      },
+      "kv4": {
+        "mean_lambda": 11.464374088100953,
+        "std_lambda": 0.3509494105283297,
+        "contractive": false,
+        "n_contractive_prompts": 0
+      },
+      "kv5": {
+        "mean_lambda": 11.467186545915132,
+        "std_lambda": 0.362232678675421,
+        "contractive": false,
+        "n_contractive_prompts": 0
+      },
+      "kv6": {
+        "mean_lambda": 11.457953132594568,
+        "std_lambda": 0.3555895194121344,
+        "contractive": false,
+        "n_contractive_prompts": 0
+      },
+      "kv7": {
+        "mean_lambda": 11.466219129010126,
+        "std_lambda": 0.3609423682621807,
+        "contractive": false,
+        "n_contractive_prompts": 0
+      }
+    },
+    "L28": {
+      "kv0": {
+        "mean_lambda": 11.472259532077564,
+        "std_lambda": 0.35677203050433015,
+        "contractive": false,
+        "n_contractive_prompts": 0
+      },
+      "kv1": {
+        "mean_lambda": 11.464368623191238,
+        "std_lambda": 0.35926504717164975,
+        "contractive": false,
+        "n_contractive_prompts": 0
+      },
+      "kv2": {
+        "mean_lambda": 11.464479050379326,
+        "std_lambda": 0.35999625136656527,
+        "contractive": false,
+        "n_contractive_prompts": 0
+      },
+      "kv3": {
+        "mean_lambda": 11.467186545915132,
+        "std_lambda": 0.362232678675421,
+        "contractive": false,
+        "n_contractive_prompts": 0
+      },
+      "kv4": {
+        "mean_lambda": 11.467186545915132,
+        "std_lambda": 0.362232678675421,
+        "contractive": false,
+        "n_contractive_prompts": 0
+      },
+      "kv5": {
+        "mean_lambda": 11.465873872409903,
+        "std_lambda": 0.36078724911355303,
+        "contractive": false,
+        "n_contractive_prompts": 0
+      },
+      "kv6": {
+        "mean_lambda": 11.465758246069832,
+        "std_lambda": 0.36066033826330074,
+        "contractive": false,
+        "n_contractive_prompts": 0
+      },
+      "kv7": {
+        "mean_lambda": 11.469268913834718,
+        "std_lambda": 0.3591366526362178,
+        "contractive": false,
+        "n_contractive_prompts": 0
+      }
+    }
+  },
+  "band_stats": {
+    "early": {
+      "n_contractive": 0,
+      "total": 16,
+      "pct_contractive": 0.0
+    },
+    "mid": {
+      "n_contractive": 0,
+      "total": 24,
+      "pct_contractive": 0.0
+    },
+    "late": {
+      "n_contractive": 0,
+      "total": 24,
+      "pct_contractive": 0.0
+    }
+  },
+  "raw_results": {
+    "prompt_0": {
+      "L00": {
+        "kv0": {
+          "lambda": 11.18464201956842,
+          "mean_kl": 0.07201588650544484,
+          "std_kl": 0.0033340208544821643,
+          "contractive": false
+        },
+        "kv1": {
+          "lambda": 11.2143645731886,
+          "mean_kl": 0.07418851057688396,
+          "std_kl": 0.0036902807501397734,
+          "contractive": false
+        },
+        "kv2": {
+          "lambda": 11.153981593036779,
+          "mean_kl": 0.06984135508537292,
+          "std_kl": 0.0016878140769641264,
+          "contractive": false
+        },
+        "kv3": {
+          "lambda": 11.109608746914859,
+          "mean_kl": 0.06681004663308461,
+          "std_kl": 0.0031764664016568976,
+          "contractive": false
+        },
+        "kv4": {
+          "lambda": 11.129178120973613,
+          "mean_kl": 0.06813035408655803,
+          "std_kl": 0.002328481389731086,
+          "contractive": false
+        },
+        "kv5": {
+          "lambda": 11.164073960456877,
+          "mean_kl": 0.0705497885743777,
+          "std_kl": 0.003961577597308229,
+          "contractive": false
+        },
+        "kv6": {
+          "lambda": 11.185050179391514,
+          "mean_kl": 0.0720452864964803,
+          "std_kl": 0.0016120162142791868,
+          "contractive": false
+        },
+        "kv7": {
+          "lambda": 11.196884998789017,
+          "mean_kl": 0.07290299485127132,
+          "std_kl": 0.004144979480573682,
+          "contractive": false
+        }
+      },
+      "L04": {
+        "kv0": {
+          "lambda": 11.115780594459535,
+          "mean_kl": 0.06722366313139598,
+          "std_kl": 0.002505807970817005,
+          "contractive": false
+        },
+        "kv1": {
+          "lambda": 11.033272786988011,
+          "mean_kl": 0.06189983462293943,
+          "std_kl": 0.003916670528358347,
+          "contractive": false
+        },
+        "kv2": {
+          "lambda": 11.21383089197541,
+          "mean_kl": 0.07414892812569936,
+          "std_kl": 0.00280760809935509,
+          "contractive": false
+        },
+        "kv3": {
+          "lambda": 11.16840356033232,
+          "mean_kl": 0.07085590312878291,
+          "std_kl": 0.0031858308425380204,
+          "contractive": false
+        },
+        "kv4": {
+          "lambda": 11.154708805741707,
+          "mean_kl": 0.06989216307799022,
+          "std_kl": 0.0014397613085635641,
+          "contractive": false
+        },
+        "kv5": {
+          "lambda": 11.076940612268963,
+          "mean_kl": 0.06466275205214818,
+          "std_kl": 0.002763031311435133,
+          "contractive": false
+        },
+        "kv6": {
+          "lambda": 11.173966607435524,
+          "mean_kl": 0.07125117629766464,
+          "std_kl": 0.003754083534979306,
+          "contractive": false
+        },
+        "kv7": {
+          "lambda": 11.16094958252327,
+          "mean_kl": 0.07032970835765202,
+          "std_kl": 0.002847001861184891,
+          "contractive": false
+        }
+      },
+      "L08": {
+        "kv0": {
+          "lambda": 11.168587908377747,
+          "mean_kl": 0.07086896648009618,
+          "std_kl": 0.0010940759915447945,
+          "contractive": false
+        },
+        "kv1": {
+          "lambda": 11.136432671018923,
+          "mean_kl": 0.06862640629212062,
+          "std_kl": 0.0035892127154882407,
+          "contractive": false
+        },
+        "kv2": {
+          "lambda": 11.138287413802322,
+          "mean_kl": 0.06875380873680115,
+          "std_kl": 0.0011560912049715245,
+          "contractive": false
+        },
+        "kv3": {
+          "lambda": 11.15213409812416,
+          "mean_kl": 0.06971244265635808,
+          "std_kl": 0.0001320495886220069,
+          "contractive": false
+        },
+        "kv4": {
+          "lambda": 11.166763259652074,
+          "mean_kl": 0.07073977341254552,
+          "std_kl": 0.0019100645984905214,
+          "contractive": false
+        },
+        "kv5": {
+          "lambda": 11.179470349592878,
+          "mean_kl": 0.07164440552393596,
+          "std_kl": 0.003549846077577537,
+          "contractive": false
+        },
+        "kv6": {
+          "lambda": 11.195176347109948,
+          "mean_kl": 0.07277853538592656,
+          "std_kl": 0.0012966555266501827,
+          "contractive": false
+        },
+        "kv7": {
+          "lambda": 11.10284531727546,
+          "mean_kl": 0.06635970622301102,
+          "std_kl": 0.00594698429844401,
+          "contractive": false
+        }
+      },
+      "L12": {
+        "kv0": {
+          "lambda": 11.114744400031794,
+          "mean_kl": 0.06715404242277145,
+          "std_kl": 0.0013016724949855704,
+          "contractive": false
+        },
+        "kv1": {
+          "lambda": 11.143541478779195,
+          "mean_kl": 0.06911599636077881,
+          "std_kl": 0.0007449384274400832,
+          "contractive": false
+        },
+        "kv2": {
+          "lambda": 11.118109689345394,
+          "mean_kl": 0.06738041589657466,
+          "std_kl": 0.0004263101548362157,
+          "contractive": false
+        },
+        "kv3": {
+          "lambda": 11.156023611628326,
+          "mean_kl": 0.06998411814371745,
+          "std_kl": 0.0016596984077862102,
+          "contractive": false
+        },
+        "kv4": {
+          "lambda": 11.15920113915339,
+          "mean_kl": 0.07020684828360875,
+          "std_kl": 0.001767237753048491,
+          "contractive": false
+        },
+        "kv5": {
+          "lambda": 11.167502885642117,
+          "mean_kl": 0.07079211374123891,
+          "std_kl": 0.0013948359025185344,
+          "contractive": false
+        },
+        "kv6": {
+          "lambda": 11.158743961722605,
+          "mean_kl": 0.0701747586329778,
+          "std_kl": 0.0031800520489090973,
+          "contractive": false
+        },
+        "kv7": {
+          "lambda": 11.170250726164053,
+          "mean_kl": 0.07098690668741862,
+          "std_kl": 0.0023349213585540257,
+          "contractive": false
+        }
+      },
+      "L16": {
+        "kv0": {
+          "lambda": 11.172233847292151,
+          "mean_kl": 0.0711278220017751,
+          "std_kl": 0.0009826505575803225,
+          "contractive": false
+        },
+        "kv1": {
+          "lambda": 11.166995541831488,
+          "mean_kl": 0.07075620690981548,
+          "std_kl": 0.0017084398991720497,
+          "contractive": false
+        },
+        "kv2": {
+          "lambda": 11.179768628915754,
+          "mean_kl": 0.07166577875614166,
+          "std_kl": 0.0016012957521865246,
+          "contractive": false
+        },
+        "kv3": {
+          "lambda": 11.135361153550157,
+          "mean_kl": 0.0685529112815857,
+          "std_kl": 0.0008183123295713714,
+          "contractive": false
+        },
+        "kv4": {
+          "lambda": 11.167524846714679,
+          "mean_kl": 0.07079366842905681,
+          "std_kl": 0.002210219370522418,
+          "contractive": false
+        },
+        "kv5": {
+          "lambda": 11.135876579701655,
+          "mean_kl": 0.06858825435241063,
+          "std_kl": 0.004830126776567362,
+          "contractive": false
+        },
+        "kv6": {
+          "lambda": 11.153472606424517,
+          "mean_kl": 0.0698058158159256,
+          "std_kl": 0.0,
+          "contractive": false
+        },
+        "kv7": {
+          "lambda": 11.162966194204152,
+          "mean_kl": 0.07047167917092641,
+          "std_kl": 0.00047083649366470084,
+          "contractive": false
+        }
+      },
+      "L20": {
+        "kv0": {
+          "lambda": 11.171168959060147,
+          "mean_kl": 0.07105211913585663,
+          "std_kl": 0.0009624768413195522,
+          "contractive": false
+        },
+        "kv1": {
+          "lambda": 11.153472606424517,
+          "mean_kl": 0.0698058158159256,
+          "std_kl": 0.0,
+          "contractive": false
+        },
+        "kv2": {
+          "lambda": 11.15501427779735,
+          "mean_kl": 0.069913516441981,
+          "std_kl": 0.0001523116860436192,
+          "contractive": false
+        },
+        "kv3": {
+          "lambda": 11.159934040840952,
+          "mean_kl": 0.07025832186142604,
+          "std_kl": 0.0012564043721489105,
+          "contractive": false
+        },
+        "kv4": {
+          "lambda": 11.175079565501617,
+          "mean_kl": 0.07133052001396815,
+          "std_kl": 0.0011642350686280353,
+          "contractive": false
+        },
+        "kv5": {
+          "lambda": 11.1531487973913,
+          "mean_kl": 0.06978321572144826,
+          "std_kl": 0.00028692360952568174,
+          "contractive": false
+        },
+        "kv6": {
+          "lambda": 11.17631102142387,
+          "mean_kl": 0.07141841451327006,
+          "std_kl": 0.0011405849443937796,
+          "contractive": false
+        },
+        "kv7": {
+          "lambda": 11.15367271068217,
+          "mean_kl": 0.06981978565454483,
+          "std_kl": 0.0018063253561879434,
+          "contractive": false
+        }
+      },
+      "L24": {
+        "kv0": {
+          "lambda": 11.157426599424431,
+          "mean_kl": 0.07008237391710281,
+          "std_kl": 0.000324377289286575,
+          "contractive": false
+        },
+        "kv1": {
+          "lambda": 11.153472606424517,
+          "mean_kl": 0.0698058158159256,
+          "std_kl": 0.0,
+          "contractive": false
+        },
+        "kv2": {
+          "lambda": 11.153472606424517,
+          "mean_kl": 0.0698058158159256,
+          "std_kl": 0.0,
+          "contractive": false
+        },
+        "kv3": {
+          "lambda": 11.1645118185211,
+          "mean_kl": 0.07058068613211314,
+          "std_kl": 0.0011777324640757827,
+          "contractive": false
+        },
+        "kv4": {
+          "lambda": 11.174360924665548,
+          "mean_kl": 0.07127927740414937,
+          "std_kl": 0.0013199795873258106,
+          "contractive": false
+        },
+        "kv5": {
+          "lambda": 11.153472606424517,
+          "mean_kl": 0.0698058158159256,
+          "std_kl": 0.0,
+          "contractive": false
+        },
+        "kv6": {
+          "lambda": 11.164473428701331,
+          "mean_kl": 0.07057797660430272,
+          "std_kl": 0.0010920002592556331,
+          "contractive": false
+        },
+        "kv7": {
+          "lambda": 11.153472606424517,
+          "mean_kl": 0.0698058158159256,
+          "std_kl": 0.0,
+          "contractive": false
+        }
+      },
+      "L28": {
+        "kv0": {
+          "lambda": 11.176139082400592,
+          "mean_kl": 0.07140613595644633,
+          "std_kl": 0.001131597223431618,
+          "contractive": false
+        },
+        "kv1": {
+          "lambda": 11.153472606424517,
+          "mean_kl": 0.0698058158159256,
+          "std_kl": 0.0,
+          "contractive": false
+        },
+        "kv2": {
+          "lambda": 11.153178620672701,
+          "mean_kl": 0.06978529691696167,
+          "std_kl": 0.0,
+          "contractive": false
+        },
+        "kv3": {
+          "lambda": 11.153472606424517,
+          "mean_kl": 0.0698058158159256,
+          "std_kl": 0.0,
+          "contractive": false
+        },
+        "kv4": {
+          "lambda": 11.153472606424517,
+          "mean_kl": 0.0698058158159256,
+          "std_kl": 0.0,
+          "contractive": false
+        },
+        "kv5": {
+          "lambda": 11.153472606424517,
+          "mean_kl": 0.0698058158159256,
+          "std_kl": 0.0,
+          "contractive": false
+        },
+        "kv6": {
+          "lambda": 11.153472606424517,
+          "mean_kl": 0.0698058158159256,
+          "std_kl": 0.0,
+          "contractive": false
+        },
+        "kv7": {
+          "lambda": 11.164392421697665,
+          "mean_kl": 0.07057225952545802,
+          "std_kl": 0.001083915088816293,
+          "contractive": false
+        }
+      }
+    },
+    "prompt_1": {
+      "L00": {
+        "kv0": {
+          "lambda": 11.854862471391776,
+          "mean_kl": 0.14076716204484305,
+          "std_kl": 0.002820183130204671,
+          "contractive": false
+        },
+        "kv1": {
+          "lambda": 11.86212746888157,
+          "mean_kl": 0.141793558994929,
+          "std_kl": 0.0012365830708794808,
+          "contractive": false
+        },
+        "kv2": {
+          "lambda": 11.867792742910478,
+          "mean_kl": 0.14259913812081018,
+          "std_kl": 0.01905871378070718,
+          "contractive": false
+        },
+        "kv3": {
+          "lambda": 11.833639794859378,
+          "mean_kl": 0.13781118392944336,
+          "std_kl": 0.002871265940371781,
+          "contractive": false
+        },
+        "kv4": {
+          "lambda": 11.84928253452879,
+          "mean_kl": 0.1399838775396347,
+          "std_kl": 0.001850112296310309,
+          "contractive": false
+        },
+        "kv5": {
+          "lambda": 11.841459941769646,
+          "mean_kl": 0.13889311254024506,
+          "std_kl": 0.004708834275514768,
+          "contractive": false
+        },
+        "kv6": {
+          "lambda": 11.830111545001257,
+          "mean_kl": 0.13732580840587616,
+          "std_kl": 0.005628790704336998,
+          "contractive": false
+        },
+        "kv7": {
+          "lambda": 11.905820595218447,
+          "mean_kl": 0.14812630414962769,
+          "std_kl": 0.0025116604533317833,
+          "contractive": false
+        }
+      },
+      "L04": {
+        "kv0": {
+          "lambda": 11.852720106544135,
+          "mean_kl": 0.14046591023604074,
+          "std_kl": 0.0014513407774221396,
+          "contractive": false
+        },
+        "kv1": {
+          "lambda": 11.872416316393588,
+          "mean_kl": 0.14325998226801553,
+          "std_kl": 0.002568344825400285,
+          "contractive": false
+        },
+        "kv2": {
+          "lambda": 11.870978491846069,
+          "mean_kl": 0.1430541475613912,
+          "std_kl": 0.002529305528642544,
+          "contractive": false
+        },
+        "kv3": {
+          "lambda": 11.867910207890267,
+          "mean_kl": 0.14261588950951895,
+          "std_kl": 0.0010746319233052063,
+          "contractive": false
+        },
+        "kv4": {
+          "lambda": 11.858975992437426,
+          "mean_kl": 0.141347403327624,
+          "std_kl": 0.001624670327714765,
+          "contractive": false
+        },
+        "kv5": {
+          "lambda": 11.885513838491443,
+          "mean_kl": 0.14514867464701334,
+          "std_kl": 0.0007557077482200985,
+          "contractive": false
+        },
+        "kv6": {
+          "lambda": 11.867226505758884,
+          "mean_kl": 0.14251841604709625,
+          "std_kl": 0.0,
+          "contractive": false
+        },
+        "kv7": {
+          "lambda": 11.866275360344721,
+          "mean_kl": 0.14238292475541434,
+          "std_kl": 0.0028861215956955963,
+          "contractive": false
+        }
+      },
+      "L08": {
+        "kv0": {
+          "lambda": 11.860968770197045,
+          "mean_kl": 0.14162935813268027,
+          "std_kl": 0.0015190129405904108,
+          "contractive": false
+        },
+        "kv1": {
+          "lambda": 11.872991006463254,
+          "mean_kl": 0.14334233601888022,
+          "std_kl": 0.0006390216695600059,
+          "contractive": false
+        },
+        "kv2": {
+          "lambda": 11.873733039523001,
+          "mean_kl": 0.14344874024391174,
+          "std_kl": 0.0018325494599537157,
+          "contractive": false
+        },
+        "kv3": {
+          "lambda": 11.866401008863214,
+          "mean_kl": 0.1424008160829544,
+          "std_kl": 0.0007173467541341075,
+          "contractive": false
+        },
+        "kv4": {
+          "lambda": 11.86774664131944,
+          "mean_kl": 0.14259256422519684,
+          "std_kl": 0.0004800032468949657,
+          "contractive": false
+        },
+        "kv5": {
+          "lambda": 11.870388712270067,
+          "mean_kl": 0.14296980202198029,
+          "std_kl": 0.0003191780837730005,
+          "contractive": false
+        },
+        "kv6": {
+          "lambda": 11.869192351739684,
+          "mean_kl": 0.1427988608678182,
+          "std_kl": 0.0007496058854761257,
+          "contractive": false
+        },
+        "kv7": {
+          "lambda": 11.858454648960908,
+          "mean_kl": 0.1412737319866816,
+          "std_kl": 0.001219598196250774,
+          "contractive": false
+        }
+      },
+      "L12": {
+        "kv0": {
+          "lambda": 11.867554548800069,
+          "mean_kl": 0.14256517589092255,
+          "std_kl": 3.366405706552394e-05,
+          "contractive": false
+        },
+        "kv1": {
+          "lambda": 11.864007696503927,
+          "mean_kl": 0.14206041395664215,
+          "std_kl": 0.0004175699016216826,
+          "contractive": false
+        },
+        "kv2": {
+          "lambda": 11.859251247185076,
+          "mean_kl": 0.14138631522655487,
+          "std_kl": 0.0009574868083488065,
+          "contractive": false
+        },
+        "kv3": {
+          "lambda": 11.85991058064372,
+          "mean_kl": 0.14147956669330597,
+          "std_kl": 0.0007354155796145441,
+          "contractive": false
+        },
+        "kv4": {
+          "lambda": 11.866644237947776,
+          "mean_kl": 0.14243545631567636,
+          "std_kl": 0.0009111478414219573,
+          "contractive": false
+        },
+        "kv5": {
+          "lambda": 11.86713118095925,
+          "mean_kl": 0.1425048311551412,
+          "std_kl": 1.921193844621586e-05,
+          "contractive": false
+        },
+        "kv6": {
+          "lambda": 11.86231349685716,
+          "mean_kl": 0.14181993901729584,
+          "std_kl": 0.0005076927288519264,
+          "contractive": false
+        },
+        "kv7": {
+          "lambda": 11.866488067538828,
+          "mean_kl": 0.1424132138490677,
+          "std_kl": 7.438918762172796e-05,
+          "contractive": false
+        }
+      },
+      "L16": {
+        "kv0": {
+          "lambda": 11.845835205569843,
+          "mean_kl": 0.1395021378993988,
+          "std_kl": 0.00013808891365303384,
+          "contractive": false
+        },
+        "kv1": {
+          "lambda": 11.85913327006463,
+          "mean_kl": 0.14136963586012521,
+          "std_kl": 0.0006716413656116573,
+          "contractive": false
+        },
+        "kv2": {
+          "lambda": 11.867589806847697,
+          "mean_kl": 0.1425702025492986,
+          "std_kl": 7.32371737624302e-05,
+          "contractive": false
+        },
+        "kv3": {
+          "lambda": 11.85567533286112,
+          "mean_kl": 0.14088163276513418,
+          "std_kl": 0.0009981849183942934,
+          "contractive": false
+        },
+        "kv4": {
+          "lambda": 11.859558632004994,
+          "mean_kl": 0.14142978191375732,
+          "std_kl": 0.0013483344420826791,
+          "contractive": false
+        },
+        "kv5": {
+          "lambda": 11.859867045871596,
+          "mean_kl": 0.14147340754667917,
+          "std_kl": 0.0013101688531097166,
+          "contractive": false
+        },
+        "kv6": {
+          "lambda": 11.867226505758884,
+          "mean_kl": 0.14251841604709625,
+          "std_kl": 0.0,
+          "contractive": false
+        },
+        "kv7": {
+          "lambda": 11.861858470991674,
+          "mean_kl": 0.14175542195638022,
+          "std_kl": 0.001063302132080862,
+          "contractive": false
+        }
+      },
+      "L20": {
+        "kv0": {
+          "lambda": 11.86050565838403,
+          "mean_kl": 0.14156378308931986,
+          "std_kl": 0.0005362632089555671,
+          "contractive": false
+        },
+        "kv1": {
+          "lambda": 11.863112172651597,
+          "mean_kl": 0.1419332524140676,
+          "std_kl": 0.0005395780035859691,
+          "contractive": false
+        },
+        "kv2": {
+          "lambda": 11.863131735057378,
+          "mean_kl": 0.14193602899710336,
+          "std_kl": 0.0008236196646503875,
+          "contractive": false
+        },
+        "kv3": {
+          "lambda": 11.862917892641553,
+          "mean_kl": 0.14190568029880524,
+          "std_kl": 0.0006074340201155311,
+          "contractive": false
+        },
+        "kv4": {
+          "lambda": 11.85579273154337,
+          "mean_kl": 0.14089817305405936,
+          "std_kl": 0.0003651275010496799,
+          "contractive": false
+        },
+        "kv5": {
+          "lambda": 11.84990517447515,
+          "mean_kl": 0.1400710642337799,
+          "std_kl": 0.0,
+          "contractive": false
+        },
+        "kv6": {
+          "lambda": 11.867226505758884,
+          "mean_kl": 0.14251841604709625,
+          "std_kl": 0.0,
+          "contractive": false
+        },
+        "kv7": {
+          "lambda": 11.860247068575031,
+          "mean_kl": 0.14152718087037405,
+          "std_kl": 0.0005333389892404401,
+          "contractive": false
+        }
+      },
+      "L24": {
+        "kv0": {
+          "lambda": 11.868008070324043,
+          "mean_kl": 0.14262984693050385,
+          "std_kl": 0.00011738954528096213,
+          "contractive": false
+        },
+        "kv1": {
+          "lambda": 11.867226505758884,
+          "mean_kl": 0.14251841604709625,
+          "std_kl": 0.0,
+          "contractive": false
+        },
+        "kv2": {
+          "lambda": 11.861587017385393,
+          "mean_kl": 0.1417169471581777,
+          "std_kl": 0.0007693170258466119,
+          "contractive": false
+        },
+        "kv3": {
+          "lambda": 11.86197640734115,
+          "mean_kl": 0.14177214105923971,
+          "std_kl": 0.0005324997719890487,
+          "contractive": false
+        },
+        "kv4": {
+          "lambda": 11.867226505758884,
+          "mean_kl": 0.14251841604709625,
+          "std_kl": 0.0,
+          "contractive": false
+        },
+        "kv5": {
+          "lambda": 11.867226505758884,
+          "mean_kl": 0.14251841604709625,
+          "std_kl": 0.0,
+          "contractive": false
+        },
+        "kv6": {
+          "lambda": 11.865348031317934,
+          "mean_kl": 0.14225095013777414,
+          "std_kl": 0.0004984896625445771,
+          "contractive": false
+        },
+        "kv7": {
+          "lambda": 11.862952719523689,
+          "mean_kl": 0.14191062251726785,
+          "std_kl": 0.000887224691319788,
+          "contractive": false
+        }
+      },
+      "L28": {
+        "kv0": {
+          "lambda": 11.864851974432534,
+          "mean_kl": 0.14218040307362875,
+          "std_kl": 0.0005130788240828096,
+          "contractive": false
+        },
+        "kv1": {
+          "lambda": 11.865914059060936,
+          "mean_kl": 0.1423314909140269,
+          "std_kl": 0.0005391396768392016,
+          "contractive": false
+        },
+        "kv2": {
+          "lambda": 11.867226505758884,
+          "mean_kl": 0.14251841604709625,
+          "std_kl": 0.0,
+          "contractive": false
+        },
+        "kv3": {
+          "lambda": 11.867226505758884,
+          "mean_kl": 0.14251841604709625,
+          "std_kl": 0.0,
+          "contractive": false
+        },
+        "kv4": {
+          "lambda": 11.867226505758884,
+          "mean_kl": 0.14251841604709625,
+          "std_kl": 0.0,
+          "contractive": false
+        },
+        "kv5": {
+          "lambda": 11.861975811737967,
+          "mean_kl": 0.14177205661932626,
+          "std_kl": 0.0005300252407510602,
+          "contractive": false
+        },
+        "kv6": {
+          "lambda": 11.861513306377688,
+          "mean_kl": 0.14170650144418082,
+          "std_kl": 0.0007278198779851255,
+          "contractive": false
+        },
+        "kv7": {
+          "lambda": 11.864562532094771,
+          "mean_kl": 0.1421392560005188,
+          "std_kl": 0.0006556303004513602,
+          "contractive": false
+        }
+      }
+    },
+    "prompt_2": {
+      "L00": {
+        "kv0": {
+          "lambda": 10.97383874853836,
+          "mean_kl": 0.05832807098825773,
+          "std_kl": 0.0007348975810312293,
+          "contractive": false
+        },
+        "kv1": {
+          "lambda": 11.00235780332269,
+          "mean_kl": 0.060015479723612465,
+          "std_kl": 0.0024570689120948564,
+          "contractive": false
+        },
+        "kv2": {
+          "lambda": 11.007090945511496,
+          "mean_kl": 0.060300214836994805,
+          "std_kl": 0.0026026277203356468,
+          "contractive": false
+        },
+        "kv3": {
+          "lambda": 11.024857599047728,
+          "mean_kl": 0.061381121476491295,
+          "std_kl": 0.001712190171151182,
+          "contractive": false
+        },
+        "kv4": {
+          "lambda": 11.01461593660735,
+          "mean_kl": 0.06075568497180939,
+          "std_kl": 0.001716320060896216,
+          "contractive": false
+        },
+        "kv5": {
+          "lambda": 10.987170237466401,
+          "mean_kl": 0.059110877414544426,
+          "std_kl": 0.0008115537665847432,
+          "contractive": false
+        },
+        "kv6": {
+          "lambda": 11.03080655654349,
+          "mean_kl": 0.06174736345807711,
+          "std_kl": 0.0019318103563774644,
+          "contractive": false
+        },
+        "kv7": {
+          "lambda": 11.01827854923147,
+          "mean_kl": 0.060978617519140244,
+          "std_kl": 0.002995837893229764,
+          "contractive": false
+        }
+      },
+      "L04": {
+        "kv0": {
+          "lambda": 11.013054760021962,
+          "mean_kl": 0.06066090861956278,
+          "std_kl": 0.0021632160637463753,
+          "contractive": false
+        },
+        "kv1": {
+          "lambda": 11.02156186455786,
+          "mean_kl": 0.06117915858825048,
+          "std_kl": 0.0018636472696068108,
+          "contractive": false
+        },
+        "kv2": {
+          "lambda": 11.005850786019947,
+          "mean_kl": 0.0602254793047905,
+          "std_kl": 0.002523929591161811,
+          "contractive": false
+        },
+        "kv3": {
+          "lambda": 11.01311426620114,
+          "mean_kl": 0.06066451842586199,
+          "std_kl": 0.00034305251733573403,
+          "contractive": false
+        },
+        "kv4": {
+          "lambda": 11.010836997888601,
+          "mean_kl": 0.060526526222626366,
+          "std_kl": 0.002461948507113356,
+          "contractive": false
+        },
+        "kv5": {
+          "lambda": 11.000028939528113,
+          "mean_kl": 0.059875874469677605,
+          "std_kl": 0.0010843133135332666,
+          "contractive": false
+        },
+        "kv6": {
+          "lambda": 11.005762101605747,
+          "mean_kl": 0.06022013848026594,
+          "std_kl": 0.0013471941149831891,
+          "contractive": false
+        },
+        "kv7": {
+          "lambda": 11.019011137425045,
+          "mean_kl": 0.06102330610156059,
+          "std_kl": 0.001812078270423355,
+          "contractive": false
+        }
+      },
+      "L08": {
+        "kv0": {
+          "lambda": 11.056556325809925,
+          "mean_kl": 0.06335799147685368,
+          "std_kl": 0.00015722530613251426,
+          "contractive": false
+        },
+        "kv1": {
+          "lambda": 10.998445615081991,
+          "mean_kl": 0.05978114654620489,
+          "std_kl": 0.002004956490120252,
+          "contractive": false
+        },
+        "kv2": {
+          "lambda": 11.022115701963662,
+          "mean_kl": 0.06121305127938589,
+          "std_kl": 0.0013648664644384295,
+          "contractive": false
+        },
+        "kv3": {
+          "lambda": 11.027636584745617,
+          "mean_kl": 0.061551935970783234,
+          "std_kl": 0.0030341977907142,
+          "contractive": false
+        },
+        "kv4": {
+          "lambda": 11.042012451527171,
+          "mean_kl": 0.062443189322948456,
+          "std_kl": 0.0017484093269138003,
+          "contractive": false
+        },
+        "kv5": {
+          "lambda": 11.025294419152015,
+          "mean_kl": 0.06140793984134992,
+          "std_kl": 0.0010502790265767745,
+          "contractive": false
+        },
+        "kv6": {
+          "lambda": 11.001397624183308,
+          "mean_kl": 0.05995788176854452,
+          "std_kl": 0.0018576143614991388,
+          "contractive": false
+        },
+        "kv7": {
+          "lambda": 11.016358364896751,
+          "mean_kl": 0.06086163967847824,
+          "std_kl": 0.0024713947907630232,
+          "contractive": false
+        }
+      },
+      "L12": {
+        "kv0": {
+          "lambda": 11.027560746907698,
+          "mean_kl": 0.06154726818203926,
+          "std_kl": 0.0024552891125424986,
+          "contractive": false
+        },
+        "kv1": {
+          "lambda": 11.040335905301331,
+          "mean_kl": 0.06233858813842138,
+          "std_kl": 0.0008187611342880637,
+          "contractive": false
+        },
+        "kv2": {
+          "lambda": 11.020758626823913,
+          "mean_kl": 0.06113003691037496,
+          "std_kl": 0.0019691113324025217,
+          "contractive": false
+        },
+        "kv3": {
+          "lambda": 11.02957067345899,
+          "mean_kl": 0.06167109807332357,
+          "std_kl": 0.0014469842406483887,
+          "contractive": false
+        },
+        "kv4": {
+          "lambda": 11.048757830041069,
+          "mean_kl": 0.06286581605672836,
+          "std_kl": 0.0007466234527969161,
+          "contractive": false
+        },
+        "kv5": {
+          "lambda": 11.031551790978284,
+          "mean_kl": 0.061793396870295204,
+          "std_kl": 0.0007931597860078268,
+          "contractive": false
+        },
+        "kv6": {
+          "lambda": 11.060282193015372,
+          "mean_kl": 0.06359449525674184,
+          "std_kl": 0.0031542929720982525,
+          "contractive": false
+        },
+        "kv7": {
+          "lambda": 11.003279935811197,
+          "mean_kl": 0.060070847471555076,
+          "std_kl": 0.0018188226618260006,
+          "contractive": false
+        }
+      },
+      "L16": {
+        "kv0": {
+          "lambda": 11.070406649804225,
+          "mean_kl": 0.06424162536859512,
+          "std_kl": 0.0007949633199003555,
+          "contractive": false
+        },
+        "kv1": {
+          "lambda": 11.061311049585374,
+          "mean_kl": 0.06365995854139328,
+          "std_kl": 0.0001569431391787714,
+          "contractive": false
+        },
+        "kv2": {
+          "lambda": 11.053423593929251,
+          "mean_kl": 0.06315981845060985,
+          "std_kl": 0.0013606021248155607,
+          "contractive": false
+        },
+        "kv3": {
+          "lambda": 11.05562971872183,
+          "mean_kl": 0.06329931070407231,
+          "std_kl": 0.0005376708586908511,
+          "contractive": false
+        },
+        "kv4": {
+          "lambda": 11.057898711657096,
+          "mean_kl": 0.06344309945901234,
+          "std_kl": 0.0003770386823037062,
+          "contractive": false
+        },
+        "kv5": {
+          "lambda": 11.064353479096097,
+          "mean_kl": 0.06385393440723419,
+          "std_kl": 0.00010507209333765882,
+          "contractive": false
+        },
+        "kv6": {
+          "lambda": 11.06161799093829,
+          "mean_kl": 0.06367950141429901,
+          "std_kl": 0.0,
+          "contractive": false
+        },
+        "kv7": {
+          "lambda": 11.054491933570109,
+          "mean_kl": 0.06322733064492543,
+          "std_kl": 0.0011187895385134548,
+          "contractive": false
+        }
+      },
+      "L20": {
+        "kv0": {
+          "lambda": 11.052759315044272,
+          "mean_kl": 0.0631178766489029,
+          "std_kl": 0.0010698783440923807,
+          "contractive": false
+        },
+        "kv1": {
+          "lambda": 11.064639269332638,
+          "mean_kl": 0.06387218584616979,
+          "std_kl": 0.00027249693680980947,
+          "contractive": false
+        },
+        "kv2": {
+          "lambda": 11.06161799093829,
+          "mean_kl": 0.06367950141429901,
+          "std_kl": 0.0,
+          "contractive": false
+        },
+        "kv3": {
+          "lambda": 11.063726468896327,
+          "mean_kl": 0.06381390988826752,
+          "std_kl": 9.576958330699053e-05,
+          "contractive": false
+        },
+        "kv4": {
+          "lambda": 11.052301442119266,
+          "mean_kl": 0.06308898329734802,
+          "std_kl": 0.0009972115524525499,
+          "contractive": false
+        },
+        "kv5": {
+          "lambda": 11.06161799093829,
+          "mean_kl": 0.06367950141429901,
+          "std_kl": 0.0,
+          "contractive": false
+        },
+        "kv6": {
+          "lambda": 11.06161799093829,
+          "mean_kl": 0.06367950141429901,
+          "std_kl": 0.0,
+          "contractive": false
+        },
+        "kv7": {
+          "lambda": 11.037505103518193,
+          "mean_kl": 0.0621623694896698,
+          "std_kl": 0.0004580160180639727,
+          "contractive": false
+        }
+      },
+      "L24": {
+        "kv0": {
+          "lambda": 11.04680634533293,
+          "mean_kl": 0.06274325400590897,
+          "std_kl": 0.0016396077623694512,
+          "contractive": false
+        },
+        "kv1": {
+          "lambda": 11.06161799093829,
+          "mean_kl": 0.06367950141429901,
+          "std_kl": 0.0,
+          "contractive": false
+        },
+        "kv2": {
+          "lambda": 11.048334718821508,
+          "mean_kl": 0.06283922245105107,
+          "std_kl": 0.0010213760625489405,
+          "contractive": false
+        },
+        "kv3": {
+          "lambda": 11.06161799093829,
+          "mean_kl": 0.06367950141429901,
+          "std_kl": 0.0,
+          "contractive": false
+        },
+        "kv4": {
+          "lambda": 11.06161799093829,
+          "mean_kl": 0.06367950141429901,
+          "std_kl": 0.0,
+          "contractive": false
+        },
+        "kv5": {
+          "lambda": 11.06161799093829,
+          "mean_kl": 0.06367950141429901,
+          "std_kl": 0.0,
+          "contractive": false
+        },
+        "kv6": {
+          "lambda": 11.049437325665538,
+          "mean_kl": 0.06290854761997859,
+          "std_kl": 8.145754995080362e-05,
+          "contractive": false
+        },
+        "kv7": {
+          "lambda": 11.062022109553459,
+          "mean_kl": 0.06370524068673451,
+          "std_kl": 3.640082816390881e-05,
+          "contractive": false
+        }
+      },
+      "L28": {
+        "kv0": {
+          "lambda": 11.06161799093829,
+          "mean_kl": 0.06367950141429901,
+          "std_kl": 0.0,
+          "contractive": false
+        },
+        "kv1": {
+          "lambda": 11.062475710082607,
+          "mean_kl": 0.06373414397239685,
+          "std_kl": 7.72762467447242e-05,
+          "contractive": false
+        },
+        "kv2": {
+          "lambda": 11.06161799093829,
+          "mean_kl": 0.06367950141429901,
+          "std_kl": 0.0,
+          "contractive": false
+        },
+        "kv3": {
+          "lambda": 11.06161799093829,
+          "mean_kl": 0.06367950141429901,
+          "std_kl": 0.0,
+          "contractive": false
+        },
+        "kv4": {
+          "lambda": 11.06161799093829,
+          "mean_kl": 0.06367950141429901,
+          "std_kl": 0.0,
+          "contractive": false
+        },
+        "kv5": {
+          "lambda": 11.06161799093829,
+          "mean_kl": 0.06367950141429901,
+          "std_kl": 0.0,
+          "contractive": false
+        },
+        "kv6": {
+          "lambda": 11.06161799093829,
+          "mean_kl": 0.06367950141429901,
+          "std_kl": 0.0,
+          "contractive": false
+        },
+        "kv7": {
+          "lambda": 11.061691621007595,
+          "mean_kl": 0.06368419031302135,
+          "std_kl": 3.3155520828569975e-06,
+          "contractive": false
+        }
+      }
+    },
+    "prompt_3": {
+      "L00": {
+        "kv0": {
+          "lambda": 11.761021816302858,
+          "mean_kl": 0.12815834085146585,
+          "std_kl": 0.002802970312625701,
+          "contractive": false
+        },
+        "kv1": {
+          "lambda": 11.73963741068757,
+          "mean_kl": 0.12544684608777365,
+          "std_kl": 0.0015492204187556968,
+          "contractive": false
+        },
+        "kv2": {
+          "lambda": 11.741551791458491,
+          "mean_kl": 0.12568722913662592,
+          "std_kl": 0.0023080029607340444,
+          "contractive": false
+        },
+        "kv3": {
+          "lambda": 11.73416291189342,
+          "mean_kl": 0.12476196388403575,
+          "std_kl": 0.0030482005018325395,
+          "contractive": false
+        },
+        "kv4": {
+          "lambda": 11.762674334567174,
+          "mean_kl": 0.12837029993534088,
+          "std_kl": 0.002195307662865583,
+          "contractive": false
+        },
+        "kv5": {
+          "lambda": 11.75232572565624,
+          "mean_kl": 0.1270486960808436,
+          "std_kl": 0.0003635150300093005,
+          "contractive": false
+        },
+        "kv6": {
+          "lambda": 11.7503189069987,
+          "mean_kl": 0.1267939880490303,
+          "std_kl": 0.0032455817863775746,
+          "contractive": false
+        },
+        "kv7": {
+          "lambda": 11.756368557387688,
+          "mean_kl": 0.12756337225437164,
+          "std_kl": 0.0032027315113484036,
+          "contractive": false
+        }
+      },
+      "L04": {
+        "kv0": {
+          "lambda": 11.76022538834909,
+          "mean_kl": 0.12805631260077158,
+          "std_kl": 0.0030230109078244988,
+          "contractive": false
+        },
+        "kv1": {
+          "lambda": 11.748704685284656,
+          "mean_kl": 0.1265894795457522,
+          "std_kl": 0.004616846152472389,
+          "contractive": false
+        },
+        "kv2": {
+          "lambda": 11.794059939193973,
+          "mean_kl": 0.13246317207813263,
+          "std_kl": 0.0008417569661726366,
+          "contractive": false
+        },
+        "kv3": {
+          "lambda": 11.738256338054388,
+          "mean_kl": 0.12527371446291605,
+          "std_kl": 0.0024008253693358654,
+          "contractive": false
+        },
+        "kv4": {
+          "lambda": 11.743840767290306,
+          "mean_kl": 0.1259752536813418,
+          "std_kl": 0.003972961831809009,
+          "contractive": false
+        },
+        "kv5": {
+          "lambda": 11.750006150000726,
+          "mean_kl": 0.12675433854262033,
+          "std_kl": 0.0023866022528959536,
+          "contractive": false
+        },
+        "kv6": {
+          "lambda": 11.75988958267438,
+          "mean_kl": 0.1280133177836736,
+          "std_kl": 0.0016600672792469586,
+          "contractive": false
+        },
+        "kv7": {
+          "lambda": 11.76342535774435,
+          "mean_kl": 0.1284667452176412,
+          "std_kl": 0.0009926020266699696,
+          "contractive": false
+        }
+      },
+      "L08": {
+        "kv0": {
+          "lambda": 11.78209742745665,
+          "mean_kl": 0.13088801999886832,
+          "std_kl": 0.0028851739821219293,
+          "contractive": false
+        },
+        "kv1": {
+          "lambda": 11.735218056303298,
+          "mean_kl": 0.12489367524782817,
+          "std_kl": 0.0007967896833358276,
+          "contractive": false
+        },
+        "kv2": {
+          "lambda": 11.765835093124464,
+          "mean_kl": 0.12877668937047324,
+          "std_kl": 0.0009435168263086291,
+          "contractive": false
+        },
+        "kv3": {
+          "lambda": 11.726103537789486,
+          "mean_kl": 0.12376050154368083,
+          "std_kl": 0.0025252424774797194,
+          "contractive": false
+        },
+        "kv4": {
+          "lambda": 11.771218097494272,
+          "mean_kl": 0.1294717639684677,
+          "std_kl": 0.002806432201794901,
+          "contractive": false
+        },
+        "kv5": {
+          "lambda": 11.76306250647812,
+          "mean_kl": 0.12842013935248056,
+          "std_kl": 0.0022349179960945696,
+          "contractive": false
+        },
+        "kv6": {
+          "lambda": 11.746220694568272,
+          "mean_kl": 0.12627542267243066,
+          "std_kl": 0.0015299489951662287,
+          "contractive": false
+        },
+        "kv7": {
+          "lambda": 11.745114255613407,
+          "mean_kl": 0.12613578389088312,
+          "std_kl": 0.001814399859790701,
+          "contractive": false
+        }
+      },
+      "L12": {
+        "kv0": {
+          "lambda": 11.763811421784554,
+          "mean_kl": 0.12851635118325552,
+          "std_kl": 0.0020932127518136544,
+          "contractive": false
+        },
+        "kv1": {
+          "lambda": 11.797113727535061,
+          "mean_kl": 0.13286830484867096,
+          "std_kl": 0.0006077786289513474,
+          "contractive": false
+        },
+        "kv2": {
+          "lambda": 11.766321163215776,
+          "mean_kl": 0.12883929908275604,
+          "std_kl": 0.001850436310446547,
+          "contractive": false
+        },
+        "kv3": {
+          "lambda": 11.748098812230465,
+          "mean_kl": 0.12651280562082926,
+          "std_kl": 0.0019602788731530123,
+          "contractive": false
+        },
+        "kv4": {
+          "lambda": 11.755214667222921,
+          "mean_kl": 0.12741626302401224,
+          "std_kl": 0.00025850820994620106,
+          "contractive": false
+        },
+        "kv5": {
+          "lambda": 11.752155684136806,
+          "mean_kl": 0.12702709436416626,
+          "std_kl": 0.00023951810660071004,
+          "contractive": false
+        },
+        "kv6": {
+          "lambda": 11.753835047217573,
+          "mean_kl": 0.1272405982017517,
+          "std_kl": 0.0003176057786714563,
+          "contractive": false
+        },
+        "kv7": {
+          "lambda": 11.773455971995382,
+          "mean_kl": 0.12976182997226715,
+          "std_kl": 0.0021125388363437284,
+          "contractive": false
+        }
+      },
+      "L16": {
+        "kv0": {
+          "lambda": 11.73191417858796,
+          "mean_kl": 0.12448172271251678,
+          "std_kl": 0.002137277224699564,
+          "contractive": false
+        },
+        "kv1": {
+          "lambda": 11.772216597182029,
+          "mean_kl": 0.1296011060476303,
+          "std_kl": 0.0020342073562771724,
+          "contractive": false
+        },
+        "kv2": {
+          "lambda": 11.77162743422835,
+          "mean_kl": 0.12952477236588797,
+          "std_kl": 0.0017356954556292457,
+          "contractive": false
+        },
+        "kv3": {
+          "lambda": 11.748544524634726,
+          "mean_kl": 0.12656920651594797,
+          "std_kl": 0.000754495621453451,
+          "contractive": false
+        },
+        "kv4": {
+          "lambda": 11.758016570468575,
+          "mean_kl": 0.12777377168337503,
+          "std_kl": 0.0011799784105189235,
+          "contractive": false
+        },
+        "kv5": {
+          "lambda": 11.755146483829838,
+          "mean_kl": 0.12740757564703623,
+          "std_kl": 0.00017416855479556741,
+          "contractive": false
+        },
+        "kv6": {
+          "lambda": 11.786429080538836,
+          "mean_kl": 0.13145621120929718,
+          "std_kl": 0.0,
+          "contractive": false
+        },
+        "kv7": {
+          "lambda": 11.754095856468544,
+          "mean_kl": 0.12727378805478415,
+          "std_kl": 0.003528277567868104,
+          "contractive": false
+        }
+      },
+      "L20": {
+        "kv0": {
+          "lambda": 11.753924788576128,
+          "mean_kl": 0.12725201745827994,
+          "std_kl": 0.000311270139993629,
+          "contractive": false
+        },
+        "kv1": {
+          "lambda": 11.786429080538836,
+          "mean_kl": 0.13145621120929718,
+          "std_kl": 0.0,
+          "contractive": false
+        },
+        "kv2": {
+          "lambda": 11.786429080538836,
+          "mean_kl": 0.13145621120929718,
+          "std_kl": 0.0,
+          "contractive": false
+        },
+        "kv3": {
+          "lambda": 11.754208207523758,
+          "mean_kl": 0.1272880882024765,
+          "std_kl": 0.00019297858328840955,
+          "contractive": false
+        },
+        "kv4": {
+          "lambda": 11.75441621292305,
+          "mean_kl": 0.12731456756591797,
+          "std_kl": 0.0001585258056893017,
+          "contractive": false
+        },
+        "kv5": {
+          "lambda": 11.786429080538836,
+          "mean_kl": 0.13145621120929718,
+          "std_kl": 0.0,
+          "contractive": false
+        },
+        "kv6": {
+          "lambda": 11.786429080538836,
+          "mean_kl": 0.13145621120929718,
+          "std_kl": 0.0,
+          "contractive": false
+        },
+        "kv7": {
+          "lambda": 11.755038059152378,
+          "mean_kl": 0.12739376227060953,
+          "std_kl": 0.00011865320825666521,
+          "contractive": false
+        }
+      },
+      "L24": {
+        "kv0": {
+          "lambda": 11.76551189253935,
+          "mean_kl": 0.12873507539431253,
+          "std_kl": 0.0019417130991107288,
+          "contractive": false
+        },
+        "kv1": {
+          "lambda": 11.776016986989362,
+          "mean_kl": 0.1300945778687795,
+          "std_kl": 0.0019256403371394855,
+          "contractive": false
+        },
+        "kv2": {
+          "lambda": 11.764810854201615,
+          "mean_kl": 0.12864485879739126,
+          "std_kl": 0.001987926354763835,
+          "contractive": false
+        },
+        "kv3": {
+          "lambda": 11.776070667090561,
+          "mean_kl": 0.13010156154632568,
+          "std_kl": 0.0019157639256384327,
+          "contractive": false
+        },
+        "kv4": {
+          "lambda": 11.75429093104109,
+          "mean_kl": 0.1272986183563868,
+          "std_kl": 0.0003055683093341681,
+          "contractive": false
+        },
+        "kv5": {
+          "lambda": 11.786429080538836,
+          "mean_kl": 0.13145621120929718,
+          "std_kl": 0.0,
+          "contractive": false
+        },
+        "kv6": {
+          "lambda": 11.752553744693476,
+          "mean_kl": 0.12707766890525818,
+          "std_kl": 0.0001404754460868098,
+          "contractive": false
+        },
+        "kv7": {
+          "lambda": 11.786429080538836,
+          "mean_kl": 0.13145621120929718,
+          "std_kl": 0.0,
+          "contractive": false
+        }
+      },
+      "L28": {
+        "kv0": {
+          "lambda": 11.786429080538836,
+          "mean_kl": 0.13145621120929718,
+          "std_kl": 0.0,
+          "contractive": false
+        },
+        "kv1": {
+          "lambda": 11.775612117196896,
+          "mean_kl": 0.13004191716512045,
+          "std_kl": 0.002000113818458235,
+          "contractive": false
+        },
+        "kv2": {
+          "lambda": 11.775893084147434,
+          "mean_kl": 0.13007845977942148,
+          "std_kl": 0.0019484347577091274,
+          "contractive": false
+        },
+        "kv3": {
+          "lambda": 11.786429080538836,
+          "mean_kl": 0.13145621120929718,
+          "std_kl": 0.0,
+          "contractive": false
+        },
+        "kv4": {
+          "lambda": 11.786429080538836,
+          "mean_kl": 0.13145621120929718,
+          "std_kl": 0.0,
+          "contractive": false
+        },
+        "kv5": {
+          "lambda": 11.786429080538836,
+          "mean_kl": 0.13145621120929718,
+          "std_kl": 0.0,
+          "contractive": false
+        },
+        "kv6": {
+          "lambda": 11.786429080538836,
+          "mean_kl": 0.13145621120929718,
+          "std_kl": 0.0,
+          "contractive": false
+        },
+        "kv7": {
+          "lambda": 11.786429080538836,
+          "mean_kl": 0.13145621120929718,
+          "std_kl": 0.0,
+          "contractive": false
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,28 @@
+{
+  "affect": {
+    "avg_sent": 11.312288786482334,
+    "avg_sent_std": 3.1251849537410865,
+    "paren_density": 0.07493728678555027,
+    "paren_density_std": 0.0514509147583073,
+    "fp_density": 0.024906713775972738,
+    "fp_density_std": 0.021107341803770465,
+    "first_period_ratio": 0.4675806451612904,
+    "first_period_ratio_std": 0.203483259863668,
+    "dash_density": 0.34087941628264207,
+    "dash_density_std": 0.29320372629427444
+  },
+  "routine": {
+    "avg_sent": 12.753830579850987,
+    "avg_sent_std": 6.1897769378084515,
+    "paren_density": 0.07427723817323913,
+    "paren_density_std": 0.05119639315805439,
+    "fp_density": 0.012061586481080832,
+    "fp_density_std": 0.02077575068165952,
+    "first_period_ratio": 0.5617517006802721,
+    "first_period_ratio_std": 0.27051835398738927,
+    "dash_density": 0.3956916099773242,
+    "dash_density_std": 0.350561521462656
+  },
+  "n_affect": 62,
+  "n_routine": 294
+}

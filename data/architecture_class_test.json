@@ -1,0 +1,366 @@
+{
+  "timestamp": 1778713282.9196115,
+  "n_ccs": 5,
+  "results": [
+    {
+      "model": "mxbai-embed-large",
+      "type": "transformer",
+      "full_gap": 0.544356,
+      "sum_individual": 0.17442,
+      "interaction_pct": 68.0,
+      "field_gaps": {
+        "semantic_gist": 0.055192,
+        "goal_orientation": 0.037784,
+        "episodic_trace": 0.027182,
+        "constraints": 0.017255,
+        "uncertainty_signals": 0.015317,
+        "relational_map": 0.014775,
+        "focal_entities": 0.004278,
+        "predictive_cue": 0.002636
+      },
+      "ccs_version": 1063
+    },
+    {
+      "model": "nomic-embed-text",
+      "type": "transformer",
+      "full_gap": 0.481024,
+      "sum_individual": 0.107052,
+      "interaction_pct": 77.7,
+      "field_gaps": {
+        "semantic_gist": 0.059027,
+        "goal_orientation": 0.019601,
+        "episodic_trace": 0.012283,
+        "uncertainty_signals": 0.005924,
+        "constraints": 0.004664,
+        "relational_map": 0.002906,
+        "predictive_cue": 0.001605,
+        "focal_entities": 0.001041
+      },
+      "ccs_version": 1063
+    },
+    {
+      "model": "tfidf-5k-bigram",
+      "type": "non-neural",
+      "full_gap": 1.0,
+      "sum_individual": 0.428694,
+      "interaction_pct": 57.1,
+      "field_gaps": {
+        "episodic_trace": 0.143101,
+        "uncertainty_signals": 0.084201,
+        "predictive_cue": 0.051729,
+        "relational_map": 0.044451,
+        "goal_orientation": 0.043504,
+        "semantic_gist": 0.037583,
+        "constraints": 0.013415,
+        "focal_entities": 0.01071
+      },
+      "ccs_version": 1063
+    },
+    {
+      "model": "hash-4096-additive",
+      "type": "non-neural-additive",
+      "full_gap": 1.0,
+      "sum_individual": 0.246662,
+      "interaction_pct": 75.3,
+      "field_gaps": {
+        "episodic_trace": 0.069685,
+        "uncertainty_signals": 0.042643,
+        "relational_map": 0.028858,
+        "goal_orientation": 0.024463,
+        "predictive_cue": 0.023896,
+        "constraints": 0.02331,
+        "semantic_gist": 0.019145,
+        "focal_entities": 0.014662
+      },
+      "ccs_version": 1063
+    },
+    {
+      "model": "mxbai-embed-large",
+      "type": "transformer",
+      "full_gap": 0.481098,
+      "sum_individual": 0.180421,
+      "interaction_pct": 62.5,
+      "field_gaps": {
+        "semantic_gist": 0.039653,
+        "episodic_trace": 0.036253,
+        "goal_orientation": 0.032174,
+        "constraints": 0.0316,
+        "relational_map": 0.01748,
+        "uncertainty_signals": 0.010279,
+        "focal_entities": 0.008144,
+        "predictive_cue": 0.004838
+      },
+      "ccs_version": 1055
+    },
+    {
+      "model": "nomic-embed-text",
+      "type": "transformer",
+      "full_gap": 0.484778,
+      "sum_individual": 0.086265,
+      "interaction_pct": 82.2,
+      "field_gaps": {
+        "semantic_gist": 0.056502,
+        "episodic_trace": 0.009512,
+        "goal_orientation": 0.007485,
+        "constraints": 0.004661,
+        "uncertainty_signals": 0.00354,
+        "relational_map": 0.002376,
+        "predictive_cue": 0.001282,
+        "focal_entities": 0.000907
+      },
+      "ccs_version": 1055
+    },
+    {
+      "model": "tfidf-5k-bigram",
+      "type": "non-neural",
+      "full_gap": 1.0,
+      "sum_individual": 0.429466,
+      "interaction_pct": 57.1,
+      "field_gaps": {
+        "episodic_trace": 0.155923,
+        "uncertainty_signals": 0.089197,
+        "relational_map": 0.050846,
+        "predictive_cue": 0.044477,
+        "goal_orientation": 0.038928,
+        "semantic_gist": 0.023952,
+        "constraints": 0.015285,
+        "focal_entities": 0.010859
+      },
+      "ccs_version": 1055
+    },
+    {
+      "model": "hash-4096-additive",
+      "type": "non-neural-additive",
+      "full_gap": 1.0,
+      "sum_individual": 0.271122,
+      "interaction_pct": 72.9,
+      "field_gaps": {
+        "episodic_trace": 0.070945,
+        "uncertainty_signals": 0.045441,
+        "relational_map": 0.037443,
+        "predictive_cue": 0.028595,
+        "constraints": 0.026496,
+        "goal_orientation": 0.023671,
+        "semantic_gist": 0.022287,
+        "focal_entities": 0.016245
+      },
+      "ccs_version": 1055
+    },
+    {
+      "model": "mxbai-embed-large",
+      "type": "transformer",
+      "full_gap": 0.528743,
+      "sum_individual": 0.186393,
+      "interaction_pct": 64.7,
+      "field_gaps": {
+        "semantic_gist": 0.054353,
+        "constraints": 0.035289,
+        "goal_orientation": 0.034734,
+        "episodic_trace": 0.028031,
+        "relational_map": 0.011141,
+        "uncertainty_signals": 0.009463,
+        "focal_entities": 0.00732,
+        "predictive_cue": 0.006061
+      },
+      "ccs_version": 1053
+    },
+    {
+      "model": "nomic-embed-text",
+      "type": "transformer",
+      "full_gap": 0.488607,
+      "sum_individual": 0.075027,
+      "interaction_pct": 84.6,
+      "field_gaps": {
+        "semantic_gist": 0.039504,
+        "goal_orientation": 0.01107,
+        "episodic_trace": 0.01079,
+        "uncertainty_signals": 0.004394,
+        "constraints": 0.003256,
+        "relational_map": 0.003039,
+        "predictive_cue": 0.001658,
+        "focal_entities": 0.001315
+      },
+      "ccs_version": 1053
+    },
+    {
+      "model": "tfidf-5k-bigram",
+      "type": "non-neural",
+      "full_gap": 1.0,
+      "sum_individual": 0.45914,
+      "interaction_pct": 54.1,
+      "field_gaps": {
+        "episodic_trace": 0.144902,
+        "predictive_cue": 0.068851,
+        "uncertainty_signals": 0.062588,
+        "relational_map": 0.062571,
+        "goal_orientation": 0.049933,
+        "semantic_gist": 0.044122,
+        "constraints": 0.016391,
+        "focal_entities": 0.009781
+      },
+      "ccs_version": 1053
+    },
+    {
+      "model": "hash-4096-additive",
+      "type": "non-neural-additive",
+      "full_gap": 0.986875,
+      "sum_individual": 0.290097,
+      "interaction_pct": 70.6,
+      "field_gaps": {
+        "episodic_trace": 0.07607,
+        "uncertainty_signals": 0.046635,
+        "relational_map": 0.035759,
+        "predictive_cue": 0.030909,
+        "goal_orientation": 0.02879,
+        "constraints": 0.028616,
+        "semantic_gist": 0.025955,
+        "focal_entities": 0.017363
+      },
+      "ccs_version": 1053
+    },
+    {
+      "model": "mxbai-embed-large",
+      "type": "transformer",
+      "full_gap": 0.514241,
+      "sum_individual": 0.107944,
+      "interaction_pct": 79.0,
+      "field_gaps": {
+        "semantic_gist": 0.029864,
+        "goal_orientation": 0.022424,
+        "episodic_trace": 0.0222,
+        "constraints": 0.009278,
+        "focal_entities": 0.007408,
+        "relational_map": 0.006496,
+        "predictive_cue": 0.00522,
+        "uncertainty_signals": 0.005055
+      },
+      "ccs_version": 1050
+    },
+    {
+      "model": "nomic-embed-text",
+      "type": "transformer",
+      "full_gap": 0.517465,
+      "sum_individual": 0.102487,
+      "interaction_pct": 80.2,
+      "field_gaps": {
+        "semantic_gist": 0.045805,
+        "goal_orientation": 0.023295,
+        "episodic_trace": 0.013672,
+        "uncertainty_signals": 0.007639,
+        "constraints": 0.005487,
+        "relational_map": 0.003156,
+        "predictive_cue": 0.002216,
+        "focal_entities": 0.001217
+      },
+      "ccs_version": 1050
+    },
+    {
+      "model": "tfidf-5k-bigram",
+      "type": "non-neural",
+      "full_gap": 1.0,
+      "sum_individual": 0.466084,
+      "interaction_pct": 53.4,
+      "field_gaps": {
+        "episodic_trace": 0.143076,
+        "predictive_cue": 0.078422,
+        "uncertainty_signals": 0.068612,
+        "semantic_gist": 0.062825,
+        "goal_orientation": 0.04501,
+        "relational_map": 0.040103,
+        "constraints": 0.017484,
+        "focal_entities": 0.010552
+      },
+      "ccs_version": 1050
+    },
+    {
+      "model": "hash-4096-additive",
+      "type": "non-neural-additive",
+      "full_gap": 1.0,
+      "sum_individual": 0.270424,
+      "interaction_pct": 73.0,
+      "field_gaps": {
+        "episodic_trace": 0.077257,
+        "uncertainty_signals": 0.044877,
+        "goal_orientation": 0.031969,
+        "relational_map": 0.030824,
+        "predictive_cue": 0.02471,
+        "constraints": 0.024457,
+        "semantic_gist": 0.021132,
+        "focal_entities": 0.015198
+      },
+      "ccs_version": 1050
+    },
+    {
+      "model": "mxbai-embed-large",
+      "type": "transformer",
+      "full_gap": 0.54166,
+      "sum_individual": 0.105572,
+      "interaction_pct": 80.5,
+      "field_gaps": {
+        "semantic_gist": 0.030738,
+        "goal_orientation": 0.022441,
+        "episodic_trace": 0.018913,
+        "constraints": 0.011227,
+        "relational_map": 0.007311,
+        "focal_entities": 0.006035,
+        "uncertainty_signals": 0.005045,
+        "predictive_cue": 0.003862
+      },
+      "ccs_version": 1049
+    },
+    {
+      "model": "nomic-embed-text",
+      "type": "transformer",
+      "full_gap": 0.510075,
+      "sum_individual": 0.092166,
+      "interaction_pct": 81.9,
+      "field_gaps": {
+        "semantic_gist": 0.0511,
+        "goal_orientation": 0.016551,
+        "episodic_trace": 0.010547,
+        "uncertainty_signals": 0.005149,
+        "constraints": 0.003945,
+        "relational_map": 0.002391,
+        "predictive_cue": 0.001531,
+        "focal_entities": 0.000952
+      },
+      "ccs_version": 1049
+    },
+    {
+      "model": "tfidf-5k-bigram",
+      "type": "non-neural",
+      "full_gap": 1.0,
+      "sum_individual": 0.428151,
+      "interaction_pct": 57.2,
+      "field_gaps": {
+        "episodic_trace": 0.144791,
+        "uncertainty_signals": 0.07001,
+        "predictive_cue": 0.062751,
+        "goal_orientation": 0.045253,
+        "relational_map": 0.041324,
+        "semantic_gist": 0.034537,
+        "constraints": 0.018307,
+        "focal_entities": 0.011177
+      },
+      "ccs_version": 1049
+    },
+    {
+      "model": "hash-4096-additive",
+      "type": "non-neural-additive",
+      "full_gap": 1.0,
+      "sum_individual": 0.241563,
+      "interaction_pct": 75.8,
+      "field_gaps": {
+        "episodic_trace": 0.068573,
+        "uncertainty_signals": 0.04016,
+        "goal_orientation": 0.028391,
+        "relational_map": 0.02783,
+        "constraints": 0.022121,
+        "predictive_cue": 0.021826,
+        "semantic_gist": 0.018797,
+        "focal_entities": 0.013864
+      },
+      "ccs_version": 1049
+    }
+  ]
+}

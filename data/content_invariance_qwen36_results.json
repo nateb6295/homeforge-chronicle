@@ -1,0 +1,37 @@
+{
+  "chronicle-qwen36": {
+    "research": {
+      "sigma1_dominance": 72.32,
+      "singular_values": [
+        0.5312,
+        0.3115,
+        0.1047,
+        0.0,
+        0.0
+      ],
+      "final_chars": 828
+    },
+    "personal": {
+      "sigma1_dominance": 51.49,
+      "singular_values": [
+        0.6037,
+        0.3917,
+        0.3034,
+        0.2601,
+        0.1738
+      ],
+      "final_chars": 1211
+    },
+    "technical": {
+      "sigma1_dominance": 53.97,
+      "singular_values": [
+        1.1288,
+        0.7687,
+        0.562,
+        0.3103,
+        0.2897
+      ],
+      "final_chars": 1122
+    }
+  }
+}

@@ -24,7 +24,7 @@ PROVIDERS = {
         "format": "anthropic",
         "url": "https://api.anthropic.com/v1/messages",
         "model": "claude-opus-4-5",
-        "key_env": "ANTHROPIC_API_KEY",
+        "key_env": "CHRONICLE_ANTHROPIC_KEY",
         "ua": "chronicle-substrate-claude/1.0",
     },
     "groq-qwen-32b": {

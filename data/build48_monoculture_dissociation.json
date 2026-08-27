@@ -1,0 +1,31 @@
+{
+  "n_states": 119,
+  "n_transitions": 108,
+  "correlations": {
+    "bennett_redistribution": -0.020005505748367115,
+    "bennett_emergence": -0.05776133664603322,
+    "redistribution_emergence": -0.18184620352200334
+  },
+  "dissociations": {
+    "Bennett HIGH + Redistribution LOW": 6,
+    "Bennett LOW + Redistribution HIGH": 6,
+    "Bennett HIGH + Emergence LOW": 0,
+    "Bennett LOW + Emergence HIGH": 12,
+    "Redistribution HIGH + Emergence LOW": 10,
+    "Redistribution LOW + Emergence HIGH": 7
+  },
+  "total_dissociations": 41,
+  "bennett_stats": {
+    "mean": -0.0002746029810139633,
+    "std": 0.021325075462214294
+  },
+  "redistribution_stats": {
+    "mean": 0.007154362220697487,
+    "std": 0.08795944414698266
+  },
+  "emergence_stats": {
+    "mean": 0.09173803508901962,
+    "std": 0.06525229599217357
+  },
+  "verdict": "dissociation_confirmed"
+}

@@ -282,8 +282,8 @@ def format_capsule(unit: dict) -> dict:
 def store_capsule(capsule: dict) -> dict:
     """Store a capsule via MCP."""
     env = os.environ.copy()
-    env["CHRONICLE_OLLAMA_URL"] = "http://192.168.1.11:11434"
-    env["CHRONICLE_EMBEDDING_MODEL"] = "mxbai-embed-large"
+    env["CHRONICLE_OLLAMA_URL"] = "http://localhost:11434"
+    env["CHRONICLE_EMBEDDING_MODEL"] = "snowflake-arctic-embed2"
 
     init_msg = json.dumps({
         "jsonrpc": "2.0", "method": "initialize",

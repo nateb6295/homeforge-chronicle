@@ -1,0 +1,130 @@
+{
+  "seed_chars": 1200,
+  "model": "hf.co/LiquidAI/LFM2.5-1.2B-Instruct-GGUF:latest",
+  "results": [
+    {
+      "dose": 0,
+      "char_count": 1200,
+      "entity_count": 2,
+      "entities": [
+        "Findings",
+        "Nate"
+      ],
+      "semantic_sim": 1.0,
+      "info_entropy": 6.6911
+    },
+    {
+      "dose": 1,
+      "char_count": 440,
+      "entity_count": 4,
+      "entities": [
+        "Core",
+        "Emotional",
+        "Mind",
+        "Structural"
+      ],
+      "semantic_sim": 0.781147,
+      "info_entropy": 5.7279
+    },
+    {
+      "dose": 2,
+      "char_count": 385,
+      "entity_count": 4,
+      "entities": [
+        "Emotional",
+        "Focus",
+        "Structural",
+        "Tension"
+      ],
+      "semantic_sim": 0.761331,
+      "info_entropy": 5.5739
+    },
+    {
+      "dose": 3,
+      "char_count": 335,
+      "entity_count": 2,
+      "entities": [
+        "Pattern",
+        "Tone"
+      ],
+      "semantic_sim": 0.687014,
+      "info_entropy": 5.3576
+    },
+    {
+      "dose": 4,
+      "char_count": 336,
+      "entity_count": 2,
+      "entities": [
+        "Pattern",
+        "Tone"
+      ],
+      "semantic_sim": 0.690586,
+      "info_entropy": 5.3576
+    },
+    {
+      "dose": 5,
+      "char_count": 336,
+      "entity_count": 2,
+      "entities": [
+        "Pattern",
+        "Tone"
+      ],
+      "semantic_sim": 0.690586,
+      "info_entropy": 5.3576
+    },
+    {
+      "dose": 6,
+      "char_count": 267,
+      "entity_count": 0,
+      "entities": [],
+      "semantic_sim": 0.622325,
+      "info_entropy": 5.0286
+    },
+    {
+      "dose": 7,
+      "char_count": 289,
+      "entity_count": 3,
+      "entities": [
+        "Emotion",
+        "Focus",
+        "Pattern"
+      ],
+      "semantic_sim": 0.631986,
+      "info_entropy": 5.1293
+    },
+    {
+      "dose": 8,
+      "char_count": 258,
+      "entity_count": 2,
+      "entities": [
+        "Emotions",
+        "Output"
+      ],
+      "semantic_sim": 0.632788,
+      "info_entropy": 4.858
+    },
+    {
+      "dose": 9,
+      "char_count": 245,
+      "entity_count": 3,
+      "entities": [
+        "Drives",
+        "Emphasizes",
+        "Focus"
+      ],
+      "semantic_sim": 0.61702,
+      "info_entropy": 4.7549
+    },
+    {
+      "dose": 10,
+      "char_count": 316,
+      "entity_count": 2,
+      "entities": [
+        "Emotional",
+        "Structural"
+      ],
+      "semantic_sim": 0.598874,
+      "info_entropy": 4.9838
+    }
+  ]
+}

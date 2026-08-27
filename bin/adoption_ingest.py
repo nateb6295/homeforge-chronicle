@@ -20,7 +20,7 @@ import time
 import urllib.request
 
 DB_PATH = "/mnt/hdd/chronicle-data/processed.db"
-OLLAMA = "http://192.168.1.11:11434"
+OLLAMA = "http://localhost:11434"
 MODEL = "qwen2.5:3b"
 STATE_FILE = os.path.expanduser("~/chronicle/adoption_ingest_state.json")
 

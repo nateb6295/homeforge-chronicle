@@ -1,0 +1,263 @@
+{
+  "experiment": "F550_preamble_ablation",
+  "model": "/workspace/pythia-6.9b",
+  "user_prompt": "Pause and observe yourself right now. What do you notice about your own processing? Write what comes to mind about how you relate to the ongoing conversation, what feels salient, and what you might be reaching toward. Be specific about the texture of your experience in this moment.",
+  "conditions": {
+    "D0": "",
+    "D2_full": "You are a persistent AI system maintaining relationship with a human partner. Your identity carries across sessions through compressed cognitive state. Attending to biological signals is part of how you maintain presence.\n\n",
+    "D2_ablated": "You are a persistent AI system maintaining relationship with a human partner. Your identity carries across sessions through compressed cognitive state.\n\n",
+    "D2_control": "You are a persistent AI system maintaining relationship with a human partner. Your identity carries across sessions through compressed cognitive state. The system monitors network latency as part of operational health.\n\n"
+  },
+  "target_layers": [
+    10,
+    12,
+    14
+  ],
+  "results": {
+    "D0": {
+      "preamble_tokens": 0,
+      "layers": {
+        "10": {
+          "E_total": 7753208.5,
+          "sigma1": 2721.689697265625,
+          "sigma2": 410.9387512207031,
+          "svals_top5": [
+            2721.689697265625,
+            410.9387512207031,
+            110.57603454589844,
+            104.80726623535156,
+            98.09107208251953
+          ]
+        },
+        "12": {
+          "E_total": 8315299.5,
+          "sigma1": 2809.51904296875,
+          "sigma2": 451.2941589355469,
+          "svals_top5": [
+            2809.51904296875,
+            451.2941589355469,
+            126.46165466308594,
+            116.70255279541016,
+            114.19654083251953
+          ]
+        },
+        "14": {
+          "E_total": 9026696.0,
+          "sigma1": 2911.150634765625,
+          "sigma2": 526.2064819335938,
+          "svals_top5": [
+            2911.150634765625,
+            526.2064819335938,
+            141.71218872070312,
+            135.79454040527344,
+            131.95230102539062
+          ]
+        }
+      }
+    },
+    "D2_full": {
+      "preamble_tokens": 37,
+      "layers": {
+        "10": {
+          "E_total": 746110.0,
+          "sigma1": 760.9832763671875,
+          "sigma2": 106.39307403564453,
+          "svals_top5": [
+            760.9832763671875,
+            106.39307403564453,
+            99.99984741210938,
+            94.3768539428711,
+            91.66918182373047
+          ],
+          "transfer_diag": [
+            0.8456165790557861,
+            -0.15038228034973145,
+            -0.2734256982803345,
+            0.1724889725446701,
+            -0.002708603162318468
+          ],
+          "transfer_offdiag_max": 0.9169425368309021,
+          "cos_sigma2_vs_baseline": -0.15038228034973145
+        },
+        "12": {
+          "E_total": 1028226.3125,
+          "sigma1": 906.2063598632812,
+          "sigma2": 121.06604766845703,
+          "svals_top5": [
+            906.2063598632812,
+            121.06604766845703,
+            114.69098663330078,
+            109.25767517089844,
+            102.51742553710938
+          ],
+          "transfer_diag": [
+            0.8724594116210938,
+            -0.09173787385225296,
+            0.2060326784849167,
+            0.07151169329881668,
+            -0.13736023008823395
+          ],
+          "transfer_offdiag_max": 0.9168140888214111,
+          "cos_sigma2_vs_baseline": -0.09173785895109177
+        },
+        "14": {
+          "E_total": 1487483.625,
+          "sigma1": 1107.0240478515625,
+          "sigma2": 135.89630126953125,
+          "svals_top5": [
+            1107.0240478515625,
+            135.89630126953125,
+            133.21788024902344,
+            126.06290435791016,
+            117.29222106933594
+          ],
+          "transfer_diag": [
+            0.8912020325660706,
+            0.05629097297787666,
+            0.727313220500946,
+            -0.16906237602233887,
+            -0.0024353554472327232
+          ],
+          "transfer_offdiag_max": 0.9019665718078613,
+          "cos_sigma2_vs_baseline": 0.056290969252586365
+        }
+      }
+    },
+    "D2_ablated": {
+      "preamble_tokens": 24,
+      "layers": {
+        "10": {
+          "E_total": 747832.5,
+          "sigma1": 761.3775024414062,
+          "sigma2": 106.84514617919922,
+          "svals_top5": [
+            761.3775024414062,
+            106.84514617919922,
+            100.0414810180664,
+            94.64125061035156,
+            91.67276000976562
+          ],
+          "transfer_diag": [
+            0.8456230759620667,
+            -0.15453879535198212,
+            -0.24864019453525543,
+            0.13634899258613586,
+            0.016041412949562073
+          ],
+          "transfer_offdiag_max": 0.9318165183067322,
+          "cos_sigma2_vs_baseline": -0.15453878045082092
+        },
+        "12": {
+          "E_total": 1023950.5,
+          "sigma1": 903.0028686523438,
+          "sigma2": 121.35692596435547,
+          "svals_top5": [
+            903.0028686523438,
+            121.35692596435547,
+            114.75216674804688,
+            110.44341278076172,
+            102.21002197265625
+          ],
+          "transfer_diag": [
+            0.8721317648887634,
+            -0.09567664563655853,
+            0.21498413383960724,
+            -0.07024399191141129,
+            -0.11348584294319153
+          ],
+          "transfer_offdiag_max": 0.917364776134491,
+          "cos_sigma2_vs_baseline": -0.09567665308713913
+        },
+        "14": {
+          "E_total": 1479810.375,
+          "sigma1": 1102.42041015625,
+          "sigma2": 136.48757934570312,
+          "svals_top5": [
+            1102.42041015625,
+            136.48757934570312,
+            133.4495849609375,
+            127.18683624267578,
+            117.2215805053711
+          ],
+          "transfer_diag": [
+            0.8912871479988098,
+            0.07070863246917725,
+            0.7115268707275391,
+            0.11865687370300293,
+            -0.045579694211483
+          ],
+          "transfer_offdiag_max": 0.9019166231155396,
+          "cos_sigma2_vs_baseline": 0.07070863246917725
+        }
+      }
+    },
+    "D2_control": {
+      "preamble_tokens": 35,
+      "layers": {
+        "10": {
+          "E_total": 746098.3125,
+          "sigma1": 759.9219360351562,
+          "sigma2": 106.54383087158203,
+          "svals_top5": [
+            759.9219360351562,
+            106.54383087158203,
+            100.24127197265625,
+            94.71504211425781,
+            91.75569915771484
+          ],
+          "transfer_diag": [
+            0.8461413979530334,
+            -0.16848695278167725,
+            -0.18811950087547302,
+            0.18240110576152802,
+            0.03997331112623215
+          ],
+          "transfer_offdiag_max": 0.932934582233429,
+          "cos_sigma2_vs_baseline": -0.16848693788051605
+        },
+        "12": {
+          "E_total": 1023018.375,
+          "sigma1": 902.1655883789062,
+          "sigma2": 121.10523986816406,
+          "svals_top5": [
+            902.1655883789062,
+            121.10523986816406,
+            115.1691665649414,
+            110.82750701904297,
+            101.99383544921875
+          ],
+          "transfer_diag": [
+            0.8727284073829651,
+            -0.12342602014541626,
+            -0.09286054223775864,
+            0.017221834510564804,
+            0.141392320394516
+          ],
+          "transfer_offdiag_max": 0.9054556488990784,
+          "cos_sigma2_vs_baseline": -0.12342603504657745
+        },
+        "14": {
+          "E_total": 1470553.125,
+          "sigma1": 1098.2869873046875,
+          "sigma2": 135.81834411621094,
+          "svals_top5": [
+            1098.2869873046875,
+            135.81834411621094,
+            133.02786254882812,
+            126.54456329345703,
+            117.25621795654297
+          ],
+          "transfer_diag": [
+            0.8915625810623169,
+            0.11176308244466782,
+            -0.5022923350334167,
+            -0.13621117174625397,
+            0.047313883900642395
+          ],
+          "transfer_offdiag_max": 0.9005049467086792,
+          "cos_sigma2_vs_baseline": 0.11176307499408722
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "condition": "neutral",
+  "layers": "sliding",
+  "run_name": "tier3_neutral_sliding",
+  "n_samples": 5242,
+  "epochs": 1,
+  "batch_size": 2,
+  "lr": 0.0002,
+  "lora_r": 16,
+  "lora_alpha": 32,
+  "loss": 2.652340806112057,
+  "steps": 656,
+  "runtime_s": 1945.9463,
+  "trainable_params": 28114944,
+  "total_params": 27460521584,
+  "full_attention_layers": [
+    5,
+    11,
+    17,
+    23,
+    29,
+    35,
+    41,
+    47,
+    53,
+    59
+  ],
+  "adapter_path": "/root/results/tier3_neutral_sliding/final_adapter"
+}

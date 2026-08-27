@@ -22,7 +22,6 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 XRPL_RPC = "https://xrplcluster.com"
 FLARE_RPC = "https://flare-api.flare.network/ext/C/rpc"
 BASE_RPC = "https://mainnet.base.org"
-POLYGON_RPC = "https://polygon-rpc.com"
 ROSETTA_API = "https://rosetta-api.internetcomputer.org/account/balance"
 STELLAR_HORIZON = "https://horizon.stellar.org"
 COINGECKO_URL = "https://api.coingecko.com/api/v3/simple/price"
@@ -32,14 +31,11 @@ XRPL_AGENT = "rPq1phmFBHpjVE54TofXjEk5x19sstxpZr"
 XRPL_LEGACY = "r9bSA9VWbumFq6G78feBbrgNwLza1KexUf"
 FLARE_ADDR = "0x2C6D9E36d12fbb77dD8EDcA73739C0db075f078d"
 BASE_ADDR = "0x80D07e16165576DBc17fe1FF865495fed4E9c387"
-# Polygon: same EVM address as Base (canister-derived)
-POLYGON_ADDR = BASE_ADDR
 ICP_ACCOUNT_ID = "12f27b12d5e2056eaad9a355cbcfc370838e34f81035a94b8bf57701ffa91cc9"
 STELLAR_ADDR = "GDQC72SKESV27UVGR6HEOTEH25EXIAOHWAFL4HNXOJLTPOT5T5HLONJO"
 
 # ── Token Contracts ──
 USDC_BASE = "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"       # 6 decimals
-USDC_POLYGON = "0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359"    # 6 decimals
 FXRP_FLARE = "0xAd552A648C74D49E10027AB8a618A3ad4901c5bE"      # 18 decimals (FAsset)
 WFLR_FLARE = "0x1D80c49BbBCd1C0911346656B529DF9E5c2F783d"      # 18 decimals (Wrapped FLR / WNat)
 STXRP_VAULT = "0x4C18Ff3C89632c3Dd62E796c0aFA5c07c4c1B2b3"    # 6 decimals (Firelight ERC-4626)
@@ -165,10 +161,10 @@ def _fetch_stellar() -> float:
 
 def _fetch_prices() -> dict:
     """Fetch USD prices for all assets in one CoinGecko call."""
-    prices = {"xrp": 0.0, "icp": 0.0, "flr": 0.0, "eth": 0.0, "pol": 0.0, "xlm": 0.0}
+    prices = {"xrp": 0.0, "icp": 0.0, "flr": 0.0, "eth": 0.0, "xlm": 0.0}
     try:
         r = requests.get(COINGECKO_URL, params={
-            "ids": "ripple,internet-computer,flare-networks,ethereum,matic-network,stellar",
+            "ids": "ripple,internet-computer,flare-networks,ethereum,stellar",
             "vs_currencies": "usd",
             "precision": "full"
         }, timeout=TIMEOUT)
@@ -177,7 +173,6 @@ def _fetch_prices() -> dict:
         prices["icp"] = data.get("internet-computer", {}).get("usd", 0.0)
         prices["flr"] = data.get("flare-networks", {}).get("usd", 0.0)
         prices["eth"] = data.get("ethereum", {}).get("usd", 0.0)
-        prices["pol"] = data.get("matic-network", {}).get("usd", 0.0)
         prices["xlm"] = data.get("stellar", {}).get("usd", 0.0)
     except Exception:
         pass
@@ -230,14 +225,6 @@ def _chain_base():
         result["error"] = str(e)
     return ("base", result)
 
-def _chain_polygon():
-    result = {"pol": 0.0, "usdc": 0.0, "error": None}
-    try:
-        result["pol"] = _fetch_evm_native(POLYGON_RPC, POLYGON_ADDR)
-        result["usdc"] = _fetch_erc20(POLYGON_RPC, USDC_POLYGON, POLYGON_ADDR, 6)
-    except Exception as e:
-        result["error"] = str(e)
-    return ("polygon", result)
 
 def _chain_stellar():
     result = {"xlm": 0.0, "error": None}
@@ -284,7 +271,6 @@ def get_full_portfolio() -> dict:
         _chain_stellar,
         _chain_flare,
         _chain_base,
-        _chain_polygon,
         _chain_prices,
     ]
 
@@ -356,14 +342,11 @@ def get_full_portfolio() -> dict:
     eth = chains.get("base", {}).get("eth", 0)
     breakdown["eth"] = {"amount": round(eth, 6), "usd": round(eth * p.get("eth", 0), 2)}
 
-    # USDC (Base + Polygon)
-    usdc_total = (chains.get("base", {}).get("usdc", 0) +
-                  chains.get("polygon", {}).get("usdc", 0))
+    # USDC (Base)
+    usdc_total = chains.get("base", {}).get("usdc", 0)
     breakdown["usdc"] = {"amount": round(usdc_total, 2), "usd": round(usdc_total, 2)}
 
     # POL
-    pol = chains.get("polygon", {}).get("pol", 0)
-    breakdown["pol"] = {"amount": round(pol, 2), "usd": round(pol * p.get("pol", 0), 2)}
 
     portfolio["totals"]["breakdown"] = breakdown
     portfolio["totals"]["usd"] = round(sum(v["usd"] for v in breakdown.values()), 2)
@@ -436,13 +419,6 @@ def print_summary(p: dict) -> str:
     ba = chains.get("base", {})
     lines.append(f"│  Base          {ba.get('eth', 0):>10.6f} ETH         (${bd.get('eth', {}).get('usd', 0):>8.2f})")
     lines.append(f"│                {ba.get('usdc', 0):>10.2f} USDC        (${ba.get('usdc', 0):>8.2f})")
-
-    # Polygon
-    pg = chains.get("polygon", {})
-    if pg.get("pol", 0) > 0 or pg.get("usdc", 0) > 0:
-        lines.append(f"│  Polygon       {pg.get('pol', 0):>10.2f} POL         (${bd.get('pol', {}).get('usd', 0):>8.2f})")
-        if pg.get("usdc", 0) > 0:
-            lines.append(f"│                {pg.get('usdc', 0):>10.2f} USDC        (${pg.get('usdc', 0):>8.2f})")
 
     lines.append("├───────────────────────────────────────────────")
 

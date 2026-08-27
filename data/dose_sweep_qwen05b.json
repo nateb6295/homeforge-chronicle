@@ -1,0 +1,230 @@
+{
+  "seed_chars": 1200,
+  "model": "qwen2.5:0.5b",
+  "results": [
+    {
+      "char_count": 1200,
+      "word_count": 200,
+      "entity_count": 3,
+      "entities": [
+        "Findi",
+        "Gist",
+        "Nate"
+      ],
+      "semantic_sim": 1.0,
+      "info_entropy": 6.7244,
+      "unique_ratio": 0.68,
+      "dose": 0
+    },
+    {
+      "char_count": 392,
+      "word_count": 45,
+      "entity_count": 4,
+      "entities": [
+        "Core",
+        "Emotional",
+        "Nate",
+        "Structural"
+      ],
+      "semantic_sim": 0.73938,
+      "info_entropy": 5.4474,
+      "unique_ratio": 0.9778,
+      "dose": 1,
+      "compress_time": 4.0,
+      "compression_ratio": 0.327
+    },
+    {
+      "char_count": 327,
+      "word_count": 38,
+      "entity_count": 6,
+      "entities": [
+        "Constraints",
+        "Emotion",
+        "Focus",
+        "Insight",
+        "Nate",
+        "Pattern"
+      ],
+      "semantic_sim": 0.714275,
+      "info_entropy": 5.2479,
+      "unique_ratio": 1.0,
+      "dose": 2,
+      "compress_time": 2.0,
+      "compression_ratio": 0.834
+    },
+    {
+      "char_count": 309,
+      "word_count": 35,
+      "entity_count": 5,
+      "entities": [
+        "Emotion",
+        "Focus",
+        "Insight",
+        "Nate",
+        "Pattern"
+      ],
+      "semantic_sim": 0.753411,
+      "info_entropy": 5.1293,
+      "unique_ratio": 1.0,
+      "dose": 3,
+      "compress_time": 1.8,
+      "compression_ratio": 0.945
+    },
+    {
+      "char_count": 285,
+      "word_count": 33,
+      "entity_count": 4,
+      "entities": [
+        "Emotion",
+        "Insight",
+        "Nate",
+        "Pattern"
+      ],
+      "semantic_sim": 0.74171,
+      "info_entropy": 5.0444,
+      "unique_ratio": 1.0,
+      "dose": 4,
+      "compress_time": 1.7,
+      "compression_ratio": 0.922
+    },
+    {
+      "char_count": 315,
+      "word_count": 37,
+      "entity_count": 4,
+      "entities": [
+        "Focus",
+        "Insight",
+        "Nate",
+        "Pattern"
+      ],
+      "semantic_sim": 0.71326,
+      "info_entropy": 5.2095,
+      "unique_ratio": 1.0,
+      "dose": 5,
+      "compress_time": 1.8,
+      "compression_ratio": 1.105
+    },
+    {
+      "char_count": 317,
+      "word_count": 36,
+      "entity_count": 4,
+      "entities": [
+        "Insight",
+        "Nate",
+        "Pattern",
+        "Prioritizes"
+      ],
+      "semantic_sim": 0.71276,
+      "info_entropy": 5.1699,
+      "unique_ratio": 1.0,
+      "dose": 6,
+      "compress_time": 1.8,
+      "compression_ratio": 1.006
+    },
+    {
+      "char_count": 294,
+      "word_count": 34,
+      "entity_count": 4,
+      "entities": [
+        "Drives",
+        "Insight",
+        "Nate",
+        "Pattern"
+      ],
+      "semantic_sim": 0.687384,
+      "info_entropy": 5.0875,
+      "unique_ratio": 1.0,
+      "dose": 7,
+      "compress_time": 1.7,
+      "compression_ratio": 0.927
+    },
+    {
+      "char_count": 291,
+      "word_count": 32,
+      "entity_count": 3,
+      "entities": [
+        "Insight",
+        "Nate",
+        "Pattern"
+      ],
+      "semantic_sim": 0.696735,
+      "info_entropy": 5.0,
+      "unique_ratio": 1.0,
+      "dose": 8,
+      "compress_time": 1.7,
+      "compression_ratio": 0.99
+    },
+    {
+      "char_count": 283,
+      "word_count": 34,
+      "entity_count": 3,
+      "entities": [
+        "Insight",
+        "Nate",
+        "Pattern"
+      ],
+      "semantic_sim": 0.715482,
+      "info_entropy": 5.0875,
+      "unique_ratio": 1.0,
+      "dose": 9,
+      "compress_time": 1.6,
+      "compression_ratio": 0.973
+    },
+    {
+      "char_count": 255,
+      "word_count": 36,
+      "entity_count": 3,
+      "entities": [
+        "Emotional",
+        "Nate",
+        "Pattern"
+      ],
+      "semantic_sim": 0.726174,
+      "info_entropy": 4.8474,
+      "unique_ratio": 0.8889,
+      "dose": 10,
+      "compress_time": 1.4,
+      "compression_ratio": 0.901
+    },
+    {
+      "char_count": 301,
+      "word_count": 35,
+      "entity_count": 9,
+      "entities": [
+        "Continuous",
+        "Emotional",
+        "Emphasis",
+        "Insight",
+        "Nate",
+        "Pattern",
+        "Relationships",
+        "Structural",
+        "Thoughtful"
+      ],
+      "semantic_sim": 0.744752,
+      "info_entropy": 5.1293,
+      "unique_ratio": 1.0,
+      "dose": 11,
+      "compress_time": 1.8,
+      "compression_ratio": 1.18
+    },
+    {
+      "char_count": 229,
+      "word_count": 26,
+      "entity_count": 5,
+      "entities": [
+        "Emotional",
+        "Insight",
+        "Nate",
+        "Pattern",
+        "Structure"
+      ],
+      "semantic_sim": 0.759234,
+      "info_entropy": 4.7004,
+      "unique_ratio": 1.0,
+      "dose": 12,
+      "compress_time": 1.4,
+      "compression_ratio": 0.761
+    }
+  ]
+}

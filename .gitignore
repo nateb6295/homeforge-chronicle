@@ -51,3 +51,60 @@ data/embeddings/
 experiments/asving_persona_distance/
 experiments/*/trial_*.json
 models/
+
+# Key material (was tracked until 2026-08-25)
+.handoff_key
+
+# Experiment outputs and uploads — DATA, not source. 2.6G / 246M.
+# Added 2026-08-25 during the consolidation. These are results, reproducible
+# from the scripts that made them; git is not an artifact store.
+experiments/
+uploads/
+images/
+tmp/
+
+# node_modules — never source
+tools/node_modules/
+
+# Large artifacts: papers, renders, payloads. Reproducible or re-downloadable.
+data/paper10/
+data/papers/
+data/visualizations/
+data/visuals/
+data/capture_images/
+data/*.jsonl.gz
+data/health_sleep_full_payload.jsonl
+*.wav
+*.mp3
+*.png
+*.jpg
+*.jpeg
+*.mp4
+
+# Runtime state that churns every few minutes — added 2026-08-25.
+# These were showing as "modified" constantly, which buries a real content
+# change (data/PUBLICATIONS.md sat uncommitted all day inside this noise).
+# A diff that is always dirty is a diff nobody reads.
+data/**/*_state.json
+data/**/*.log
+data/*_state.json
+data/*.log
+data/last_compaction
+data/last_opus_post.txt
+data/session_digest.md
+data/log_watermarks.json
+data/mesh_replies.jsonl
+data/mesh_replies/
+data/capsule_composition.jsonl
+data/reconstruction_pulse_history.jsonl
+
+# Root-level runtime logs and state — same reasoning as data/ above.
+/*.log
+/*_state.json
+/healthwatch.state
+backups/
+
+# Papers Nate sends via Discord — copyrighted PDFs, never commit (added 2026-08-25)
+data/attachments/
+data/gemma4_training.jsonl
+data/phase2_conversations.jsonl

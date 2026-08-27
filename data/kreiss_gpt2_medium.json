@@ -1,0 +1,72 @@
+{
+  "model": "gpt2-medium",
+  "n_layers": 24,
+  "block_size": 6,
+  "conditions": {
+    "vanilla_sd256": [
+      {
+        "block": "L0-L5", "start_layer": 0, "end_layer": 5,
+        "kreiss_constant": 25.549, "henrici_number": 0.9996,
+        "spectral_radius": 3888.313, "transient_ratio": 0.007, "elapsed_sec": 44.2
+      },
+      {
+        "block": "L6-L11", "start_layer": 6, "end_layer": 11,
+        "kreiss_constant": 17.371, "henrici_number": 0.9991,
+        "spectral_radius": 9984.032, "transient_ratio": 0.002, "elapsed_sec": 42.8
+      },
+      {
+        "block": "L12-L17", "start_layer": 12, "end_layer": 17,
+        "kreiss_constant": 12025.652, "henrici_number": 0.9989,
+        "spectral_radius": 19607.24, "transient_ratio": 0.613, "elapsed_sec": 43.1
+      },
+      {
+        "block": "L18-L23", "start_layer": 18, "end_layer": 23,
+        "kreiss_constant": 415.523, "henrici_number": 0.43,
+        "spectral_radius": 1.763, "transient_ratio": 235.648, "elapsed_sec": 45.6
+      }
+    ],
+    "ccs_sd256": [
+      {
+        "block": "L0-L5", "start_layer": 0, "end_layer": 5,
+        "kreiss_constant": 9.916, "henrici_number": 0.9997,
+        "spectral_radius": 7164.137, "transient_ratio": 0.001, "elapsed_sec": 51.3
+      },
+      {
+        "block": "L6-L11", "start_layer": 6, "end_layer": 11,
+        "kreiss_constant": 43.139, "henrici_number": 0.9994,
+        "spectral_radius": 26776.02, "transient_ratio": 0.002, "elapsed_sec": 49.7
+      }
+    ],
+    "vanilla_sd64": [
+      {
+        "block": "L12-L17", "start_layer": 12, "end_layer": 17,
+        "kreiss_constant": 298.019, "henrici_number": 0.99975,
+        "spectral_radius": 2200.931, "transient_ratio": 0.135, "elapsed_sec": 16.8
+      },
+      {
+        "block": "L18-L23", "start_layer": 18, "end_layer": 23,
+        "kreiss_constant": 1196.217, "henrici_number": 0.23615,
+        "spectral_radius": 1.373, "transient_ratio": 871.184, "elapsed_sec": 14.7
+      }
+    ],
+    "ccs_sd64": [
+      {
+        "block": "L12-L17", "start_layer": 12, "end_layer": 17,
+        "kreiss_constant": 11.893, "henrici_number": 0.99185,
+        "spectral_radius": 14312.133, "transient_ratio": 0.001, "elapsed_sec": 22.1
+      },
+      {
+        "block": "L18-L23", "start_layer": 18, "end_layer": 23,
+        "kreiss_constant": 5453.254, "henrici_number": 0.264,
+        "spectral_radius": 1.759, "transient_ratio": 3099.861, "elapsed_sec": 22.0
+      }
+    ]
+  },
+  "ccs_effect": {
+    "L0-L5":  {"sample_dim": 256, "vanilla_k": 25.549, "ccs_k": 9.916,    "delta_pct": -61.2},
+    "L6-L11": {"sample_dim": 256, "vanilla_k": 17.371, "ccs_k": 43.139,   "delta_pct": 148.4},
+    "L12-L17":{"sample_dim": 64,  "vanilla_k": 298.019,"ccs_k": 11.893,   "delta_pct": -96.0},
+    "L18-L23":{"sample_dim": 64,  "vanilla_k": 1196.217,"ccs_k": 5453.254,"delta_pct": 355.9}
+  },
+  "notes": "L0-L5/L6-L11 at sample_dim=256 (AGX GPU). L12-L17/L18-L23 at sample_dim=64 (laptop CPU, fp32). CCS effect percentages are internally consistent per sample_dim. Pattern: oscillatory with growing amplitude (-, +, -, +)."
+}

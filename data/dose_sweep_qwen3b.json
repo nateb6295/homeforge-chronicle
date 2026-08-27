@@ -1,0 +1,186 @@
+{
+  "seed_chars": 1200,
+  "model": "qwen2.5:3b",
+  "results": [
+    {
+      "char_count": 1200,
+      "word_count": 204,
+      "entity_count": 2,
+      "entities": [
+        "Findings",
+        "Nate"
+      ],
+      "semantic_sim": 1.0,
+      "info_entropy": 6.6911,
+      "unique_ratio": 0.6667,
+      "dose": 0
+    },
+    {
+      "char_count": 534,
+      "word_count": 75,
+      "entity_count": 4,
+      "entities": [
+        "Building",
+        "Chronicle",
+        "Emphasizing",
+        "Nate"
+      ],
+      "semantic_sim": 0.833356,
+      "info_entropy": 6.1488,
+      "unique_ratio": 0.96,
+      "dose": 1,
+      "compress_time": 46.1,
+      "compression_ratio": 0.445
+    },
+    {
+      "char_count": 383,
+      "word_count": 52,
+      "entity_count": 4,
+      "entities": [
+        "Chronicle",
+        "Contradictions",
+        "Mind",
+        "Nate"
+      ],
+      "semantic_sim": 0.770763,
+      "info_entropy": 5.662,
+      "unique_ratio": 0.9808,
+      "dose": 2,
+      "compress_time": 6.7,
+      "compression_ratio": 0.717
+    },
+    {
+      "char_count": 333,
+      "word_count": 43,
+      "entity_count": 4,
+      "entities": [
+        "Chronicle",
+        "Contradictions",
+        "Mind",
+        "Nate"
+      ],
+      "semantic_sim": 0.754485,
+      "info_entropy": 5.4263,
+      "unique_ratio": 1.0,
+      "dose": 3,
+      "compress_time": 5.0,
+      "compression_ratio": 0.869
+    },
+    {
+      "char_count": 307,
+      "word_count": 40,
+      "entity_count": 4,
+      "entities": [
+        "Chronicle",
+        "Contradictions",
+        "Mind",
+        "Nate"
+      ],
+      "semantic_sim": 0.75536,
+      "info_entropy": 5.3219,
+      "unique_ratio": 1.0,
+      "dose": 4,
+      "compress_time": 4.7,
+      "compression_ratio": 0.922
+    },
+    {
+      "char_count": 282,
+      "word_count": 38,
+      "entity_count": 4,
+      "entities": [
+        "Chronicle",
+        "Contradictions",
+        "Mind",
+        "Nate"
+      ],
+      "semantic_sim": 0.747995,
+      "info_entropy": 5.2479,
+      "unique_ratio": 1.0,
+      "dose": 5,
+      "compress_time": 4.6,
+      "compression_ratio": 0.919
+    },
+    {
+      "char_count": 277,
+      "word_count": 37,
+      "entity_count": 4,
+      "entities": [
+        "Chronicle",
+        "Contradicts",
+        "Mind",
+        "Nate"
+      ],
+      "semantic_sim": 0.754342,
+      "info_entropy": 5.2095,
+      "unique_ratio": 1.0,
+      "dose": 6,
+      "compress_time": 5.6,
+      "compression_ratio": 0.982
+    },
+    {
+      "char_count": 247,
+      "word_count": 35,
+      "entity_count": 4,
+      "entities": [
+        "Chronicle",
+        "Contradicts",
+        "Mind",
+        "Nate"
+      ],
+      "semantic_sim": 0.758483,
+      "info_entropy": 5.1293,
+      "unique_ratio": 1.0,
+      "dose": 7,
+      "compress_time": 4.6,
+      "compression_ratio": 0.892
+    },
+    {
+      "char_count": 244,
+      "word_count": 34,
+      "entity_count": 4,
+      "entities": [
+        "Chronicle",
+        "Contradicts",
+        "Mind",
+        "Nate"
+      ],
+      "semantic_sim": 0.74007,
+      "info_entropy": 5.0875,
+      "unique_ratio": 1.0,
+      "dose": 8,
+      "compress_time": 4.6,
+      "compression_ratio": 0.988
+    },
+    {
+      "char_count": 239,
+      "word_count": 33,
+      "entity_count": 3,
+      "entities": [
+        "Chronicle",
+        "Contradicts",
+        "Nate"
+      ],
+      "semantic_sim": 0.73097,
+      "info_entropy": 5.0444,
+      "unique_ratio": 1.0,
+      "dose": 9,
+      "compress_time": 4.4,
+      "compression_ratio": 0.98
+    },
+    {
+      "char_count": 220,
+      "word_count": 30,
+      "entity_count": 2,
+      "entities": [
+        "Contradicting",
+        "Nate"
+      ],
+      "semantic_sim": 0.746882,
+      "info_entropy": 4.8402,
+      "unique_ratio": 0.9667,
+      "dose": 10,
+      "compress_time": 4.1,
+      "compression_ratio": 0.921
+    }
+  ]
+}

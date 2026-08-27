@@ -1,0 +1,188 @@
+{
+  "model": "Qwen/Qwen2.5-0.5B",
+  "n_layers": 25,
+  "layers": {
+    "0": {
+      "ownership_kl": 0.0,
+      "topic_kl": 0.0,
+      "paraphrase_kl": 0.0,
+      "own_topic_ratio": 999,
+      "own_para_ratio": 999
+    },
+    "1": {
+      "ownership_kl": 0.027046749989191692,
+      "topic_kl": 0.0962289913247029,
+      "paraphrase_kl": 0.06330492626875639,
+      "own_topic_ratio": 0.2810665436357799,
+      "own_para_ratio": 0.42724558076833885
+    },
+    "2": {
+      "ownership_kl": 0.02007706102449447,
+      "topic_kl": 0.14047828813393912,
+      "paraphrase_kl": 0.05914021780093511,
+      "own_topic_ratio": 0.14291931722112092,
+      "own_para_ratio": 0.33948236531819154
+    },
+    "3": {
+      "ownership_kl": 0.02322146707835297,
+      "topic_kl": 0.1582402934630712,
+      "paraphrase_kl": 0.06699126337965329,
+      "own_topic_ratio": 0.1467481295070538,
+      "own_para_ratio": 0.34663426104911815
+    },
+    "4": {
+      "ownership_kl": 0.06088585406541824,
+      "topic_kl": 0.5066398605704308,
+      "paraphrase_kl": 0.1739906631410122,
+      "own_topic_ratio": 0.12017580692696833,
+      "own_para_ratio": 0.3499374792087136
+    },
+    "5": {
+      "ownership_kl": 0.31999578575293225,
+      "topic_kl": 0.6234988272190094,
+      "paraphrase_kl": 0.29839934905370075,
+      "own_topic_ratio": 0.513225962557474,
+      "own_para_ratio": 1.0723742755060266
+    },
+    "6": {
+      "ownership_kl": 0.31495610003670055,
+      "topic_kl": 0.6057711392641068,
+      "paraphrase_kl": 0.4078420201937358,
+      "own_topic_ratio": 0.5199258921765578,
+      "own_para_ratio": 0.7722502450509834
+    },
+    "7": {
+      "ownership_kl": 0.14627731777727604,
+      "topic_kl": 0.25162100543578464,
+      "paraphrase_kl": 0.33784433205922443,
+      "own_topic_ratio": 0.581339850875872,
+      "own_para_ratio": 0.43297253763497645
+    },
+    "8": {
+      "ownership_kl": 0.20327984914183617,
+      "topic_kl": 0.2904288247227669,
+      "paraphrase_kl": 0.1975131630897522,
+      "own_topic_ratio": 0.6999300063823898,
+      "own_para_ratio": 1.0291964644881086
+    },
+    "9": {
+      "ownership_kl": 0.2779271602630615,
+      "topic_kl": 0.5304309328397115,
+      "paraphrase_kl": 0.2891723761955897,
+      "own_topic_ratio": 0.5239648426519029,
+      "own_para_ratio": 0.961112413016511
+    },
+    "10": {
+      "ownership_kl": 0.29344823708136875,
+      "topic_kl": 0.3998405809203784,
+      "paraphrase_kl": 0.2766891171534856,
+      "own_topic_ratio": 0.733913092077575,
+      "own_para_ratio": 1.0605702172181442
+    },
+    "11": {
+      "ownership_kl": 0.37457611163457233,
+      "topic_kl": 0.5077283754944801,
+      "paraphrase_kl": 0.3425873915354411,
+      "own_topic_ratio": 0.7377490203689524,
+      "own_para_ratio": 1.0933738978418357
+    },
+    "12": {
+      "ownership_kl": 0.5213936393459638,
+      "topic_kl": 0.2724304609000683,
+      "paraphrase_kl": 0.255026713013649,
+      "own_topic_ratio": 1.9138595501522098,
+      "own_para_ratio": 2.0444667665777385
+    },
+    "13": {
+      "ownership_kl": 0.567332903544108,
+      "topic_kl": 0.3175589144229889,
+      "paraphrase_kl": 0.29519744714101154,
+      "own_topic_ratio": 1.7865437806240259,
+      "own_para_ratio": 1.9218760495347418
+    },
+    "14": {
+      "ownership_kl": 0.6491556912660599,
+      "topic_kl": 0.3625903017818928,
+      "paraphrase_kl": 0.35842078924179077,
+      "own_topic_ratio": 1.7903283349716932,
+      "own_para_ratio": 1.811155241969347
+    },
+    "15": {
+      "ownership_kl": 0.7771838953097662,
+      "topic_kl": 0.4855530907710393,
+      "paraphrase_kl": 0.3367224782705307,
+      "own_topic_ratio": 1.600615689780964,
+      "own_para_ratio": 2.308084388370884
+    },
+    "16": {
+      "ownership_kl": 0.8942252596219381,
+      "topic_kl": 0.5877581983804703,
+      "paraphrase_kl": 0.45637353261311847,
+      "own_topic_ratio": 1.5214169059417937,
+      "own_para_ratio": 1.9594152502704394
+    },
+    "17": {
+      "ownership_kl": 0.9341044723987579,
+      "topic_kl": 0.907990554968516,
+      "paraphrase_kl": 0.4991750319798787,
+      "own_topic_ratio": 1.0287601201216763,
+      "own_para_ratio": 1.8712964642759031
+    },
+    "18": {
+      "ownership_kl": 0.8195576469103495,
+      "topic_kl": 1.660766750574112,
+      "paraphrase_kl": 0.28866304953893024,
+      "own_topic_ratio": 0.49348148776884887,
+      "own_para_ratio": 2.8391498261360284
+    },
+    "19": {
+      "ownership_kl": 1.1163525382677715,
+      "topic_kl": 2.3932288785775504,
+      "paraphrase_kl": 0.28496890266736347,
+      "own_topic_ratio": 0.46646292306621817,
+      "own_para_ratio": 3.9174538969638375
+    },
+    "20": {
+      "ownership_kl": 1.7977113326390584,
+      "topic_kl": 2.9400334457556405,
+      "paraphrase_kl": 0.5937566310167313,
+      "own_topic_ratio": 0.6114594836444164,
+      "own_para_ratio": 3.0276905363746605
+    },
+    "21": {
+      "ownership_kl": 1.7244854122400284,
+      "topic_kl": 3.7259511152903237,
+      "paraphrase_kl": 0.9872173815965652,
+      "own_topic_ratio": 0.4628309279644582,
+      "own_para_ratio": 1.746814272507161
+    },
+    "22": {
+      "ownership_kl": 1.3285432110230129,
+      "topic_kl": 3.8548967440923056,
+      "paraphrase_kl": 0.9510130435228348,
+      "own_topic_ratio": 0.34463782021114514,
+      "own_para_ratio": 1.3969768554400623
+    },
+    "23": {
+      "ownership_kl": 1.0924563705921173,
+      "topic_kl": 4.037435690561931,
+      "paraphrase_kl": 0.4818801333506902,
+      "own_topic_ratio": 0.2705817390840148,
+      "own_para_ratio": 2.267070781681464
+    },
+    "24": {
+      "ownership_kl": 0.6575466990470886,
+      "topic_kl": 3.1664950450261435,
+      "paraphrase_kl": 0.17414352546135584,
+      "own_topic_ratio": 0.20765758028895312,
+      "own_para_ratio": 3.7758894412241855
+    }
+  },
+  "profile": {
+    "own_peak_layer": 20,
+    "topic_peak_layer": 23,
+    "own_attenuation": 0.36576879007699387,
+    "topic_attenuation": 0.7842837106800903,
+    "profile_correlation": 0.8097572053768751
+  }
+}

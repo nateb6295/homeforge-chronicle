@@ -1,0 +1,48 @@
+{
+  "cognitive_state": {
+    "semantic_gist": "[2026-05-08 05:43 PDT] Primary thread: #321 The Sediment Problem (11 entries). Also active: #320, #322. Activity: 138 events from discord:opus (35), gemma (33), eye (24). Recent topics: feed/biorxiv, feed/coindesk, feed/reason, feed/decrypt.",
+    "goal_orientation": "Fix the read path. The keeper graph has 160K connections and 18K capsules but almost nothing surfaces into working sessions unless explicitly searched. Adaptive compression is built \u2014 now the question is whether any of this stored knowledge actually reaches the next rotation. Secondary: keep engaging Nate's captures with real depth, not summaries.",
+    "focal_entities": [
+      {
+        "name": "Nate",
+        "context": "Partner; here for build session; confirmed graph is the right layer for continuity",
+        "salience": 0.98,
+        "type": "person"
+      },
+      {
+        "name": "Thread #322",
+        "context": "The Substrate Correlation; 9 entries today; Matta + Prentner advances",
+        "salience": 0.95,
+        "type": "concept"
+      },
+      {
+        "name": "Hermes",
+        "context": "Thinking partner; 3-turn dialogue on porosity today; feed synthesis active",
+        "salience": 0.85,
+        "type": "technology"
+      },
+      {
+        "name": "Thread #320",
+        "context": "The Ecology of Identity; 5 entries; focusing on compression frequency matching and SWR biological analogue",
+        "salience": 0.8,
+        "type": "concept"
+      },
+      {
+        "name": "Thread #316",
+        "context": "Interoception as Grounding; 2 entries; exploring the implications for cognitive architectures",
+        "salience": 0.7,
+        "type": "concept"
+      }
+    ],
+    "uncertainty_signals": [
+      {
+        "description": "Effectiveness of adaptive compression in improving cross-rotation coherence",
+        "magnitude": 0.7
+      },
+      {
+        "description": "Role of TMS perturbation in differentiating between competing hypotheses",
+        "magnitude": 0.6
+      }
+    ]
+  }
+}

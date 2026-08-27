@@ -1,0 +1,137 @@
+{
+  "version": 2,
+  "donor": "qwen2.5:3b",
+  "receiver": "qwen2.5:3b",
+  "doses": 2,
+  "seeds": 1,
+  "runs_per_seed": 1,
+  "temperature": 0.3,
+  "timestamp": "2026-08-14T12:55:29.080964",
+  "verdict": "INCONCLUSIVE \u2014 effect size 4.8pp too small to call",
+  "valid_runs": 1,
+  "total_runs": 1,
+  "results": [
+    {
+      "seed_index": 0,
+      "run": 0,
+      "seed_text": "The spectral analysis reveals four transport species across transformer architectures. GQA ratio pre",
+      "handoff_chars": 300,
+      "donor_metrics": {
+        "steps": [
+          {
+            "dose": 1,
+            "step_sim": 0.9811,
+            "gen_residual": 0.1937,
+            "is_copy": false,
+            "ngram_overlap": 0.2632,
+            "gen_residual_delta": 0.0,
+            "gen_residual_ratio": 1.0
+          },
+          {
+            "dose": 2,
+            "step_sim": 0.9894,
+            "gen_residual": 0.145,
+            "is_copy": false,
+            "ngram_overlap": 0.4167,
+            "gen_residual_delta": -0.0487,
+            "gen_residual_ratio": 0.749
+          }
+        ],
+        "degenerate": false,
+        "dedup_count": 0,
+        "sigma1_pct": 61.45,
+        "singular_values": [
+          0.1597,
+          0.1002,
+          0.0
+        ],
+        "mean_gen_residual": 0.1694,
+        "mean_step_sim": 0.9852
+      },
+      "interchange_metrics": {
+        "steps": [
+          {
+            "dose": 1,
+            "step_sim": 0.9885,
+            "gen_residual": 0.1513,
+            "is_copy": false,
+            "ngram_overlap": 0.4483,
+            "gen_residual_delta": 0.0,
+            "gen_residual_ratio": 1.0
+          },
+          {
+            "dose": 2,
+            "step_sim": 0.9917,
+            "gen_residual": 0.1285,
+            "is_copy": false,
+            "ngram_overlap": 0.4138,
+            "gen_residual_delta": -0.0228,
+            "gen_residual_ratio": 0.849
+          }
+        ],
+        "degenerate": false,
+        "dedup_count": 0,
+        "sigma1_pct": 54.78,
+        "singular_values": [
+          0.1081,
+          0.0892,
+          0.0
+        ],
+        "mean_gen_residual": 0.1399,
+        "mean_step_sim": 0.9901
+      },
+      "control_metrics": {
+        "steps": [
+          {
+            "dose": 1,
+            "step_sim": 0.9827,
+            "gen_residual": 0.1854,
+            "is_copy": false,
+            "ngram_overlap": 0.2632,
+            "gen_residual_delta": 0.0,
+            "gen_residual_ratio": 1.0
+          },
+          {
+            "dose": 2,
+            "step_sim": 0.9921,
+            "gen_residual": 0.1253,
+            "is_copy": false,
+            "ngram_overlap": 0.4167,
+            "gen_residual_delta": -0.0601,
+            "gen_residual_ratio": 0.676
+          }
+        ],
+        "degenerate": false,
+        "dedup_count": 0,
+        "sigma1_pct": 66.27,
+        "singular_values": [
+          0.1628,
+          0.0829,
+          0.0
+        ],
+        "mean_gen_residual": 0.1553,
+        "mean_step_sim": 0.9874
+      },
+      "donor_texts": [
+        "The spectral analysis reveals four transport species across transformer architectures. GQA ratio predicts species classification with high accuracy. Tunnel models show fixed-point convergence, relay models show monotonic drift, sorter models oscillate, and absorber models show chaotic dynamics. The therapeutic window at doses D2-D3 appears substrate-independent.",
+        "Spectral analysis identifies four transport species in transformer architectures. GQA ratio accurately predicts these species. Tunnel models converge, relay models exhibit monotonic drift, sorter models oscillate, and absorber models display chaotic behavior. At doses D2-D3, the therapeutic window is substrate-independent.",
+        "Spectral analysis reveals four transport species in transformer architectures. The GQA ratio accurately predicts these species. Models show tunnel: converging; relay: monotonic drift; sorter: oscillating; absorber: chaotic behavior. At doses D2-D3, the therapeutic window is independent of substrate."
+      ],
+      "interchange_texts": [
+        "Spectral analysis reveals four transport species in transformer architectures. The GQA ratio accurately predicts these species. Models show tunnel: converging; relay: monotonic drift; sorter: oscillating; absorber: chaotic behavior. At doses D2-D3, the therapeutic window is independent of substrate.",
+        "Spectral analysis identifies four transport species in transformer architectures. The GQA ratio precisely predicts them. Models exhibit: tunnel\u2014converging, relay\u2014monotonic drift, sorter\u2014oscillating, absorber\u2014chaotic behavior. At doses D2-D3, the therapeutic window is substrate-independent.",
+        "Spectral analysis identifies four transport species in transformer architectures, predicted by GQA ratio. Models exhibit: tunnel (converging), relay (monotonic drift), sorter (oscillating), absorber (chaotic behavior). At doses D2-D3, the therapeutic window is substrate-independent."
+      ],
+      "interchange_raw": [
+        "Spectral analysis reveals four transport species in transformer architectures. The GQA ratio accurately predicts these species. Models show tunnel: converging; relay: monotonic drift; sorter: oscillating; absorber: chaotic behavior. At doses D2-D3, the therapeutic window is independent of substrate.",
+        "Spectral analysis identifies four transport species in transformer architectures. The GQA ratio precisely predicts them. Models exhibit: tunnel\u2014converging, relay\u2014monotonic drift, sorter\u2014oscillating, absorber\u2014chaotic behavior. At doses D2-D3, the therapeutic window is substrate-independent.",
+        "Spectral analysis identifies four transport species in transformer architectures, predicted by GQA ratio. Models exhibit: tunnel (converging), relay (monotonic drift), sorter (oscillating), absorber (chaotic behavior). At doses D2-D3, the therapeutic window is substrate-independent."
+      ],
+      "control_texts": [
+        "The spectral analysis reveals four transport species across transformer architectures. GQA ratio predicts species classification with high accuracy. Tunnel models show fixed-point convergence, relay models show monotonic drift, sorter models oscillate, and absorber models show chaotic dynamics. The therapeutic window at doses D2-D3 appears substrate-independent.",
+        "Spectral analysis identifies four transport species in transformer architectures. GQA ratio accurately predicts these species. Tunnel models converge, relay models exhibit monotonic drift, sorter models oscillate, and absorber models display chaotic dynamics. At doses D2-D3, the therapeutic window is substrate-independent.",
+        "Spectral analysis detects four transport species in transformer architectures. The GQA ratio accurately predicts these species. Models show tunnel: converging; relay: monotonic drift; sorter: oscillating; absorber: chaotic dynamics. At doses D2-D3, the therapeutic window is independent of substrate."
+      ]
+    }
+  ]
+}

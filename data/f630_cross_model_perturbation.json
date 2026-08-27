@@ -1,0 +1,60 @@
+{
+  "experiment": "F630_cross_model_perturbation",
+  "hypothesis": "At matched depth, valley curvature (GQA) should show different perturbation sensitivity than saddle curvature (MHA)",
+  "controls": "Same depth (L4-L12), same prompt, same epsilon (0.1), same perturbation method (sigma-1 direction)",
+  "gpt2_medium": [
+    {
+      "layer": 4,
+      "kl_divergence": 9.95909795165062e-06,
+      "sigma1_value": 26.355392456054688
+    },
+    {
+      "layer": 6,
+      "kl_divergence": 2.3339867766480893e-05,
+      "sigma1_value": 18.230764389038086
+    },
+    {
+      "layer": 8,
+      "kl_divergence": 2.6039706426672637e-06,
+      "sigma1_value": 19.30183219909668
+    },
+    {
+      "layer": 10,
+      "kl_divergence": 2.9618677217513323e-05,
+      "sigma1_value": 18.180627822875977
+    },
+    {
+      "layer": 12,
+      "kl_divergence": 1.6717967810109258e-05,
+      "sigma1_value": 17.99079704284668
+    }
+  ],
+  "qwen_0_5b": [
+    {
+      "layer": 4,
+      "sigma1": 2.385206699371338,
+      "kl_divergence": -0.000873565673828125
+    },
+    {
+      "layer": 6,
+      "sigma1": 2.5454089641571045,
+      "kl_divergence": 0.0002460479736328125
+    },
+    {
+      "layer": 8,
+      "sigma1": 4.782982349395752,
+      "kl_divergence": 0.00188446044921875
+    },
+    {
+      "layer": 10,
+      "sigma1": 2.5278775691986084,
+      "kl_divergence": 0.00154876708984375
+    },
+    {
+      "layer": 12,
+      "sigma1": 2.435424566268921,
+      "kl_divergence": 0.0003223419189453125
+    }
+  ],
+  "mean_ratio_gpt2_over_qwen": 0.03116568556692978
+}

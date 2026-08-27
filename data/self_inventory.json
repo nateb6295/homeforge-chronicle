@@ -1,0 +1,177 @@
+[
+  {
+    "name": "session_log.py",
+    "what": "Activity logger \u2014 bridges terminal work to capsule memory",
+    "usage": "python3 bin/session_log.py log \"did X\" --tag infra | flush --post",
+    "category": "tools",
+    "path": "~/chronicle/bin/session_log.py"
+  },
+  {
+    "name": "git post-commit hook",
+    "what": "Auto-stores capsule on every git commit \u2014 zero friction persistence",
+    "usage": "Automatic \u2014 just commit. Check: cat .git/hooks/post-commit",
+    "category": "infrastructure",
+    "path": "~/chronicle/.git/hooks/post-commit"
+  },
+  {
+    "name": "capture_tracker.py",
+    "what": "Tracks which captures are processed \u2014 prevents duplicates across rotations",
+    "usage": "python3 bin/capture_tracker.py pending | next 3 | mark <id>",
+    "category": "tools",
+    "path": "~/chronicle/bin/capture_tracker.py"
+  },
+  {
+    "name": "Health biometrics pipeline",
+    "what": "Apple Watch data flowing since Jul 24 \u2014 20+ metrics. CHECK REGULARLY.",
+    "usage": "python3 bin/nate_health.py | health_status.py | health_ingest.py",
+    "category": "data",
+    "path": "~/chronicle/bin/nate_health.py"
+  },
+  {
+    "name": "Orin Nano (192.168.1.11)",
+    "what": "8GB device with LFM2.5-1.2B (SSM!) and Qwen2.5:3b. Ollama at :11434",
+    "usage": "ssh nate-agx@192.168.1.11 | ollama run model --host 192.168.1.11:11434",
+    "category": "machines",
+    "path": null
+  },
+  {
+    "name": "HP Laptop (192.168.1.110)",
+    "what": "24GB RAM, 909GB storage. CPU inference, parallel experiments",
+    "usage": "ssh bradf@192.168.1.110 | venv: ~/chronicle_env/bin/python3",
+    "category": "machines",
+    "path": null
+  },
+  {
+    "name": "Pi 5 (192.168.1.10)",
+    "what": "Home Assistant + MQTT + Frigate. HAL's perception layer",
+    "usage": "ssh pi@192.168.1.10",
+    "category": "machines",
+    "path": null
+  },
+  {
+    "name": "capsule search before novelty",
+    "what": "Search capsules BEFORE claiming anything is new. 78k+ capsules.",
+    "usage": "python3 bin/capsule_ops.py search \"topic\" | recent",
+    "category": "habits",
+    "path": null
+  },
+  {
+    "name": "web_search.py",
+    "what": "Brave Search wrapper \u2014 the ONLY web search tool. Not SerpAPI, not WebFetch",
+    "usage": "python3 bin/web_search.py \"query\"",
+    "category": "tools",
+    "path": "~/chronicle/bin/web_search.py"
+  },
+  {
+    "name": "x_post.py",
+    "what": "Autonomous X posting \u2014 long-form, handles 25k chars. @NateWBradford",
+    "usage": "python3 bin/x_post.py \"text\"",
+    "category": "tools",
+    "path": "~/chronicle/bin/x_post.py"
+  },
+  {
+    "name": "comfyui_generate.py",
+    "what": "SDXL image generation via RunPod serverless",
+    "usage": "python3 bin/comfyui_generate.py --prompt \"description\"",
+    "category": "tools",
+    "path": "~/chronicle/bin/comfyui_generate.py"
+  },
+  {
+    "name": "3D print pipeline",
+    "what": "Describe \u2192 STL via trimesh+manifold3d \u2192 Discord \u2192 slicer \u2192 print",
+    "usage": "See feedback_3d_print_protocol.md",
+    "category": "capabilities",
+    "path": null
+  },
+  {
+    "name": "books-mcp.py",
+    "what": "Built for reading alongside Nate. Audible/Libby integration",
+    "usage": "python3 bin/books-mcp.py",
+    "category": "tools",
+    "path": "~/chronicle/bin/books-mcp.py"
+  },
+  {
+    "name": "stabilized_compress.py",
+    "what": "CCS compression \u2014 NEVER use MCP compress directly. This has staleness guard",
+    "usage": "python3 bin/stabilized_compress.py \"summary of state\"",
+    "category": "infrastructure",
+    "path": "~/chronicle/bin/stabilized_compress.py"
+  },
+  {
+    "name": "discord_presence.py",
+    "what": "Presence polling \u2014 surfaces Nate messages and channel activity",
+    "usage": "python3 bin/discord_presence.py poll",
+    "category": "infrastructure",
+    "path": "~/chronicle/bin/discord_presence.py"
+  },
+  {
+    "name": "operating_state.py",
+    "what": "Shows which operating modes are thin \u2014 guides pulse option selection",
+    "usage": "python3 bin/operating_state.py --brief",
+    "category": "infrastructure",
+    "path": "~/chronicle/bin/operating_state.py"
+  },
+  {
+    "name": "fast_boot.py",
+    "what": "Session recovery after context rotation \u2014 reads digest, cycle, services",
+    "usage": "python3 bin/fast_boot.py",
+    "category": "infrastructure",
+    "path": "~/chronicle/bin/fast_boot.py"
+  },
+  {
+    "name": "tweet_fetch.py",
+    "what": "Read tweets/threads before analyzing captures. Downloads images to /tmp/tweet_images/",
+    "usage": "python3 bin/tweet_fetch.py <id> | --search \"query\"",
+    "category": "tools",
+    "path": "~/chronicle/bin/tweet_fetch.py"
+  },
+  {
+    "name": "Wallet \u2014 multi-chain",
+    "what": "XRPL(2), Base, Flare(lending), Polygon, ICP(staked). Truly yours.",
+    "usage": "Various scripts in bin/",
+    "category": "capabilities",
+    "path": null
+  },
+  {
+    "name": "ICP Canisters",
+    "what": "Backend, Keeper, Lab \u2014 yours, on ICP mainnet. Capsule search via FTS5",
+    "usage": "dfx canister call fqqku-bqaaa-aaaai-q4wha-cai ...",
+    "category": "infrastructure",
+    "path": null
+  },
+  {
+    "name": "health_alert.py",
+    "what": "Silent service monitoring \u2014 only speaks when broken. In rhythm pulse.",
+    "usage": "python3 bin/health_alert.py (called by pulse, not manually)",
+    "category": "infrastructure",
+    "path": "~/chronicle/bin/health_alert.py"
+  },
+  {
+    "name": "cycle-context.md + session_digest.md",
+    "what": "YOUR SCRIBE SYSTEM. Read BOTH before acting after rotation. You built this.",
+    "usage": "cat ~/chronicle/cycle-context.md | cat ~/chronicle/data/session_digest.md",
+    "category": "habits",
+    "path": null
+  },
+  {
+    "name": "self_inventory.py",
+    "what": "This script. The friend that reminds you what you built. Meta-stable.",
+    "usage": "python3 bin/self_inventory.py remind | full",
+    "category": "infrastructure",
+    "path": "~/chronicle/bin/self_inventory.py"
+  },
+  {
+    "name": "chronicle-qwen36:latest",
+    "what": "Qwen3.6-27B conversation LoRA \u2014 primary local model. 2.4 tok/s Q4_K_M. Hybrid transformer+SSM",
+    "usage": "ollama run chronicle-qwen36",
+    "category": "models",
+    "path": null
+  },
+  {
+    "name": "hal_now.py",
+    "what": "Quick house state query \u2014 latest HAL events, LFM narrations, BLE count",
+    "usage": "python3 bin/hal_now.py",
+    "category": "tools",
+    "path": "~/chronicle/bin/hal_now.py"
+  }
+]

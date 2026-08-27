@@ -1,0 +1,58 @@
+{
+  "test_time": "2026-05-08 08:02:51",
+  "pre_compression": {
+    "entity_count": 6,
+    "entities": [
+      "daodejing",
+      "doc-v* architecture",
+      "hermes",
+      "nate",
+      "thread #321",
+      "thread #322"
+    ],
+    "gist_length": 353,
+    "gist_preview": "[2026-05-08 07:22 PDT] Primary thread: #321 The Sediment Problem (15 entries). Also active: #322, #320. Activity: 191 events from discord:opus (56), gemma (49), eye (24). Recent topics: feed/conversat"
+  },
+  "text_only_summary": {
+    "char_count": 2470,
+    "confidence_markers": 0,
+    "spatial_referents": 0,
+    "unique_tokens": 166
+  },
+  "grounded_summary": {
+    "char_count": 3561,
+    "confidence_markers": 0,
+    "spatial_referents": 8,
+    "unique_tokens": 220,
+    "new_tokens_from_sensors": 54,
+    "sample_new_tokens": [
+      "animals",
+      "area",
+      "bright",
+      "camera",
+      "cameras",
+      "captured",
+      "ceiling",
+      "coming",
+      "context",
+      "dark",
+      "data",
+      "daylight",
+      "devices",
+      "domestic",
+      "during",
+      "early",
+      "environmental",
+      "friday",
+      "green",
+      "home"
+    ]
+  },
+  "analysis": {
+    "spatial_ratio": 8.0,
+    "token_expansion": 1.3253012048192772,
+    "new_referent_count": 54,
+    "prediction": "Grounded summary provides 54 new concrete referents that constrain the compression space. The rate-distortion theory (Guo & Li) predicts fewer hallucinated details when the compressor has external anchors. Sensor data adds spatial and temporal grounding (8 spatial terms vs 0 without)."
+  },
+  "sensor_count": 10
+}

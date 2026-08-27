@@ -1,0 +1,109 @@
+{
+  "pythia-410m": {
+    "model": "EleutherAI/pythia-410m",
+    "attention": "MHA",
+    "avg_concentration": 0.27099740709763437,
+    "avg_gini": NaN,
+    "per_pair": [
+      {
+        "prompt_a": "The fundamental nature of consciousness ",
+        "prompt_b": "The essential nature of awareness is",
+        "mean_conc": 0.2743104000535708,
+        "mean_gini": NaN
+      },
+      {
+        "prompt_a": "Machine learning models can be trained t",
+        "prompt_b": "Neural networks can be optimized to",
+        "mean_conc": 0.2934167644806145,
+        "mean_gini": NaN
+      },
+      {
+        "prompt_a": "The economic implications of trade polic",
+        "prompt_b": "The financial consequences of tariff cha",
+        "mean_conc": 0.2452650567587178,
+        "mean_gini": NaN
+      }
+    ],
+    "verdict": "DIFFUSE",
+    "processing_order": "parallel"
+  },
+  "gpt2-medium": {
+    "model": "gpt2-medium",
+    "attention": "MHA",
+    "avg_concentration": 0.44933247415523286,
+    "avg_gini": 0.5859797712916707,
+    "per_pair": [
+      {
+        "prompt_a": "The fundamental nature of consciousness ",
+        "prompt_b": "The essential nature of awareness is",
+        "mean_conc": 0.47901423067937143,
+        "mean_gini": 0.6050237746734407
+      },
+      {
+        "prompt_a": "Machine learning models can be trained t",
+        "prompt_b": "Neural networks can be optimized to",
+        "mean_conc": 0.4267975324764066,
+        "mean_gini": 0.5730354555943244
+      },
+      {
+        "prompt_a": "The economic implications of trade polic",
+        "prompt_b": "The financial consequences of tariff cha",
+        "mean_conc": 0.4421856593099205,
+        "mean_gini": 0.5798800836072472
+      }
+    ],
+    "verdict": "CONCENTRATED",
+    "processing_order": "sequential"
+  },
+  "Qwen2.5-0.5B": {
+    "model": "Qwen/Qwen2.5-0.5B",
+    "attention": "GQA",
+    "avg_concentration": 0.2711888501782946,
+    "avg_gini": 0.4916753283868924,
+    "per_pair": [
+      {
+        "prompt_a": "The fundamental nature of consciousness ",
+        "prompt_b": "The essential nature of awareness is",
+        "mean_conc": 0.3065678229352608,
+        "mean_gini": 0.5227198394971021
+      },
+      {
+        "prompt_a": "Machine learning models can be trained t",
+        "prompt_b": "Neural networks can be optimized to",
+        "mean_conc": 0.25574111078192324,
+        "mean_gini": 0.47676908603937834
+      },
+      {
+        "prompt_a": "The economic implications of trade polic",
+        "prompt_b": "The financial consequences of tariff cha",
+        "mean_conc": 0.2512576168176996,
+        "mean_gini": 0.47553705962419657
+      }
+    ],
+    "verdict": "DIFFUSE",
+    "processing_order": "sequential"
+  },
+  "pythia-1.4b": {
+    "model": "EleutherAI/pythia-1.4b",
+    "attention": "MHA",
+    "avg_concentration": 0.3873,
+    "note": "scale control: same data as pythia-410m, 3.5x params, 2x width",
+    "processing_order": "parallel"
+  },
+  "gpt2-small": {
+    "model": "gpt2",
+    "attention": "MHA",
+    "processing_order": "sequential",
+    "avg_concentration": 0.4637,
+    "n_layers": 12,
+    "note": "smallest model, highest concentration"
+  },
+  "Qwen2.5-1.5B": {
+    "model": "Qwen/Qwen2.5-1.5B",
+    "attention": "GQA",
+    "processing_order": "sequential",
+    "avg_concentration": 0.4049,
+    "n_layers": 28,
+    "note": "decisive test: GQA does not suppress concentration at scale"
+  }
+}

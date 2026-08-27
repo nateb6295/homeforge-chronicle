@@ -44,8 +44,7 @@ SELF_REF_TERMS = [
     "hermes agent", "cron job", "scheduler", "checkpoint.py", "rotate.py",
 ]
 
-ALERTS_WEBHOOK = os.environ.get("ALERTS_WEBHOOK",
-    "https://discord.com/api/webhooks/1489300749308395611/zlZZH3QzXqEDxznmNelK3mlkLF0IeZqoxwNUnrL0no_jfeZnDMvwvD_7XhYcCyQzq78I")
+ALERTS_WEBHOOK = os.environ.get("ALERTS_WEBHOOK", "")
 HEALTH_SIGNAL_PATH = os.path.expanduser("~/chronicle/spot_check_health.json")
 
 

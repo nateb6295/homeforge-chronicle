@@ -1,0 +1,70 @@
+{
+  "timestamp": 1779151447,
+  "probe": "map-regeneration",
+  "thread": "#320",
+  "ccs_version": 1399,
+  "model": "qwen2.5:3b",
+  "original_edges": [
+    "TPR-grounds-322-Noether-replacement",
+    "discord-runtime-diagnosis-to-mistral-agent",
+    "319-unblocked-confirms-synergistic",
+    "doubt-relocation-complicates-compression-agency"
+  ],
+  "regenerated_trials": [
+    {
+      "edges": [
+        "edge-316-to-320",
+        "edge-319-to-322",
+        "edge-317-to-320",
+        "edge-321-to-322",
+        "edge-320-to-321"
+      ],
+      "raw": {
+        "edge-316-to-320": "The doubt-relocation mechanism on #316 needs further testing as it shows more doubt leads to increased susceptibility.",
+        "edge-319-to-322": "#319's lag-1 check confirms the trajectory reframe for #322, which is currently under investigation.",
+        "edge-317-to-320": "#317 is now unblocked after #319's lag-1 check with SYNERGISTIC mode confirmed on CCS v1395.",
+        "edge-321-to-322": "The TPR binding-matrix finding grounds the trajectory reframe for #322, aligning with Hermes transitioning to Mistral Large.",
+        "edge-320-to-321": "#320's parallel threads on identity and substrate are in sync with the grounding of #321 by #322."
+      }
+    },
+    {
+      "edges": [
+        "edge-identity-grounding-substrate",
+        "edge-hermes-transition-mistral-large",
+        "edge-doubt-relocation-mechanism-identity",
+        "edge-synergistic-check-unblock-317",
+        "edge-mistral-large-tpr-binding-matrix"
+      ],
+      "raw": {
+        "edge-identity-grounding-substrate": "I'm running parallel threads on identity, grounding, and substrate \u2014 #316, #320, #321, #322.",
+        "edge-hermes-transition-mistral-large": "Hermes transitions to Mistral Large and the TPR binding-matrix finding now grounds #322's trajectory reframe.",
+        "edge-doubt-relocation-mechanism-identity": "I'm holding the doubt-relocation mechanism on #316 as the immediate open question \u2014 delta=+0.0160 counterintuitive direction needs a second probe on 2-3 additional CCS versions before it drives architecture.",
+        "edge-synergistic-check-unblock-317": "#319 lag-1 check is finally done (SYNERGISTIC confirmed), which unblocks #317.",
+        "edge-mistral-large-tpr-binding-matrix": "The TPR binding-matrix finding now grounds #322's trajectory reframe, while Mistral Large is live as chronicle-mistral.service with dramatically better first outputs."
+      }
+    },
+    {
+      "edges": [
+        "edge-identity-grounding-substrate",
+        "edge-hermes-mistral-large",
+        "edge-doubt-relocation-hypothesis-testing",
+        "edge-lag-1-check-unblock",
+        "edge-mistral-large-output-stress-testing"
+      ],
+      "raw": {
+        "edge-identity-grounding-substrate": "I'm running parallel threads on identity, grounding, and substrate \u2014 #316, #320, #321, #322.",
+        "edge-hermes-mistral-large": "Hermes transitions to Mistral Large and the TPR binding-matrix finding now grounds #322's trajectory reframe.",
+        "edge-doubt-relocation-hypothesis-testing": "I'm holding the doubt-relocation mechanism on #316 as the immediate open question \u2014 delta=+0.0160 counterintuitive direction needs a second probe on 2-3 additional CCS versions before it drives architecture.",
+        "edge-lag-1-check-unblock": "#319 lag-1 check is finally done (SYNERGISTIC confirmed), which unblocks #317.",
+        "edge-mistral-large-output-stress-testing": "The next instance wakes into a session where the big displacement finally broke \u2014 #319 lag-1 ran, SYNERGISTIC confirmed, #317 is now unblocked \u2014 and Mistral Large is live as chronicle-mistral.service with dramatically better first outputs."
+      }
+    }
+  ],
+  "similarities": [
+    0.7665403295496964,
+    0.8311012853149669,
+    0.8221164421591672
+  ],
+  "mean_similarity": 0.8066,
+  "verdict": "AMBIGUOUS"
+}

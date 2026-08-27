@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
-"""Chronicle Eye — Periodic camera snapshot analysis via Gemma 4 vision.
+"""Chronicle Eye — Periodic camera snapshot analysis via local vision model.
 
-Fetches snapshots from Home Assistant cameras, describes them using Gemma 4 26B's
-vision capabilities, and publishes descriptions to MQTT for HAL to consume.
+Fetches snapshots from Home Assistant cameras, describes them using a local
+vision model (moondream by default), and publishes descriptions to MQTT for
+HAL to consume.
 
-This closes the "eye" part of the perception loop: cameras see → Gemma describes →
-HAL knows what the house looks like → presence layer can reference it.
+This closes the "eye" part of the perception loop: cameras see → vision model
+describes → HAL knows what the house looks like → presence layer references it.
 
 Runs as: systemctl --user start chronicle-eye
 """
@@ -40,15 +41,15 @@ HASS_TOKEN = os.environ.get("HASS_TOKEN", "")
 MQTT_BROKER = os.environ.get("MQTT_BROKER", "192.168.1.10")
 MQTT_PORT = int(os.environ.get("MQTT_PORT", "1883"))
 OLLAMA_URL = os.environ.get("OLLAMA_URL", "http://localhost:11434")  # for embeddings
-INFERENCE_URL = os.environ.get("EYE_INFERENCE_URL", "http://localhost:11435")  # llama-server for vision
-VISION_MODEL = os.environ.get("VISION_MODEL", "gemma4:26b")
+INFERENCE_URL = os.environ.get("EYE_INFERENCE_URL", "http://localhost:11434")  # Ollama
+VISION_MODEL = os.environ.get("VISION_MODEL", "moondream:latest")
 DB_PATH = os.environ.get("CHRONICLE_DB",
-    os.path.expanduser("~/.homeforge-chronicle/processed.db"))
+    "/mnt/hdd/chronicle-data/processed.db")
 
 # Camera entity IDs to check (HA entity_id → friendly name)
 CAMERAS = {
-    "camera.driveway_fluent": "kitchen",
-    "camera.reolink_lumus_fluent": "lumus",
+    "camera.driveway_fluent": "front_porch",
+    "camera.reolink_lumus_fluent": "driveway",
 }
 
 CYCLE_INTERVAL = 1800  # 30 minutes between full scans
@@ -119,47 +120,27 @@ def describe_image(image_bytes, camera_name):
         "in the afternoon" if hour < 17 else "in the evening"))
 
     prompt = (
-        f"This is a security camera image from the {camera_name} camera {time_context}. "
-        "Describe what you see in 2-3 sentences. Focus on: the general scene, "
-        "any people present, vehicles, animals, weather/lighting conditions, "
-        "and anything unusual. Be factual and concise."
+        f"Describe this {camera_name} camera image {time_context} in 2-3 sentences. "
+        "Note: people, vehicles, animals, weather, lighting, anything unusual or changed."
     )
 
     try:
         resp = requests.post(
-            f"{INFERENCE_URL}/v1/chat/completions",
+            f"{INFERENCE_URL}/api/generate",
             json={
                 "model": VISION_MODEL,
-                "messages": [{
-                    "role": "user",
-                    "content": [
-                        {"type": "text", "text": prompt},
-                        {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{img_b64}"}},
-                    ],
-                }],
-                "max_tokens": 300,
-                "temperature": 0.3,
-                "reasoning_format": "none",
+                "prompt": prompt,
+                "images": [img_b64],
+                "stream": False,
+                "options": {"num_predict": 300, "temperature": 0.3},
             },
             timeout=VISION_TIMEOUT,
         )
         if resp.status_code == 200:
             data = resp.json()
-            content = data.get("choices", [{}])[0].get("message", {}).get("content", "") if data.get("choices") else ""
-            # Strip Gemma 4 thinking tags if present
-            if "<channel|>" in content:
-                content = content.split("<channel|>")[-1].strip()
-            eval_count = data.get("usage", {}).get("completion_tokens", 0)
-            duration = 0  # llama-server doesn't report total_duration
-            # Strip common LLM preambles
-            for prefix in [
-                "Here's a description of the security camera image:\n\n",
-                "Here's a description of the camera image:\n\n",
-                "Here is a description of the security camera image:\n\n",
-            ]:
-                if content.startswith(prefix):
-                    content = content[len(prefix):]
-                    break
+            content = data.get("response", "")
+            eval_count = data.get("eval_count", 0)
+            duration = data.get("total_duration", 0) / 1e9
             log(f"  {camera_name}: \"{content[:80]}...\" ({eval_count} tokens, {duration:.1f}s)")
             return content.strip()
         log(f"  {camera_name}: Ollama HTTP {resp.status_code}")

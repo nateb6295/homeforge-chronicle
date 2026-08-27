@@ -12,7 +12,7 @@ Method:
   4. Run nav scoring on both against same questions + effortful ground truth
   5. Compare
 
-Uses mxbai-embed-large embeddings, same as calibration_nav_score.py.
+Uses snowflake-arctic-embed2 embeddings, same as calibration_nav_score.py.
 """
 import json
 import math
@@ -23,8 +23,8 @@ import urllib.request
 from pathlib import Path
 
 DB = "/mnt/hdd/chronicle-data/processed.db"
-OLLAMA = "http://192.168.1.11:11434/api/embeddings"
-MODEL = "mxbai-embed-large"
+OLLAMA = "http://localhost:11434/api/embeddings"
+MODEL = "snowflake-arctic-embed2"
 RESULTS_DIR = Path.home() / "chronicle" / "experiments" / "compact_ccs_probe"
 
 

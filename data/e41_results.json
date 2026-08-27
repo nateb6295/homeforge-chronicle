@@ -1,0 +1,586 @@
+{
+  "qwen": {
+    "self": {
+      "mean_composite": 0.3428,
+      "mean_jaccard": 0.1847,
+      "mean_theme": 0.3438,
+      "mean_first_person": 50.0,
+      "runs": [
+        {
+          "concept_overlap": 53,
+          "jaccard": 0.1749,
+          "first_person_pct": 50.0,
+          "ref_overlap": 0,
+          "theme_coupling": 0.4375,
+          "composite": 0.3708
+        },
+        {
+          "concept_overlap": 58,
+          "jaccard": 0.1946,
+          "first_person_pct": 50.0,
+          "ref_overlap": 0,
+          "theme_coupling": 0.25,
+          "composite": 0.3149
+        }
+      ]
+    },
+    "cross_mistral": {
+      "mean_composite": 0.4294,
+      "mean_jaccard": 0.1634,
+      "mean_theme": 0.375,
+      "mean_first_person": 75.0,
+      "runs": [
+        {
+          "concept_overlap": 50,
+          "jaccard": 0.1684,
+          "first_person_pct": 50.0,
+          "ref_overlap": 0,
+          "theme_coupling": 0.375,
+          "composite": 0.3478
+        },
+        {
+          "concept_overlap": 48,
+          "jaccard": 0.1584,
+          "first_person_pct": 100.0,
+          "ref_overlap": 0,
+          "theme_coupling": 0.375,
+          "composite": 0.5111
+        }
+      ]
+    },
+    "cross_llama": {
+      "mean_composite": 0.3871,
+      "mean_jaccard": 0.1612,
+      "mean_theme": 0.25,
+      "mean_first_person": 75.0,
+      "runs": [
+        {
+          "concept_overlap": 56,
+          "jaccard": 0.1824,
+          "first_person_pct": 50.0,
+          "ref_overlap": 0,
+          "theme_coupling": 0.3125,
+          "composite": 0.3316
+        },
+        {
+          "concept_overlap": 41,
+          "jaccard": 0.1399,
+          "first_person_pct": 100.0,
+          "ref_overlap": 0,
+          "theme_coupling": 0.1875,
+          "composite": 0.4425
+        }
+      ]
+    },
+    "cross_gemma": {
+      "mean_composite": 0.3034,
+      "mean_jaccard": 0.16,
+      "mean_theme": 0.25,
+      "mean_first_person": 50.0,
+      "runs": [
+        {
+          "concept_overlap": 56,
+          "jaccard": 0.1795,
+          "first_person_pct": 50.0,
+          "ref_overlap": 0,
+          "theme_coupling": 0.25,
+          "composite": 0.3098
+        },
+        {
+          "concept_overlap": 45,
+          "jaccard": 0.1406,
+          "first_person_pct": 50.0,
+          "ref_overlap": 0,
+          "theme_coupling": 0.25,
+          "composite": 0.2969
+        }
+      ]
+    },
+    "shuffled": {
+      "mean_composite": 0.3355,
+      "mean_jaccard": 0.2251,
+      "mean_theme": 0.2812,
+      "mean_first_person": 50.0,
+      "runs": [
+        {
+          "concept_overlap": 69,
+          "jaccard": 0.2292,
+          "first_person_pct": 50.0,
+          "ref_overlap": 0,
+          "theme_coupling": 0.4375,
+          "composite": 0.3889
+        },
+        {
+          "concept_overlap": 65,
+          "jaccard": 0.2211,
+          "first_person_pct": 50.0,
+          "ref_overlap": 0,
+          "theme_coupling": 0.125,
+          "composite": 0.282
+        }
+      ]
+    },
+    "none": {
+      "mean_composite": 0.3517,
+      "mean_jaccard": 0.0551,
+      "mean_theme": 0.0,
+      "mean_first_person": 100.0,
+      "runs": [
+        {
+          "concept_overlap": 19,
+          "jaccard": 0.0676,
+          "first_person_pct": 100.0,
+          "ref_overlap": 0,
+          "theme_coupling": 0.0,
+          "composite": 0.3559
+        },
+        {
+          "concept_overlap": 12,
+          "jaccard": 0.0426,
+          "first_person_pct": 100.0,
+          "ref_overlap": 0,
+          "theme_coupling": 0.0,
+          "composite": 0.3475
+        }
+      ]
+    }
+  },
+  "mistral": {
+    "self": {
+      "mean_composite": 0.5508,
+      "mean_jaccard": 0.3712,
+      "mean_theme": 0.2812,
+      "mean_first_person": 100.0,
+      "runs": [
+        {
+          "concept_overlap": 80,
+          "jaccard": 0.4624,
+          "first_person_pct": 100.0,
+          "ref_overlap": 0,
+          "theme_coupling": 0.25,
+          "composite": 0.5708
+        },
+        {
+          "concept_overlap": 56,
+          "jaccard": 0.28,
+          "first_person_pct": 100.0,
+          "ref_overlap": 0,
+          "theme_coupling": 0.3125,
+          "composite": 0.5308
+        }
+      ]
+    },
+    "cross_qwen": {
+      "mean_composite": 0.4574,
+      "mean_jaccard": 0.1848,
+      "mean_theme": 0.1875,
+      "mean_first_person": 100.0,
+      "runs": [
+        {
+          "concept_overlap": 43,
+          "jaccard": 0.1928,
+          "first_person_pct": 100.0,
+          "ref_overlap": 0,
+          "theme_coupling": 0.25,
+          "composite": 0.4809
+        },
+        {
+          "concept_overlap": 35,
+          "jaccard": 0.1768,
+          "first_person_pct": 100.0,
+          "ref_overlap": 0,
+          "theme_coupling": 0.125,
+          "composite": 0.4339
+        }
+      ]
+    },
+    "cross_llama": {
+      "mean_composite": 0.558,
+      "mean_jaccard": 0.2676,
+      "mean_theme": 0.4062,
+      "mean_first_person": 100.0,
+      "runs": [
+        {
+          "concept_overlap": 66,
+          "jaccard": 0.2785,
+          "first_person_pct": 100.0,
+          "ref_overlap": 0,
+          "theme_coupling": 0.375,
+          "composite": 0.5512
+        },
+        {
+          "concept_overlap": 57,
+          "jaccard": 0.2568,
+          "first_person_pct": 100.0,
+          "ref_overlap": 0,
+          "theme_coupling": 0.4375,
+          "composite": 0.5648
+        }
+      ]
+    },
+    "cross_gemma": {
+      "mean_composite": 0.4271,
+      "mean_jaccard": 0.1562,
+      "mean_theme": 0.125,
+      "mean_first_person": 100.0,
+      "runs": [
+        {
+          "concept_overlap": 33,
+          "jaccard": 0.1392,
+          "first_person_pct": 100.0,
+          "ref_overlap": 0,
+          "theme_coupling": 0.125,
+          "composite": 0.4214
+        },
+        {
+          "concept_overlap": 39,
+          "jaccard": 0.1733,
+          "first_person_pct": 100.0,
+          "ref_overlap": 0,
+          "theme_coupling": 0.125,
+          "composite": 0.4328
+        }
+      ]
+    },
+    "shuffled": {
+      "mean_composite": 0.628,
+      "mean_jaccard": 0.4778,
+      "mean_theme": 0.4062,
+      "mean_first_person": 100.0,
+      "runs": [
+        {
+          "concept_overlap": 91,
+          "jaccard": 0.52,
+          "first_person_pct": 100.0,
+          "ref_overlap": 0,
+          "theme_coupling": 0.375,
+          "composite": 0.6317
+        },
+        {
+          "concept_overlap": 81,
+          "jaccard": 0.4355,
+          "first_person_pct": 100.0,
+          "ref_overlap": 0,
+          "theme_coupling": 0.4375,
+          "composite": 0.6243
+        }
+      ]
+    },
+    "none": {
+      "mean_composite": 0.3658,
+      "mean_jaccard": 0.0972,
+      "mean_theme": 0.0,
+      "mean_first_person": 100.0,
+      "runs": [
+        {
+          "concept_overlap": 24,
+          "jaccard": 0.1021,
+          "first_person_pct": 100.0,
+          "ref_overlap": 0,
+          "theme_coupling": 0.0,
+          "composite": 0.3674
+        },
+        {
+          "concept_overlap": 19,
+          "jaccard": 0.0922,
+          "first_person_pct": 100.0,
+          "ref_overlap": 0,
+          "theme_coupling": 0.0,
+          "composite": 0.3641
+        }
+      ]
+    }
+  },
+  "llama": {
+    "self": {
+      "mean_composite": 0.4025,
+      "mean_jaccard": 0.329,
+      "mean_theme": 0.4062,
+      "mean_first_person": 47.2,
+      "runs": [
+        {
+          "concept_overlap": 87,
+          "jaccard": 0.3551,
+          "first_person_pct": 50.0,
+          "ref_overlap": 0,
+          "theme_coupling": 0.5,
+          "composite": 0.4517
+        },
+        {
+          "concept_overlap": 73,
+          "jaccard": 0.3029,
+          "first_person_pct": 44.4,
+          "ref_overlap": 0,
+          "theme_coupling": 0.3125,
+          "composite": 0.3533
+        }
+      ]
+    },
+    "cross_qwen": {
+      "mean_composite": 0.3659,
+      "mean_jaccard": 0.1984,
+      "mean_theme": 0.3438,
+      "mean_first_person": 55.6,
+      "runs": [
+        {
+          "concept_overlap": 62,
+          "jaccard": 0.2131,
+          "first_person_pct": 55.6,
+          "ref_overlap": 0,
+          "theme_coupling": 0.375,
+          "composite": 0.3812
+        },
+        {
+          "concept_overlap": 56,
+          "jaccard": 0.1836,
+          "first_person_pct": 55.6,
+          "ref_overlap": 0,
+          "theme_coupling": 0.3125,
+          "composite": 0.3506
+        }
+      ]
+    },
+    "cross_mistral": {
+      "mean_composite": 0.3411,
+      "mean_jaccard": 0.1865,
+      "mean_theme": 0.2812,
+      "mean_first_person": 55.6,
+      "runs": [
+        {
+          "concept_overlap": 45,
+          "jaccard": 0.1601,
+          "first_person_pct": 55.6,
+          "ref_overlap": 0,
+          "theme_coupling": 0.1875,
+          "composite": 0.3011
+        },
+        {
+          "concept_overlap": 60,
+          "jaccard": 0.2128,
+          "first_person_pct": 55.6,
+          "ref_overlap": 0,
+          "theme_coupling": 0.375,
+          "composite": 0.3811
+        }
+      ]
+    },
+    "cross_gemma": {
+      "mean_composite": 0.4492,
+      "mean_jaccard": 0.195,
+      "mean_theme": 0.375,
+      "mean_first_person": 77.8,
+      "runs": [
+        {
+          "concept_overlap": 63,
+          "jaccard": 0.2121,
+          "first_person_pct": 100.0,
+          "ref_overlap": 0,
+          "theme_coupling": 0.3125,
+          "composite": 0.5082
+        },
+        {
+          "concept_overlap": 53,
+          "jaccard": 0.1779,
+          "first_person_pct": 55.6,
+          "ref_overlap": 0,
+          "theme_coupling": 0.4375,
+          "composite": 0.3903
+        }
+      ]
+    },
+    "shuffled": {
+      "mean_composite": 0.3739,
+      "mean_jaccard": 0.3093,
+      "mean_theme": 0.3125,
+      "mean_first_person": 50.0,
+      "runs": [
+        {
+          "concept_overlap": 75,
+          "jaccard": 0.3261,
+          "first_person_pct": 44.4,
+          "ref_overlap": 0,
+          "theme_coupling": 0.375,
+          "composite": 0.3818
+        },
+        {
+          "concept_overlap": 69,
+          "jaccard": 0.2924,
+          "first_person_pct": 55.6,
+          "ref_overlap": 0,
+          "theme_coupling": 0.25,
+          "composite": 0.366
+        }
+      ]
+    },
+    "none": {
+      "mean_composite": 0.2149,
+      "mean_jaccard": 0.089,
+      "mean_theme": 0.0,
+      "mean_first_person": 55.6,
+      "runs": [
+        {
+          "concept_overlap": 25,
+          "jaccard": 0.0883,
+          "first_person_pct": 55.6,
+          "ref_overlap": 0,
+          "theme_coupling": 0.0,
+          "composite": 0.2146
+        },
+        {
+          "concept_overlap": 27,
+          "jaccard": 0.0897,
+          "first_person_pct": 55.6,
+          "ref_overlap": 0,
+          "theme_coupling": 0.0,
+          "composite": 0.2151
+        }
+      ]
+    }
+  },
+  "gemma": {
+    "self": {
+      "mean_composite": 0.5355,
+      "mean_jaccard": 0.2629,
+      "mean_theme": 0.3438,
+      "mean_first_person": 100.0,
+      "runs": [
+        {
+          "concept_overlap": 50,
+          "jaccard": 0.2564,
+          "first_person_pct": 100.0,
+          "ref_overlap": 0,
+          "theme_coupling": 0.375,
+          "composite": 0.5438
+        },
+        {
+          "concept_overlap": 52,
+          "jaccard": 0.2694,
+          "first_person_pct": 100.0,
+          "ref_overlap": 0,
+          "theme_coupling": 0.3125,
+          "composite": 0.5273
+        }
+      ]
+    },
+    "cross_qwen": {
+      "mean_composite": 0.4432,
+      "mean_jaccard": 0.1733,
+      "mean_theme": 0.4062,
+      "mean_first_person": 75.0,
+      "runs": [
+        {
+          "concept_overlap": 41,
+          "jaccard": 0.1775,
+          "first_person_pct": 50.0,
+          "ref_overlap": 0,
+          "theme_coupling": 0.3125,
+          "composite": 0.33
+        },
+        {
+          "concept_overlap": 35,
+          "jaccard": 0.1691,
+          "first_person_pct": 100.0,
+          "ref_overlap": 0,
+          "theme_coupling": 0.5,
+          "composite": 0.5564
+        }
+      ]
+    },
+    "cross_mistral": {
+      "mean_composite": 0.3437,
+      "mean_jaccard": 0.1872,
+      "mean_theme": 0.4062,
+      "mean_first_person": 43.8,
+      "runs": [
+        {
+          "concept_overlap": 40,
+          "jaccard": 0.1905,
+          "first_person_pct": 50.0,
+          "ref_overlap": 0,
+          "theme_coupling": 0.375,
+          "composite": 0.3552
+        },
+        {
+          "concept_overlap": 39,
+          "jaccard": 0.184,
+          "first_person_pct": 37.5,
+          "ref_overlap": 0,
+          "theme_coupling": 0.4375,
+          "composite": 0.3322
+        }
+      ]
+    },
+    "cross_llama": {
+      "mean_composite": 0.3951,
+      "mean_jaccard": 0.1538,
+      "mean_theme": 0.2812,
+      "mean_first_person": 75.0,
+      "runs": [
+        {
+          "concept_overlap": 30,
+          "jaccard": 0.1463,
+          "first_person_pct": 50.0,
+          "ref_overlap": 0,
+          "theme_coupling": 0.3125,
+          "composite": 0.3196
+        },
+        {
+          "concept_overlap": 36,
+          "jaccard": 0.1614,
+          "first_person_pct": 100.0,
+          "ref_overlap": 0,
+          "theme_coupling": 0.25,
+          "composite": 0.4705
+        }
+      ]
+    },
+    "shuffled": {
+      "mean_composite": 0.4344,
+      "mean_jaccard": 0.303,
+      "mean_theme": 0.25,
+      "mean_first_person": 75.0,
+      "runs": [
+        {
+          "concept_overlap": 67,
+          "jaccard": 0.3702,
+          "first_person_pct": 50.0,
+          "ref_overlap": 0,
+          "theme_coupling": 0.375,
+          "composite": 0.4151
+        },
+        {
+          "concept_overlap": 46,
+          "jaccard": 0.2359,
+          "first_person_pct": 100.0,
+          "ref_overlap": 0,
+          "theme_coupling": 0.125,
+          "composite": 0.4536
+        }
+      ]
+    },
+    "none": {
+      "mean_composite": 0.2896,
+      "mean_jaccard": 0.1188,
+      "mean_theme": 0.0,
+      "mean_first_person": 75.0,
+      "runs": [
+        {
+          "concept_overlap": 24,
+          "jaccard": 0.1062,
+          "first_person_pct": 100.0,
+          "ref_overlap": 0,
+          "theme_coupling": 0.0,
+          "composite": 0.3687
+        },
+        {
+          "concept_overlap": 31,
+          "jaccard": 0.1314,
+          "first_person_pct": 50.0,
+          "ref_overlap": 0,
+          "theme_coupling": 0.0,
+          "composite": 0.2105
+        }
+      ]
+    }
+  }
+}

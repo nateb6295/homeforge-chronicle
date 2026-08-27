@@ -23,8 +23,8 @@ from pathlib import Path
 
 DB = Path("/mnt/hdd/chronicle-data/processed.db")
 LOG_FILE = Path(os.path.expanduser("~/chronicle/data/fisher_profiles.jsonl"))
-OLLAMA_URL = "http://192.168.1.11:11434"
-MODEL = "mxbai-embed-large"
+OLLAMA_URL = "http://localhost:11434"
+MODEL = "snowflake-arctic-embed2"
 
 
 def get_ccs_fields() -> dict:

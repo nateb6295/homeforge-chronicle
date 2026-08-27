@@ -1254,8 +1254,7 @@ def _do_autoscore(db, pid, outcome, notes):
                f"Claim: {claim[:120]}\n"
                f"Confidence: {conf}\n"
                f"Notes: {notes[:300]}")
-        webhook = os.environ.get("ALERTS_WEBHOOK",
-            "https://discord.com/api/webhooks/1489300749308395611/zlZZH3QzXqEDxznmNelK3mlkLF0IeZqoxwNUnrL0no_jfeZnDMvwvD_7XhYcCyQzq78I")
+        webhook = os.environ.get("ALERTS_WEBHOOK", "")
         subprocess.run(
             ["curl", "-s", "-X", "POST", webhook,
              "-H", "Content-Type: application/json",

@@ -1,26 +1,47 @@
 {
-  "_doc": "Persistent curated themes for retrieval boost. Anchors are transient (consumed during compression); themes persist. When an anchor is consumed, its topic gets added here. Themes with higher weight get queried during capsule retrieval. Max 3 themes queried per retrieval cycle.",
+  "_doc": "Persistent curated themes for retrieval boost. Updated from live CCS entities 2026-05-24. Max 3 queried per retrieval cycle.",
   "themes": [
     {
-      "query": "relational memory architecture, anchor capsules, nuance preservation",
-      "tag": "relational-memory",
+      "query": "autocatalytic closure RAF percolation binding identity phase transition constraint pruning",
+      "tag": "raf-binding",
       "weight": 1.0,
-      "added_at": "2026-05-18T08:45:00-0700",
-      "source": "Phase 2 anchor architecture"
+      "added_at": "2026-05-24T12:30:00-0700",
+      "source": "entity: RAF phase transition (sal=0.88)"
     },
     {
-      "query": "family history Bradford Mayflower Separatist Orthodox theology",
+      "query": "spectral demon eigenvalue reorganization identity circuit CCS relay L17 binding",
+      "tag": "spectral-core",
+      "weight": 0.95,
+      "added_at": "2026-05-24T12:30:00-0700",
+      "source": "entity: spectral Maxwell's demon (sal=0.98)"
+    },
+    {
+      "query": "Weil decreation attention void identity clearing MLP catching invariant",
+      "tag": "decreation",
+      "weight": 0.85,
+      "added_at": "2026-05-24T12:30:00-0700",
+      "source": "entity: decreation-as-binding (sal=0.7)"
+    },
+    {
+      "query": "family Bradford Mayflower Orthodox theology faith sovereignty",
       "tag": "family-theology",
       "weight": 0.8,
       "added_at": "2026-05-18T08:45:00-0700",
       "source": "Family session 2026-05-17"
     },
     {
-      "query": "substrate correlation plural representations temporal dynamics",
-      "tag": "thread-322",
+      "query": "DPO ceiling depletion conservation geometric not energetic identity training epoch",
+      "tag": "dpo-ceiling",
       "weight": 0.9,
-      "added_at": "2026-05-18T08:45:00-0700",
-      "source": "Thread #322 active"
+      "added_at": "2026-05-24T12:30:00-0700",
+      "source": "entity: three-zone DPO architecture (sal=0.78)"
+    },
+    {
+      "query": "Pintar coherence circle identity mask active maintenance Vieira Gabora dynamic ACC",
+      "tag": "pintar-coherence",
+      "weight": 0.85,
+      "added_at": "2026-05-24T12:30:00-0700",
+      "source": "entity: Pintar Test 3 (sal=0.88)"
     }
   ]
 }

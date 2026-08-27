@@ -1,0 +1,34 @@
+{
+  "Long retrieval": {
+    "label": "Long retrieval",
+    "avg_tokens": 108.33333333333333,
+    "mid_ratio": 0.23950327850050396,
+    "late_ratio": 0.2942264692650901,
+    "mid_frob": 1461.3444485134548,
+    "late_frob": 1831.5992838541667
+  },
+  "Short discovery": {
+    "label": "Short discovery",
+    "avg_tokens": 17.0,
+    "mid_ratio": 0.10817046380705303,
+    "late_ratio": 0.24086256904734504,
+    "mid_frob": 1329.4886576334636,
+    "late_frob": 1226.4405924479167
+  },
+  "Obscure facts (OOD, no reasoning)": {
+    "label": "Obscure facts (OOD, no reasoning)",
+    "avg_tokens": 54.333333333333336,
+    "mid_ratio": 0.1767593597372373,
+    "late_ratio": 0.3000904669364293,
+    "mid_frob": 1381.7353820800781,
+    "late_frob": 1508.9642537434895
+  },
+  "Familiar puzzles (reasoning, low OOD)": {
+    "label": "Familiar puzzles (reasoning, low OOD)",
+    "avg_tokens": 40.666666666666664,
+    "mid_ratio": 0.16165699188907942,
+    "late_ratio": 0.28163376202185947,
+    "mid_frob": 1380.112772623698,
+    "late_frob": 1510.062472873264
+  }
+}

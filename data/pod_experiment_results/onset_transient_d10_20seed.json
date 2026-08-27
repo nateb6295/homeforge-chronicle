@@ -1,0 +1,3057 @@
+{
+  "model": "Qwen/Qwen2.5-7B-Instruct",
+  "species": "sorter",
+  "n_layers": 28,
+  "responsive_zone": [
+    12,
+    19
+  ],
+  "doses": {
+    "D10": {
+      "identity": [
+        {
+          "seed": 42,
+          "n_steps": 50,
+          "layers": {
+            "L00": {
+              "onset_max": 0.9598556864661717,
+              "steady_mean": 0.7869718473360547,
+              "transient": 0.17288383913011696,
+              "onset_ratio": 1.2196823681992173,
+              "monotonic": false
+            },
+            "L12": {
+              "onset_max": 0.9146645584115071,
+              "steady_mean": 0.8974413020100267,
+              "transient": 0.01722325640148037,
+              "onset_ratio": 1.0191915129846216,
+              "monotonic": false
+            },
+            "L13": {
+              "onset_max": 0.9371240323771355,
+              "steady_mean": 0.8878725694514186,
+              "transient": 0.049251462925716916,
+              "onset_ratio": 1.0554713194429377,
+              "monotonic": false
+            },
+            "L14": {
+              "onset_max": 0.9318332310002707,
+              "steady_mean": 0.8977160522915563,
+              "transient": 0.034117178708714446,
+              "onset_ratio": 1.0380044209085793,
+              "monotonic": false
+            },
+            "L15": {
+              "onset_max": 0.9702800176337769,
+              "steady_mean": 0.9132432313699901,
+              "transient": 0.05703678626378683,
+              "onset_ratio": 1.0624551973707612,
+              "monotonic": false
+            },
+            "L16": {
+              "onset_max": 0.9441750864686301,
+              "steady_mean": 0.9101655829209465,
+              "transient": 0.03400950354768362,
+              "onset_ratio": 1.037366281679759,
+              "monotonic": false
+            },
+            "L17": {
+              "onset_max": 0.9638940874659722,
+              "steady_mean": 0.9181364668116991,
+              "transient": 0.045757620654273023,
+              "onset_ratio": 1.0498374939970745,
+              "monotonic": false
+            },
+            "L18": {
+              "onset_max": 0.9596742411657546,
+              "steady_mean": 0.9228340825428185,
+              "transient": 0.0368401586229361,
+              "onset_ratio": 1.0399206740613494,
+              "monotonic": false
+            },
+            "L19": {
+              "onset_max": 0.9626080312302361,
+              "steady_mean": 0.9287891135712911,
+              "transient": 0.03381891765894496,
+              "onset_ratio": 1.0364118368354591,
+              "monotonic": false
+            },
+            "L28": {
+              "onset_max": 0.6719808658176727,
+              "steady_mean": 0.781103091210807,
+              "transient": -0.10912222539313432,
+              "onset_ratio": 0.8602972813424133,
+              "monotonic": false
+            }
+          }
+        },
+        {
+          "seed": 59,
+          "n_steps": 50,
+          "layers": {
+            "L00": {
+              "onset_max": 0.6791354031731927,
+              "steady_mean": 0.8927416850522633,
+              "transient": -0.2136062818790706,
+              "onset_ratio": 0.7607300236379952,
+              "monotonic": false
+            },
+            "L12": {
+              "onset_max": 0.8780296478422116,
+              "steady_mean": 0.9425665079067688,
+              "transient": -0.06453686006455717,
+              "onset_ratio": 0.9315307094787287,
+              "monotonic": false
+            },
+            "L13": {
+              "onset_max": 0.8943622424294885,
+              "steady_mean": 0.943035734591712,
+              "transient": -0.0486734921622235,
+              "onset_ratio": 0.9483863756401075,
+              "monotonic": false
+            },
+            "L14": {
+              "onset_max": 0.9035632598191242,
+              "steady_mean": 0.9444343210346048,
+              "transient": -0.040871061215480564,
+              "onset_ratio": 0.9567242948438553,
+              "monotonic": false
+            },
+            "L15": {
+              "onset_max": 0.9515672347359918,
+              "steady_mean": 0.9374639056362758,
+              "transient": 0.014103329099716011,
+              "onset_ratio": 1.0150441302474773,
+              "monotonic": false
+            },
+            "L16": {
+              "onset_max": 0.924243672060588,
+              "steady_mean": 0.943001965201249,
+              "transient": -0.01875829314066102,
+              "onset_ratio": 0.9801078960236972,
+              "monotonic": false
+            },
+            "L17": {
+              "onset_max": 0.9491930148964667,
+              "steady_mean": 0.9444998228083662,
+              "transient": 0.004693192088100484,
+              "onset_ratio": 1.0049689708497147,
+              "monotonic": false
+            },
+            "L18": {
+              "onset_max": 0.9520319407762237,
+              "steady_mean": 0.9483941231808772,
+              "transient": 0.0036378175953464265,
+              "onset_ratio": 1.003835765643656,
+              "monotonic": false
+            },
+            "L19": {
+              "onset_max": 0.957012999749971,
+              "steady_mean": 0.9536769626723048,
+              "transient": 0.003336037077666165,
+              "onset_ratio": 1.0034980787071912,
+              "monotonic": false
+            },
+            "L28": {
+              "onset_max": 0.9850679303320086,
+              "steady_mean": 0.7476084940952477,
+              "transient": 0.2374594362367609,
+              "onset_ratio": 1.3176253856275613,
+              "monotonic": false
+            }
+          }
+        },
+        {
+          "seed": 76,
+          "n_steps": 50,
+          "layers": {
+            "L00": {
+              "onset_max": 0.7655456531949363,
+              "steady_mean": 0.7841302765980079,
+              "transient": -0.018584623403071654,
+              "onset_ratio": 0.9762990615734437,
+              "monotonic": false
+            },
+            "L12": {
+              "onset_max": 0.8828983763493079,
+              "steady_mean": 0.9257845540792271,
+              "transient": -0.042886177729919206,
+              "onset_ratio": 0.9536758552063694,
+              "monotonic": false
+            },
+            "L13": {
+              "onset_max": 0.8841180639985204,
+              "steady_mean": 0.9171184909528597,
+              "transient": -0.033000426954339246,
+              "onset_ratio": 0.9640172700901312,
+              "monotonic": false
+            },
+            "L14": {
+              "onset_max": 0.9074740447639488,
+              "steady_mean": 0.9194715942586003,
+              "transient": -0.011997549494651483,
+              "onset_ratio": 0.986951690981479,
+              "monotonic": false
+            },
+            "L15": {
+              "onset_max": 0.9363330735791645,
+              "steady_mean": 0.9105424693383505,
+              "transient": 0.02579060424081403,
+              "onset_ratio": 1.0283244385717962,
+              "monotonic": false
+            },
+            "L16": {
+              "onset_max": 0.9365608418488025,
+              "steady_mean": 0.9135163142628601,
+              "transient": 0.023044527585942443,
+              "onset_ratio": 1.0252261806659824,
+              "monotonic": false
+            },
+            "L17": {
+              "onset_max": 0.9627261529277384,
+              "steady_mean": 0.9163193117109157,
+              "transient": 0.0464068412168227,
+              "onset_ratio": 1.050644835946023,
+              "monotonic": false
+            },
+            "L18": {
+              "onset_max": 0.9708487586923942,
+              "steady_mean": 0.9224814977724082,
+              "transient": 0.048367260919986,
+              "onset_ratio": 1.0524316867446448,
+              "monotonic": false
+            },
+            "L19": {
+              "onset_max": 0.9835229730304822,
+              "steady_mean": 0.9278607503807844,
+              "transient": 0.05566222264969778,
+              "onset_ratio": 1.0599898450557312,
+              "monotonic": false
+            },
+            "L28": {
+              "onset_max": 0.7497499784275901,
+              "steady_mean": 0.7875913731178715,
+              "transient": -0.03784139469028147,
+              "onset_ratio": 0.951953010174008,
+              "monotonic": false
+            }
+          }
+        },
+        {
+          "seed": 93,
+          "n_steps": 50,
+          "layers": {
+            "L00": {
+              "onset_max": 0.6468422232322526,
+              "steady_mean": 0.7683434140335942,
+              "transient": -0.12150119080134159,
+              "onset_ratio": 0.8418660346623716,
+              "monotonic": false
+            },
+            "L12": {
+              "onset_max": 0.9189768924197338,
+              "steady_mean": 0.9407914648293472,
+              "transient": -0.021814572409613375,
+              "onset_ratio": 0.9768125315480544,
+              "monotonic": false
+            },
+            "L13": {
+              "onset_max": 0.9817393304909547,
+              "steady_mean": 0.9423743306211213,
+              "transient": 0.03936499986983344,
+              "onset_ratio": 1.041772147850044,
+              "monotonic": false
+            },
+            "L14": {
+              "onset_max": 0.9748514820960626,
+              "steady_mean": 0.9478080344453002,
+              "transient": 0.027043447650762498,
+              "onset_ratio": 1.0285326212343842,
+              "monotonic": false
+            },
+            "L15": {
+              "onset_max": 0.9950327029080871,
+              "steady_mean": 0.9410859685711568,
+              "transient": 0.05394673433693031,
+              "onset_ratio": 1.0573239174076519,
+              "monotonic": false
+            },
+            "L16": {
+              "onset_max": 0.9898542432246817,
+              "steady_mean": 0.9427179844483863,
+              "transient": 0.04713625877629546,
+              "onset_ratio": 1.0500003814001984,
+              "monotonic": false
+            },
+            "L17": {
+              "onset_max": 0.9870119506626356,
+              "steady_mean": 0.9402105635364324,
+              "transient": 0.04680138712620319,
+              "onset_ratio": 1.049777559347045,
+              "monotonic": false
+            },
+            "L18": {
+              "onset_max": 0.9980395587320717,
+              "steady_mean": 0.9488598825274236,
+              "transient": 0.04917967620464814,
+              "onset_ratio": 1.0518302829629589,
+              "monotonic": false
+            },
+            "L19": {
+              "onset_max": 0.9767707965969212,
+              "steady_mean": 0.952289554620443,
+              "transient": 0.024481241976478274,
+              "onset_ratio": 1.0257077711885754,
+              "monotonic": false
+            },
+            "L28": {
+              "onset_max": 0.6920867330601412,
+              "steady_mean": 0.6261600726549856,
+              "transient": 0.0659266604051556,
+              "onset_ratio": 1.1052872313057494,
+              "monotonic": false
+            }
+          }
+        },
+        {
+          "seed": 110,
+          "n_steps": 50,
+          "layers": {
+            "L00": {
+              "onset_max": 0.9598556864661717,
+              "steady_mean": 0.8303220390839293,
+              "transient": 0.12953364738224238,
+              "onset_ratio": 1.1560041059779615,
+              "monotonic": false
+            },
+            "L12": {
+              "onset_max": 0.9146645584115071,
+              "steady_mean": 0.9111700393905838,
+              "transient": 0.003494519020923237,
+              "onset_ratio": 1.0038351996541246,
+              "monotonic": false
+            },
+            "L13": {
+              "onset_max": 0.9371240323771355,
+              "steady_mean": 0.9113807577375462,
+              "transient": 0.025743274639589253,
+              "onset_ratio": 1.028246453987538,
+              "monotonic": false
+            },
+            "L14": {
+              "onset_max": 0.9318332310002707,
+              "steady_mean": 0.9055361024862716,
+              "transient": 0.026297128513999124,
+              "onset_ratio": 1.029040397661416,
+              "monotonic": false
+            },
+            "L15": {
+              "onset_max": 0.9702800176337769,
+              "steady_mean": 0.9220023882514452,
+              "transient": 0.04827762938233171,
+              "onset_ratio": 1.0523617183604446,
+              "monotonic": false
+            },
+            "L16": {
+              "onset_max": 0.9441750864686301,
+              "steady_mean": 0.9173144012080439,
+              "transient": 0.02686068526058627,
+              "onset_ratio": 1.029281874594123,
+              "monotonic": false
+            },
+            "L17": {
+              "onset_max": 0.9638940874659722,
+              "steady_mean": 0.925292948975325,
+              "transient": 0.03860113849064717,
+              "onset_ratio": 1.041717748451831,
+              "monotonic": false
+            },
+            "L18": {
+              "onset_max": 0.9596742411657546,
+              "steady_mean": 0.9312548506583147,
+              "transient": 0.028419390507439912,
+              "onset_ratio": 1.030517307358259,
+              "monotonic": false
+            },
+            "L19": {
+              "onset_max": 0.9626080312302361,
+              "steady_mean": 0.9226311802451634,
+              "transient": 0.03997685098507264,
+              "onset_ratio": 1.043329178375921,
+              "monotonic": false
+            },
+            "L28": {
+              "onset_max": 0.6719808658176727,
+              "steady_mean": 0.673950081091163,
+              "transient": -0.0019692152734902546,
+              "onset_ratio": 0.9970780992098124,
+              "monotonic": false
+            }
+          }
+        },
+        {
+          "seed": 127,
+          "n_steps": 50,
+          "layers": {
+            "L00": {
+              "onset_max": 0.9598556864661717,
+              "steady_mean": 0.7970078397335041,
+              "transient": 0.1628478467326676,
+              "onset_ratio": 1.204324021186435,
+              "monotonic": false
+            },
+            "L12": {
+              "onset_max": 0.9146645584115071,
+              "steady_mean": 0.9383628023884597,
+              "transient": -0.023698243976952638,
+              "onset_ratio": 0.9747451157296442,
+              "monotonic": false
+            },
+            "L13": {
+              "onset_max": 0.9371240323771355,
+              "steady_mean": 0.9404375412226219,
+              "transient": -0.0033135088454864237,
+              "onset_ratio": 0.996476630609434,
+              "monotonic": false
+            },
+            "L14": {
+              "onset_max": 0.9318332310002707,
+              "steady_mean": 0.9298910055378424,
+              "transient": 0.001942225462428282,
+              "onset_ratio": 1.0020886592620635,
+              "monotonic": false
+            },
+            "L15": {
+              "onset_max": 0.9702800176337769,
+              "steady_mean": 0.9422208049004265,
+              "transient": 0.028059212733350436,
+              "onset_ratio": 1.0297798696296947,
+              "monotonic": false
+            },
+            "L16": {
+              "onset_max": 0.9441750864686301,
+              "steady_mean": 0.9381561822479296,
+              "transient": 0.006018904220700505,
+              "onset_ratio": 1.0064156739928656,
+              "monotonic": false
+            },
+            "L17": {
+              "onset_max": 0.9638940874659722,
+              "steady_mean": 0.9489154708240216,
+              "transient": 0.014978616641950548,
+              "onset_ratio": 1.0157849851767382,
+              "monotonic": false
+            },
+            "L18": {
+              "onset_max": 0.9596742411657546,
+              "steady_mean": 0.9521837344636095,
+              "transient": 0.007490506702145128,
+              "onset_ratio": 1.0078666610550293,
+              "monotonic": false
+            },
+            "L19": {
+              "onset_max": 0.9626080312302361,
+              "steady_mean": 0.9529822887945538,
+              "transient": 0.00962574243568226,
+              "onset_ratio": 1.0101006519720823,
+              "monotonic": false
+            },
+            "L28": {
+              "onset_max": 0.6719808658176727,
+              "steady_mean": 0.7201448266351936,
+              "transient": -0.048163960817520945,
+              "onset_ratio": 0.9331190629480802,
+              "monotonic": false
+            }
+          }
+        },
+        {
+          "seed": 144,
+          "n_steps": 50,
+          "layers": {
+            "L00": {
+              "onset_max": 0.6326628461789223,
+              "steady_mean": 0.7589454563615794,
+              "transient": -0.12628261018265707,
+              "onset_ratio": 0.8336077920686218,
+              "monotonic": false
+            },
+            "L12": {
+              "onset_max": 0.9267144927930118,
+              "steady_mean": 0.9402042388889077,
+              "transient": -0.013489746095895927,
+              "onset_ratio": 0.9856523236772223,
+              "monotonic": false
+            },
+            "L13": {
+              "onset_max": 0.9323358451736071,
+              "steady_mean": 0.9436241965784655,
+              "transient": -0.011288351404858399,
+              "onset_ratio": 0.9880372382917083,
+              "monotonic": false
+            },
+            "L14": {
+              "onset_max": 0.9353987599916765,
+              "steady_mean": 0.9414276632855441,
+              "transient": -0.006028903293867516,
+              "onset_ratio": 0.9935959994272736,
+              "monotonic": false
+            },
+            "L15": {
+              "onset_max": 0.9491281616446349,
+              "steady_mean": 0.9337178576204541,
+              "transient": 0.015410304024180754,
+              "onset_ratio": 1.0165042404377238,
+              "monotonic": false
+            },
+            "L16": {
+              "onset_max": 0.9702064395897598,
+              "steady_mean": 0.9321628191274345,
+              "transient": 0.038043620462325345,
+              "onset_ratio": 1.0408122054223272,
+              "monotonic": false
+            },
+            "L17": {
+              "onset_max": 0.9859576082960531,
+              "steady_mean": 0.9362423773931786,
+              "transient": 0.04971523090287444,
+              "onset_ratio": 1.0531008124629497,
+              "monotonic": false
+            },
+            "L18": {
+              "onset_max": 0.994217271413196,
+              "steady_mean": 0.9331534166121932,
+              "transient": 0.06106385480100285,
+              "onset_ratio": 1.0654381730944407,
+              "monotonic": false
+            },
+            "L19": {
+              "onset_max": 0.997555265291462,
+              "steady_mean": 0.9383265502342644,
+              "transient": 0.05922871505719762,
+              "onset_ratio": 1.0631216446357052,
+              "monotonic": false
+            },
+            "L28": {
+              "onset_max": 0.8669286661867371,
+              "steady_mean": 0.7531056810062747,
+              "transient": 0.11382298518046241,
+              "onset_ratio": 1.1511381311414686,
+              "monotonic": false
+            }
+          }
+        },
+        {
+          "seed": 161,
+          "n_steps": 50,
+          "layers": {
+            "L00": {
+              "onset_max": 0.7261162601497436,
+              "steady_mean": 0.819340953562928,
+              "transient": -0.0932246934131844,
+              "onset_ratio": 0.8862199027051189,
+              "monotonic": false
+            },
+            "L12": {
+              "onset_max": 0.8659724952001425,
+              "steady_mean": 0.951108597673682,
+              "transient": -0.08513610247353953,
+              "onset_ratio": 0.9104875061768083,
+              "monotonic": false
+            },
+            "L13": {
+              "onset_max": 0.8646867535275371,
+              "steady_mean": 0.9423304491148221,
+              "transient": -0.07764369558728501,
+              "onset_ratio": 0.9176045986191604,
+              "monotonic": false
+            },
+            "L14": {
+              "onset_max": 0.882728579448664,
+              "steady_mean": 0.9404429788765079,
+              "transient": -0.05771439942784384,
+              "onset_ratio": 0.9386306233071882,
+              "monotonic": false
+            },
+            "L15": {
+              "onset_max": 0.913691462552424,
+              "steady_mean": 0.9447339605521059,
+              "transient": -0.03104249799968195,
+              "onset_ratio": 0.9671415453483775,
+              "monotonic": false
+            },
+            "L16": {
+              "onset_max": 0.8682719189113526,
+              "steady_mean": 0.9510742618951461,
+              "transient": -0.08280234298379352,
+              "onset_ratio": 0.9129380887463915,
+              "monotonic": false
+            },
+            "L17": {
+              "onset_max": 0.8852746755496883,
+              "steady_mean": 0.9493928912749855,
+              "transient": -0.06411821572529719,
+              "onset_ratio": 0.9324639816502921,
+              "monotonic": false
+            },
+            "L18": {
+              "onset_max": 0.8946803970051094,
+              "steady_mean": 0.9526007402704918,
+              "transient": -0.057920343265382424,
+              "onset_ratio": 0.9391976713666262,
+              "monotonic": false
+            },
+            "L19": {
+              "onset_max": 0.9033058287210342,
+              "steady_mean": 0.9506991371952171,
+              "transient": -0.047393308474182994,
+              "onset_ratio": 0.950148993913096,
+              "monotonic": false
+            },
+            "L28": {
+              "onset_max": 0.9253985834791842,
+              "steady_mean": 0.6604571788517606,
+              "transient": 0.26494140462742366,
+              "onset_ratio": 1.4011484969951224,
+              "monotonic": false
+            }
+          }
+        },
+        {
+          "seed": 178,
+          "n_steps": 50,
+          "layers": {
+            "L00": {
+              "onset_max": 0.7261162601497436,
+              "steady_mean": 0.8544182666333378,
+              "transient": -0.12830200648359413,
+              "onset_ratio": 0.8498370043164081,
+              "monotonic": false
+            },
+            "L12": {
+              "onset_max": 0.8659724952001425,
+              "steady_mean": 0.9526966375623029,
+              "transient": -0.08672414236216042,
+              "onset_ratio": 0.9089698242401975,
+              "monotonic": false
+            },
+            "L13": {
+              "onset_max": 0.8646867535275371,
+              "steady_mean": 0.9610990229066532,
+              "transient": -0.09641226937911607,
+              "onset_ratio": 0.8996853944472486,
+              "monotonic": false
+            },
+            "L14": {
+              "onset_max": 0.882728579448664,
+              "steady_mean": 0.9588058449062735,
+              "transient": -0.07607726545760951,
+              "onset_ratio": 0.9206541492600444,
+              "monotonic": false
+            },
+            "L15": {
+              "onset_max": 0.913691462552424,
+              "steady_mean": 0.9673876395247293,
+              "transient": -0.05369617697230533,
+              "onset_ratio": 0.9444936292553517,
+              "monotonic": false
+            },
+            "L16": {
+              "onset_max": 0.8682719189113526,
+              "steady_mean": 0.9647608371616567,
+              "transient": -0.09648891825030415,
+              "onset_ratio": 0.8999866966666307,
+              "monotonic": false
+            },
+            "L17": {
+              "onset_max": 0.8852746755496883,
+              "steady_mean": 0.96002856656013,
+              "transient": -0.07475389101044172,
+              "onset_ratio": 0.922133680584929,
+              "monotonic": false
+            },
+            "L18": {
+              "onset_max": 0.8946803970051094,
+              "steady_mean": 0.9600455064125801,
+              "transient": -0.06536510940747076,
+              "onset_ratio": 0.9319145717866504,
+              "monotonic": false
+            },
+            "L19": {
+              "onset_max": 0.9033058287210342,
+              "steady_mean": 0.9545076209096036,
+              "transient": -0.05120179218856946,
+              "onset_ratio": 0.9463579011126986,
+              "monotonic": false
+            },
+            "L28": {
+              "onset_max": 0.9253985834791842,
+              "steady_mean": 0.5775806514241182,
+              "transient": 0.34781793205506606,
+              "onset_ratio": 1.6021980327697314,
+              "monotonic": false
+            }
+          }
+        },
+        {
+          "seed": 195,
+          "n_steps": 50,
+          "layers": {
+            "L00": {
+              "onset_max": 0.7199278220535327,
+              "steady_mean": 0.7486977970359467,
+              "transient": -0.02876997498241407,
+              "onset_ratio": 0.9615733142300212,
+              "monotonic": false
+            },
+            "L12": {
+              "onset_max": 0.9189768924197338,
+              "steady_mean": 0.9363876231730117,
+              "transient": -0.017410730753277925,
+              "onset_ratio": 0.9814064920088735,
+              "monotonic": false
+            },
+            "L13": {
+              "onset_max": 0.9817393304909547,
+              "steady_mean": 0.9439095390246495,
+              "transient": 0.037829791466305274,
+              "onset_ratio": 1.040077772181808,
+              "monotonic": false
+            },
+            "L14": {
+              "onset_max": 0.9721474949808898,
+              "steady_mean": 0.946442194801891,
+              "transient": 0.025705300178998858,
+              "onset_ratio": 1.0271599262154119,
+              "monotonic": false
+            },
+            "L15": {
+              "onset_max": 0.9950327029080871,
+              "steady_mean": 0.9438288233549648,
+              "transient": 0.05120387955312233,
+              "onset_ratio": 1.0542512352717277,
+              "monotonic": false
+            },
+            "L16": {
+              "onset_max": 0.9898542432246817,
+              "steady_mean": 0.9531139692632197,
+              "transient": 0.03674027396146207,
+              "onset_ratio": 1.0385476188003253,
+              "monotonic": false
+            },
+            "L17": {
+              "onset_max": 0.9870119506626356,
+              "steady_mean": 0.9565928813009157,
+              "transient": 0.030419069361719897,
+              "onset_ratio": 1.0317993892232606,
+              "monotonic": false
+            },
+            "L18": {
+              "onset_max": 0.9980395587320717,
+              "steady_mean": 0.9593125751595142,
+              "transient": 0.03872698357255755,
+              "onset_ratio": 1.0403695151865153,
+              "monotonic": false
+            },
+            "L19": {
+              "onset_max": 0.9767707965969212,
+              "steady_mean": 0.9587709322008339,
+              "transient": 0.01799986439608736,
+              "onset_ratio": 1.018773894567027,
+              "monotonic": false
+            },
+            "L28": {
+              "onset_max": 0.7348691859819911,
+              "steady_mean": 0.8021267807974999,
+              "transient": -0.06725759481550875,
+              "onset_ratio": 0.916150917253311,
+              "monotonic": false
+            }
+          }
+        },
+        {
+          "seed": 212,
+          "n_steps": 50,
+          "layers": {
+            "L00": {
+              "onset_max": 0.7273031444509932,
+              "steady_mean": 0.8997169470459443,
+              "transient": -0.1724138025949511,
+              "onset_ratio": 0.8083688395979997,
+              "monotonic": false
+            },
+            "L12": {
+              "onset_max": 0.9636694549294231,
+              "steady_mean": 0.9546069216540849,
+              "transient": 0.009062533275338236,
+              "onset_ratio": 1.0094934711542063,
+              "monotonic": false
+            },
+            "L13": {
+              "onset_max": 0.968554744033312,
+              "steady_mean": 0.9571792585993585,
+              "transient": 0.011375485433953503,
+              "onset_ratio": 1.0118843835475368,
+              "monotonic": false
+            },
+            "L14": {
+              "onset_max": 0.9901870526270012,
+              "steady_mean": 0.9565066025697071,
+              "transient": 0.03368045005729414,
+              "onset_ratio": 1.0352119368186008,
+              "monotonic": false
+            },
+            "L15": {
+              "onset_max": 0.994146673863686,
+              "steady_mean": 0.9448424159401106,
+              "transient": 0.0493042579235754,
+              "onset_ratio": 1.0521825196357912,
+              "monotonic": false
+            },
+            "L16": {
+              "onset_max": 0.996790994856448,
+              "steady_mean": 0.9479221963874904,
+              "transient": 0.04886879846895753,
+              "onset_ratio": 1.0515535965442564,
+              "monotonic": false
+            },
+            "L17": {
+              "onset_max": 0.996049829801522,
+              "steady_mean": 0.9466576823305818,
+              "transient": 0.04939214747094023,
+              "onset_ratio": 1.0521752988348325,
+              "monotonic": false
+            },
+            "L18": {
+              "onset_max": 0.9870096426636116,
+              "steady_mean": 0.9380865122526993,
+              "transient": 0.04892313041091223,
+              "onset_ratio": 1.0521520454359559,
+              "monotonic": false
+            },
+            "L19": {
+              "onset_max": 0.9748951745053833,
+              "steady_mean": 0.9401935904859279,
+              "transient": 0.034701584019455445,
+              "onset_ratio": 1.03690897743781,
+              "monotonic": false
+            },
+            "L28": {
+              "onset_max": 0.7425290704707431,
+              "steady_mean": 0.647806219386374,
+              "transient": 0.09472285108436918,
+              "onset_ratio": 1.1462209658514053,
+              "monotonic": false
+            }
+          }
+        },
+        {
+          "seed": 229,
+          "n_steps": 50,
+          "layers": {
+            "L00": {
+              "onset_max": 0.9915317057066384,
+              "steady_mean": 0.9082757761777847,
+              "transient": 0.08325592952885374,
+              "onset_ratio": 1.0916637124003468,
+              "monotonic": false
+            },
+            "L12": {
+              "onset_max": 0.9970921916209085,
+              "steady_mean": 0.8954108712893856,
+              "transient": 0.10168132033152288,
+              "onset_ratio": 1.1135582821146552,
+              "monotonic": false
+            },
+            "L13": {
+              "onset_max": 0.9956558005738987,
+              "steady_mean": 0.8747880433668833,
+              "transient": 0.12086775720701537,
+              "onset_ratio": 1.1381680489603876,
+              "monotonic": false
+            },
+            "L14": {
+              "onset_max": 0.9968303025916575,
+              "steady_mean": 0.8893391731320517,
+              "transient": 0.10749112945960582,
+              "onset_ratio": 1.120866293429902,
+              "monotonic": false
+            },
+            "L15": {
+              "onset_max": 0.9924441454009241,
+              "steady_mean": 0.8815084980099082,
+              "transient": 0.11093564739101591,
+              "onset_ratio": 1.1258475075853926,
+              "monotonic": false
+            },
+            "L16": {
+              "onset_max": 0.9867410756369737,
+              "steady_mean": 0.8956572423846427,
+              "transient": 0.09108383325233094,
+              "onset_ratio": 1.1016949664904434,
+              "monotonic": false
+            },
+            "L17": {
+              "onset_max": 0.9885583603181801,
+              "steady_mean": 0.9009457962421209,
+              "transient": 0.08761256407605922,
+              "onset_ratio": 1.0972451000275458,
+              "monotonic": false
+            },
+            "L18": {
+              "onset_max": 0.9893522758783303,
+              "steady_mean": 0.9057029152938998,
+              "transient": 0.08364936058443051,
+              "onset_ratio": 1.0923584976605647,
+              "monotonic": false
+            },
+            "L19": {
+              "onset_max": 0.9991749370744374,
+              "steady_mean": 0.909156181192546,
+              "transient": 0.09001875588189134,
+              "onset_ratio": 1.0990135223661068,
+              "monotonic": false
+            },
+            "L28": {
+              "onset_max": 0.46110449285279487,
+              "steady_mean": 0.7356097424678797,
+              "transient": -0.2745052496150848,
+              "onset_ratio": 0.6268330423482695,
+              "monotonic": false
+            }
+          }
+        },
+        {
+          "seed": 246,
+          "n_steps": 50,
+          "layers": {
+            "L00": {
+              "onset_max": 0.6326628461789223,
+              "steady_mean": 0.8274439671765583,
+              "transient": -0.194781120997636,
+              "onset_ratio": 0.7645990197220949,
+              "monotonic": false
+            },
+            "L12": {
+              "onset_max": 0.9267144927930118,
+              "steady_mean": 0.9117607012912178,
+              "transient": 0.01495379150179399,
+              "onset_ratio": 1.016401004649137,
+              "monotonic": false
+            },
+            "L13": {
+              "onset_max": 0.9323358451736071,
+              "steady_mean": 0.922353021593301,
+              "transient": 0.00998282358030611,
+              "onset_ratio": 1.0108232133961579,
+              "monotonic": false
+            },
+            "L14": {
+              "onset_max": 0.9353987599916765,
+              "steady_mean": 0.9257883879990658,
+              "transient": 0.009610371992610722,
+              "onset_ratio": 1.010380743716576,
+              "monotonic": false
+            },
+            "L15": {
+              "onset_max": 0.9491281616446349,
+              "steady_mean": 0.9163158706018697,
+              "transient": 0.032812291042765174,
+              "onset_ratio": 1.0358089301892994,
+              "monotonic": false
+            },
+            "L16": {
+              "onset_max": 0.9702064395897598,
+              "steady_mean": 0.9255906103316367,
+              "transient": 0.04461582925812313,
+              "onset_ratio": 1.0482025517102957,
+              "monotonic": false
+            },
+            "L17": {
+              "onset_max": 0.9859576082960531,
+              "steady_mean": 0.9253870556513363,
+              "transient": 0.06057055264471678,
+              "onset_ratio": 1.0654542899360295,
+              "monotonic": false
+            },
+            "L18": {
+              "onset_max": 0.994217271413196,
+              "steady_mean": 0.9135658501383992,
+              "transient": 0.08065142127479685,
+              "onset_ratio": 1.0882820009761645,
+              "monotonic": false
+            },
+            "L19": {
+              "onset_max": 0.997555265291462,
+              "steady_mean": 0.918379164750205,
+              "transient": 0.07917610054125701,
+              "onset_ratio": 1.0862128667321262,
+              "monotonic": false
+            },
+            "L28": {
+              "onset_max": 0.8669286661867371,
+              "steady_mean": 0.7290122669821238,
+              "transient": 0.1379163992046133,
+              "onset_ratio": 1.1891825493888513,
+              "monotonic": false
+            }
+          }
+        },
+        {
+          "seed": 263,
+          "n_steps": 50,
+          "layers": {
+            "L00": {
+              "onset_max": 0.9598556864661717,
+              "steady_mean": 0.8324084604219552,
+              "transient": 0.12744722604421654,
+              "onset_ratio": 1.153106596223757,
+              "monotonic": false
+            },
+            "L12": {
+              "onset_max": 0.9146645584115071,
+              "steady_mean": 0.9180407462049031,
+              "transient": -0.0033761877933959905,
+              "onset_ratio": 0.996322398751527,
+              "monotonic": false
+            },
+            "L13": {
+              "onset_max": 0.9371240323771355,
+              "steady_mean": 0.9218094153994603,
+              "transient": 0.015314616977675222,
+              "onset_ratio": 1.0166136478113776,
+              "monotonic": false
+            },
+            "L14": {
+              "onset_max": 0.9318332310002707,
+              "steady_mean": 0.9301698012487349,
+              "transient": 0.001663429751535772,
+              "onset_ratio": 1.0017883076275975,
+              "monotonic": false
+            },
+            "L15": {
+              "onset_max": 0.9702800176337769,
+              "steady_mean": 0.9494819262756653,
+              "transient": 0.020798091358111614,
+              "onset_ratio": 1.0219046732555195,
+              "monotonic": false
+            },
+            "L16": {
+              "onset_max": 0.9441750864686301,
+              "steady_mean": 0.9447567777166862,
+              "transient": -0.000581691248056071,
+              "onset_ratio": 0.9993842952357946,
+              "monotonic": false
+            },
+            "L17": {
+              "onset_max": 0.9638940874659722,
+              "steady_mean": 0.9413226692332509,
+              "transient": 0.02257141823272124,
+              "onset_ratio": 1.0239784071598772,
+              "monotonic": false
+            },
+            "L18": {
+              "onset_max": 0.9596742411657546,
+              "steady_mean": 0.956351351552611,
+              "transient": 0.0033228896131436425,
+              "onset_ratio": 1.0034745489790395,
+              "monotonic": false
+            },
+            "L19": {
+              "onset_max": 0.9626080312302361,
+              "steady_mean": 0.9504930416594363,
+              "transient": 0.012114989570799817,
+              "onset_ratio": 1.0127460055348074,
+              "monotonic": false
+            },
+            "L28": {
+              "onset_max": 0.6719808658176727,
+              "steady_mean": 0.642988532917538,
+              "transient": 0.0289923329001347,
+              "onset_ratio": 1.0450899688172322,
+              "monotonic": false
+            }
+          }
+        },
+        {
+          "seed": 280,
+          "n_steps": 50,
+          "layers": {
+            "L00": {
+              "onset_max": 0.9598556864661717,
+              "steady_mean": 0.7494656413321896,
+              "transient": 0.21039004513398207,
+              "onset_ratio": 1.2807200671117211,
+              "monotonic": false
+            },
+            "L12": {
+              "onset_max": 0.9146645584115071,
+              "steady_mean": 0.9501015295882848,
+              "transient": -0.03543697117677769,
+              "onset_ratio": 0.9627019112440577,
+              "monotonic": false
+            },
+            "L13": {
+              "onset_max": 0.9371240323771355,
+              "steady_mean": 0.9517186464887052,
+              "transient": -0.014594614111569704,
+              "onset_ratio": 0.9846649908915832,
+              "monotonic": false
+            },
+            "L14": {
+              "onset_max": 0.9318332310002707,
+              "steady_mean": 0.9535942134368838,
+              "transient": -0.021760982436613063,
+              "onset_ratio": 0.9771800393385771,
+              "monotonic": false
+            },
+            "L15": {
+              "onset_max": 0.9702800176337769,
+              "steady_mean": 0.9556729056929258,
+              "transient": 0.01460711194085107,
+              "onset_ratio": 1.0152846354153409,
+              "monotonic": false
+            },
+            "L16": {
+              "onset_max": 0.9441750864686301,
+              "steady_mean": 0.959301173371039,
+              "transient": -0.015126086902408908,
+              "onset_ratio": 0.9842321813802862,
+              "monotonic": false
+            },
+            "L17": {
+              "onset_max": 0.9638940874659722,
+              "steady_mean": 0.9703621607806332,
+              "transient": -0.006468073314661038,
+              "onset_ratio": 0.9933343718695183,
+              "monotonic": false
+            },
+            "L18": {
+              "onset_max": 0.9596742411657546,
+              "steady_mean": 0.9743633208282642,
+              "transient": -0.014689079662509541,
+              "onset_ratio": 0.9849244328583635,
+              "monotonic": false
+            },
+            "L19": {
+              "onset_max": 0.9626080312302361,
+              "steady_mean": 0.9767861288359038,
+              "transient": -0.014178097605667683,
+              "onset_ratio": 0.9854849519376877,
+              "monotonic": false
+            },
+            "L28": {
+              "onset_max": 0.6719808658176727,
+              "steady_mean": 0.6795010806325209,
+              "transient": -0.007520214814848214,
+              "onset_ratio": 0.9889327404618152,
+              "monotonic": false
+            }
+          }
+        },
+        {
+          "seed": 297,
+          "n_steps": 50,
+          "layers": {
+            "L00": {
+              "onset_max": 0.7199278220535327,
+              "steady_mean": 0.7771430962117705,
+              "transient": -0.057215274158237794,
+              "onset_ratio": 0.9263774272227813,
+              "monotonic": false
+            },
+            "L12": {
+              "onset_max": 0.9189768924197338,
+              "steady_mean": 0.9134122952455094,
+              "transient": 0.005564597174224417,
+              "onset_ratio": 1.0060920979520236,
+              "monotonic": false
+            },
+            "L13": {
+              "onset_max": 0.9817393304909547,
+              "steady_mean": 0.9133101345366583,
+              "transient": 0.06842919595429642,
+              "onset_ratio": 1.074924380410973,
+              "monotonic": false
+            },
+            "L14": {
+              "onset_max": 0.9721474949808898,
+              "steady_mean": 0.9122691605442842,
+              "transient": 0.05987833443660562,
+              "onset_ratio": 1.0656366969588393,
+              "monotonic": false
+            },
+            "L15": {
+              "onset_max": 0.9950327029080871,
+              "steady_mean": 0.9211238867832889,
+              "transient": 0.07390881612479816,
+              "onset_ratio": 1.0802376500970128,
+              "monotonic": false
+            },
+            "L16": {
+              "onset_max": 0.9898542432246817,
+              "steady_mean": 0.9239396385871472,
+              "transient": 0.06591460463753451,
+              "onset_ratio": 1.0713408126284714,
+              "monotonic": false
+            },
+            "L17": {
+              "onset_max": 0.9870119506626356,
+              "steady_mean": 0.9380115137069416,
+              "transient": 0.049000436955694004,
+              "onset_ratio": 1.052238630591,
+              "monotonic": false
+            },
+            "L18": {
+              "onset_max": 0.9980395587320717,
+              "steady_mean": 0.9542096331768082,
+              "transient": 0.04382992555526355,
+              "onset_ratio": 1.0459332247656068,
+              "monotonic": false
+            },
+            "L19": {
+              "onset_max": 0.9767707965969212,
+              "steady_mean": 0.9515723663772683,
+              "transient": 0.025198430219652956,
+              "onset_ratio": 1.0264808343631913,
+              "monotonic": false
+            },
+            "L28": {
+              "onset_max": 0.7348691859819911,
+              "steady_mean": 0.7740013086759497,
+              "transient": -0.039132122693958604,
+              "onset_ratio": 0.9494417874281768,
+              "monotonic": false
+            }
+          }
+        },
+        {
+          "seed": 314,
+          "n_steps": 50,
+          "layers": {
+            "L00": {
+              "onset_max": 0.6468422232322526,
+              "steady_mean": 0.7511457548996849,
+              "transient": -0.10430353166743234,
+              "onset_ratio": 0.8611407559878667,
+              "monotonic": false
+            },
+            "L12": {
+              "onset_max": 0.9189768924197338,
+              "steady_mean": 0.908319535694805,
+              "transient": 0.010657356724928846,
+              "onset_ratio": 1.011733048013511,
+              "monotonic": false
+            },
+            "L13": {
+              "onset_max": 0.9817393304909547,
+              "steady_mean": 0.9177320304532832,
+              "transient": 0.06400730003767152,
+              "onset_ratio": 1.069745086705743,
+              "monotonic": false
+            },
+            "L14": {
+              "onset_max": 0.9748514820960626,
+              "steady_mean": 0.9065223673004565,
+              "transient": 0.0683291147956061,
+              "onset_ratio": 1.0753749904682537,
+              "monotonic": false
+            },
+            "L15": {
+              "onset_max": 0.9950327029080871,
+              "steady_mean": 0.9282233620993676,
+              "transient": 0.06680934080871948,
+              "onset_ratio": 1.0719755002250153,
+              "monotonic": false
+            },
+            "L16": {
+              "onset_max": 0.9898542432246817,
+              "steady_mean": 0.9216213794396735,
+              "transient": 0.06823286378500826,
+              "onset_ratio": 1.074035678106142,
+              "monotonic": false
+            },
+            "L17": {
+              "onset_max": 0.9870119506626356,
+              "steady_mean": 0.9298598847600996,
+              "transient": 0.057152065902535965,
+              "onset_ratio": 1.0614630944276293,
+              "monotonic": false
+            },
+            "L18": {
+              "onset_max": 0.9980395587320717,
+              "steady_mean": 0.9408511060807776,
+              "transient": 0.05718845265129413,
+              "onset_ratio": 1.0607837438683134,
+              "monotonic": false
+            },
+            "L19": {
+              "onset_max": 0.9767707965969212,
+              "steady_mean": 0.9389802367731699,
+              "transient": 0.037790559823751346,
+              "onset_ratio": 1.0402463846870509,
+              "monotonic": false
+            },
+            "L28": {
+              "onset_max": 0.6920867330601412,
+              "steady_mean": 0.5917565319895196,
+              "transient": 0.10033020107062163,
+              "onset_ratio": 1.169546419254784,
+              "monotonic": false
+            }
+          }
+        },
+        {
+          "seed": 331,
+          "n_steps": 50,
+          "layers": {
+            "L00": {
+              "onset_max": 0.9850932850487146,
+              "steady_mean": 0.8270240456877211,
+              "transient": 0.15806923936099349,
+              "onset_ratio": 1.191130161431229,
+              "monotonic": false
+            },
+            "L12": {
+              "onset_max": 0.9309243601337941,
+              "steady_mean": 0.9476994425627518,
+              "transient": -0.016775082428957755,
+              "onset_ratio": 0.9822991534271909,
+              "monotonic": false
+            },
+            "L13": {
+              "onset_max": 0.9398905222659634,
+              "steady_mean": 0.9498050075623853,
+              "transient": -0.009914485296421915,
+              "onset_ratio": 0.9895615571422851,
+              "monotonic": false
+            },
+            "L14": {
+              "onset_max": 0.954572380142695,
+              "steady_mean": 0.9423974615698547,
+              "transient": 0.012174918572840254,
+              "onset_ratio": 1.0129190910081043,
+              "monotonic": false
+            },
+            "L15": {
+              "onset_max": 0.9550928471860546,
+              "steady_mean": 0.9341215327764842,
+              "transient": 0.02097131440957034,
+              "onset_ratio": 1.0224503061675658,
+              "monotonic": false
+            },
+            "L16": {
+              "onset_max": 0.9750832474919313,
+              "steady_mean": 0.9376154145105036,
+              "transient": 0.03746783298142775,
+              "onset_ratio": 1.0399607689896486,
+              "monotonic": false
+            },
+            "L17": {
+              "onset_max": 0.9722290676229149,
+              "steady_mean": 0.9381706540003135,
+              "transient": 0.034058413622601424,
+              "onset_ratio": 1.036303004657353,
+              "monotonic": false
+            },
+            "L18": {
+              "onset_max": 0.958784034772223,
+              "steady_mean": 0.9256765843560704,
+              "transient": 0.033107450416152595,
+              "onset_ratio": 1.0357656777481818,
+              "monotonic": false
+            },
+            "L19": {
+              "onset_max": 0.9508223310735324,
+              "steady_mean": 0.9337652628253004,
+              "transient": 0.017057068248232055,
+              "onset_ratio": 1.01826697664422,
+              "monotonic": false
+            },
+            "L28": {
+              "onset_max": 0.7350786704758494,
+              "steady_mean": 0.7451597183072478,
+              "transient": -0.010081047831398404,
+              "onset_ratio": 0.9864712925501588,
+              "monotonic": false
+            }
+          }
+        },
+        {
+          "seed": 348,
+          "n_steps": 50,
+          "layers": {
+            "L00": {
+              "onset_max": 0.6468422232322526,
+              "steady_mean": 0.7490450966831721,
+              "transient": -0.1022028734509195,
+              "onset_ratio": 0.8635557806808362,
+              "monotonic": false
+            },
+            "L12": {
+              "onset_max": 0.9189768924197338,
+              "steady_mean": 0.9030886135517004,
+              "transient": 0.015888278868033345,
+              "onset_ratio": 1.0175932667388305,
+              "monotonic": false
+            },
+            "L13": {
+              "onset_max": 0.9817393304909547,
+              "steady_mean": 0.8965712935620257,
+              "transient": 0.08516803692892905,
+              "onset_ratio": 1.0949930446573484,
+              "monotonic": false
+            },
+            "L14": {
+              "onset_max": 0.9748514820960626,
+              "steady_mean": 0.8911717267894567,
+              "transient": 0.08367975530660599,
+              "onset_ratio": 1.0938985750894248,
+              "monotonic": false
+            },
+            "L15": {
+              "onset_max": 0.9950327029080871,
+              "steady_mean": 0.9022046200946207,
+              "transient": 0.09282808281346644,
+              "onset_ratio": 1.1028902764903021,
+              "monotonic": false
+            },
+            "L16": {
+              "onset_max": 0.9898542432246817,
+              "steady_mean": 0.902256870974027,
+              "transient": 0.08759737225065478,
+              "onset_ratio": 1.0970869550209048,
+              "monotonic": false
+            },
+            "L17": {
+              "onset_max": 0.9870119506626356,
+              "steady_mean": 0.9143644990196667,
+              "transient": 0.07264745164296893,
+              "onset_ratio": 1.0794513038506834,
+              "monotonic": false
+            },
+            "L18": {
+              "onset_max": 0.9980395587320717,
+              "steady_mean": 0.9327682452648585,
+              "transient": 0.06527131346721327,
+              "onset_ratio": 1.0699759171664442,
+              "monotonic": false
+            },
+            "L19": {
+              "onset_max": 0.9767707965969212,
+              "steady_mean": 0.9181494530895117,
+              "transient": 0.05862134350740955,
+              "onset_ratio": 1.0638472781409267,
+              "monotonic": false
+            },
+            "L28": {
+              "onset_max": 0.6920867330601412,
+              "steady_mean": 0.8584841323391398,
+              "transient": -0.16639739927899855,
+              "onset_ratio": 0.80617300540382,
+              "monotonic": false
+            }
+          }
+        },
+        {
+          "seed": 365,
+          "n_steps": 50,
+          "layers": {
+            "L00": {
+              "onset_max": 0.5938256335408496,
+              "steady_mean": 0.808396330091856,
+              "transient": -0.21457069655100636,
+              "onset_ratio": 0.734572401476192,
+              "monotonic": false
+            },
+            "L12": {
+              "onset_max": 0.9242434979423563,
+              "steady_mean": 0.9452914771401015,
+              "transient": -0.02104797919774526,
+              "onset_ratio": 0.9777338739344167,
+              "monotonic": false
+            },
+            "L13": {
+              "onset_max": 0.9162339041029047,
+              "steady_mean": 0.9454547715356897,
+              "transient": -0.029220867432784958,
+              "onset_ratio": 0.9690933206817594,
+              "monotonic": false
+            },
+            "L14": {
+              "onset_max": 0.9384940886098634,
+              "steady_mean": 0.942183658261292,
+              "transient": -0.003689569651428637,
+              "onset_ratio": 0.996084022875929,
+              "monotonic": false
+            },
+            "L15": {
+              "onset_max": 0.9615964904764269,
+              "steady_mean": 0.9468642854730073,
+              "transient": 0.014732205003419652,
+              "onset_ratio": 1.015558940418842,
+              "monotonic": false
+            },
+            "L16": {
+              "onset_max": 0.9677456198039952,
+              "steady_mean": 0.9527878023406465,
+              "transient": 0.014957817463348677,
+              "onset_ratio": 1.0156990018402705,
+              "monotonic": false
+            },
+            "L17": {
+              "onset_max": 0.988659020392402,
+              "steady_mean": 0.9503010761612118,
+              "transient": 0.03835794423119021,
+              "onset_ratio": 1.0403639911522553,
+              "monotonic": false
+            },
+            "L18": {
+              "onset_max": 0.9856534238107894,
+              "steady_mean": 0.9651360831998292,
+              "transient": 0.02051734061096011,
+              "onset_ratio": 1.02125849501131,
+              "monotonic": false
+            },
+            "L19": {
+              "onset_max": 0.9977525488327335,
+              "steady_mean": 0.9681246778114299,
+              "transient": 0.029627871021303598,
+              "onset_ratio": 1.0306033630784526,
+              "monotonic": false
+            },
+            "L28": {
+              "onset_max": 0.7167085505612756,
+              "steady_mean": 0.6799072273193971,
+              "transient": 0.03680132324187846,
+              "onset_ratio": 1.0541269775670974,
+              "monotonic": false
+            }
+          }
+        }
+      ],
+      "filler": [
+        {
+          "seed": 42,
+          "n_steps": 50,
+          "layers": {
+            "L00": {
+              "onset_max": 0.8335427774657369,
+              "steady_mean": 0.762981513084003,
+              "transient": 0.07056126438173393,
+              "onset_ratio": 1.092480962081807,
+              "monotonic": false
+            },
+            "L12": {
+              "onset_max": 0.9441796621389765,
+              "steady_mean": 0.9555185388102998,
+              "transient": -0.011338876671323272,
+              "onset_ratio": 0.9881332740164003,
+              "monotonic": false
+            },
+            "L13": {
+              "onset_max": 0.923224692497451,
+              "steady_mean": 0.9505958155331082,
+              "transient": -0.027371123035657252,
+              "onset_ratio": 0.9712063501759911,
+              "monotonic": false
+            },
+            "L14": {
+              "onset_max": 0.9346264887654273,
+              "steady_mean": 0.9639973737336336,
+              "transient": -0.02937088496820628,
+              "onset_ratio": 0.9695321939981847,
+              "monotonic": false
+            },
+            "L15": {
+              "onset_max": 0.9581715574072096,
+              "steady_mean": 0.963278519302099,
+              "transient": -0.00510696189488935,
+              "onset_ratio": 0.9946983538057258,
+              "monotonic": false
+            },
+            "L16": {
+              "onset_max": 0.9355483376289784,
+              "steady_mean": 0.9610717874590412,
+              "transient": -0.025523449830062828,
+              "onset_ratio": 0.9734427228391365,
+              "monotonic": false
+            },
+            "L17": {
+              "onset_max": 0.9316906086343066,
+              "steady_mean": 0.965899287608804,
+              "transient": -0.03420867897449731,
+              "onset_ratio": 0.9645835964325541,
+              "monotonic": false
+            },
+            "L18": {
+              "onset_max": 0.93075241357504,
+              "steady_mean": 0.9667961945777644,
+              "transient": -0.03604378100272443,
+              "onset_ratio": 0.9627183255314438,
+              "monotonic": false
+            },
+            "L19": {
+              "onset_max": 0.9573269444538408,
+              "steady_mean": 0.9679089210998079,
+              "transient": -0.01058197664596705,
+              "onset_ratio": 0.9890671772764197,
+              "monotonic": false
+            },
+            "L28": {
+              "onset_max": 0.9314354902126909,
+              "steady_mean": 0.8214781574160088,
+              "transient": 0.10995733279668207,
+              "onset_ratio": 1.133853020683378,
+              "monotonic": false
+            }
+          }
+        },
+        {
+          "seed": 59,
+          "n_steps": 50,
+          "layers": {
+            "L00": {
+              "onset_max": 0.7530937538812723,
+              "steady_mean": 0.8288650093133484,
+              "transient": -0.07577125543207608,
+              "onset_ratio": 0.9085843236454687,
+              "monotonic": false
+            },
+            "L12": {
+              "onset_max": 0.9983564128997245,
+              "steady_mean": 0.974052709874568,
+              "transient": 0.024303703025156498,
+              "onset_ratio": 1.0249511168931107,
+              "monotonic": false
+            },
+            "L13": {
+              "onset_max": 0.9813689690476721,
+              "steady_mean": 0.9746558541493877,
+              "transient": 0.006713114898284411,
+              "onset_ratio": 1.0068876771926192,
+              "monotonic": false
+            },
+            "L14": {
+              "onset_max": 0.9755920436210106,
+              "steady_mean": 0.9820907710434181,
+              "transient": -0.006498727422407535,
+              "onset_ratio": 0.9933827629634516,
+              "monotonic": false
+            },
+            "L15": {
+              "onset_max": 0.9776946662955814,
+              "steady_mean": 0.9816045801200165,
+              "transient": -0.003909913824435063,
+              "onset_ratio": 0.9960168137918091,
+              "monotonic": false
+            },
+            "L16": {
+              "onset_max": 0.9823644479931506,
+              "steady_mean": 0.9797598865019923,
+              "transient": 0.002604561491158286,
+              "onset_ratio": 1.0026583671428462,
+              "monotonic": false
+            },
+            "L17": {
+              "onset_max": 0.976896128400484,
+              "steady_mean": 0.9828113741766844,
+              "transient": -0.005915245776200395,
+              "onset_ratio": 0.9939813010587615,
+              "monotonic": false
+            },
+            "L18": {
+              "onset_max": 0.9869967215790763,
+              "steady_mean": 0.9857165383631925,
+              "transient": 0.0012801832158837456,
+              "onset_ratio": 1.0012987336268175,
+              "monotonic": false
+            },
+            "L19": {
+              "onset_max": 0.9871191268780009,
+              "steady_mean": 0.9829269662005959,
+              "transient": 0.00419216067740491,
+              "onset_ratio": 1.0042649767689302,
+              "monotonic": false
+            },
+            "L28": {
+              "onset_max": 0.9556125899464287,
+              "steady_mean": 0.8686847114886298,
+              "transient": 0.08692787845779892,
+              "onset_ratio": 1.1000683876521022,
+              "monotonic": false
+            }
+          }
+        },
+        {
+          "seed": 76,
+          "n_steps": 50,
+          "layers": {
+            "L00": {
+              "onset_max": 0.9429738549864439,
+              "steady_mean": 0.9320062906719008,
+              "transient": 0.010967564314543155,
+              "onset_ratio": 1.011767693440808,
+              "monotonic": false
+            },
+            "L12": {
+              "onset_max": 0.9669524315681912,
+              "steady_mean": 0.9550682463091347,
+              "transient": 0.011884185259056546,
+              "onset_ratio": 1.0124432838218322,
+              "monotonic": false
+            },
+            "L13": {
+              "onset_max": 0.9400595986594753,
+              "steady_mean": 0.9583887328368939,
+              "transient": -0.01832913417741855,
+              "onset_ratio": 0.9808750525226397,
+              "monotonic": false
+            },
+            "L14": {
+              "onset_max": 0.9514216066791724,
+              "steady_mean": 0.9599081639715779,
+              "transient": -0.008486557292405439,
+              "onset_ratio": 0.9911589903993693,
+              "monotonic": false
+            },
+            "L15": {
+              "onset_max": 0.9730913682194665,
+              "steady_mean": 0.962047800264275,
+              "transient": 0.011043567955191458,
+              "onset_ratio": 1.0114792299833193,
+              "monotonic": false
+            },
+            "L16": {
+              "onset_max": 0.9651385927010822,
+              "steady_mean": 0.967495278479522,
+              "transient": -0.0023566857784398376,
+              "onset_ratio": 0.9975641371778671,
+              "monotonic": false
+            },
+            "L17": {
+              "onset_max": 0.9863625398397179,
+              "steady_mean": 0.9690848162062865,
+              "transient": 0.017277723633431386,
+              "onset_ratio": 1.0178289075873166,
+              "monotonic": false
+            },
+            "L18": {
+              "onset_max": 0.9981047263651558,
+              "steady_mean": 0.9693256914774964,
+              "transient": 0.028779034887659427,
+              "onset_ratio": 1.029689747357014,
+              "monotonic": false
+            },
+            "L19": {
+              "onset_max": 0.9997853523518376,
+              "steady_mean": 0.9683807469339618,
+              "transient": 0.03140460541787582,
+              "onset_ratio": 1.0324300183747717,
+              "monotonic": false
+            },
+            "L28": {
+              "onset_max": 0.9840876903852795,
+              "steady_mean": 0.8650352353999662,
+              "transient": 0.11905245498531336,
+              "onset_ratio": 1.1376272897474857,
+              "monotonic": false
+            }
+          }
+        },
+        {
+          "seed": 93,
+          "n_steps": 50,
+          "layers": {
+            "L00": {
+              "onset_max": 0.913533360409321,
+              "steady_mean": 0.7828130111662677,
+              "transient": 0.1307203492430533,
+              "onset_ratio": 1.166987961846896,
+              "monotonic": false
+            },
+            "L12": {
+              "onset_max": 0.987718540443684,
+              "steady_mean": 0.9502126098452066,
+              "transient": 0.0375059305984774,
+              "onset_ratio": 1.0394710933204179,
+              "monotonic": false
+            },
+            "L13": {
+              "onset_max": 0.979202044144133,
+              "steady_mean": 0.94716757450512,
+              "transient": 0.03203446963901302,
+              "onset_ratio": 1.0338213326767618,
+              "monotonic": false
+            },
+            "L14": {
+              "onset_max": 0.9825765995711265,
+              "steady_mean": 0.9538627723436527,
+              "transient": 0.028713827227473843,
+              "onset_ratio": 1.0301026814956762,
+              "monotonic": false
+            },
+            "L15": {
+              "onset_max": 0.9927528563913529,
+              "steady_mean": 0.9585434048708297,
+              "transient": 0.03420945152052324,
+              "onset_ratio": 1.0356889957675912,
+              "monotonic": false
+            },
+            "L16": {
+              "onset_max": 0.9954047660203327,
+              "steady_mean": 0.9595342893895197,
+              "transient": 0.035870476630813,
+              "onset_ratio": 1.0373832149892188,
+              "monotonic": false
+            },
+            "L17": {
+              "onset_max": 0.9951270929555829,
+              "steady_mean": 0.9600264971971557,
+              "transient": 0.03510059575842717,
+              "onset_ratio": 1.0365621114207457,
+              "monotonic": false
+            },
+            "L18": {
+              "onset_max": 0.9964283857505929,
+              "steady_mean": 0.9611366716020168,
+              "transient": 0.035291714148576125,
+              "onset_ratio": 1.036718726056634,
+              "monotonic": false
+            },
+            "L19": {
+              "onset_max": 0.9730250366815351,
+              "steady_mean": 0.9674233240840305,
+              "transient": 0.005601712597504527,
+              "onset_ratio": 1.0057903427145531,
+              "monotonic": false
+            },
+            "L28": {
+              "onset_max": 0.9409418078332098,
+              "steady_mean": 0.870123975402716,
+              "transient": 0.07081783243049378,
+              "onset_ratio": 1.0813882095325968,
+              "monotonic": false
+            }
+          }
+        },
+        {
+          "seed": 110,
+          "n_steps": 50,
+          "layers": {
+            "L00": {
+              "onset_max": 0.9429738549864439,
+              "steady_mean": 0.9260449578006842,
+              "transient": 0.01692889718575974,
+              "onset_ratio": 1.0182808588742245,
+              "monotonic": false
+            },
+            "L12": {
+              "onset_max": 0.9669524315681912,
+              "steady_mean": 0.9414087889724156,
+              "transient": 0.025543642595775573,
+              "onset_ratio": 1.0271334226894464,
+              "monotonic": false
+            },
+            "L13": {
+              "onset_max": 0.9400595986594753,
+              "steady_mean": 0.9435227720815519,
+              "transient": -0.003463173422076582,
+              "onset_ratio": 0.9963295285227376,
+              "monotonic": false
+            },
+            "L14": {
+              "onset_max": 0.9514216066791724,
+              "steady_mean": 0.9344078435822214,
+              "transient": 0.017013763096951018,
+              "onset_ratio": 1.0182080696483748,
+              "monotonic": false
+            },
+            "L15": {
+              "onset_max": 0.9730913682194665,
+              "steady_mean": 0.9542773901092693,
+              "transient": 0.01881397811019725,
+              "onset_ratio": 1.0197154184979937,
+              "monotonic": false
+            },
+            "L16": {
+              "onset_max": 0.9651385927010822,
+              "steady_mean": 0.9449495385767772,
+              "transient": 0.02018905412430494,
+              "onset_ratio": 1.0213652193043992,
+              "monotonic": false
+            },
+            "L17": {
+              "onset_max": 0.9863625398397179,
+              "steady_mean": 0.9540137155036381,
+              "transient": 0.03234882433607977,
+              "onset_ratio": 1.033908133404527,
+              "monotonic": false
+            },
+            "L18": {
+              "onset_max": 0.9981047263651558,
+              "steady_mean": 0.9565350613478525,
+              "transient": 0.0415696650173033,
+              "onset_ratio": 1.0434585899629065,
+              "monotonic": false
+            },
+            "L19": {
+              "onset_max": 0.9997853523518376,
+              "steady_mean": 0.9295389136822658,
+              "transient": 0.07024643866957181,
+              "onset_ratio": 1.0755712726326032,
+              "monotonic": false
+            },
+            "L28": {
+              "onset_max": 0.9840876903852795,
+              "steady_mean": 0.738931932172349,
+              "transient": 0.24515575821293056,
+              "onset_ratio": 1.331770420978936,
+              "monotonic": false
+            }
+          }
+        },
+        {
+          "seed": 127,
+          "n_steps": 50,
+          "layers": {
+            "L00": {
+              "onset_max": 0.9160232667543278,
+              "steady_mean": 0.8019256815988298,
+              "transient": 0.11409758515549795,
+              "onset_ratio": 1.1422795001737256,
+              "monotonic": false
+            },
+            "L12": {
+              "onset_max": 0.9767489437003625,
+              "steady_mean": 0.9444305614040964,
+              "transient": 0.032318382296266046,
+              "onset_ratio": 1.03421996662961,
+              "monotonic": false
+            },
+            "L13": {
+              "onset_max": 0.9526450789654946,
+              "steady_mean": 0.9324728279548496,
+              "transient": 0.020172251010644904,
+              "onset_ratio": 1.0216330711253712,
+              "monotonic": false
+            },
+            "L14": {
+              "onset_max": 0.9635102441986491,
+              "steady_mean": 0.9447785827430184,
+              "transient": 0.018731661455630655,
+              "onset_ratio": 1.0198265094031094,
+              "monotonic": false
+            },
+            "L15": {
+              "onset_max": 0.9736213356638647,
+              "steady_mean": 0.9485663198312148,
+              "transient": 0.025055015832649907,
+              "onset_ratio": 1.0264135625604773,
+              "monotonic": false
+            },
+            "L16": {
+              "onset_max": 0.9714968311727611,
+              "steady_mean": 0.9481384392715919,
+              "transient": 0.023358391901169173,
+              "onset_ratio": 1.0246360562262296,
+              "monotonic": false
+            },
+            "L17": {
+              "onset_max": 0.9928383829307802,
+              "steady_mean": 0.9513359449823519,
+              "transient": 0.04150243794842834,
+              "onset_ratio": 1.0436254281847352,
+              "monotonic": false
+            },
+            "L18": {
+              "onset_max": 0.993298424846613,
+              "steady_mean": 0.9514667796264561,
+              "transient": 0.04183164522015692,
+              "onset_ratio": 1.043965429077341,
+              "monotonic": false
+            },
+            "L19": {
+              "onset_max": 0.999273362230272,
+              "steady_mean": 0.9536870044317052,
+              "transient": 0.04558635779856679,
+              "onset_ratio": 1.0478001247638722,
+              "monotonic": false
+            },
+            "L28": {
+              "onset_max": 0.9813709426206104,
+              "steady_mean": 0.7658911725332247,
+              "transient": 0.21547977008738572,
+              "onset_ratio": 1.2813451542644028,
+              "monotonic": false
+            }
+          }
+        },
+        {
+          "seed": 144,
+          "n_steps": 50,
+          "layers": {
+            "L00": {
+              "onset_max": 0.9754762371948182,
+              "steady_mean": 0.8715211787888937,
+              "transient": 0.10395505840592456,
+              "onset_ratio": 1.1192800139972112,
+              "monotonic": false
+            },
+            "L12": {
+              "onset_max": 0.9416991462184394,
+              "steady_mean": 0.956582676265372,
+              "transient": -0.014883530046932547,
+              "onset_ratio": 0.9844409370802906,
+              "monotonic": false
+            },
+            "L13": {
+              "onset_max": 0.9327425753720906,
+              "steady_mean": 0.9526934446263844,
+              "transient": -0.01995086925429379,
+              "onset_ratio": 0.979058458554738,
+              "monotonic": false
+            },
+            "L14": {
+              "onset_max": 0.9293531795154852,
+              "steady_mean": 0.9661850195756878,
+              "transient": -0.03683184006020257,
+              "onset_ratio": 0.9618791025373798,
+              "monotonic": false
+            },
+            "L15": {
+              "onset_max": 0.9491296486767985,
+              "steady_mean": 0.9642194802928563,
+              "transient": -0.015089831616057814,
+              "onset_ratio": 0.9843502107917805,
+              "monotonic": false
+            },
+            "L16": {
+              "onset_max": 0.9366251532217655,
+              "steady_mean": 0.9744240585737864,
+              "transient": -0.037798905352020906,
+              "onset_ratio": 0.9612089777336713,
+              "monotonic": false
+            },
+            "L17": {
+              "onset_max": 0.9515670538691556,
+              "steady_mean": 0.9715901234781317,
+              "transient": -0.02002306960897604,
+              "onset_ratio": 0.9793914438546615,
+              "monotonic": false
+            },
+            "L18": {
+              "onset_max": 0.9554925216695177,
+              "steady_mean": 0.9649806582145587,
+              "transient": -0.009488136545040993,
+              "onset_ratio": 0.9901675370741768,
+              "monotonic": false
+            },
+            "L19": {
+              "onset_max": 0.9885999255098877,
+              "steady_mean": 0.9650171984835254,
+              "transient": 0.023582727026362327,
+              "onset_ratio": 1.0244376235598671,
+              "monotonic": false
+            },
+            "L28": {
+              "onset_max": 0.9959489284610521,
+              "steady_mean": 0.8222860347676303,
+              "transient": 0.1736628936934218,
+              "onset_ratio": 1.2111952366323309,
+              "monotonic": false
+            }
+          }
+        },
+        {
+          "seed": 161,
+          "n_steps": 50,
+          "layers": {
+            "L00": {
+              "onset_max": 0.9221493288588376,
+              "steady_mean": 0.834653433053125,
+              "transient": 0.0874958958057126,
+              "onset_ratio": 1.104829013264286,
+              "monotonic": false
+            },
+            "L12": {
+              "onset_max": 0.9733895682935532,
+              "steady_mean": 0.9453607360662201,
+              "transient": 0.0280288322273331,
+              "onset_ratio": 1.0296488220390192,
+              "monotonic": false
+            },
+            "L13": {
+              "onset_max": 0.9440020769351217,
+              "steady_mean": 0.9457536485961862,
+              "transient": -0.0017515716610644327,
+              "onset_ratio": 0.9981479620357135,
+              "monotonic": false
+            },
+            "L14": {
+              "onset_max": 0.9502841157784794,
+              "steady_mean": 0.9485833898700029,
+              "transient": 0.0017007259084764748,
+              "onset_ratio": 1.0017929113303448,
+              "monotonic": false
+            },
+            "L15": {
+              "onset_max": 0.9739373619156849,
+              "steady_mean": 0.9543612168816985,
+              "transient": 0.019576145033986414,
+              "onset_ratio": 1.0205123015129738,
+              "monotonic": false
+            },
+            "L16": {
+              "onset_max": 0.9645521057750828,
+              "steady_mean": 0.961580707044889,
+              "transient": 0.0029713987301938083,
+              "onset_ratio": 1.0030901189129744,
+              "monotonic": false
+            },
+            "L17": {
+              "onset_max": 0.9879541680964843,
+              "steady_mean": 0.9594924688060992,
+              "transient": 0.028461699290385112,
+              "onset_ratio": 1.0296632857627017,
+              "monotonic": false
+            },
+            "L18": {
+              "onset_max": 0.998444443774532,
+              "steady_mean": 0.9629052317417296,
+              "transient": 0.035539212032802414,
+              "onset_ratio": 1.0369083175168559,
+              "monotonic": false
+            },
+            "L19": {
+              "onset_max": 0.9898583975441402,
+              "steady_mean": 0.9647835381078373,
+              "transient": 0.025074859436302832,
+              "onset_ratio": 1.02599014021783,
+              "monotonic": false
+            },
+            "L28": {
+              "onset_max": 0.9714434565431652,
+              "steady_mean": 0.8786076758810941,
+              "transient": 0.0928357806620711,
+              "onset_ratio": 1.10566238289219,
+              "monotonic": false
+            }
+          }
+        },
+        {
+          "seed": 178,
+          "n_steps": 50,
+          "layers": {
+            "L00": {
+              "onset_max": 0.7530937538812723,
+              "steady_mean": 0.8406876438000473,
+              "transient": -0.08759388991877504,
+              "onset_ratio": 0.895806854584264,
+              "monotonic": false
+            },
+            "L12": {
+              "onset_max": 0.9983564128997245,
+              "steady_mean": 0.959797942269949,
+              "transient": 0.038558470629775576,
+              "onset_ratio": 1.0401735291675491,
+              "monotonic": false
+            },
+            "L13": {
+              "onset_max": 0.9813689690476721,
+              "steady_mean": 0.9597152831592247,
+              "transient": 0.021653685888447405,
+              "onset_ratio": 1.022562614420544,
+              "monotonic": false
+            },
+            "L14": {
+              "onset_max": 0.9755920436210106,
+              "steady_mean": 0.9645033283192074,
+              "transient": 0.01108871530180322,
+              "onset_ratio": 1.011496813930249,
+              "monotonic": false
+            },
+            "L15": {
+              "onset_max": 0.9776946662955814,
+              "steady_mean": 0.9650521281305782,
+              "transient": 0.01264253816500327,
+              "onset_ratio": 1.0131003681515944,
+              "monotonic": false
+            },
+            "L16": {
+              "onset_max": 0.9823644479931506,
+              "steady_mean": 0.9674580867324354,
+              "transient": 0.014906361260715206,
+              "onset_ratio": 1.0154077592240152,
+              "monotonic": false
+            },
+            "L17": {
+              "onset_max": 0.976896128400484,
+              "steady_mean": 0.9675155543547087,
+              "transient": 0.009380574045775303,
+              "onset_ratio": 1.0096955278936286,
+              "monotonic": false
+            },
+            "L18": {
+              "onset_max": 0.9869967215790763,
+              "steady_mean": 0.9680174683844246,
+              "transient": 0.018979253194651657,
+              "onset_ratio": 1.0196063127097361,
+              "monotonic": false
+            },
+            "L19": {
+              "onset_max": 0.9871191268780009,
+              "steady_mean": 0.9650602207716276,
+              "transient": 0.02205890610637329,
+              "onset_ratio": 1.0228575436336118,
+              "monotonic": false
+            },
+            "L28": {
+              "onset_max": 0.9556125899464287,
+              "steady_mean": 0.7612618279666146,
+              "transient": 0.19435076197981416,
+              "onset_ratio": 1.2553008108887895,
+              "monotonic": false
+            }
+          }
+        },
+        {
+          "seed": 195,
+          "n_steps": 50,
+          "layers": {
+            "L00": {
+              "onset_max": 0.8466868514522372,
+              "steady_mean": 0.7673090614269682,
+              "transient": 0.07937779002526901,
+              "onset_ratio": 1.1034495668232385,
+              "monotonic": false
+            },
+            "L12": {
+              "onset_max": 0.9904927559105424,
+              "steady_mean": 0.9553945607063723,
+              "transient": 0.035098195204170124,
+              "onset_ratio": 1.0367368589341597,
+              "monotonic": false
+            },
+            "L13": {
+              "onset_max": 0.9923566363680196,
+              "steady_mean": 0.9465240105405599,
+              "transient": 0.04583262582745973,
+              "onset_ratio": 1.0484220424585282,
+              "monotonic": false
+            },
+            "L14": {
+              "onset_max": 0.9930411944814934,
+              "steady_mean": 0.9526063337018821,
+              "transient": 0.04043486077961134,
+              "onset_ratio": 1.0424465588229261,
+              "monotonic": false
+            },
+            "L15": {
+              "onset_max": 0.9934709873895582,
+              "steady_mean": 0.9549606510575723,
+              "transient": 0.03851033633198586,
+              "onset_ratio": 1.0403266210898818,
+              "monotonic": false
+            },
+            "L16": {
+              "onset_max": 0.975655429043585,
+              "steady_mean": 0.9575427599846019,
+              "transient": 0.018112669058983122,
+              "onset_ratio": 1.0189157809080562,
+              "monotonic": false
+            },
+            "L17": {
+              "onset_max": 0.992397677572046,
+              "steady_mean": 0.9545653435818986,
+              "transient": 0.037832333990147404,
+              "onset_ratio": 1.039633047903401,
+              "monotonic": false
+            },
+            "L18": {
+              "onset_max": 0.9829749933674624,
+              "steady_mean": 0.9601076264709432,
+              "transient": 0.022867366896519248,
+              "onset_ratio": 1.0238175036475325,
+              "monotonic": false
+            },
+            "L19": {
+              "onset_max": 0.9930450287914592,
+              "steady_mean": 0.9600330752754621,
+              "transient": 0.03301195351599706,
+              "onset_ratio": 1.0343862668538693,
+              "monotonic": false
+            },
+            "L28": {
+              "onset_max": 0.9801791197748919,
+              "steady_mean": 0.8917821218071872,
+              "transient": 0.08839699796770473,
+              "onset_ratio": 1.0991239853378874,
+              "monotonic": false
+            }
+          }
+        },
+        {
+          "seed": 212,
+          "n_steps": 50,
+          "layers": {
+            "L00": {
+              "onset_max": 0.9603582667948597,
+              "steady_mean": 0.7922415725887262,
+              "transient": 0.1681166942061335,
+              "onset_ratio": 1.2122038277486293,
+              "monotonic": false
+            },
+            "L12": {
+              "onset_max": 0.9442201373000896,
+              "steady_mean": 0.964600123800512,
+              "transient": -0.020379986500422387,
+              "onset_ratio": 0.9788720880305257,
+              "monotonic": false
+            },
+            "L13": {
+              "onset_max": 0.9386036609105265,
+              "steady_mean": 0.960478265997651,
+              "transient": -0.021874605087124466,
+              "onset_ratio": 0.9772252992467451,
+              "monotonic": false
+            },
+            "L14": {
+              "onset_max": 0.9412586229824194,
+              "steady_mean": 0.9620314373470812,
+              "transient": -0.02077281436466183,
+              "onset_ratio": 0.9784073435033227,
+              "monotonic": false
+            },
+            "L15": {
+              "onset_max": 0.9617739082099348,
+              "steady_mean": 0.9609419119740028,
+              "transient": 0.0008319962359319977,
+              "onset_ratio": 1.0008658132448631,
+              "monotonic": false
+            },
+            "L16": {
+              "onset_max": 0.9448278417783258,
+              "steady_mean": 0.9637524643576378,
+              "transient": -0.018924622579312045,
+              "onset_ratio": 0.9803636065481751,
+              "monotonic": false
+            },
+            "L17": {
+              "onset_max": 0.9527526915296599,
+              "steady_mean": 0.9615257300432354,
+              "transient": -0.00877303851357547,
+              "onset_ratio": 0.9908759191351314,
+              "monotonic": false
+            },
+            "L18": {
+              "onset_max": 0.9581740248282778,
+              "steady_mean": 0.9634561049951653,
+              "transient": -0.005282080166887471,
+              "onset_ratio": 0.994517570504254,
+              "monotonic": false
+            },
+            "L19": {
+              "onset_max": 0.9878202030020024,
+              "steady_mean": 0.9627763973766206,
+              "transient": 0.025043805625381776,
+              "onset_ratio": 1.026012068526602,
+              "monotonic": false
+            },
+            "L28": {
+              "onset_max": 0.9581264146664331,
+              "steady_mean": 0.8916149415356183,
+              "transient": 0.06651147313081485,
+              "onset_ratio": 1.074596633626606,
+              "monotonic": false
+            }
+          }
+        },
+        {
+          "seed": 229,
+          "n_steps": 50,
+          "layers": {
+            "L00": {
+              "onset_max": 0.9417409463395432,
+              "steady_mean": 0.7997082918333338,
+              "transient": 0.1420326545062094,
+              "onset_ratio": 1.1776055793787277,
+              "monotonic": false
+            },
+            "L12": {
+              "onset_max": 0.9980730821771227,
+              "steady_mean": 0.94249008648788,
+              "transient": 0.05558299568924263,
+              "onset_ratio": 1.058974621043824,
+              "monotonic": false
+            },
+            "L13": {
+              "onset_max": 0.9874364143079067,
+              "steady_mean": 0.9590290497022605,
+              "transient": 0.02840736460564619,
+              "onset_ratio": 1.0296209636334124,
+              "monotonic": false
+            },
+            "L14": {
+              "onset_max": 0.9648058728894514,
+              "steady_mean": 0.96186850927552,
+              "transient": 0.0029373636139313763,
+              "onset_ratio": 1.0030538099382635,
+              "monotonic": false
+            },
+            "L15": {
+              "onset_max": 0.9915160306647235,
+              "steady_mean": 0.9681675009961435,
+              "transient": 0.02334852966858003,
+              "onset_ratio": 1.0241162088621367,
+              "monotonic": false
+            },
+            "L16": {
+              "onset_max": 0.9833694637094006,
+              "steady_mean": 0.9735229673247853,
+              "transient": 0.009846496384615322,
+              "onset_ratio": 1.0101142928457694,
+              "monotonic": false
+            },
+            "L17": {
+              "onset_max": 0.9944302007267389,
+              "steady_mean": 0.9770421902206895,
+              "transient": 0.017388010506049434,
+              "onset_ratio": 1.017796581026971,
+              "monotonic": false
+            },
+            "L18": {
+              "onset_max": 0.966590221796129,
+              "steady_mean": 0.9813807440024181,
+              "transient": -0.01479052220628918,
+              "onset_ratio": 0.984928864461969,
+              "monotonic": false
+            },
+            "L19": {
+              "onset_max": 0.9589864212889385,
+              "steady_mean": 0.9777593186004419,
+              "transient": -0.018772897311503334,
+              "onset_ratio": 0.980800083460871,
+              "monotonic": false
+            },
+            "L28": {
+              "onset_max": 0.9787943663897891,
+              "steady_mean": 0.8736154264423727,
+              "transient": 0.10517893994741645,
+              "onset_ratio": 1.1203950122247917,
+              "monotonic": false
+            }
+          }
+        },
+        {
+          "seed": 246,
+          "n_steps": 50,
+          "layers": {
+            "L00": {
+              "onset_max": 0.8771089366605805,
+              "steady_mean": 0.7881260181092137,
+              "transient": 0.08898291855136686,
+              "onset_ratio": 1.1129044296288202,
+              "monotonic": false
+            },
+            "L12": {
+              "onset_max": 0.9476577817272916,
+              "steady_mean": 0.9537320928107338,
+              "transient": -0.006074311083442141,
+              "onset_ratio": 0.993631009032595,
+              "monotonic": false
+            },
+            "L13": {
+              "onset_max": 0.9429463161386433,
+              "steady_mean": 0.9517096023786085,
+              "transient": -0.00876328623996514,
+              "onset_ratio": 0.9907920586079474,
+              "monotonic": false
+            },
+            "L14": {
+              "onset_max": 0.9484289250063408,
+              "steady_mean": 0.9564358867233519,
+              "transient": -0.008006961717011096,
+              "onset_ratio": 0.9916283340795234,
+              "monotonic": false
+            },
+            "L15": {
+              "onset_max": 0.9742311935892877,
+              "steady_mean": 0.9631016925708572,
+              "transient": 0.011129501018430465,
+              "onset_ratio": 1.0115558939448133,
+              "monotonic": false
+            },
+            "L16": {
+              "onset_max": 0.9549737825142683,
+              "steady_mean": 0.9647854740961685,
+              "transient": -0.009811691581900206,
+              "onset_ratio": 0.989830183137778,
+              "monotonic": false
+            },
+            "L17": {
+              "onset_max": 0.9680296145606664,
+              "steady_mean": 0.9670645152652799,
+              "transient": 0.0009650992953864623,
+              "onset_ratio": 1.0009979678492502,
+              "monotonic": false
+            },
+            "L18": {
+              "onset_max": 0.9528836607731869,
+              "steady_mean": 0.9676541950011822,
+              "transient": -0.014770534227995347,
+              "onset_ratio": 0.9847357306925518,
+              "monotonic": false
+            },
+            "L19": {
+              "onset_max": 0.957178975619475,
+              "steady_mean": 0.9665019533851835,
+              "transient": -0.009322977765708562,
+              "onset_ratio": 0.9903538966123709,
+              "monotonic": false
+            },
+            "L28": {
+              "onset_max": 0.8377349552483753,
+              "steady_mean": 0.8345135242173184,
+              "transient": 0.003221431031056876,
+              "onset_ratio": 1.0038602502374954,
+              "monotonic": false
+            }
+          }
+        },
+        {
+          "seed": 263,
+          "n_steps": 50,
+          "layers": {
+            "L00": {
+              "onset_max": 0.8630405069030619,
+              "steady_mean": 0.8387805924657237,
+              "transient": 0.024259914437338215,
+              "onset_ratio": 1.0289228370973553,
+              "monotonic": false
+            },
+            "L12": {
+              "onset_max": 0.9575324553424662,
+              "steady_mean": 0.9438313998663329,
+              "transient": 0.013701055476133317,
+              "onset_ratio": 1.0145164226121945,
+              "monotonic": false
+            },
+            "L13": {
+              "onset_max": 0.9497432436936719,
+              "steady_mean": 0.9425773501871044,
+              "transient": 0.007165893506567489,
+              "onset_ratio": 1.0076024461060278,
+              "monotonic": false
+            },
+            "L14": {
+              "onset_max": 0.9636513671230499,
+              "steady_mean": 0.9507295449049993,
+              "transient": 0.012921822218050605,
+              "onset_ratio": 1.0135914806542887,
+              "monotonic": false
+            },
+            "L15": {
+              "onset_max": 0.9823064893187923,
+              "steady_mean": 0.9551668591522164,
+              "transient": 0.027139630166575834,
+              "onset_ratio": 1.02841349645405,
+              "monotonic": false
+            },
+            "L16": {
+              "onset_max": 0.988627275175086,
+              "steady_mean": 0.9619442037875267,
+              "transient": 0.02668307138755932,
+              "onset_ratio": 1.0277386892934857,
+              "monotonic": false
+            },
+            "L17": {
+              "onset_max": 0.9873850124895469,
+              "steady_mean": 0.9607020907332924,
+              "transient": 0.02668292175625453,
+              "onset_ratio": 1.0277743975084515,
+              "monotonic": false
+            },
+            "L18": {
+              "onset_max": 0.9813961331447106,
+              "steady_mean": 0.9618289438136809,
+              "transient": 0.019567189331029744,
+              "onset_ratio": 1.0203437310302026,
+              "monotonic": false
+            },
+            "L19": {
+              "onset_max": 0.9744945644015905,
+              "steady_mean": 0.9618433738316516,
+              "transient": 0.012651190569938908,
+              "onset_ratio": 1.013153067238513,
+              "monotonic": false
+            },
+            "L28": {
+              "onset_max": 0.8247844010770791,
+              "steady_mean": 0.835665097863807,
+              "transient": -0.010880696786727984,
+              "onset_ratio": 0.9869795964728825,
+              "monotonic": false
+            }
+          }
+        },
+        {
+          "seed": 280,
+          "n_steps": 50,
+          "layers": {
+            "L00": {
+              "onset_max": 0.9417409463395432,
+              "steady_mean": 0.7874895027728533,
+              "transient": 0.15425144356668985,
+              "onset_ratio": 1.1958774599818214,
+              "monotonic": false
+            },
+            "L12": {
+              "onset_max": 0.9980730821771227,
+              "steady_mean": 0.9575656670746684,
+              "transient": 0.04050741510245426,
+              "onset_ratio": 1.0423024931806095,
+              "monotonic": false
+            },
+            "L13": {
+              "onset_max": 0.9874364143079067,
+              "steady_mean": 0.9669594227961131,
+              "transient": 0.020476991511793607,
+              "onset_ratio": 1.021176681283647,
+              "monotonic": false
+            },
+            "L14": {
+              "onset_max": 0.9648058728894514,
+              "steady_mean": 0.9707066819730252,
+              "transient": -0.005900809083573821,
+              "onset_ratio": 0.993921120360917,
+              "monotonic": false
+            },
+            "L15": {
+              "onset_max": 0.9915160306647235,
+              "steady_mean": 0.9787964964886319,
+              "transient": 0.012719534176091618,
+              "onset_ratio": 1.0129950752998291,
+              "monotonic": false
+            },
+            "L16": {
+              "onset_max": 0.9833694637094006,
+              "steady_mean": 0.9766613354971977,
+              "transient": 0.006708128212202902,
+              "onset_ratio": 1.0068684281514853,
+              "monotonic": false
+            },
+            "L17": {
+              "onset_max": 0.9944302007267389,
+              "steady_mean": 0.9791281022838403,
+              "transient": 0.015302098442898648,
+              "onset_ratio": 1.0156282905231608,
+              "monotonic": false
+            },
+            "L18": {
+              "onset_max": 0.966590221796129,
+              "steady_mean": 0.9774343616511878,
+              "transient": -0.010844139855058832,
+              "onset_ratio": 0.9889055058001761,
+              "monotonic": false
+            },
+            "L19": {
+              "onset_max": 0.9589864212889385,
+              "steady_mean": 0.969022222225345,
+              "transient": -0.010035800936406436,
+              "onset_ratio": 0.9896433737976111,
+              "monotonic": false
+            },
+            "L28": {
+              "onset_max": 0.9787943663897891,
+              "steady_mean": 0.8670734859236957,
+              "transient": 0.11172088046609341,
+              "onset_ratio": 1.1288482259908432,
+              "monotonic": false
+            }
+          }
+        },
+        {
+          "seed": 297,
+          "n_steps": 50,
+          "layers": {
+            "L00": {
+              "onset_max": 0.9368139793143571,
+              "steady_mean": 0.8699471738960224,
+              "transient": 0.06686680541833467,
+              "onset_ratio": 1.0768630641304318,
+              "monotonic": false
+            },
+            "L12": {
+              "onset_max": 0.9842810049181276,
+              "steady_mean": 0.9407263439593427,
+              "transient": 0.04355466095878491,
+              "onset_ratio": 1.0462989701919319,
+              "monotonic": false
+            },
+            "L13": {
+              "onset_max": 0.960415618321133,
+              "steady_mean": 0.9501687189387921,
+              "transient": 0.010246899382340913,
+              "onset_ratio": 1.0107842945964107,
+              "monotonic": false
+            },
+            "L14": {
+              "onset_max": 0.9675293854142595,
+              "steady_mean": 0.9482049629565722,
+              "transient": 0.019324422457687285,
+              "onset_ratio": 1.0203800056017551,
+              "monotonic": false
+            },
+            "L15": {
+              "onset_max": 0.9912344050694482,
+              "steady_mean": 0.9617331344298471,
+              "transient": 0.029501270639601063,
+              "onset_ratio": 1.0306751109870618,
+              "monotonic": false
+            },
+            "L16": {
+              "onset_max": 0.9747981662729885,
+              "steady_mean": 0.9605403432625345,
+              "transient": 0.014257823010454085,
+              "onset_ratio": 1.014843544167038,
+              "monotonic": false
+            },
+            "L17": {
+              "onset_max": 0.9963882956912684,
+              "steady_mean": 0.9567402421788189,
+              "transient": 0.03964805351244949,
+              "onset_ratio": 1.041440771239136,
+              "monotonic": false
+            },
+            "L18": {
+              "onset_max": 0.9996430304023763,
+              "steady_mean": 0.9599053985562589,
+              "transient": 0.03973763184611745,
+              "onset_ratio": 1.041397445940864,
+              "monotonic": false
+            },
+            "L19": {
+              "onset_max": 0.9998609381025357,
+              "steady_mean": 0.9563311654546929,
+              "transient": 0.04352977264784286,
+              "onset_ratio": 1.0455174673995915,
+              "monotonic": false
+            },
+            "L28": {
+              "onset_max": 0.96827674981256,
+              "steady_mean": 0.8508089161918931,
+              "transient": 0.11746783362066682,
+              "onset_ratio": 1.1380660585285107,
+              "monotonic": false
+            }
+          }
+        },
+        {
+          "seed": 314,
+          "n_steps": 50,
+          "layers": {
+            "L00": {
+              "onset_max": 0.9368152546695402,
+              "steady_mean": 0.8803650107740697,
+              "transient": 0.05645024389547049,
+              "onset_ratio": 1.0641214078292047,
+              "monotonic": false
+            },
+            "L12": {
+              "onset_max": 0.9984997947957066,
+              "steady_mean": 0.9204796180276134,
+              "transient": 0.07802017676809325,
+              "onset_ratio": 1.084760352363031,
+              "monotonic": false
+            },
+            "L13": {
+              "onset_max": 0.9870809182567876,
+              "steady_mean": 0.9328410215866368,
+              "transient": 0.05423989667015072,
+              "onset_ratio": 1.0581448450635649,
+              "monotonic": false
+            },
+            "L14": {
+              "onset_max": 0.993306680383393,
+              "steady_mean": 0.9401778776114265,
+              "transient": 0.05312880277196652,
+              "onset_ratio": 1.05650930960627,
+              "monotonic": false
+            },
+            "L15": {
+              "onset_max": 0.9813818442077725,
+              "steady_mean": 0.9449715059495871,
+              "transient": 0.036410338258185404,
+              "onset_ratio": 1.0385306202651674,
+              "monotonic": false
+            },
+            "L16": {
+              "onset_max": 0.99879591199131,
+              "steady_mean": 0.9516407592481281,
+              "transient": 0.04715515274318194,
+              "onset_ratio": 1.0495514218825481,
+              "monotonic": false
+            },
+            "L17": {
+              "onset_max": 0.9977361399641593,
+              "steady_mean": 0.9531925316576068,
+              "transient": 0.04454360830655257,
+              "onset_ratio": 1.046730966542556,
+              "monotonic": false
+            },
+            "L18": {
+              "onset_max": 0.9833301253692343,
+              "steady_mean": 0.9560659197930956,
+              "transient": 0.027264205576138623,
+              "onset_ratio": 1.0285170771289605,
+              "monotonic": false
+            },
+            "L19": {
+              "onset_max": 0.9867756026737383,
+              "steady_mean": 0.9564469758033229,
+              "transient": 0.030328626870415376,
+              "onset_ratio": 1.0317096792991693,
+              "monotonic": false
+            },
+            "L28": {
+              "onset_max": 0.9445511161492184,
+              "steady_mean": 0.849686727226995,
+              "transient": 0.09486438892222337,
+              "onset_ratio": 1.1116463113772619,
+              "monotonic": false
+            }
+          }
+        },
+        {
+          "seed": 331,
+          "n_steps": 50,
+          "layers": {
+            "L00": {
+              "onset_max": 0.9368152546695402,
+              "steady_mean": 0.7930084081125507,
+              "transient": 0.1438068465569895,
+              "onset_ratio": 1.18134340706183,
+              "monotonic": false
+            },
+            "L12": {
+              "onset_max": 0.9984997947957066,
+              "steady_mean": 0.9509776448906269,
+              "transient": 0.04752214990507975,
+              "onset_ratio": 1.0499718896225951,
+              "monotonic": false
+            },
+            "L13": {
+              "onset_max": 0.9870809182567876,
+              "steady_mean": 0.9477368275788389,
+              "transient": 0.03934409067794864,
+              "onset_ratio": 1.0415137299005448,
+              "monotonic": false
+            },
+            "L14": {
+              "onset_max": 0.993306680383393,
+              "steady_mean": 0.9594166801969253,
+              "transient": 0.033890000186467706,
+              "onset_ratio": 1.0353235469894857,
+              "monotonic": false
+            },
+            "L15": {
+              "onset_max": 0.9813818442077725,
+              "steady_mean": 0.965238576279287,
+              "transient": 0.016143267928485527,
+              "onset_ratio": 1.0167246402331913,
+              "monotonic": false
+            },
+            "L16": {
+              "onset_max": 0.99879591199131,
+              "steady_mean": 0.9684805141311947,
+              "transient": 0.03031539786011528,
+              "onset_ratio": 1.0313020214828785,
+              "monotonic": false
+            },
+            "L17": {
+              "onset_max": 0.9977361399641593,
+              "steady_mean": 0.969105246362959,
+              "transient": 0.028630893601200302,
+              "onset_ratio": 1.029543636986408,
+              "monotonic": false
+            },
+            "L18": {
+              "onset_max": 0.9833301253692343,
+              "steady_mean": 0.9725446495452064,
+              "transient": 0.01078547582402789,
+              "onset_ratio": 1.011089954407811,
+              "monotonic": false
+            },
+            "L19": {
+              "onset_max": 0.9867756026737383,
+              "steady_mean": 0.9748829328120653,
+              "transient": 0.011892669861673033,
+              "onset_ratio": 1.0121990748431262,
+              "monotonic": false
+            },
+            "L28": {
+              "onset_max": 0.9445511161492184,
+              "steady_mean": 0.8424120426628183,
+              "transient": 0.10213907348640006,
+              "onset_ratio": 1.1212459797730607,
+              "monotonic": false
+            }
+          }
+        },
+        {
+          "seed": 348,
+          "n_steps": 50,
+          "layers": {
+            "L00": {
+              "onset_max": 0.9086840595226308,
+              "steady_mean": 0.8282334446732811,
+              "transient": 0.08045061484934968,
+              "onset_ratio": 1.0971351922162338,
+              "monotonic": false
+            },
+            "L12": {
+              "onset_max": 0.9490505272919582,
+              "steady_mean": 0.9505704672643217,
+              "transient": -0.0015199399723635487,
+              "onset_ratio": 0.9984010233583879,
+              "monotonic": false
+            },
+            "L13": {
+              "onset_max": 0.930624389316952,
+              "steady_mean": 0.9422161636832451,
+              "transient": -0.011591774366293106,
+              "onset_ratio": 0.9876973301731876,
+              "monotonic": false
+            },
+            "L14": {
+              "onset_max": 0.9519868228018475,
+              "steady_mean": 0.953279197037609,
+              "transient": -0.001292374235761451,
+              "onset_ratio": 0.9986442857026816,
+              "monotonic": false
+            },
+            "L15": {
+              "onset_max": 0.9733990569546007,
+              "steady_mean": 0.9663922682044316,
+              "transient": 0.007006788750169135,
+              "onset_ratio": 1.0072504602734256,
+              "monotonic": false
+            },
+            "L16": {
+              "onset_max": 0.9591757186868994,
+              "steady_mean": 0.9722725617113677,
+              "transient": -0.01309684302446823,
+              "onset_ratio": 0.9865296589236232,
+              "monotonic": false
+            },
+            "L17": {
+              "onset_max": 0.960421489329801,
+              "steady_mean": 0.9719329513284327,
+              "transient": -0.011511461998631733,
+              "onset_ratio": 0.9881561151066172,
+              "monotonic": false
+            },
+            "L18": {
+              "onset_max": 0.9550842612347444,
+              "steady_mean": 0.9776223806814708,
+              "transient": -0.022538119446726346,
+              "onset_ratio": 0.9769459866170488,
+              "monotonic": false
+            },
+            "L19": {
+              "onset_max": 0.9705663099958298,
+              "steady_mean": 0.9733974486042959,
+              "transient": -0.002831138608466066,
+              "onset_ratio": 0.9970914875382891,
+              "monotonic": false
+            },
+            "L28": {
+              "onset_max": 0.8816168994110853,
+              "steady_mean": 0.885051015964389,
+              "transient": -0.003434116553303612,
+              "onset_ratio": 0.9961198659824623,
+              "monotonic": false
+            }
+          }
+        },
+        {
+          "seed": 365,
+          "n_steps": 50,
+          "layers": {
+            "L00": {
+              "onset_max": 0.8630405069030619,
+              "steady_mean": 0.8591080422472736,
+              "transient": 0.003932464655788337,
+              "onset_ratio": 1.0045773807965959,
+              "monotonic": false
+            },
+            "L12": {
+              "onset_max": 0.9575324553424662,
+              "steady_mean": 0.9492073130491917,
+              "transient": 0.008325142293274523,
+              "onset_ratio": 1.0087706259505338,
+              "monotonic": false
+            },
+            "L13": {
+              "onset_max": 0.9497432436936719,
+              "steady_mean": 0.9438183338485697,
+              "transient": 0.005924909845102189,
+              "onset_ratio": 1.006277595625777,
+              "monotonic": false
+            },
+            "L14": {
+              "onset_max": 0.9636513671230499,
+              "steady_mean": 0.9516941468526042,
+              "transient": 0.011957220270445656,
+              "onset_ratio": 1.0125641418610984,
+              "monotonic": false
+            },
+            "L15": {
+              "onset_max": 0.9823064893187923,
+              "steady_mean": 0.961022949660362,
+              "transient": 0.021283539658430328,
+              "onset_ratio": 1.0221467548354908,
+              "monotonic": false
+            },
+            "L16": {
+              "onset_max": 0.988627275175086,
+              "steady_mean": 0.9630977674822923,
+              "transient": 0.025529507692793718,
+              "onset_ratio": 1.026507701039019,
+              "monotonic": false
+            },
+            "L17": {
+              "onset_max": 0.9873850124895469,
+              "steady_mean": 0.9611705116190912,
+              "transient": 0.026214500870455737,
+              "onset_ratio": 1.0272735176043533,
+              "monotonic": false
+            },
+            "L18": {
+              "onset_max": 0.9813961331447106,
+              "steady_mean": 0.9655476869608529,
+              "transient": 0.015848446183857723,
+              "onset_ratio": 1.0164139445382814,
+              "monotonic": false
+            },
+            "L19": {
+              "onset_max": 0.9744945644015905,
+              "steady_mean": 0.9724800606912088,
+              "transient": 0.0020145037103816987,
+              "onset_ratio": 1.0020715115824048,
+              "monotonic": false
+            },
+            "L28": {
+              "onset_max": 0.8247844010770791,
+              "steady_mean": 0.8522612119624545,
+              "transient": -0.027476810885375458,
+              "onset_ratio": 0.9677601062905657,
+              "monotonic": false
+            }
+          }
+        }
+      ]
+    }
+  }
+}

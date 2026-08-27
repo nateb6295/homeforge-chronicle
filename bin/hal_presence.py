@@ -276,24 +276,30 @@ def get_crossref_health(conn):
 
 def get_recent_predictions(conn):
     """Get any predictions that were scored recently or are near deadline."""
-    rows = conn.execute(
-        "SELECT id, claim, confidence, deadline, outcome FROM prediction_track "
-        "WHERE outcome IS NOT NULL AND scored_at > ? "
-        "ORDER BY scored_at DESC LIMIT 3",
-        (int(time.time()) - 86400,)
-    ).fetchall()
-    return [dict(r) for r in rows]
+    try:
+        rows = conn.execute(
+            "SELECT id, claim, confidence, deadline, outcome FROM prediction_track "
+            "WHERE outcome IS NOT NULL AND scored_at > ? "
+            "ORDER BY scored_at DESC LIMIT 3",
+            (int(time.time()) - 86400,)
+        ).fetchall()
+        return [dict(r) for r in rows]
+    except Exception:
+        return []
 
 def get_open_predictions(conn):
     """Get predictions nearing deadline (within 7 days) with live data."""
     today = datetime.now().strftime("%Y-%m-%d")
     week_ahead = (datetime.now() + timedelta(days=7)).strftime("%Y-%m-%d")
-    rows = conn.execute(
-        "SELECT id, claim, confidence, deadline, category FROM prediction_track "
-        "WHERE status='open' AND deadline >= ? AND deadline <= ? "
-        "ORDER BY deadline ASC LIMIT 3",
-        (today, week_ahead)
-    ).fetchall()
+    try:
+        rows = conn.execute(
+            "SELECT id, claim, confidence, deadline, category FROM prediction_track "
+            "WHERE status='open' AND deadline >= ? AND deadline <= ? "
+            "ORDER BY deadline ASC LIMIT 3",
+            (today, week_ahead)
+        ).fetchall()
+    except Exception:
+        return []
     preds = []
     for r in rows:
         p = dict(r)
@@ -405,7 +411,7 @@ def get_recent_captures(conn, hours=16, limit=10):
     rows = conn.execute(
         "SELECT id, substr(content, 1, 400) as content, created_at "
         "FROM activity_feed "
-        "WHERE source = 'operator:capture' "
+        "WHERE source IN ('operator:capture', 'discord:capture') "
         "AND created_at > ? "
         "ORDER BY created_at DESC LIMIT ?",
         (cutoff, limit)

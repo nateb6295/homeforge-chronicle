@@ -43,18 +43,16 @@ log() { echo "$LOG_PREFIX $(date '+%Y-%m-%d %H:%M:%S') $*"; }
 
 get_balance() {
     local canister="$1"
-    $DFX canister --network "$NETWORK" status "$canister" 2>&1 \
-        | grep "^Balance:" \
-        | head -1 \
-        | sed 's/[^0-9]//g'
+    local output
+    output=$($DFX canister --network "$NETWORK" status "$canister" 2>&1) || true
+    echo "$output" | grep "^Balance:" | head -1 | sed 's/[^0-9]//g'
 }
 
 get_idle_burn() {
     local canister="$1"
-    $DFX canister --network "$NETWORK" status "$canister" 2>&1 \
-        | grep "Idle cycles burned" \
-        | head -1 \
-        | sed 's/[^0-9]//g'
+    local output
+    output=$($DFX canister --network "$NETWORK" status "$canister" 2>&1) || true
+    echo "$output" | grep "Idle cycles burned" | head -1 | sed 's/[^0-9]//g'
 }
 
 log_balance_to_db() {
@@ -107,7 +105,12 @@ done
 
 log "Richest canister: $richest_name (${richest_balance})"
 
-# Top up any canister below MIN_BALANCE
+# Check wallet balance (this is what deposit-cycles actually draws from)
+wallet_balance=$($DFX cycles balance --network "$NETWORK" 2>&1 | grep -oP '[\d.]+(?= TC)' || echo "0")
+wallet_cycles=$(echo "$wallet_balance * 1000000000000 / 1" | bc 2>/dev/null || echo "0")
+log "Wallet balance: ${wallet_balance}TC (${wallet_cycles} cycles)"
+
+# Top up any canister below MIN_BALANCE (draws from wallet, not other canisters)
 for name in "${!BALANCES[@]}"; do
     bal="${BALANCES[$name]}"
 
@@ -116,32 +119,28 @@ for name in "${!BALANCES[@]}"; do
         continue
     fi
 
-    if [ "$bal" -lt "$MIN_BALANCE" ] && [ "$name" != "$richest_name" ]; then
-        # Calculate how much to send (bring target up to TOP_UP_TARGET)
+    if [ "$bal" -lt "$MIN_BALANCE" ]; then
         needed=$((TOP_UP_TARGET - bal))
-        available=$((richest_balance - DONOR_RESERVE))
 
-        if [ "$available" -le 0 ]; then
-            log "WARNING: Richest canister ($richest_name) has no surplus above reserve"
+        if [ "$wallet_cycles" -le 0 ]; then
+            log "WARNING: Wallet empty — cannot top up $name (needs $(($needed / 1000000000000))T)"
             continue
         fi
 
-        # Send the lesser of what's needed and what's available
+        # Send the lesser of what's needed and what's in the wallet
         send=$needed
-        if [ "$send" -gt "$available" ]; then
-            send=$available
+        if [ "$send" -gt "$wallet_cycles" ]; then
+            send=$wallet_cycles
         fi
 
         send_t=$((send / 1000000000000))
-        log "Topping up $name with ${send_t}T cycles from $richest_name..."
+        log "Topping up $name with ${send_t}T cycles from wallet..."
 
-        # Use deposit-cycles (from wallet) since inter-canister transfer
-        # requires the backend's transfer_cycles method which may not exist on all canisters
         result=$($DFX canister --network "$NETWORK" deposit-cycles "$send" "${CANISTERS[$name]}" 2>&1 || true)
 
         if echo "$result" | grep -q "Deposited"; then
             log "OK: $name topped up. $result"
-            richest_balance=$((richest_balance - send))
+            wallet_cycles=$((wallet_cycles - send))
         else
             log "ERROR: Top-up failed for $name. $result"
         fi

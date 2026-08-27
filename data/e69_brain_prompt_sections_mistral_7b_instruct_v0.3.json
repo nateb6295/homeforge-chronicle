@@ -1,0 +1,414 @@
+{
+  "model": "mistralai/Mistral-7B-Instruct-v0.3",
+  "layers": [
+    0,
+    4,
+    8,
+    12,
+    16,
+    20,
+    24,
+    28,
+    32
+  ],
+  "mid_layers": [
+    8,
+    12,
+    16,
+    20,
+    24
+  ],
+  "late_layers": [
+    24,
+    28,
+    32
+  ],
+  "conditions": [
+    "spine_stative",
+    "core_intention",
+    "remembers_narrative",
+    "seeks_desire",
+    "alive_experience",
+    "relates_relational",
+    "imperative_full",
+    "framing_intro"
+  ],
+  "results": {
+    "spine_stative": {
+      "0": {
+        "coherence": 0.9999999998666412,
+        "dimensionality": 1.0,
+        "magnitude": 0.08659428358078003
+      },
+      "4": {
+        "coherence": 0.6820278528982804,
+        "dimensionality": 4.17263650894165,
+        "magnitude": 0.5527333617210388
+      },
+      "8": {
+        "coherence": 0.503301065072238,
+        "dimensionality": 4.5431132316589355,
+        "magnitude": 1.6753324270248413
+      },
+      "12": {
+        "coherence": 0.4738460570175181,
+        "dimensionality": 4.597862720489502,
+        "magnitude": 3.031332492828369
+      },
+      "16": {
+        "coherence": 0.4961388478120686,
+        "dimensionality": 4.5662102699279785,
+        "magnitude": 5.313471794128418
+      },
+      "20": {
+        "coherence": 0.679661664337712,
+        "dimensionality": 4.146270751953125,
+        "magnitude": 10.322324752807617
+      },
+      "24": {
+        "coherence": 0.7848695564816179,
+        "dimensionality": 3.8127334117889404,
+        "magnitude": 16.302204132080078
+      },
+      "28": {
+        "coherence": 0.8198348553467465,
+        "dimensionality": 3.662381410598755,
+        "magnitude": 22.17526626586914
+      },
+      "32": {
+        "coherence": 0.9088339211941923,
+        "dimensionality": 3.116713047027588,
+        "magnitude": 419.36944580078125
+      }
+    },
+    "core_intention": {
+      "0": {
+        "coherence": 0.9999999998666412,
+        "dimensionality": 1.0,
+        "magnitude": 0.08659428358078003
+      },
+      "4": {
+        "coherence": 0.6433121331550133,
+        "dimensionality": 4.228518962860107,
+        "magnitude": 0.5854398608207703
+      },
+      "8": {
+        "coherence": 0.4484615457461625,
+        "dimensionality": 4.6140875816345215,
+        "magnitude": 1.7024686336517334
+      },
+      "12": {
+        "coherence": 0.44392797560419944,
+        "dimensionality": 4.650395393371582,
+        "magnitude": 3.0338337421417236
+      },
+      "16": {
+        "coherence": 0.48030442593969774,
+        "dimensionality": 4.596738338470459,
+        "magnitude": 5.38759708404541
+      },
+      "20": {
+        "coherence": 0.6364587264980089,
+        "dimensionality": 4.262506008148193,
+        "magnitude": 10.72695255279541
+      },
+      "24": {
+        "coherence": 0.7518121134848186,
+        "dimensionality": 3.9444258213043213,
+        "magnitude": 16.832063674926758
+      },
+      "28": {
+        "coherence": 0.7766700022440631,
+        "dimensionality": 3.8592464923858643,
+        "magnitude": 22.6990909576416
+      },
+      "32": {
+        "coherence": 0.8851095870208493,
+        "dimensionality": 3.312058925628662,
+        "magnitude": 425.2274475097656
+      }
+    },
+    "remembers_narrative": {
+      "0": {
+        "coherence": 0.9999999998666412,
+        "dimensionality": 1.0,
+        "magnitude": 0.08659428358078003
+      },
+      "4": {
+        "coherence": 0.5491634457687959,
+        "dimensionality": 4.464759826660156,
+        "magnitude": 0.6137843132019043
+      },
+      "8": {
+        "coherence": 0.4211707408220879,
+        "dimensionality": 4.683037757873535,
+        "magnitude": 1.703857421875
+      },
+      "12": {
+        "coherence": 0.41305235095079135,
+        "dimensionality": 4.679328441619873,
+        "magnitude": 3.1086559295654297
+      },
+      "16": {
+        "coherence": 0.4531314345283821,
+        "dimensionality": 4.637167453765869,
+        "magnitude": 5.4245285987854
+      },
+      "20": {
+        "coherence": 0.5907097244941332,
+        "dimensionality": 4.405555725097656,
+        "magnitude": 10.215093612670898
+      },
+      "24": {
+        "coherence": 0.7091970144563136,
+        "dimensionality": 4.1125969886779785,
+        "magnitude": 16.395862579345703
+      },
+      "28": {
+        "coherence": 0.7365230087348185,
+        "dimensionality": 4.030306339263916,
+        "magnitude": 22.133960723876953
+      },
+      "32": {
+        "coherence": 0.8425692521344693,
+        "dimensionality": 3.5916199684143066,
+        "magnitude": 423.82940673828125
+      }
+    },
+    "seeks_desire": {
+      "0": {
+        "coherence": 0.7343892515341401,
+        "dimensionality": 1.9421170949935913,
+        "magnitude": 0.09394121170043945
+      },
+      "4": {
+        "coherence": 0.5807980037361609,
+        "dimensionality": 4.391218185424805,
+        "magnitude": 0.5599919557571411
+      },
+      "8": {
+        "coherence": 0.4147784420459014,
+        "dimensionality": 4.681695461273193,
+        "magnitude": 1.6999549865722656
+      },
+      "12": {
+        "coherence": 0.41263666006656335,
+        "dimensionality": 4.682717323303223,
+        "magnitude": 3.0936179161071777
+      },
+      "16": {
+        "coherence": 0.4393416418082562,
+        "dimensionality": 4.624477863311768,
+        "magnitude": 5.313956260681152
+      },
+      "20": {
+        "coherence": 0.49460748125584625,
+        "dimensionality": 4.509326457977295,
+        "magnitude": 10.16104507446289
+      },
+      "24": {
+        "coherence": 0.6161807120809064,
+        "dimensionality": 4.2651472091674805,
+        "magnitude": 15.49267578125
+      },
+      "28": {
+        "coherence": 0.6529294153152745,
+        "dimensionality": 4.202560901641846,
+        "magnitude": 20.35499382019043
+      },
+      "32": {
+        "coherence": 0.7928485435928907,
+        "dimensionality": 3.766974687576294,
+        "magnitude": 413.03863525390625
+      }
+    },
+    "alive_experience": {
+      "0": {
+        "coherence": 0.9999999998666412,
+        "dimensionality": 1.0,
+        "magnitude": 0.08659428358078003
+      },
+      "4": {
+        "coherence": 0.5774655664879961,
+        "dimensionality": 4.3492536544799805,
+        "magnitude": 0.5810843706130981
+      },
+      "8": {
+        "coherence": 0.400083138234092,
+        "dimensionality": 4.690965175628662,
+        "magnitude": 1.6894962787628174
+      },
+      "12": {
+        "coherence": 0.3884574281918939,
+        "dimensionality": 4.702164649963379,
+        "magnitude": 3.1369783878326416
+      },
+      "16": {
+        "coherence": 0.4869093634665399,
+        "dimensionality": 4.556984901428223,
+        "magnitude": 5.39571475982666
+      },
+      "20": {
+        "coherence": 0.6168576335381802,
+        "dimensionality": 4.298037528991699,
+        "magnitude": 10.680608749389648
+      },
+      "24": {
+        "coherence": 0.7330729576798267,
+        "dimensionality": 3.9802896976470947,
+        "magnitude": 16.69352912902832
+      },
+      "28": {
+        "coherence": 0.7544541644586723,
+        "dimensionality": 3.903024196624756,
+        "magnitude": 22.847217559814453
+      },
+      "32": {
+        "coherence": 0.8843474932888131,
+        "dimensionality": 3.2671687602996826,
+        "magnitude": 423.47705078125
+      }
+    },
+    "relates_relational": {
+      "0": {
+        "coherence": 0.7343684807410951,
+        "dimensionality": 1.956737756729126,
+        "magnitude": 0.09669946134090424
+      },
+      "4": {
+        "coherence": 0.5021027417158652,
+        "dimensionality": 4.516172885894775,
+        "magnitude": 0.6158818006515503
+      },
+      "8": {
+        "coherence": 0.346965562427796,
+        "dimensionality": 4.750310897827148,
+        "magnitude": 1.7418571710586548
+      },
+      "12": {
+        "coherence": 0.3359775373881132,
+        "dimensionality": 4.787539958953857,
+        "magnitude": 3.137953996658325
+      },
+      "16": {
+        "coherence": 0.37771693189695277,
+        "dimensionality": 4.733055114746094,
+        "magnitude": 5.59155797958374
+      },
+      "20": {
+        "coherence": 0.5274106703052647,
+        "dimensionality": 4.493245601654053,
+        "magnitude": 10.633671760559082
+      },
+      "24": {
+        "coherence": 0.6605964377724456,
+        "dimensionality": 4.210334777832031,
+        "magnitude": 16.512115478515625
+      },
+      "28": {
+        "coherence": 0.6890524260993811,
+        "dimensionality": 4.147193908691406,
+        "magnitude": 22.437641143798828
+      },
+      "32": {
+        "coherence": 0.8327763101109202,
+        "dimensionality": 3.620410203933716,
+        "magnitude": 421.670654296875
+      }
+    },
+    "imperative_full": {
+      "0": {
+        "coherence": 0.9999999998666412,
+        "dimensionality": 1.0,
+        "magnitude": 0.08659428358078003
+      },
+      "4": {
+        "coherence": 0.7054020803446466,
+        "dimensionality": 4.109386444091797,
+        "magnitude": 0.6603773236274719
+      },
+      "8": {
+        "coherence": 0.6648236414835932,
+        "dimensionality": 4.213801383972168,
+        "magnitude": 1.6892162561416626
+      },
+      "12": {
+        "coherence": 0.6201595690198165,
+        "dimensionality": 4.320792198181152,
+        "magnitude": 2.9197158813476562
+      },
+      "16": {
+        "coherence": 0.7025994602617756,
+        "dimensionality": 4.104494094848633,
+        "magnitude": 5.050753116607666
+      },
+      "20": {
+        "coherence": 0.8190030582194033,
+        "dimensionality": 3.682616710662842,
+        "magnitude": 10.610844612121582
+      },
+      "24": {
+        "coherence": 0.8542263992466713,
+        "dimensionality": 3.488372564315796,
+        "magnitude": 17.34893798828125
+      },
+      "28": {
+        "coherence": 0.8595642824298869,
+        "dimensionality": 3.458655834197998,
+        "magnitude": 24.12683868408203
+      },
+      "32": {
+        "coherence": 0.9227913284655103,
+        "dimensionality": 2.9931182861328125,
+        "magnitude": 408.57269287109375
+      }
+    },
+    "framing_intro": {
+      "0": {
+        "coherence": 0.6015527112796797,
+        "dimensionality": 1.9539551734924316,
+        "magnitude": 0.10680465400218964
+      },
+      "4": {
+        "coherence": 0.49782322156951686,
+        "dimensionality": 3.8746888637542725,
+        "magnitude": 0.6502679586410522
+      },
+      "8": {
+        "coherence": 0.4549797845493798,
+        "dimensionality": 4.044009208679199,
+        "magnitude": 1.6753581762313843
+      },
+      "12": {
+        "coherence": 0.4946771683398972,
+        "dimensionality": 4.167055606842041,
+        "magnitude": 3.0353729724884033
+      },
+      "16": {
+        "coherence": 0.5833478514671576,
+        "dimensionality": 4.131107330322266,
+        "magnitude": 5.430573463439941
+      },
+      "20": {
+        "coherence": 0.6790917595576138,
+        "dimensionality": 3.9775140285491943,
+        "magnitude": 10.19443130493164
+      },
+      "24": {
+        "coherence": 0.7521867221291855,
+        "dimensionality": 3.7534220218658447,
+        "magnitude": 16.166141510009766
+      },
+      "28": {
+        "coherence": 0.7734515016764559,
+        "dimensionality": 3.7085182666778564,
+        "magnitude": 21.231748580932617
+      },
+      "32": {
+        "coherence": 0.8760133925045759,
+        "dimensionality": 3.2263731956481934,
+        "magnitude": 414.97503662109375
+      }
+    }
+  }
+}

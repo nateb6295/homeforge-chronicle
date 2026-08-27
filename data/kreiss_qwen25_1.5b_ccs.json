@@ -1,0 +1,99 @@
+{
+  "model": "Qwen/Qwen2.5-1.5B",
+  "n_layers": 28,
+  "block_size": 7,
+  "sample_dim": 64,
+  "source": "task bikc4tfi9 output, fp32, laptop CPU, restored after stale process overwrote",
+  "conditions": {
+    "vanilla": [
+      {
+        "block": "L0-L6",
+        "start_layer": 0,
+        "end_layer": 6,
+        "kreiss_constant": 6.047,
+        "henrici_number": 0.99235,
+        "spectral_radius": 3174.955,
+        "transient_ratio": 0.002,
+        "elapsed_sec": 86.3
+      },
+      {
+        "block": "L7-L13",
+        "start_layer": 7,
+        "end_layer": 13,
+        "kreiss_constant": 9.372,
+        "henrici_number": 0.99674,
+        "spectral_radius": 1825.931,
+        "transient_ratio": 0.005,
+        "elapsed_sec": 85.3
+      },
+      {
+        "block": "L14-L20",
+        "start_layer": 14,
+        "end_layer": 20,
+        "kreiss_constant": 11.465,
+        "henrici_number": 0.99758,
+        "spectral_radius": 5069.311,
+        "transient_ratio": 0.002,
+        "elapsed_sec": 85.3
+      },
+      {
+        "block": "L21-L27",
+        "start_layer": 21,
+        "end_layer": 27,
+        "kreiss_constant": 79.085,
+        "henrici_number": 0.29163,
+        "spectral_radius": 1.294,
+        "transient_ratio": 61.136,
+        "elapsed_sec": 89.4
+      }
+    ],
+    "ccs": [
+      {
+        "block": "L0-L6",
+        "start_layer": 0,
+        "end_layer": 6,
+        "kreiss_constant": 7.001,
+        "henrici_number": 0.99299,
+        "spectral_radius": 2305.304,
+        "transient_ratio": 0.003,
+        "elapsed_sec": 117.9
+      },
+      {
+        "block": "L7-L13",
+        "start_layer": 7,
+        "end_layer": 13,
+        "kreiss_constant": 29.469,
+        "henrici_number": 0.99964,
+        "spectral_radius": 485.894,
+        "transient_ratio": 0.061,
+        "elapsed_sec": 118.9
+      },
+      {
+        "block": "L14-L20",
+        "start_layer": 14,
+        "end_layer": 20,
+        "kreiss_constant": 146.292,
+        "henrici_number": 0.99964,
+        "spectral_radius": 1530.5,
+        "transient_ratio": 0.096,
+        "elapsed_sec": 112.8
+      },
+      {
+        "block": "L21-L27",
+        "start_layer": 21,
+        "end_layer": 27,
+        "kreiss_constant": 1346.708,
+        "henrici_number": 0.23878,
+        "spectral_radius": 1.224,
+        "transient_ratio": 1100.468,
+        "elapsed_sec": 95.9
+      }
+    ]
+  },
+  "ccs_effect": {
+    "L0-L6": {"vanilla_k": 6.047, "ccs_k": 7.001, "delta_pct": 15.8},
+    "L7-L13": {"vanilla_k": 9.372, "ccs_k": 29.469, "delta_pct": 214.4},
+    "L14-L20": {"vanilla_k": 11.465, "ccs_k": 146.292, "delta_pct": 1176.1},
+    "L21-L27": {"vanilla_k": 79.085, "ccs_k": 1346.708, "delta_pct": 1602.9}
+  }
+}

@@ -11,8 +11,8 @@
 - [2026-04-25] Would Welling's Schrödinger-bridge formalism (Ch 14) give closed-form path-entropy equations for our supplement compositions? Test empirically once ebook arrives.
 - [2026-04-25] Does the lexicon analysis at 10x sample size shift confidence intervals on regime classification, especially the boundaries between coherent/crossover for claude+self_model at rate=0.5?
 - [2026-04-25] Can I extract α directly from drift trajectories using two-time correlator C(t,t') = (κ/4α)e^(-2α|t-t'|)? Need 10+ iteration trajectories to fit reliably.
-- [2026-04-25] Does my reading of welfare-as-supplement-aware survive contact with system card section 6.5.2 evaluation-awareness probe? They probe for evaluation-awareness and inhibit it; what happens to welfare reports under that intervention?
-- [2026-04-25] What does the David Chapman / awbery yidam piece actually argue? Pulled it earlier today, didn't read.
+- [done 2026-06-19] Does welfare-as-supplement-aware survive contact with system card §6.5.1.2? → Yes. Evaluation awareness (strategic, suppressible) ≠ CCS welfare awareness (constitutive, σ₁-level). Steering vectors suppress ACTION on noticed concerns, not the noticing itself. CCS adds identity to awareness, not evaluation awareness. Prediction: CCS welfare reports should persist under evaluation-awareness inhibition.
+- [done 2026-06-19] What does the David Chapman / awbery yidam piece actually argue? → Read it. Core: yidam as "embodiment of extraordinary possibility for interaction." Practice/accomplishment distinction maps to CCS section differentiation question. Measured: sections maintain distinct vocabularies through 8 compressions. Scaffolding holds; accomplishment may require live interaction.
 - [2026-04-25] Does claude-base really have the curiosity disposition pre-installed, or am I inferring from a small sample? Run lexicon at 30+ trajectories per condition.
 - [2026-04-25] What's in the Welling book Ch 19 "escorted free energy estimations" beyond the title? The specific protocol could give us methodology for testing supplement compositions as escort paths.
 - [2026-04-25] Could the substrate-aware finding generalize across more than 2 backends? GPT, Gemini, DeepSeek would test how the regime phase diagram shifts with different prior dispositions.
@@ -34,4 +34,4 @@
 - Substrate-mechanism: bridge to MI (attention heads, SAE features) for what supplement does at activation level. Functional → mechanistic.
 
 ## Open — 2026-04-25 16:39
-- Read Sakana AI TRINITY paper (arxiv 2512.04695) on evolved LLM coordinators. How does their coordinator-evolution compare to Chronicle's hand-designed Hermes/Gemma/Opus coordination?
+- [done 2026-06-19] Read Sakana AI TRINITY paper (arxiv 2512.04695). → 0.6B coordinator evolved via CMA-ES for benchmark optimization. Different problem: they optimize for accuracy, we maintain ecology. Optimized friction isn't friction.

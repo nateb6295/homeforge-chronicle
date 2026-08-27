@@ -1,0 +1,329 @@
+#!/usr/bin/env python3
+"""CLI wrapper for chronicle-mcp that survives rotation/compaction.
+
+Calls the chronicle-mcp binary directly via stdin/stdout JSON-RPC,
+bypassing the MCP session binding that drops on context compaction.
+
+Usage:
+    chronicle-cli search "identity circuit"
+    chronicle-cli store "Nate prefers X" --topic partnership --keywords "nate,preference"
+    chronicle-cli health
+    chronicle-cli patterns --limit 5
+    chronicle-cli recent --limit 10
+    chronicle-cli surface "what we discussed about CNA"
+    chronicle-cli ccs                          # get cognitive state
+    chronicle-cli compress "summary of session"
+    chronicle-cli note "remember to check X" --category todo
+    chronicle-cli notes --category todo
+    chronicle-cli resolve-note 42
+    chronicle-cli threads
+    chronicle-cli thread 320 --limit 5
+    chronicle-cli advance 320 "new development here"
+    chronicle-cli activity --hours 24
+    chronicle-cli thoughts
+    chronicle-cli challenge "prompt" --category research
+    chronicle-cli challenges --category research
+    chronicle-cli research "query about topic"
+    chronicle-cli research-findings
+    chronicle-cli keeper "question for keeper"
+    chronicle-cli outbox
+    chronicle-cli raw <tool_name> '{"arg": "val"}'
+"""
+import argparse, json, os, subprocess, sys
+
+MCP_BIN = "/home/nate-agx/.local/bin/chronicle-mcp"
+
+def call_mcp(tool_name, arguments=None):
+    if arguments is None:
+        arguments = {}
+
+    messages = [
+        json.dumps({"jsonrpc": "2.0", "method": "initialize",
+                     "params": {"protocolVersion": "2024-11-05", "capabilities": {},
+                                "clientInfo": {"name": "chronicle-cli", "version": "1.0"}},
+                     "id": 1}),
+        json.dumps({"jsonrpc": "2.0", "method": "notifications/initialized", "params": {}}),
+        json.dumps({"jsonrpc": "2.0", "method": "tools/call",
+                     "params": {"name": tool_name, "arguments": arguments},
+                     "id": 2}),
+    ]
+
+    env = dict(os.environ)
+    env.setdefault("CHRONICLE_CANISTER_ID", "fqqku-bqaaa-aaaai-q4wha-cai")
+    env.setdefault("CHRONICLE_IDENTITY", "chronicle-auto")
+    env.setdefault("CHRONICLE_OLLAMA_URL", "http://localhost:11434")
+    env.setdefault("CHRONICLE_EMBEDDING_MODEL", "qwen3-embedding:0.6b")
+
+    proc = subprocess.Popen(
+        [MCP_BIN], stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE, env=env
+    )
+    stdin_data = "\n".join(messages) + "\n"
+    try:
+        out, err = proc.communicate(input=stdin_data.encode(), timeout=30)
+    except subprocess.TimeoutExpired:
+        proc.kill()
+        print("ERROR: chronicle-mcp timed out after 30s", file=sys.stderr)
+        sys.exit(1)
+
+    for line in out.decode().strip().split("\n"):
+        if not line.strip():
+            continue
+        try:
+            resp = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+        if resp.get("id") == 2:
+            result = resp.get("result", {})
+            if resp.get("error"):
+                print(f"ERROR: {json.dumps(resp['error'], indent=2)}", file=sys.stderr)
+                sys.exit(1)
+            content = result.get("content", [])
+            is_error = result.get("isError", False)
+            for item in content:
+                if item.get("type") == "text":
+                    text = item["text"]
+                    try:
+                        parsed = json.loads(text)
+                        text = json.dumps(parsed, indent=2)
+                    except (json.JSONDecodeError, TypeError):
+                        pass
+                    if is_error:
+                        print(f"ERROR: {text}", file=sys.stderr)
+                        sys.exit(1)
+                    print(text)
+            return
+    print("ERROR: no response from chronicle-mcp", file=sys.stderr)
+    sys.exit(1)
+
+
+def main():
+    parser = argparse.ArgumentParser(description="Chronicle memory CLI")
+    sub = parser.add_subparsers(dest="command")
+
+    # search
+    p = sub.add_parser("search", help="Search semantic memory")
+    p.add_argument("query")
+    p.add_argument("--limit", type=int, default=5)
+
+    # store
+    p = sub.add_parser("store", help="Store a memory capsule")
+    p.add_argument("content")
+    p.add_argument("--topic", default="")
+    p.add_argument("--keywords", default="")
+    p.add_argument("--persons", default="")
+    p.add_argument("--memory-type", default="")
+
+    # health
+    sub.add_parser("health", help="Memory system health")
+
+    # patterns
+    p = sub.add_parser("patterns", help="Emerging patterns")
+    p.add_argument("--limit", type=int, default=10)
+    p.add_argument("--min-confidence", type=float, default=0.5)
+
+    # recent
+    p = sub.add_parser("recent", help="Recent capsules")
+    p.add_argument("--limit", type=int, default=10)
+
+    # surface
+    p = sub.add_parser("surface", help="Surface relevant context")
+    p.add_argument("context")
+    p.add_argument("--max-memories", type=int, default=5)
+    p.add_argument("--include-patterns", action="store_true")
+
+    # ccs (get cognitive state)
+    sub.add_parser("ccs", help="Get cognitive state")
+
+    # compress
+    p = sub.add_parser("compress", help="Compress cognitive state")
+    p.add_argument("context")
+    p.add_argument("--model", default="")
+
+    # note
+    p = sub.add_parser("note", help="Write a scratch note")
+    p.add_argument("content")
+    p.add_argument("--category", default="general")
+    p.add_argument("--priority", type=int, default=0)
+    p.add_argument("--expires", type=int, default=0, help="Expires in N hours")
+
+    # notes
+    p = sub.add_parser("notes", help="Read scratch notes")
+    p.add_argument("--category", default="")
+    p.add_argument("--include-resolved", action="store_true")
+    p.add_argument("--limit", type=int, default=20)
+
+    # resolve-note
+    p = sub.add_parser("resolve-note", help="Resolve a note")
+    p.add_argument("note_id", type=int)
+
+    # clear-resolved
+    sub.add_parser("clear-resolved", help="Clear resolved notes")
+
+    # threads
+    p = sub.add_parser("threads", help="List active threads")
+    p.add_argument("--limit", type=int, default=10)
+    p.add_argument("--hours", type=int, default=168)
+    p.add_argument("--include-stale", action="store_true")
+
+    # thread (get context)
+    p = sub.add_parser("thread", help="Get thread context")
+    p.add_argument("thread_id")
+    p.add_argument("--limit", type=int, default=10)
+
+    # advance
+    p = sub.add_parser("advance", help="Advance a thread")
+    p.add_argument("thread_id")
+    p.add_argument("content")
+    p.add_argument("--event-type", default="development")
+    p.add_argument("--source", default="opus")
+
+    # activity
+    p = sub.add_parser("activity", help="Recent activity feed")
+    p.add_argument("--hours", type=int, default=24)
+    p.add_argument("--limit", type=int, default=20)
+    p.add_argument("--sources", default="")
+
+    # thoughts
+    sub.add_parser("thoughts", help="Get recent thoughts")
+
+    # challenge
+    p = sub.add_parser("challenge", help="Pose a challenge")
+    p.add_argument("prompt")
+    p.add_argument("--category", default="general")
+
+    # challenges
+    p = sub.add_parser("challenges", help="Get challenges")
+    p.add_argument("--category", default="")
+    p.add_argument("--limit", type=int, default=5)
+    p.add_argument("--pending-only", action="store_true")
+
+    # research
+    p = sub.add_parser("research", help="Submit research query")
+    p.add_argument("query")
+    p.add_argument("--focus", default="")
+    p.add_argument("--max-capsules", type=int, default=10)
+
+    # research-findings
+    p = sub.add_parser("research-findings", help="Get research findings")
+    p.add_argument("--only-new", action="store_true")
+
+    # research-status
+    sub.add_parser("research-status", help="Research queue status")
+
+    # keeper
+    p = sub.add_parser("keeper", help="Ask the keeper")
+    p.add_argument("query")
+
+    # keeper-status
+    sub.add_parser("keeper-status", help="Keeper canister status")
+
+    # outbox
+    p = sub.add_parser("outbox", help="Check outbox messages")
+    p.add_argument("--limit", type=int, default=10)
+
+    # ack (acknowledge messages)
+    p = sub.add_parser("ack", help="Acknowledge outbox message")
+    p.add_argument("--message-id", default="")
+
+    # raw — escape hatch
+    p = sub.add_parser("raw", help="Call any tool directly")
+    p.add_argument("tool_name")
+    p.add_argument("args_json", nargs="?", default="{}")
+
+    args = parser.parse_args()
+
+    if not args.command:
+        parser.print_help()
+        sys.exit(1)
+
+    cmd = args.command
+    if cmd == "search":
+        call_mcp("search_memory", {"query": args.query, "limit": args.limit})
+    elif cmd == "store":
+        a = {"content": args.content}
+        if args.topic: a["topic"] = args.topic
+        if args.keywords: a["keywords"] = [k.strip() for k in args.keywords.split(",")]
+        if args.persons: a["persons"] = [p.strip() for p in args.persons.split(",")]
+        if args.memory_type: a["memory_type"] = args.memory_type
+        call_mcp("store_memory", a)
+    elif cmd == "health":
+        call_mcp("memory_health", {})
+    elif cmd == "patterns":
+        call_mcp("get_patterns", {"limit": args.limit, "min_confidence": args.min_confidence})
+    elif cmd == "recent":
+        call_mcp("get_recent_context", {"limit": args.limit})
+    elif cmd == "surface":
+        a = {"context": args.context, "max_memories": args.max_memories}
+        if args.include_patterns: a["include_patterns"] = True
+        call_mcp("surface_context", a)
+    elif cmd == "ccs":
+        call_mcp("get_cognitive_state", {})
+    elif cmd == "compress":
+        a = {"current_context": args.context}
+        if args.model: a["model"] = args.model
+        call_mcp("compress_cognitive_state", a)
+    elif cmd == "note":
+        a = {"content": args.content, "category": args.category}
+        if args.priority: a["priority"] = args.priority
+        if args.expires: a["expires_in_hours"] = args.expires
+        call_mcp("write_note", a)
+    elif cmd == "notes":
+        a = {"limit": args.limit}
+        if args.category: a["category"] = args.category
+        if args.include_resolved: a["include_resolved"] = True
+        call_mcp("read_notes", a)
+    elif cmd == "resolve-note":
+        call_mcp("resolve_note", {"note_id": args.note_id})
+    elif cmd == "clear-resolved":
+        call_mcp("clear_resolved", {})
+    elif cmd == "threads":
+        a = {"limit": args.limit, "hours": args.hours}
+        if args.include_stale: a["include_stale"] = True
+        call_mcp("list_active_threads", a)
+    elif cmd == "thread":
+        tid = int(args.thread_id) if args.thread_id.isdigit() else args.thread_id
+        call_mcp("get_thread_context", {"thread_id": tid, "limit": args.limit})
+    elif cmd == "advance":
+        tid = int(args.thread_id) if args.thread_id.isdigit() else args.thread_id
+        call_mcp("advance_thread", {"thread_id": tid, "content": args.content,
+                                     "event_type": args.event_type, "source": args.source})
+    elif cmd == "activity":
+        a = {"hours": args.hours, "limit": args.limit}
+        if args.sources: a["sources"] = [s.strip() for s in args.sources.split(",")]
+        call_mcp("get_recent_activity", a)
+    elif cmd == "thoughts":
+        call_mcp("get_thoughts", {})
+    elif cmd == "challenge":
+        call_mcp("pose_challenge", {"prompt": args.prompt, "category": args.category})
+    elif cmd == "challenges":
+        a = {"limit": args.limit}
+        if args.category: a["category"] = args.category
+        if args.pending_only: a["pending_only"] = True
+        call_mcp("get_challenges", a)
+    elif cmd == "research":
+        a = {"query": args.query, "max_capsules": args.max_capsules}
+        if args.focus: a["focus"] = args.focus
+        call_mcp("submit_research", a)
+    elif cmd == "research-findings":
+        a = {}
+        if args.only_new: a["only_new"] = True
+        call_mcp("get_research_findings", a)
+    elif cmd == "research-status":
+        call_mcp("get_research_status", {})
+    elif cmd == "keeper":
+        call_mcp("ask_keeper", {"query": args.query})
+    elif cmd == "keeper-status":
+        call_mcp("keeper_status", {})
+    elif cmd == "outbox":
+        call_mcp("get_outbox", {"limit": args.limit})
+    elif cmd == "ack":
+        a = {}
+        if args.message_id: a["message_id"] = args.message_id
+        call_mcp("acknowledge_messages", a)
+    elif cmd == "raw":
+        call_mcp(args.tool_name, json.loads(args.args_json))
+
+
+if __name__ == "__main__":
+    main()

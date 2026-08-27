@@ -8,6 +8,7 @@ Usage:
     python3 discord_presence.py post CHANNEL "message"  # Post to a channel
     python3 discord_presence.py read CHANNEL [limit]    # Read recent messages
     python3 discord_presence.py reply MSG_ID "message"  # Reply to a specific message
+    python3 discord_presence.py reactions [limit]       # Check recent reactions from users
 
 Channels: operator, opus, crew, capture, alerts, oversight, mind
 """
@@ -22,7 +23,83 @@ from datetime import datetime
 UPLOAD_DIR = os.path.expanduser("~/chronicle/uploads")
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
+import re
+import subprocess
+
 import requests
+
+XMCP = os.path.expanduser("~/chronicle/bin/xmcp_call.py")
+
+
+def _load_chronicle_env():
+    """Load chronicle.env into a dict."""
+    env = {**os.environ}
+    envfile = os.path.expanduser("~/chronicle/chronicle.env")
+    if os.path.exists(envfile):
+        with open(envfile) as f:
+            for line in f:
+                line = line.strip()
+                if line and not line.startswith("#") and "=" in line:
+                    k, v = line.split("=", 1)
+                    env[k.strip()] = v.strip()
+    return env
+
+
+def _enrich_tweet(content: str) -> str:
+    """Fetch tweet text, media URLs, and quoted tweets. Download images."""
+    m = re.search(r'https?://(?:x|twitter)\.com/(\w+)/status/(\d+)', content)
+    if not m:
+        return content
+    author, tweet_id = m.group(1), m.group(2)
+    env = _load_chronicle_env()
+    parts = [content]
+    try:
+        params = {
+            "id": tweet_id,
+            "expansions": "attachments.media_keys,referenced_tweets.id",
+            "media.fields": "url,preview_image_url,type",
+            "tweet.fields": "referenced_tweets",
+        }
+        result = subprocess.run(
+            [sys.executable, XMCP, "getPostsById", json.dumps(params)],
+            capture_output=True, text=True, timeout=12, env=env,
+        )
+        if result.returncode != 0:
+            return content
+        data = json.loads(result.stdout)
+        tweet_data = data.get("data", {})
+        tweet_text = tweet_data.get("text")
+        if tweet_text:
+            parts.append(f"@{author}: {tweet_text}")
+
+        # Media — download images
+        includes = data.get("includes", {})
+        for media in includes.get("media", []):
+            img_url = media.get("url") or media.get("preview_image_url")
+            if not img_url:
+                continue
+            try:
+                ext = ".jpg" if "jpg" in img_url or "jpeg" in img_url else ".png"
+                fname = f"capture_{tweet_id}_{int(time.time())}{ext}"
+                local_path = os.path.join(UPLOAD_DIR, fname)
+                img_resp = requests.get(img_url, timeout=15)
+                if img_resp.status_code == 200 and len(img_resp.content) > 500:
+                    with open(local_path, "wb") as f_img:
+                        f_img.write(img_resp.content)
+                    parts.append(f"[Image saved: {local_path}]")
+            except Exception as e_img:
+                parts.append(f"[Image download failed: {e_img}]")
+
+        # Quoted/referenced tweets
+        for ref_tweet in includes.get("tweets", []):
+            ref_text = ref_tweet.get("text", "")
+            ref_id = ref_tweet.get("id", "")
+            if ref_text:
+                parts.append(f"[Quoted tweet {ref_id}]: {ref_text}")
+
+    except Exception as e:
+        print(f"  Tweet enrich failed for {tweet_id}: {e}")
+    return "\n".join(parts)
 
 
 def _discord_ts_to_epoch(ts_str: str) -> int:
@@ -72,10 +149,11 @@ CHANNELS = {
     "opus":      "1483843572129202427",
     "alerts":    "1487901536678838565",
     "oversight": "1488178551491657728",
+    "gemma":     "1534619086674202744",
 }
 
 # Which channels to poll for new messages
-POLL_CHANNELS = ["capture", "opus", "operator", "oversight"]
+POLL_CHANNELS = ["capture", "operator", "oversight", "gemma"]
 
 # State file for tracking last-read message IDs
 STATE_PATH = os.path.expanduser("~/chronicle/discord_presence_state.json")
@@ -193,7 +271,7 @@ def poll_channels():
             if is_bot:
                 seen_ids.add(msg_id)
                 continue
-            if channel_name not in ("opus",) and is_webhook and not is_chronicle_webhook:
+            if is_webhook and not is_chronicle_webhook:
                 seen_ids.add(msg_id)
                 continue
 
@@ -221,10 +299,21 @@ def poll_channels():
                     except Exception as e_att:
                         content += f"\n[Image download failed: {e_att}]"
 
+            reply_target = ""
+            ref_msg = msg.get("referenced_message")
+            if ref_msg:
+                reply_target = (ref_msg.get("content") or "")[:20]
+
             if channel_name == "operator" and is_chronicle_webhook:
                 source = "discord:opus"
+            elif channel_name == "operator" and reply_target.startswith("\U0001f7e2 Gemma:"):
+                source = "discord:nate:to_gemma"
             elif channel_name == "operator":
                 source = "discord:nate"
+            elif channel_name == "gemma" and is_chronicle_webhook:
+                source = "discord:gemma"
+            elif channel_name == "gemma":
+                source = "discord:nate:to_gemma"
             elif channel_name == "oversight":
                 source = "discord:nate:crosschain"
             elif channel_name == "capture":
@@ -262,11 +351,16 @@ def poll_channels():
 
             has_attachments = bool(msg.get("attachments"))
             if not existing and (content.strip() or has_attachments):
+                store_content = content
+                activity_type = "message"
+                if channel_name == "capture":
+                    store_content = _enrich_tweet(content)
+                    activity_type = "capture"
                 db.execute(
                     "INSERT INTO activity_feed (source, activity_type, content, created_at) "
                     "VALUES (?, ?, ?, ?)",
-                    (source, "message",
-                     f"[Discord #{channel_name}] {author}: {content}",
+                    (source, activity_type,
+                     f"[Discord #{channel_name}] {author}: {store_content}",
                      _discord_ts_to_epoch(ts))
                 )
                 new_messages.append({
@@ -295,6 +389,66 @@ def poll_channels():
         print("No new Discord messages.")
 
     return new_messages
+
+
+def check_reactions(channels=None, limit=20):
+    """Check recent messages in channels for reactions from non-bot users."""
+    if channels is None:
+        channels = ["operator"]
+    bot_id = _get_bot_id()
+    found = []
+
+    for ch_name in channels:
+        msgs = read_channel(ch_name, limit)
+        if not msgs:
+            continue
+        for m in msgs:
+            reactions = m.get("reactions", [])
+            if not reactions:
+                continue
+            msg_preview = m["content"][:80]
+            msg_author = m["author"].get("global_name") or m["author"]["username"]
+            msg_ts = m["timestamp"][:16]
+            msg_id = m["id"]
+
+            for r in reactions:
+                emoji = r["emoji"]
+                emoji_str = emoji.get("name", "?")
+                count = r.get("count", 0)
+                if count < 1:
+                    continue
+                try:
+                    encoded = emoji_str
+                    if emoji.get("id"):
+                        encoded = f"{emoji_str}:{emoji['id']}"
+                    ch_id = CHANNELS.get(ch_name, ch_name)
+                    resp = requests.get(
+                        f"{BASE}/channels/{ch_id}/messages/{msg_id}/reactions/{encoded}",
+                        headers=HEADERS, params={"limit": 10}, timeout=10
+                    )
+                    if resp.status_code == 200:
+                        users = resp.json()
+                        non_bot = [u for u in users if u["id"] != bot_id]
+                        for u in non_bot:
+                            uname = u.get("global_name") or u["username"]
+                            found.append({
+                                "channel": ch_name,
+                                "emoji": emoji_str,
+                                "reactor": uname,
+                                "message_author": msg_author,
+                                "message_preview": msg_preview,
+                                "timestamp": msg_ts,
+                            })
+                except Exception:
+                    pass
+
+    if not found:
+        print("No reactions found on recent messages.")
+    else:
+        for r in found:
+            print(f"[{r['timestamp']}] #{r['channel']} — {r['emoji']} by {r['reactor']}")
+            print(f"  On [{r['message_author']}]: {r['message_preview']}")
+    return found
 
 
 def main():
@@ -333,11 +487,15 @@ def main():
         if len(sys.argv) < 4:
             print("Usage: discord_presence.py reply MSG_ID \"message\"")
             sys.exit(1)
-        # Reply goes to #opus by default
+        # Reply goes to #operator by default
         msg_id = sys.argv[2]
         message = sys.argv[3]
         channel = sys.argv[4] if len(sys.argv) > 4 else "operator"
         post_message(channel, message, reply_to=msg_id)
+
+    elif cmd == "reactions":
+        limit = int(sys.argv[2]) if len(sys.argv) > 2 else 20
+        check_reactions(limit=limit)
 
     else:
         print(f"Unknown command: {cmd}")

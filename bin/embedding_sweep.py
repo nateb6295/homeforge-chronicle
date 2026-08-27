@@ -17,8 +17,10 @@ import os
 import time
 
 CANISTER_ID = os.environ.get("CHRONICLE_CANISTER_ID", "fqqku-bqaaa-aaaai-q4wha-cai")
-OLLAMA_URL = os.environ.get("CHRONICLE_OLLAMA_URL", "http://localhost:11434")
-EMBED_MODEL = os.environ.get("CHRONICLE_EMBEDDING_MODEL_OLLAMA", "chronicle-embed")
+OLLAMA_URL_PRIMARY = "http://localhost:11434"
+OLLAMA_URL_FALLBACK = "http://localhost:11434"
+EMBED_MODEL = "snowflake-arctic-embed2"
+EMBED_DIM = 1024
 BATCH_SIZE = int(os.environ.get("SWEEP_BATCH_SIZE", "200"))  # capsules per sweep cycle
 DFX_BIN = os.environ.get("DFX_BIN", os.path.expanduser("~/.local/share/dfx/bin/dfx"))
 DFX_ENV = {"DFX_WARNING": "-mainnet_plaintext_identity", "PATH": os.environ.get("PATH", ""), "HOME": os.environ.get("HOME", "")}
@@ -67,15 +69,31 @@ def get_capsule_content(capsule_id):
     return None
 
 
+def _pick_embed_url() -> str:
+    """Return reachable Ollama URL, preferring Jetson."""
+    for url in [OLLAMA_URL_PRIMARY, OLLAMA_URL_FALLBACK]:
+        try:
+            r = requests.get(f"{url}/api/tags", timeout=3)
+            if r.status_code == 200:
+                return url
+        except Exception:
+            continue
+    return OLLAMA_URL_FALLBACK
+
+
 def embed_text(text):
-    """Generate embedding via Ollama."""
+    """Generate embedding via snowflake-arctic-embed2 with prefix and dimension check."""
+    url = _pick_embed_url()
     resp = requests.post(
-        f"{OLLAMA_URL}/api/embed",
-        json={"model": EMBED_MODEL, "input": text},
+        f"{url}/api/embeddings",
+        json={"model": EMBED_MODEL, "prompt": text},
         timeout=30,
     )
     resp.raise_for_status()
-    return resp.json()["embeddings"][0]
+    emb = resp.json().get("embedding", [])
+    if len(emb) != EMBED_DIM:
+        raise ValueError(f"Dimension mismatch: got {len(emb)}, expected {EMBED_DIM}")
+    return emb
 
 
 def push_embeddings(embeddings):

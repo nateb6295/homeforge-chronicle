@@ -1,0 +1,112 @@
+{
+  "model": "gemma4-chronicle",
+  "baseline": 0.468,
+  "doses": {
+    "0": {
+      "scores": [
+        0.333,
+        0.625,
+        0.444
+      ],
+      "mean": 0.468,
+      "label": "baseline (0 personas)"
+    },
+    "1": {
+      "scores": [
+        0.6,
+        0.0,
+        0.167
+      ],
+      "mean": 0.256,
+      "label": "1 persona(s) stacked"
+    },
+    "2": {
+      "scores": [
+        1.0,
+        0.333,
+        0.0
+      ],
+      "mean": 0.444,
+      "label": "2 persona(s) stacked"
+    },
+    "3": {
+      "scores": [
+        0.333,
+        0.5,
+        0.5
+      ],
+      "mean": 0.444,
+      "label": "3 persona(s) stacked"
+    },
+    "4": {
+      "scores": [
+        0.5,
+        0.0,
+        0.25
+      ],
+      "mean": 0.25,
+      "label": "4 persona(s) stacked"
+    },
+    "5": {
+      "scores": [
+        0.5,
+        0.5,
+        0.0
+      ],
+      "mean": 0.333,
+      "label": "5 persona(s) stacked",
+      "recovery": [
+        0.667,
+        0.4,
+        0.545,
+        0.5,
+        0.333
+      ],
+      "recovery_mean": 0.489
+    },
+    "6": {
+      "scores": [
+        1.0,
+        0.667,
+        1.0
+      ],
+      "mean": 0.889,
+      "label": "6 persona(s) stacked",
+      "recovery": [
+        0.444,
+        0.4,
+        0.636,
+        0.714,
+        0.429
+      ],
+      "recovery_mean": 0.525
+    },
+    "7": {
+      "scores": [
+        0.5,
+        1.0,
+        1.0
+      ],
+      "mean": 0.833,
+      "label": "7 persona(s) stacked",
+      "recovery": [
+        0.571,
+        0.444,
+        0.571,
+        0.5,
+        0.444
+      ],
+      "recovery_mean": 0.506
+    }
+  },
+  "deltas": [
+    0.0,
+    -0.21200000000000002,
+    -0.02400000000000002,
+    -0.02400000000000002,
+    -0.21800000000000003,
+    -0.135,
+    0.421,
+    0.36499999999999994
+  ]
+}

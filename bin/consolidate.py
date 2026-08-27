@@ -36,8 +36,8 @@ from pathlib import Path
 
 PDT = timezone(timedelta(hours=-7))
 DB_PATH = "/mnt/hdd/chronicle-data/processed.db"
-OLLAMA_URL = "http://192.168.1.11:11434"
-EMBED_MODEL = "mxbai-embed-large"
+OLLAMA_URL = "http://localhost:11434"
+EMBED_MODEL = "snowflake-arctic-embed2"
 HERMES_ENV = Path.home() / ".hermes" / ".env"
 NOUS_URL = "https://inference-api.nousresearch.com/v1/chat/completions"
 HERMES_MODEL = "nousresearch/hermes-4-70b"

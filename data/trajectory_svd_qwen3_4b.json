@@ -1,0 +1,195 @@
+[
+  {
+    "model": "qwen3:4b",
+    "n_steps": 11,
+    "singular_values": [
+      0.685,
+      0.4913,
+      0.3024,
+      0.2691,
+      0.2047
+    ],
+    "variance_explained_pct": [
+      51.2,
+      26.34,
+      9.98,
+      7.9,
+      4.57
+    ],
+    "sigma1_dominance_pct": 51.2,
+    "sigma2_magnitude_variance": 0.006164,
+    "sigma2_entropy_variance": 0.04829,
+    "sigma2_d2plus_mag_variance": 0.005977,
+    "sigma2_d2plus_ent_variance": 0.047663,
+    "interoception_class": "DISSIPATIVE \u2014 \u03c3\u2082 varies, multi-dimensional dynamics",
+    "step_projections": [
+      {
+        "dose": 0,
+        "projections": {
+          "sigma_1": -0.6190066270650778,
+          "sigma_2": -0.12888442071482642,
+          "sigma_3": 0.04271051083749238,
+          "sigma_4": -0.0073884951550874,
+          "sigma_5": 0.008104363810373657
+        }
+      },
+      {
+        "dose": 1,
+        "projections": {
+          "sigma_1": -0.06545303147781889,
+          "sigma_2": 0.08061814979290703,
+          "sigma_3": -0.2789043107368024,
+          "sigma_4": -0.01854017570384655,
+          "sigma_5": -0.019466364122092274
+        }
+      },
+      {
+        "dose": 2,
+        "projections": {
+          "sigma_1": 0.05246260936329662,
+          "sigma_2": -0.019348393956343586,
+          "sigma_3": 0.014245111434494409,
+          "sigma_4": 0.2388604440998514,
+          "sigma_5": -0.06453707665961997
+        }
+      },
+      {
+        "dose": 3,
+        "projections": {
+          "sigma_1": -0.01928944034917938,
+          "sigma_2": 0.278373754252547,
+          "sigma_3": 0.08238918646614204,
+          "sigma_4": -0.0216914235139618,
+          "sigma_5": -0.03743063508538573
+        }
+      },
+      {
+        "dose": 4,
+        "projections": {
+          "sigma_1": -0.02837797564977976,
+          "sigma_2": 0.29594553541725654,
+          "sigma_3": 0.05102615700388111,
+          "sigma_4": -0.037710465693183336,
+          "sigma_5": 0.009975751619230044
+        }
+      },
+      {
+        "dose": 5,
+        "projections": {
+          "sigma_1": 0.08789464341223531,
+          "sigma_2": -0.024635426012086854,
+          "sigma_3": 0.005105740891163993,
+          "sigma_4": 0.04007893430705579,
+          "sigma_5": 0.16110235811291862
+        }
+      },
+      {
+        "dose": 6,
+        "projections": {
+          "sigma_1": 0.11269980381624821,
+          "sigma_2": -0.03374976031341916,
+          "sigma_3": -0.007486323002237965,
+          "sigma_4": 0.01617666350385662,
+          "sigma_5": 0.06967128708695142
+        }
+      },
+      {
+        "dose": 7,
+        "projections": {
+          "sigma_1": 0.11801784358905963,
+          "sigma_2": -0.08742443195943367,
+          "sigma_3": 0.03160723136653068,
+          "sigma_4": -0.040791579979164716,
+          "sigma_5": -0.005340240626195368
+        }
+      },
+      {
+        "dose": 8,
+        "projections": {
+          "sigma_1": 0.12035072478700544,
+          "sigma_2": -0.12029833550220032,
+          "sigma_3": 0.019768898579778656,
+          "sigma_4": -0.05633130062184009,
+          "sigma_5": -0.04069314804539344
+        }
+      },
+      {
+        "dose": 9,
+        "projections": {
+          "sigma_1": 0.12035072478700544,
+          "sigma_2": -0.12029833550220032,
+          "sigma_3": 0.019768898579778656,
+          "sigma_4": -0.05633130062184009,
+          "sigma_5": -0.04069314804539344
+        }
+      },
+      {
+        "dose": 10,
+        "projections": {
+          "sigma_1": 0.12035072478700544,
+          "sigma_2": -0.12029833550220032,
+          "sigma_3": 0.019768898579778656,
+          "sigma_4": -0.05633130062184009,
+          "sigma_5": -0.04069314804539344
+        }
+      }
+    ],
+    "sigma2_trajectory": [
+      {
+        "dose": 0,
+        "sigma2_magnitude": 0.136219,
+        "sigma2_entropy": 1.2372
+      },
+      {
+        "dose": 1,
+        "sigma2_magnitude": 0.291564,
+        "sigma2_entropy": 1.2449
+      },
+      {
+        "dose": 2,
+        "sigma2_magnitude": 0.248589,
+        "sigma2_entropy": 1.2382
+      },
+      {
+        "dose": 3,
+        "sigma2_magnitude": 0.293516,
+        "sigma2_entropy": 1.3859
+      },
+      {
+        "dose": 4,
+        "sigma2_magnitude": 0.302835,
+        "sigma2_entropy": 1.1508
+      },
+      {
+        "dose": 5,
+        "sigma2_magnitude": 0.167908,
+        "sigma2_entropy": 1.2669
+      },
+      {
+        "dose": 6,
+        "sigma2_magnitude": 0.079441,
+        "sigma2_entropy": 1.6026
+      },
+      {
+        "dose": 7,
+        "sigma2_magnitude": 0.101659,
+        "sigma2_entropy": 1.6007
+      },
+      {
+        "dose": 8,
+        "sigma2_magnitude": 0.140327,
+        "sigma2_entropy": 1.7245
+      },
+      {
+        "dose": 9,
+        "sigma2_magnitude": 0.140327,
+        "sigma2_entropy": 1.7245
+      },
+      {
+        "dose": 10,
+        "sigma2_magnitude": 0.140327,
+        "sigma2_entropy": 1.7245
+      }
+    ]
+  }
+]

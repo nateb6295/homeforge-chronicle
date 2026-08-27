@@ -1,0 +1,9 @@
+{
+  "model": "EleutherAI/pythia-1.4b",
+  "pad_to": 40,
+  "retrieval_mid_ratio": 0.17341418722598195,
+  "discovery_mid_ratio": 0.1592246615506826,
+  "retrieval_entropy": 4.33203125,
+  "discovery_entropy": 5.7578125,
+  "verdict": "RETRIEVAL HIGHER by 0.0142 \u2014 inverted from F645"
+}

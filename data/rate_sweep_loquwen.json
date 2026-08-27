@@ -1,0 +1,147 @@
+{
+  "chronicle-qwen36": {
+    "model": "chronicle-qwen36",
+    "doses": 8,
+    "seed_chars": 566,
+    "rapid": {
+      "sigma1_pct": 95.6,
+      "participation_ratio": 1.092,
+      "singular_values": [
+        0.5365,
+        0.1151,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "generative_residuals": [
+        0.5415,
+        0.0,
+        0.0851,
+        0.0,
+        0.0,
+        0.0851,
+        0.0,
+        0.0
+      ],
+      "mean_gen_residual": 0.089,
+      "step_similarities": [
+        0.8407,
+        1.0,
+        0.9964,
+        1.0,
+        1.0,
+        0.9964,
+        1.0,
+        1.0
+      ],
+      "mean_step_sim": 0.9792,
+      "n_texts": 9,
+      "final_chars": 956,
+      "pr_trajectory": [
+        1.0,
+        1.0,
+        1.0,
+        0.0,
+        1.0,
+        1.0,
+        0.0
+      ]
+    },
+    "spaced_compress_only": {
+      "sigma1_pct": 40.52,
+      "participation_ratio": 3.709,
+      "singular_values": [
+        0.7684,
+        0.5981,
+        0.4932,
+        0.4004,
+        0.3249
+      ],
+      "generative_residuals": [
+        0.502,
+        0.5305,
+        0.3571,
+        0.4237,
+        0.3805,
+        0.4372,
+        0.437,
+        0.5951
+      ],
+      "mean_gen_residual": 0.4579,
+      "step_similarities": [
+        0.8649,
+        0.8477,
+        0.9341,
+        0.9058,
+        0.9248,
+        0.8994,
+        0.8995,
+        0.8036
+      ],
+      "mean_step_sim": 0.885,
+      "n_texts": 9,
+      "final_chars": 2372,
+      "pr_trajectory": [
+        1.688,
+        1.573,
+        1.636,
+        1.897,
+        1.728,
+        1.56,
+        1.656
+      ]
+    },
+    "spaced_full": {
+      "sigma1_pct": 37.66,
+      "participation_ratio": 3.832,
+      "singular_values": [
+        0.9827,
+        0.8417,
+        0.616,
+        0.5591,
+        0.4445
+      ],
+      "generative_residuals": [
+        0.502,
+        0.5115,
+        0.4898,
+        0.5306,
+        0.4372,
+        0.4956,
+        0.4176,
+        0.546,
+        0.5204,
+        0.5649,
+        0.4911,
+        0.437,
+        0.0,
+        0.0805,
+        0.6048,
+        0.3026
+      ],
+      "mean_gen_residual": 0.4332,
+      "step_similarities": [
+        0.8649,
+        0.8593,
+        0.8719,
+        0.8476,
+        0.8994,
+        0.8686,
+        0.9086,
+        0.8378,
+        0.8539,
+        0.8252,
+        0.8711,
+        0.8995,
+        1.0,
+        0.9968,
+        0.7964,
+        0.9531
+      ],
+      "mean_step_sim": 0.8846,
+      "n_texts": 17,
+      "final_chars": 814
+    },
+    "timestamp": "2026-08-14T07:46:20.341766"
+  }
+}

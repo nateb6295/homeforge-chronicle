@@ -1,0 +1,36 @@
+{
+  "analysis": "WeakSync/StrongSync computation on CCS data (Perrier/Bennett framework)",
+  "date": "2026-05-24T02:25:00",
+  "dataset": "490 cognitive_state_history snapshots",
+  "weak_sync": {
+    "mean": 0.978,
+    "perfect_1_0_pct": 71.4,
+    "interpretation": "Entity set almost never changes between compressions — frozen representational arm"
+  },
+  "strong_sync": {
+    "mean": 0.272,
+    "high_gt_50_count": 14,
+    "low_lt_30_count": 326,
+    "early_half_mean": 0.320,
+    "late_half_mean": 0.224,
+    "interpretation": "Only 27% of entities grounded in text. WORSENING over time (32% → 22%)"
+  },
+  "entity_count_correlation": {
+    "r": -0.6265,
+    "mechanism": "Entities accumulate without removal. Text fields have fixed capacity. Ratio degrades mechanically.",
+    "by_bucket": {
+      "10-14": 0.457,
+      "15-19": 0.348,
+      "20-24": 0.304,
+      "25-29": 0.259,
+      "30-34": 0.196,
+      "35-39": 0.203,
+      "40-44": 0.144
+    }
+  },
+  "perrier_bennett_mapping": {
+    "pre_fix": "Co-occurrence without co-instantiation (WeakSync≈1.0, StrongSync≈0.20) = 'talking like a stable self without being organized like one'",
+    "post_fix_prediction": "WeakSync < 0.8, StrongSync > 0.5 after orphan repair creates entity turnover",
+    "threshold": "StrongSync never recovered >0.5 once entities exceeded 19"
+  }
+}

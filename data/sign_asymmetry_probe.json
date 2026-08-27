@@ -1,0 +1,85 @@
+{
+  "model": "stabilityai/stablelm-3b-4e1t",
+  "label": "StableLM-3B",
+  "species": "MHA",
+  "ref_layer": 30,
+  "zone_layers_tested": [
+    2,
+    24,
+    25
+  ],
+  "nonzone_layers_tested": [
+    3,
+    4,
+    5
+  ],
+  "lora_rank": 16,
+  "aligned_scale": 2.0,
+  "sigma_indices_tested": [
+    1,
+    2,
+    3
+  ],
+  "zone_sign_results": [
+    {
+      "sigma_k": 1,
+      "sigma_label": "\u03c3_1",
+      "positive_displacement_deg": 16.113004288859475,
+      "negative_displacement_deg": 11.729579413114502,
+      "mean_displacement_deg": 13.92129185098699,
+      "asymmetry": 0.3146459727232275,
+      "mean_singular_value": 2503.6756490071616
+    },
+    {
+      "sigma_k": 2,
+      "sigma_label": "\u03c3_2",
+      "positive_displacement_deg": 23.096151807585137,
+      "negative_displacement_deg": 22.10215094753767,
+      "mean_displacement_deg": 22.599151377561405,
+      "asymmetry": 0.04396453645907161,
+      "mean_singular_value": 244.7628434499105
+    },
+    {
+      "sigma_k": 3,
+      "sigma_label": "\u03c3_3",
+      "positive_displacement_deg": 8.81032979616006,
+      "negative_displacement_deg": 8.559054590203832,
+      "mean_displacement_deg": 8.684692193181945,
+      "asymmetry": 0.02889983916316997,
+      "mean_singular_value": 168.36299816767374
+    }
+  ],
+  "nonzone_sign_results": [
+    {
+      "sigma_k": 1,
+      "sigma_label": "\u03c3_1",
+      "positive_displacement_deg": 10.044415900394169,
+      "negative_displacement_deg": 9.035245783905157,
+      "mean_displacement_deg": 9.539830842149662,
+      "asymmetry": 0.10567413529828008,
+      "mean_singular_value": 2362.7749239603677
+    },
+    {
+      "sigma_k": 2,
+      "sigma_label": "\u03c3_2",
+      "positive_displacement_deg": 38.65163290177543,
+      "negative_displacement_deg": 19.260246248704792,
+      "mean_displacement_deg": 28.95593957524011,
+      "asymmetry": 0.6694547781783768,
+      "mean_singular_value": 187.0124308268229
+    },
+    {
+      "sigma_k": 3,
+      "sigma_label": "\u03c3_3",
+      "positive_displacement_deg": 38.530623849480996,
+      "negative_displacement_deg": 26.969412323546926,
+      "mean_displacement_deg": 32.75001808651396,
+      "asymmetry": 0.35290613989903064,
+      "mean_singular_value": 11.581090609232584
+    }
+  ],
+  "mean_zone_asymmetry": 0.12917011611515636,
+  "mean_nonzone_asymmetry": 0.37601168445856253,
+  "verdict": "CYLINDER SUPPORTED \u2014 mean zone asymmetry 12.9%. +v and \u2212v produce near-symmetric displacement, consistent with orientation-independent tube geometry (F237). Zone IS more symmetric than non-zone (0.129 < 0.376), which is consistent with the tube having well-defined cylindrical geometry in zone layers.",
+  "time_s": 66.96259832382202
+}

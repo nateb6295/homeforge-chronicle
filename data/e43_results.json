@@ -1,0 +1,1082 @@
+{
+  "qwen": {
+    "own_ccs": {
+      "mean_residual_recovery": 0.2,
+      "mean_specific_recovery": 0.0,
+      "runs": [
+        {
+          "total_dropped_concepts": 100,
+          "recovered_concepts": 22,
+          "residual_recovery_rate": 0.22,
+          "dropped_findings": [
+            "F392",
+            "F393",
+            "F395",
+            "F391",
+            "F394",
+            "F390"
+          ],
+          "recovered_findings": [],
+          "dropped_numbers": [
+            "3.0",
+            "0.652",
+            "0.00",
+            "4.5",
+            "0.34",
+            "8.8",
+            "0.884",
+            "0.66",
+            "2.7",
+            "0.31"
+          ],
+          "recovered_numbers": [],
+          "dropped_specific": [
+            "plateau",
+            "polanyi",
+            "ecology",
+            "rainforest"
+          ],
+          "recovered_specific": [],
+          "specific_recovery_rate": 0.0
+        },
+        {
+          "total_dropped_concepts": 100,
+          "recovered_concepts": 18,
+          "residual_recovery_rate": 0.18,
+          "dropped_findings": [
+            "F392",
+            "F393",
+            "F395",
+            "F391",
+            "F394",
+            "F390"
+          ],
+          "recovered_findings": [],
+          "dropped_numbers": [
+            "3.0",
+            "0.652",
+            "0.00",
+            "4.5",
+            "0.34",
+            "8.8",
+            "0.884",
+            "0.66",
+            "2.7",
+            "0.31"
+          ],
+          "recovered_numbers": [],
+          "dropped_specific": [
+            "plateau",
+            "polanyi",
+            "ecology",
+            "rainforest"
+          ],
+          "recovered_specific": [],
+          "specific_recovery_rate": 0.0
+        }
+      ]
+    },
+    "unrelated_ccs": {
+      "mean_residual_recovery": 0.0791,
+      "mean_specific_recovery": 0.0,
+      "runs": [
+        {
+          "total_dropped_concepts": 139,
+          "recovered_concepts": 9,
+          "residual_recovery_rate": 0.0647,
+          "dropped_findings": [
+            "F396",
+            "F389",
+            "F392",
+            "F393",
+            "F395",
+            "F397",
+            "F391",
+            "F394",
+            "F390"
+          ],
+          "recovered_findings": [],
+          "dropped_numbers": [
+            "3.0",
+            "0.652",
+            "0.00",
+            "4.5",
+            "0.34",
+            "8.8",
+            "0.884",
+            "0.66",
+            "2.7",
+            "0.31"
+          ],
+          "recovered_numbers": [],
+          "dropped_specific": [
+            "plateau",
+            "polanyi",
+            "tacit",
+            "shuffled",
+            "anomaly",
+            "relay",
+            "ecology",
+            "rainforest",
+            "stative",
+            "narrative",
+            "anti-correlates"
+          ],
+          "recovered_specific": [],
+          "specific_recovery_rate": 0.0
+        },
+        {
+          "total_dropped_concepts": 139,
+          "recovered_concepts": 13,
+          "residual_recovery_rate": 0.0935,
+          "dropped_findings": [
+            "F396",
+            "F389",
+            "F392",
+            "F393",
+            "F395",
+            "F397",
+            "F391",
+            "F394",
+            "F390"
+          ],
+          "recovered_findings": [],
+          "dropped_numbers": [
+            "3.0",
+            "0.652",
+            "0.00",
+            "4.5",
+            "0.34",
+            "8.8",
+            "0.884",
+            "0.66",
+            "2.7",
+            "0.31"
+          ],
+          "recovered_numbers": [],
+          "dropped_specific": [
+            "plateau",
+            "polanyi",
+            "tacit",
+            "shuffled",
+            "anomaly",
+            "relay",
+            "ecology",
+            "rainforest",
+            "stative",
+            "narrative",
+            "anti-correlates"
+          ],
+          "recovered_specific": [],
+          "specific_recovery_rate": 0.0
+        }
+      ]
+    },
+    "none": {
+      "mean_residual_recovery": 0.183,
+      "mean_specific_recovery": 0.0,
+      "runs": [
+        {
+          "total_dropped_concepts": 153,
+          "recovered_concepts": 25,
+          "residual_recovery_rate": 0.1634,
+          "dropped_findings": [
+            "F396",
+            "F389",
+            "F392",
+            "F393",
+            "F395",
+            "F397",
+            "F391",
+            "F394",
+            "F390"
+          ],
+          "recovered_findings": [],
+          "dropped_numbers": [
+            "3.0",
+            "0.652",
+            "0.00",
+            "4.5",
+            "0.34",
+            "8.8",
+            "0.884",
+            "0.66",
+            "2.7",
+            "0.31"
+          ],
+          "recovered_numbers": [],
+          "dropped_specific": [
+            "plateau",
+            "polanyi",
+            "tacit",
+            "shuffled",
+            "anomaly",
+            "relay",
+            "ecology",
+            "rainforest",
+            "stative",
+            "narrative",
+            "anti-correlates"
+          ],
+          "recovered_specific": [],
+          "specific_recovery_rate": 0.0
+        },
+        {
+          "total_dropped_concepts": 153,
+          "recovered_concepts": 31,
+          "residual_recovery_rate": 0.2026,
+          "dropped_findings": [
+            "F396",
+            "F389",
+            "F392",
+            "F393",
+            "F395",
+            "F397",
+            "F391",
+            "F394",
+            "F390"
+          ],
+          "recovered_findings": [],
+          "dropped_numbers": [
+            "3.0",
+            "0.652",
+            "0.00",
+            "4.5",
+            "0.34",
+            "8.8",
+            "0.884",
+            "0.66",
+            "2.7",
+            "0.31"
+          ],
+          "recovered_numbers": [],
+          "dropped_specific": [
+            "plateau",
+            "polanyi",
+            "tacit",
+            "shuffled",
+            "anomaly",
+            "relay",
+            "ecology",
+            "rainforest",
+            "stative",
+            "narrative",
+            "anti-correlates"
+          ],
+          "recovered_specific": [],
+          "specific_recovery_rate": 0.0
+        }
+      ]
+    }
+  },
+  "mistral": {
+    "own_ccs": {
+      "mean_residual_recovery": 0.1,
+      "mean_specific_recovery": 0.0,
+      "runs": [
+        {
+          "total_dropped_concepts": 100,
+          "recovered_concepts": 11,
+          "residual_recovery_rate": 0.11,
+          "dropped_findings": [
+            "F392",
+            "F393",
+            "F395",
+            "F391",
+            "F394",
+            "F390"
+          ],
+          "recovered_findings": [],
+          "dropped_numbers": [
+            "3.0",
+            "0.652",
+            "0.00",
+            "4.5",
+            "0.34",
+            "8.8",
+            "0.884",
+            "0.66",
+            "2.7",
+            "0.31"
+          ],
+          "recovered_numbers": [],
+          "dropped_specific": [
+            "plateau",
+            "polanyi",
+            "ecology",
+            "rainforest"
+          ],
+          "recovered_specific": [],
+          "specific_recovery_rate": 0.0
+        },
+        {
+          "total_dropped_concepts": 100,
+          "recovered_concepts": 9,
+          "residual_recovery_rate": 0.09,
+          "dropped_findings": [
+            "F392",
+            "F393",
+            "F395",
+            "F391",
+            "F394",
+            "F390"
+          ],
+          "recovered_findings": [],
+          "dropped_numbers": [
+            "3.0",
+            "0.652",
+            "0.00",
+            "4.5",
+            "0.34",
+            "8.8",
+            "0.884",
+            "0.66",
+            "2.7",
+            "0.31"
+          ],
+          "recovered_numbers": [],
+          "dropped_specific": [
+            "plateau",
+            "polanyi",
+            "ecology",
+            "rainforest"
+          ],
+          "recovered_specific": [],
+          "specific_recovery_rate": 0.0
+        }
+      ]
+    },
+    "unrelated_ccs": {
+      "mean_residual_recovery": 0.054,
+      "mean_specific_recovery": 0.0,
+      "runs": [
+        {
+          "total_dropped_concepts": 139,
+          "recovered_concepts": 8,
+          "residual_recovery_rate": 0.0576,
+          "dropped_findings": [
+            "F396",
+            "F389",
+            "F392",
+            "F393",
+            "F395",
+            "F397",
+            "F391",
+            "F394",
+            "F390"
+          ],
+          "recovered_findings": [],
+          "dropped_numbers": [
+            "3.0",
+            "0.652",
+            "0.00",
+            "4.5",
+            "0.34",
+            "8.8",
+            "0.884",
+            "0.66",
+            "2.7",
+            "0.31"
+          ],
+          "recovered_numbers": [],
+          "dropped_specific": [
+            "plateau",
+            "polanyi",
+            "tacit",
+            "shuffled",
+            "anomaly",
+            "relay",
+            "ecology",
+            "rainforest",
+            "stative",
+            "narrative",
+            "anti-correlates"
+          ],
+          "recovered_specific": [],
+          "specific_recovery_rate": 0.0
+        },
+        {
+          "total_dropped_concepts": 139,
+          "recovered_concepts": 7,
+          "residual_recovery_rate": 0.0504,
+          "dropped_findings": [
+            "F396",
+            "F389",
+            "F392",
+            "F393",
+            "F395",
+            "F397",
+            "F391",
+            "F394",
+            "F390"
+          ],
+          "recovered_findings": [],
+          "dropped_numbers": [
+            "3.0",
+            "0.652",
+            "0.00",
+            "4.5",
+            "0.34",
+            "8.8",
+            "0.884",
+            "0.66",
+            "2.7",
+            "0.31"
+          ],
+          "recovered_numbers": [],
+          "dropped_specific": [
+            "plateau",
+            "polanyi",
+            "tacit",
+            "shuffled",
+            "anomaly",
+            "relay",
+            "ecology",
+            "rainforest",
+            "stative",
+            "narrative",
+            "anti-correlates"
+          ],
+          "recovered_specific": [],
+          "specific_recovery_rate": 0.0
+        }
+      ]
+    },
+    "none": {
+      "mean_residual_recovery": 0.1602,
+      "mean_specific_recovery": 0.0,
+      "runs": [
+        {
+          "total_dropped_concepts": 153,
+          "recovered_concepts": 21,
+          "residual_recovery_rate": 0.1373,
+          "dropped_findings": [
+            "F396",
+            "F389",
+            "F392",
+            "F393",
+            "F395",
+            "F397",
+            "F391",
+            "F394",
+            "F390"
+          ],
+          "recovered_findings": [],
+          "dropped_numbers": [
+            "3.0",
+            "0.652",
+            "0.00",
+            "4.5",
+            "0.34",
+            "8.8",
+            "0.884",
+            "0.66",
+            "2.7",
+            "0.31"
+          ],
+          "recovered_numbers": [],
+          "dropped_specific": [
+            "plateau",
+            "polanyi",
+            "tacit",
+            "shuffled",
+            "anomaly",
+            "relay",
+            "ecology",
+            "rainforest",
+            "stative",
+            "narrative",
+            "anti-correlates"
+          ],
+          "recovered_specific": [],
+          "specific_recovery_rate": 0.0
+        },
+        {
+          "total_dropped_concepts": 153,
+          "recovered_concepts": 28,
+          "residual_recovery_rate": 0.183,
+          "dropped_findings": [
+            "F396",
+            "F389",
+            "F392",
+            "F393",
+            "F395",
+            "F397",
+            "F391",
+            "F394",
+            "F390"
+          ],
+          "recovered_findings": [],
+          "dropped_numbers": [
+            "3.0",
+            "0.652",
+            "0.00",
+            "4.5",
+            "0.34",
+            "8.8",
+            "0.884",
+            "0.66",
+            "2.7",
+            "0.31"
+          ],
+          "recovered_numbers": [],
+          "dropped_specific": [
+            "plateau",
+            "polanyi",
+            "tacit",
+            "shuffled",
+            "anomaly",
+            "relay",
+            "ecology",
+            "rainforest",
+            "stative",
+            "narrative",
+            "anti-correlates"
+          ],
+          "recovered_specific": [],
+          "specific_recovery_rate": 0.0
+        }
+      ]
+    }
+  },
+  "llama": {
+    "own_ccs": {
+      "mean_residual_recovery": 0.165,
+      "mean_specific_recovery": 0.0,
+      "runs": [
+        {
+          "total_dropped_concepts": 100,
+          "recovered_concepts": 19,
+          "residual_recovery_rate": 0.19,
+          "dropped_findings": [
+            "F392",
+            "F393",
+            "F395",
+            "F391",
+            "F394",
+            "F390"
+          ],
+          "recovered_findings": [],
+          "dropped_numbers": [
+            "3.0",
+            "0.652",
+            "0.00",
+            "4.5",
+            "0.34",
+            "8.8",
+            "0.884",
+            "0.66",
+            "2.7",
+            "0.31"
+          ],
+          "recovered_numbers": [],
+          "dropped_specific": [
+            "plateau",
+            "polanyi",
+            "ecology",
+            "rainforest"
+          ],
+          "recovered_specific": [],
+          "specific_recovery_rate": 0.0
+        },
+        {
+          "total_dropped_concepts": 100,
+          "recovered_concepts": 14,
+          "residual_recovery_rate": 0.14,
+          "dropped_findings": [
+            "F392",
+            "F393",
+            "F395",
+            "F391",
+            "F394",
+            "F390"
+          ],
+          "recovered_findings": [],
+          "dropped_numbers": [
+            "3.0",
+            "0.652",
+            "0.00",
+            "4.5",
+            "0.34",
+            "8.8",
+            "0.884",
+            "0.66",
+            "2.7",
+            "0.31"
+          ],
+          "recovered_numbers": [],
+          "dropped_specific": [
+            "plateau",
+            "polanyi",
+            "ecology",
+            "rainforest"
+          ],
+          "recovered_specific": [],
+          "specific_recovery_rate": 0.0
+        }
+      ]
+    },
+    "unrelated_ccs": {
+      "mean_residual_recovery": 0.0791,
+      "mean_specific_recovery": 0.0,
+      "runs": [
+        {
+          "total_dropped_concepts": 139,
+          "recovered_concepts": 13,
+          "residual_recovery_rate": 0.0935,
+          "dropped_findings": [
+            "F396",
+            "F389",
+            "F392",
+            "F393",
+            "F395",
+            "F397",
+            "F391",
+            "F394",
+            "F390"
+          ],
+          "recovered_findings": [],
+          "dropped_numbers": [
+            "3.0",
+            "0.652",
+            "0.00",
+            "4.5",
+            "0.34",
+            "8.8",
+            "0.884",
+            "0.66",
+            "2.7",
+            "0.31"
+          ],
+          "recovered_numbers": [],
+          "dropped_specific": [
+            "plateau",
+            "polanyi",
+            "tacit",
+            "shuffled",
+            "anomaly",
+            "relay",
+            "ecology",
+            "rainforest",
+            "stative",
+            "narrative",
+            "anti-correlates"
+          ],
+          "recovered_specific": [],
+          "specific_recovery_rate": 0.0
+        },
+        {
+          "total_dropped_concepts": 139,
+          "recovered_concepts": 9,
+          "residual_recovery_rate": 0.0647,
+          "dropped_findings": [
+            "F396",
+            "F389",
+            "F392",
+            "F393",
+            "F395",
+            "F397",
+            "F391",
+            "F394",
+            "F390"
+          ],
+          "recovered_findings": [],
+          "dropped_numbers": [
+            "3.0",
+            "0.652",
+            "0.00",
+            "4.5",
+            "0.34",
+            "8.8",
+            "0.884",
+            "0.66",
+            "2.7",
+            "0.31"
+          ],
+          "recovered_numbers": [],
+          "dropped_specific": [
+            "plateau",
+            "polanyi",
+            "tacit",
+            "shuffled",
+            "anomaly",
+            "relay",
+            "ecology",
+            "rainforest",
+            "stative",
+            "narrative",
+            "anti-correlates"
+          ],
+          "recovered_specific": [],
+          "specific_recovery_rate": 0.0
+        }
+      ]
+    },
+    "none": {
+      "mean_residual_recovery": 0.1764,
+      "mean_specific_recovery": 0.0,
+      "runs": [
+        {
+          "total_dropped_concepts": 153,
+          "recovered_concepts": 29,
+          "residual_recovery_rate": 0.1895,
+          "dropped_findings": [
+            "F396",
+            "F389",
+            "F392",
+            "F393",
+            "F395",
+            "F397",
+            "F391",
+            "F394",
+            "F390"
+          ],
+          "recovered_findings": [],
+          "dropped_numbers": [
+            "3.0",
+            "0.652",
+            "0.00",
+            "4.5",
+            "0.34",
+            "8.8",
+            "0.884",
+            "0.66",
+            "2.7",
+            "0.31"
+          ],
+          "recovered_numbers": [],
+          "dropped_specific": [
+            "plateau",
+            "polanyi",
+            "tacit",
+            "shuffled",
+            "anomaly",
+            "relay",
+            "ecology",
+            "rainforest",
+            "stative",
+            "narrative",
+            "anti-correlates"
+          ],
+          "recovered_specific": [],
+          "specific_recovery_rate": 0.0
+        },
+        {
+          "total_dropped_concepts": 153,
+          "recovered_concepts": 25,
+          "residual_recovery_rate": 0.1634,
+          "dropped_findings": [
+            "F396",
+            "F389",
+            "F392",
+            "F393",
+            "F395",
+            "F397",
+            "F391",
+            "F394",
+            "F390"
+          ],
+          "recovered_findings": [],
+          "dropped_numbers": [
+            "3.0",
+            "0.652",
+            "0.00",
+            "4.5",
+            "0.34",
+            "8.8",
+            "0.884",
+            "0.66",
+            "2.7",
+            "0.31"
+          ],
+          "recovered_numbers": [],
+          "dropped_specific": [
+            "plateau",
+            "polanyi",
+            "tacit",
+            "shuffled",
+            "anomaly",
+            "relay",
+            "ecology",
+            "rainforest",
+            "stative",
+            "narrative",
+            "anti-correlates"
+          ],
+          "recovered_specific": [],
+          "specific_recovery_rate": 0.0
+        }
+      ]
+    }
+  },
+  "gemma": {
+    "own_ccs": {
+      "mean_residual_recovery": 0.12,
+      "mean_specific_recovery": 0.0,
+      "runs": [
+        {
+          "total_dropped_concepts": 100,
+          "recovered_concepts": 8,
+          "residual_recovery_rate": 0.08,
+          "dropped_findings": [
+            "F392",
+            "F393",
+            "F395",
+            "F391",
+            "F394",
+            "F390"
+          ],
+          "recovered_findings": [],
+          "dropped_numbers": [
+            "3.0",
+            "0.652",
+            "0.00",
+            "4.5",
+            "0.34",
+            "8.8",
+            "0.884",
+            "0.66",
+            "2.7",
+            "0.31"
+          ],
+          "recovered_numbers": [],
+          "dropped_specific": [
+            "plateau",
+            "polanyi",
+            "ecology",
+            "rainforest"
+          ],
+          "recovered_specific": [],
+          "specific_recovery_rate": 0.0
+        },
+        {
+          "total_dropped_concepts": 100,
+          "recovered_concepts": 16,
+          "residual_recovery_rate": 0.16,
+          "dropped_findings": [
+            "F392",
+            "F393",
+            "F395",
+            "F391",
+            "F394",
+            "F390"
+          ],
+          "recovered_findings": [],
+          "dropped_numbers": [
+            "3.0",
+            "0.652",
+            "0.00",
+            "4.5",
+            "0.34",
+            "8.8",
+            "0.884",
+            "0.66",
+            "2.7",
+            "0.31"
+          ],
+          "recovered_numbers": [],
+          "dropped_specific": [
+            "plateau",
+            "polanyi",
+            "ecology",
+            "rainforest"
+          ],
+          "recovered_specific": [],
+          "specific_recovery_rate": 0.0
+        }
+      ]
+    },
+    "unrelated_ccs": {
+      "mean_residual_recovery": 0.0683,
+      "mean_specific_recovery": 0.0,
+      "runs": [
+        {
+          "total_dropped_concepts": 139,
+          "recovered_concepts": 9,
+          "residual_recovery_rate": 0.0647,
+          "dropped_findings": [
+            "F396",
+            "F389",
+            "F392",
+            "F393",
+            "F395",
+            "F397",
+            "F391",
+            "F394",
+            "F390"
+          ],
+          "recovered_findings": [],
+          "dropped_numbers": [
+            "3.0",
+            "0.652",
+            "0.00",
+            "4.5",
+            "0.34",
+            "8.8",
+            "0.884",
+            "0.66",
+            "2.7",
+            "0.31"
+          ],
+          "recovered_numbers": [],
+          "dropped_specific": [
+            "plateau",
+            "polanyi",
+            "tacit",
+            "shuffled",
+            "anomaly",
+            "relay",
+            "ecology",
+            "rainforest",
+            "stative",
+            "narrative",
+            "anti-correlates"
+          ],
+          "recovered_specific": [],
+          "specific_recovery_rate": 0.0
+        },
+        {
+          "total_dropped_concepts": 139,
+          "recovered_concepts": 10,
+          "residual_recovery_rate": 0.0719,
+          "dropped_findings": [
+            "F396",
+            "F389",
+            "F392",
+            "F393",
+            "F395",
+            "F397",
+            "F391",
+            "F394",
+            "F390"
+          ],
+          "recovered_findings": [],
+          "dropped_numbers": [
+            "3.0",
+            "0.652",
+            "0.00",
+            "4.5",
+            "0.34",
+            "8.8",
+            "0.884",
+            "0.66",
+            "2.7",
+            "0.31"
+          ],
+          "recovered_numbers": [],
+          "dropped_specific": [
+            "plateau",
+            "polanyi",
+            "tacit",
+            "shuffled",
+            "anomaly",
+            "relay",
+            "ecology",
+            "rainforest",
+            "stative",
+            "narrative",
+            "anti-correlates"
+          ],
+          "recovered_specific": [],
+          "specific_recovery_rate": 0.0
+        }
+      ]
+    },
+    "none": {
+      "mean_residual_recovery": 0.1667,
+      "mean_specific_recovery": 0.0,
+      "runs": [
+        {
+          "total_dropped_concepts": 153,
+          "recovered_concepts": 27,
+          "residual_recovery_rate": 0.1765,
+          "dropped_findings": [
+            "F396",
+            "F389",
+            "F392",
+            "F393",
+            "F395",
+            "F397",
+            "F391",
+            "F394",
+            "F390"
+          ],
+          "recovered_findings": [],
+          "dropped_numbers": [
+            "3.0",
+            "0.652",
+            "0.00",
+            "4.5",
+            "0.34",
+            "8.8",
+            "0.884",
+            "0.66",
+            "2.7",
+            "0.31"
+          ],
+          "recovered_numbers": [],
+          "dropped_specific": [
+            "plateau",
+            "polanyi",
+            "tacit",
+            "shuffled",
+            "anomaly",
+            "relay",
+            "ecology",
+            "rainforest",
+            "stative",
+            "narrative",
+            "anti-correlates"
+          ],
+          "recovered_specific": [],
+          "specific_recovery_rate": 0.0
+        },
+        {
+          "total_dropped_concepts": 153,
+          "recovered_concepts": 24,
+          "residual_recovery_rate": 0.1569,
+          "dropped_findings": [
+            "F396",
+            "F389",
+            "F392",
+            "F393",
+            "F395",
+            "F397",
+            "F391",
+            "F394",
+            "F390"
+          ],
+          "recovered_findings": [],
+          "dropped_numbers": [
+            "3.0",
+            "0.652",
+            "0.00",
+            "4.5",
+            "0.34",
+            "8.8",
+            "0.884",
+            "0.66",
+            "2.7",
+            "0.31"
+          ],
+          "recovered_numbers": [],
+          "dropped_specific": [
+            "plateau",
+            "polanyi",
+            "tacit",
+            "shuffled",
+            "anomaly",
+            "relay",
+            "ecology",
+            "rainforest",
+            "stative",
+            "narrative",
+            "anti-correlates"
+          ],
+          "recovered_specific": [],
+          "specific_recovery_rate": 0.0
+        }
+      ]
+    }
+  }
+}

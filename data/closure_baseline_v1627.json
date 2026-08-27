@@ -1,0 +1,14 @@
+{
+  "measurement": "CCS closure convergence baseline",
+  "version": 1627,
+  "timestamp": "2026-05-24T02:20:00-07:00",
+  "total_entities": 34,
+  "distribution": {
+    "core_high_salience": 6,
+    "demoted_orphans_at_045": 28,
+    "low_salience_below_045": 0
+  },
+  "core_entities": ["Nate", "spectral Maxwell's demon", "silence probe", "three-zone DPO architecture", "sae_cna_convergence.md", "Mistral Large"],
+  "prediction": "Next compression should show weighted scoring differentiating among 28 demoted entities. High-connectivity entities (threads, relay architecture) should score higher than isolated concepts (Jack Clark, TPR binding matrices). If correct: entity count drops, but surviving entities have genuine relational grounding. Convergence toward meaningful fixed-point set.",
+  "falsifier": "If weighted scoring does NOT differentiate (all 28 stay at 0.45 or are uniformly culled), the connectivity/persistence signals are not informative and the fix is cosmetic."
+}

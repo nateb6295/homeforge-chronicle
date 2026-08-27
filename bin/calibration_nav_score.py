@@ -15,7 +15,7 @@ For each question Q:
      High cosine = CCS can navigate to the same place effort reaches.
      This measures navigability, not surface-term presence.
 
-Uses mxbai-embed-large on Ollama (192.168.1.11:11434).
+Uses snowflake-arctic-embed2 on Ollama (localhost:11434).
 """
 import json
 import math
@@ -27,8 +27,8 @@ import urllib.request
 from pathlib import Path
 
 DB = "/mnt/hdd/chronicle-data/processed.db"
-OLLAMA = "http://192.168.1.11:11434/api/embeddings"
-MODEL = "mxbai-embed-large"
+OLLAMA = "http://localhost:11434/api/embeddings"
+MODEL = "snowflake-arctic-embed2"
 EXP = Path.home() / "chronicle" / "experiments" / "calibration_vs_effort"
 RIG = Path.home() / "chronicle" / "bin" / "calibration_vs_effort.py"
 

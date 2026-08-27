@@ -90,24 +90,49 @@ def trunc(text, limit=200):
 
 
 def clean_capture_text(content):
-    """Extract meaningful text from a capture, stripping URLs and handles."""
+    """Extract meaningful text from a capture."""
+    # Strip Discord message prefix
+    content = re.sub(r'^\[Discord #\w+\]\s*\w+:\s*', '', content.strip())
     lines = content.strip().split('\n')
     text_parts = []
+    urls = []
     for line in lines:
         line = line.strip()
-        if line.startswith('http'):
-            continue
         if line.startswith('[Image:') or line.startswith('[Video:'):
             continue
+        # Collect URLs separately — they might be the whole capture
+        url_match = re.search(r'(https?://\S+)', line)
+        if url_match:
+            urls.append(url_match.group(1))
+        # Strip URLs for text portion
+        no_url = re.sub(r'https?://\S+', '', line).strip()
         # Strip @handle: prefix
-        line = re.sub(r'^@\S+\s*:\s*', '', line)
-        if line:
-            text_parts.append(line)
-    return ' '.join(text_parts).strip()
+        no_url = re.sub(r'^@\S+\s*:\s*', '', no_url)
+        if no_url:
+            text_parts.append(no_url)
+
+    text = ' '.join(text_parts).strip()
+
+    # If no text but we have X/Twitter URLs, extract the username
+    if not text and urls:
+        for url in urls:
+            m = re.search(r'x\.com/(\w+)/status', url)
+            if m:
+                text = f"@{m.group(1)}"
+                break
+        if not text:
+            text = urls[0]  # fallback: show the URL
+
+    return text
 
 
 def is_noise_capture(text):
     """Return True if capture is greeting/noise."""
+    if not text:
+        return True
+    # Don't filter @username captures — those are X links Nate sent
+    if text.startswith('@') and len(text) > 2:
+        return False
     if len(text) < 20:
         return True
     return bool(CAPTURE_NOISE.match(text))
@@ -176,15 +201,16 @@ def get_thread_section(conn, since):
 def score_capture(text, raw_content):
     """Signal score for a capture. Higher = more substantive."""
     score = 0
-    # Text length (clamped) — bare URLs and one-liners score low.
-    score += min(len(text), 400)
-    # Bare-arxiv-link or "arxiv: URL" patterns with almost no prose: penalize.
-    stripped = re.sub(r'\s+', ' ', text).strip()
-    if len(stripped) < 40:
-        score -= 200
-    if re.fullmatch(r'(arxiv\s*:?\s*)?https?://\S+\.?', stripped, flags=re.IGNORECASE):
-        score -= 300
-    # Having analysis attached is a positive signal.
+    # @username captures (X links) are standard — don't penalize
+    if text.startswith('@'):
+        score = 100
+    else:
+        score += min(len(text), 400)
+        stripped = re.sub(r'\s+', ' ', text).strip()
+        if len(stripped) < 40:
+            score -= 200
+        if re.fullmatch(r'(arxiv\s*:?\s*)?https?://\S+\.?', stripped, flags=re.IGNORECASE):
+            score -= 300
     if 'arxiv.org' in raw_content or 'doi.org' in raw_content or 'nature.com' in raw_content:
         score += 50
     return score
@@ -194,7 +220,8 @@ def get_captures_section(conn, since):
     """Nate's captures — filtered, ranked by signal not recency."""
     captures = conn.execute(
         """SELECT id, content, created_at FROM activity_feed
-           WHERE source='operator:capture' AND created_at > ?
+           WHERE source IN ('discord:capture', 'operator:capture', 'nate:capture')
+           AND created_at > ?
            ORDER BY created_at DESC LIMIT 30""",
         (since,),
     ).fetchall()
@@ -350,6 +377,31 @@ def get_world_section(conn, since):
     return None, []
 
 
+def get_reactions_section(conn, since):
+    """Nate's reactions to posts — what he engaged with."""
+    reactions = conn.execute(
+        """SELECT id, content FROM activity_feed
+           WHERE source LIKE 'reaction:%' AND activity_type='feedback'
+           AND created_at > ?
+           ORDER BY created_at DESC LIMIT 5""",
+        (since,),
+    ).fetchall()
+
+    items = []
+    for r in reactions:
+        text = r['content']
+        emoji_match = re.search(r'reacted\s+(\S+)\s+to', text)
+        emoji = emoji_match.group(1) if emoji_match else ""
+        # Extract the post content after the bracket
+        post_match = re.search(r'\]\s*(.+)', text, re.DOTALL)
+        post_text = trunc(post_match.group(1).strip(), 100) if post_match else trunc(text, 100)
+        items.append(f"{emoji} {post_text}")
+        if len(items) >= 3:
+            break
+
+    return ('\n'.join(items) if items else None), [r['id'] for r in reactions[:3]]
+
+
 def format_digest(sections, total, since):
     now = int(time.time())
     hours = (now - since) / 3600
@@ -379,6 +431,10 @@ def format_digest(sections, total, since):
     # World — one substantive brief
     if sections.get('world'):
         parts.append(f"\n**World**\n{sections['world']}")
+
+    # Reactions — what Nate engaged with
+    if sections.get('reactions'):
+        parts.append(f"\n**Your reactions**\n{sections['reactions']}")
 
     text = '\n'.join(parts)
     if len(text) > MAX_DISCORD_CHARS:
@@ -429,6 +485,17 @@ def main():
         since = get_last_digest_time(conn)
     now = int(time.time())
 
+    # Guard against double posting — skip if a digest was logged in last 30 min
+    if not dry_run:
+        recent = conn.execute(
+            "SELECT created_at FROM digest_log WHERE created_at > ? ORDER BY created_at DESC LIMIT 1",
+            (now - 1800,),
+        ).fetchone()
+        if recent:
+            print(f"Skipping — digest already posted {(now - recent[0]) // 60}min ago")
+            conn.close()
+            return
+
     # Collect all sections
     sections = {}
     item_ids = []
@@ -452,6 +519,10 @@ def main():
     world_text, world_ids = get_world_section(conn, since)
     sections['world'] = world_text
     item_ids.extend(world_ids)
+
+    react_text, react_ids = get_reactions_section(conn, since)
+    sections['reactions'] = react_text
+    item_ids.extend(react_ids)
 
     total = conn.execute(
         "SELECT count(*) FROM activity_feed WHERE created_at > ?", (since,)

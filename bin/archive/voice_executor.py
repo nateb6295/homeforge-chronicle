@@ -22,8 +22,8 @@ DB_PATH = os.environ.get(
     "CHRONICLE_DB",
     os.path.expanduser("~/.homeforge-chronicle/processed.db"),
 )
-EMBED_URL = os.environ.get("EMBED_OLLAMA_URL", "http://192.168.1.11:11434")
-EMBED_MODEL = "nomic-embed-text"
+EMBED_URL = os.environ.get("EMBED_OLLAMA_URL", "http://localhost:11434")
+EMBED_MODEL = "snowflake-arctic-embed2"
 SEARXNG_URL = "http://192.168.1.11:8080/search"
 INFERENCE_URL = os.environ.get("GEMMA_INFERENCE_URL", "http://localhost:11436")
 INFERENCE_MODEL = "chronicle-deep"  # Darby cloud

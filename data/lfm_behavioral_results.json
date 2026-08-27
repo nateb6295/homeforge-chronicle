@@ -1,0 +1,267 @@
+{
+  "timestamp": "2026-08-12T16:05:17",
+  "models": {
+    "lfm": "hf.co/LiquidAI/LFM2.5-1.2B-Instruct-GGUF:latest",
+    "qwen": "qwen2.5:3b"
+  },
+  "results": {
+    "SERIAL RELAY FIDELITY": {
+      "lfm": [
+        {
+          "position": 1,
+          "expected_fragment": "miles",
+          "response": "The river is 47 miles long.",
+          "correct": true,
+          "time": 0.197814772
+        },
+        {
+          "position": 4,
+          "expected_fragment": "is",
+          "response": "The population is 12,400.",
+          "correct": true,
+          "time": 0.167447781
+        },
+        {
+          "position": 7,
+          "expected_fragment": "in",
+          "response": "The festival happens in October.",
+          "correct": true,
+          "time": 0.127771209
+        }
+      ],
+      "qwen": [
+        {
+          "position": 1,
+          "expected_fragment": "miles",
+          "response": "The river is 47 miles long.",
+          "correct": true,
+          "time": 0.501998496
+        },
+        {
+          "position": 4,
+          "expected_fragment": "is",
+          "response": "The population is 12,400.",
+          "correct": true,
+          "time": 0.621864006
+        },
+        {
+          "position": 7,
+          "expected_fragment": "in",
+          "response": "The festival happens in October.",
+          "correct": true,
+          "time": 0.330763297
+        }
+      ]
+    },
+    "SELECTIVE RECALL AT DISTANCE": {
+      "lfm": [
+        {
+          "distance": 2,
+          "response": "AMBER-7",
+          "correct": true,
+          "time": 0.100258867
+        },
+        {
+          "distance": 5,
+          "response": "AMBER-7",
+          "correct": true,
+          "time": 0.099917802
+        },
+        {
+          "distance": 8,
+          "response": "AMBER-7",
+          "correct": true,
+          "time": 0.099258355
+        }
+      ],
+      "qwen": [
+        {
+          "distance": 2,
+          "response": "AMBER-7",
+          "correct": true,
+          "time": 0.238764787
+        },
+        {
+          "distance": 5,
+          "response": "AMBER-7",
+          "correct": true,
+          "time": 0.23039924
+        },
+        {
+          "distance": 8,
+          "response": "AMBER-7",
+          "correct": true,
+          "time": 0.240202946
+        }
+      ]
+    },
+    "CROSS-CONTEXT INTEGRATION": {
+      "lfm": [
+        {
+          "question": "How many apples does Alice have now?",
+          "expected": "8",
+          "response": "8",
+          "correct": true,
+          "time": 0.024478162
+        },
+        {
+          "question": "What time does the train arrive?",
+          "expected": "6",
+          "response": "16:00",
+          "correct": true,
+          "time": 0.070494041
+        },
+        {
+          "question": "What is the area of the room in square feet?",
+          "expected": "180",
+          "response": "3600",
+          "correct": false,
+          "time": 0.056560216
+        }
+      ],
+      "qwen": [
+        {
+          "question": "How many apples does Alice have now?",
+          "expected": "8",
+          "response": "8",
+          "correct": true,
+          "time": 0.066077481
+        },
+        {
+          "question": "What time does the train arrive?",
+          "expected": "6",
+          "response": "6\ufe0f\u20e3",
+          "correct": true,
+          "time": 0.306596947
+        },
+        {
+          "question": "What is the area of the room in square feet?",
+          "expected": "180",
+          "response": "180",
+          "correct": true,
+          "time": 0.180510915
+        }
+      ]
+    },
+    "RECENCY VS PRIMACY BIAS": {
+      "lfm": [
+        {
+          "question": "What is the capital of Zendara?",
+          "response": "Northport",
+          "bias": "early",
+          "time": 0.045266253
+        },
+        {
+          "question": "In what year did Dr. Chen win the award?",
+          "response": "2022",
+          "bias": "late",
+          "time": 0.089240177
+        }
+      ],
+      "qwen": [
+        {
+          "question": "What is the capital of Zendara?",
+          "response": "Southhaven",
+          "bias": "late",
+          "time": 0.127862729
+        },
+        {
+          "question": "In what year did Dr. Chen win the award?",
+          "response": "2022",
+          "bias": "late",
+          "time": 0.248628716
+        }
+      ]
+    },
+    "SIGNAL IN NOISE": {
+      "lfm": [
+        {
+          "noise_count": 2,
+          "expected": "blue",
+          "response": "BLUE",
+          "correct": true,
+          "time": 0.0518608
+        },
+        {
+          "noise_count": 4,
+          "expected": "blue",
+          "response": "BLUE",
+          "correct": true,
+          "time": 0.062015686
+        },
+        {
+          "noise_count": 6,
+          "expected": "blue",
+          "response": "BLUE",
+          "correct": true,
+          "time": 0.070557081
+        },
+        {
+          "noise_count": 2,
+          "expected": "phoenix",
+          "response": "PHOENIX",
+          "correct": true,
+          "time": 0.092216111
+        },
+        {
+          "noise_count": 4,
+          "expected": "phoenix",
+          "response": "PHOENIX",
+          "correct": true,
+          "time": 0.097765505
+        },
+        {
+          "noise_count": 6,
+          "expected": "phoenix",
+          "response": "PHOENIX",
+          "correct": true,
+          "time": 0.119497496
+        }
+      ],
+      "qwen": [
+        {
+          "noise_count": 2,
+          "expected": "blue",
+          "response": "BLUE",
+          "correct": true,
+          "time": 0.057582104
+        },
+        {
+          "noise_count": 4,
+          "expected": "blue",
+          "response": "BLUE",
+          "correct": true,
+          "time": 0.057815296
+        },
+        {
+          "noise_count": 6,
+          "expected": "blue",
+          "response": "BLUE",
+          "correct": true,
+          "time": 0.076532664
+        },
+        {
+          "noise_count": 2,
+          "expected": "phoenix",
+          "response": "PHOENIX",
+          "correct": true,
+          "time": 0.246203642
+        },
+        {
+          "noise_count": 4,
+          "expected": "phoenix",
+          "response": "PHOENIX",
+          "correct": true,
+          "time": 0.236420066
+        },
+        {
+          "noise_count": 6,
+          "expected": "phoenix",
+          "response": "PHOENIX",
+          "correct": true,
+          "time": 0.260911601
+        }
+      ]
+    }
+  }
+}

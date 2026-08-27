@@ -35,8 +35,8 @@ DB_PATH = os.environ.get(
     "CHRONICLE_DB",
     "/mnt/hdd/chronicle-data/processed.db"
 )
-OLLAMA_URL = os.environ.get("EMBED_URL", "http://192.168.1.11:11434")  # Jetson — dedicated embeddings
-EMBED_MODEL = "nomic-embed-text"  # Build #125
+OLLAMA_URL = os.environ.get("EMBED_URL", "http://localhost:11434")
+EMBED_MODEL = "snowflake-arctic-embed2"
 
 # How many recent captures to check against
 LOOKBACK_WINDOW = 200

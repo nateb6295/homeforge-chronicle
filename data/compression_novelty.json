@@ -1,0 +1,46 @@
+{
+  "n_states": 2000,
+  "entity_novelty": {
+    "total_novel": 636,
+    "ephemeral": 48,
+    "survived_1": 561,
+    "survived_5": 403,
+    "continuous": 376,
+    "mean_lifespan": 82.2751572327044,
+    "max_lifespan": 1222,
+    "persistence_rate_1": 0.8820754716981132,
+    "persistence_rate_5": 0.6336477987421384
+  },
+  "edge_novelty": {
+    "total_novel": 822,
+    "ephemeral": 207,
+    "survived_1": 604,
+    "survived_5": 136,
+    "continuous": 601,
+    "mean_lifespan": 3.610705596107056,
+    "max_lifespan": 273,
+    "persistence_rate_1": 0.7347931873479319,
+    "persistence_rate_5": 0.1654501216545012
+  },
+  "gist_bigram_novelty": {
+    "total_novel": 64854,
+    "ephemeral": 33566,
+    "survived_1": 21243,
+    "survived_5": 3823,
+    "continuous": 16050,
+    "mean_lifespan": 62.06516174792611,
+    "max_lifespan": 1997,
+    "persistence_rate_1": 0.327551114811731,
+    "persistence_rate_5": 0.05894779042156228
+  },
+  "entity_churn": {
+    "mean_entries": 0.7498749374687343,
+    "mean_exits": 0.7593796898449224
+  },
+  "gist_evolution": {
+    "mean_similarity": 0.6894414839757855,
+    "std": 0.35432500566692876,
+    "preservative_steps": 1027,
+    "generative_steps": 719
+  }
+}

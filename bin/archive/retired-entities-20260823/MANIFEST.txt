@@ -1,0 +1,26 @@
+# Retired entity code, archived 2026-08-23 05:00 PDT
+# Nate: 'Hermes, Gemma, Darby, Ada, etc.. all remnants of old attempts.'
+# Verified inert before moving: chronicle-gemma disabled+inactive;
+# chronicle-hermes-failover and hermes-watchdog static+inactive;
+# every importer (thread_dialogue, hermes_gemma_loop, gemma_think,
+# depth_eval) itself has no unit, no cron, and no importers.
+# Reversible: mv bin/archive/retired-entities-20260823/*.py bin/
+
+gemma4_register_probe.py
+gemma_capture_react.py
+gemma_ccs.py
+gemma_evaluator.py
+gemma_lab.py
+gemma_lora_extract.py
+gemma_memory.py
+gemma.py
+gemma_quality.py
+gemma_score_tracker.py
+gemma_self_study.py
+gemma_think.py
+gemma_threshold_audit.py
+hermes_chat.py
+hermes_failover.py
+hermes_gemma_loop.py
+hermes_mirror.py
+hermes_watchdog.sh

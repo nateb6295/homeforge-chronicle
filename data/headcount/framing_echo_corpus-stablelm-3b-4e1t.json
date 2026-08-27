@@ -1,0 +1,13 @@
+[
+  {
+    "model": "stabilityai/stablelm-3b-4e1t",
+    "n_layers": 32,
+    "peak_layer": 15,
+    "peak_frac": 0.46875,
+    "delta": 0.18861278702618503,
+    "kl_identity": 0.9749575797468424,
+    "kl_echo": 0.5181489799482127,
+    "ratio": 1.8816163255677665,
+    "perm_p": 0.020989505247376312
+  }
+]

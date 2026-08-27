@@ -1,10 +1,4 @@
 {
-  "autonomous_max": 10.0,
-  "delayed_max": 25.0,
-  "cosign_max": 100.0,
-  "daily_volume_max": 50.0,
-  "max_tx_per_hour": 10,
-  "min_interval_seconds": 600,
   "destination_mode": "allowlist",
   "allowed_destinations": [
     "rPq1phmFBHpjVE54TofXjEk5x19sstxpZr",

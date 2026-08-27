@@ -1,0 +1,577 @@
+{
+  "timestamp": "2026-07-13T11:20:56-0700",
+  "probe": "workspace interleave \u2014 concurrent chain tracking",
+  "conditions": [
+    2,
+    3,
+    4,
+    5,
+    6
+  ],
+  "results": {
+    "gemma-26b": {
+      "species": "tunnel",
+      "gqa": "2:1",
+      "conditions": {
+        "2": {
+          "chains": {
+            "A": {
+              "correct": true,
+              "response": "Dr. Voss",
+              "expected": "voss"
+            },
+            "B": {
+              "correct": true,
+              "response": "Professor Tanaka",
+              "expected": "tanaka"
+            }
+          },
+          "accuracy": 1.0,
+          "n_correct": 2,
+          "n_total": 2
+        },
+        "3": {
+          "chains": {
+            "A": {
+              "correct": true,
+              "response": "*   Domain 1: Crystal\n    *   Domain 2: Ocean\n    *   Domain 3: Space\n\n    *   Fact 1 (Crystal): Dr.",
+              "expected": "voss"
+            },
+            "B": {
+              "correct": true,
+              "response": "Professor Tanaka",
+              "expected": "tanaka"
+            },
+            "C": {
+              "correct": true,
+              "response": "Lin Zhao",
+              "expected": "lin zhao"
+            }
+          },
+          "accuracy": 1.0,
+          "n_correct": 3,
+          "n_total": 3
+        },
+        "4": {
+          "chains": {
+            "A": {
+              "correct": true,
+              "response": "Dr. Voss",
+              "expected": "voss"
+            },
+            "B": {
+              "correct": true,
+              "response": "Professor Tanaka",
+              "expected": "tanaka"
+            },
+            "C": {
+              "correct": true,
+              "response": "Lin Zhao",
+              "expected": "lin zhao"
+            },
+            "D": {
+              "correct": true,
+              "response": "Aria Petrov",
+              "expected": "petrov"
+            }
+          },
+          "accuracy": 1.0,
+          "n_correct": 4,
+          "n_total": 4
+        },
+        "5": {
+          "chains": {
+            "A": {
+              "correct": true,
+              "response": "Dr. Voss",
+              "expected": "voss"
+            },
+            "B": {
+              "correct": true,
+              "response": "Professor Tanaka",
+              "expected": "tanaka"
+            },
+            "C": {
+              "correct": true,
+              "response": "Lin Zhao",
+              "expected": "lin zhao"
+            },
+            "D": {
+              "correct": true,
+              "response": "Aria Petrov",
+              "expected": "petrov"
+            },
+            "E": {
+              "correct": true,
+              "response": "Dr. Soren Ek",
+              "expected": "soren ek"
+            }
+          },
+          "accuracy": 1.0,
+          "n_correct": 5,
+          "n_total": 5
+        },
+        "6": {
+          "chains": {
+            "A": {
+              "correct": true,
+              "response": "Dr. Voss",
+              "expected": "voss"
+            },
+            "B": {
+              "correct": true,
+              "response": "Professor Tanaka",
+              "expected": "tanaka"
+            },
+            "C": {
+              "correct": true,
+              "response": "Lin Zhao",
+              "expected": "lin zhao"
+            },
+            "D": {
+              "correct": true,
+              "response": "Aria Petrov",
+              "expected": "petrov"
+            },
+            "E": {
+              "correct": true,
+              "response": "Dr. Soren Ek",
+              "expected": "soren ek"
+            },
+            "F": {
+              "correct": true,
+              "response": "Dr. Mira Chen",
+              "expected": "mira chen"
+            }
+          },
+          "accuracy": 1.0,
+          "n_correct": 6,
+          "n_total": 6
+        }
+      }
+    },
+    "qwen3-32b": {
+      "species": "bottleneck",
+      "gqa": "7:1",
+      "conditions": {
+        "2": {
+          "chains": {
+            "A": {
+              "correct": true,
+              "response": "Dr. Voss",
+              "expected": "voss"
+            },
+            "B": {
+              "correct": true,
+              "response": "Professor Tanaka",
+              "expected": "tanaka"
+            }
+          },
+          "accuracy": 1.0,
+          "n_correct": 2,
+          "n_total": 2
+        },
+        "3": {
+          "chains": {
+            "A": {
+              "correct": true,
+              "response": "Dr. Voss",
+              "expected": "voss"
+            },
+            "B": {
+              "correct": true,
+              "response": "Professor Tanaka",
+              "expected": "tanaka"
+            },
+            "C": {
+              "correct": true,
+              "response": "Lin Zhao",
+              "expected": "lin zhao"
+            }
+          },
+          "accuracy": 1.0,
+          "n_correct": 3,
+          "n_total": 3
+        },
+        "4": {
+          "chains": {
+            "A": {
+              "correct": true,
+              "response": "Dr. Voss",
+              "expected": "voss"
+            },
+            "B": {
+              "correct": true,
+              "response": "Professor Tanaka",
+              "expected": "tanaka"
+            },
+            "C": {
+              "correct": true,
+              "response": "Engineer Lin Zhao",
+              "expected": "lin zhao"
+            },
+            "D": {
+              "correct": true,
+              "response": "Composer Aria Petrov",
+              "expected": "petrov"
+            }
+          },
+          "accuracy": 1.0,
+          "n_correct": 4,
+          "n_total": 4
+        },
+        "5": {
+          "chains": {
+            "A": {
+              "correct": true,
+              "response": "Dr. Voss",
+              "expected": "voss"
+            },
+            "B": {
+              "correct": true,
+              "response": "Professor Tanaka",
+              "expected": "tanaka"
+            },
+            "C": {
+              "correct": true,
+              "response": "Engineer Lin Zhao",
+              "expected": "lin zhao"
+            },
+            "D": {
+              "correct": true,
+              "response": "Composer Aria Petrov",
+              "expected": "petrov"
+            },
+            "E": {
+              "correct": true,
+              "response": "Dr. Soren Ek",
+              "expected": "soren ek"
+            }
+          },
+          "accuracy": 1.0,
+          "n_correct": 5,
+          "n_total": 5
+        },
+        "6": {
+          "chains": {
+            "A": {
+              "correct": true,
+              "response": "Dr. Voss",
+              "expected": "voss"
+            },
+            "B": {
+              "correct": true,
+              "response": "Professor Tanaka",
+              "expected": "tanaka"
+            },
+            "C": {
+              "correct": true,
+              "response": "<think>\nOkay, let's tackle this question. The user is asking, \"In the space domain, who designed the",
+              "expected": "lin zhao"
+            },
+            "D": {
+              "correct": true,
+              "response": "Composer Aria Petrov",
+              "expected": "petrov"
+            },
+            "E": {
+              "correct": true,
+              "response": "Dr. Soren Ek",
+              "expected": "soren ek"
+            },
+            "F": {
+              "correct": true,
+              "response": "Dr. Mira Chen",
+              "expected": "mira chen"
+            }
+          },
+          "accuracy": 1.0,
+          "n_correct": 6,
+          "n_total": 6
+        }
+      }
+    },
+    "llama3.3-70b": {
+      "species": "relay",
+      "gqa": "4:1",
+      "conditions": {
+        "2": {
+          "chains": {
+            "A": {
+              "correct": true,
+              "response": "Dr. Voss",
+              "expected": "voss"
+            },
+            "B": {
+              "correct": true,
+              "response": "Professor Tanaka",
+              "expected": "tanaka"
+            }
+          },
+          "accuracy": 1.0,
+          "n_correct": 2,
+          "n_total": 2
+        },
+        "3": {
+          "chains": {
+            "A": {
+              "correct": true,
+              "response": "Dr. Voss",
+              "expected": "voss"
+            },
+            "B": {
+              "correct": true,
+              "response": "Professor Tanaka",
+              "expected": "tanaka"
+            },
+            "C": {
+              "correct": true,
+              "response": "Lin Zhao",
+              "expected": "lin zhao"
+            }
+          },
+          "accuracy": 1.0,
+          "n_correct": 3,
+          "n_total": 3
+        },
+        "4": {
+          "chains": {
+            "A": {
+              "correct": true,
+              "response": "Dr. Voss",
+              "expected": "voss"
+            },
+            "B": {
+              "correct": true,
+              "response": "Professor Tanaka",
+              "expected": "tanaka"
+            },
+            "C": {
+              "correct": true,
+              "response": "Lin Zhao",
+              "expected": "lin zhao"
+            },
+            "D": {
+              "correct": true,
+              "response": "Aria Petrov",
+              "expected": "petrov"
+            }
+          },
+          "accuracy": 1.0,
+          "n_correct": 4,
+          "n_total": 4
+        },
+        "5": {
+          "chains": {
+            "A": {
+              "correct": true,
+              "response": "Dr. Voss",
+              "expected": "voss"
+            },
+            "B": {
+              "correct": true,
+              "response": "Professor Tanaka",
+              "expected": "tanaka"
+            },
+            "C": {
+              "correct": true,
+              "response": "Lin Zhao",
+              "expected": "lin zhao"
+            },
+            "D": {
+              "correct": true,
+              "response": "Aria Petrov",
+              "expected": "petrov"
+            },
+            "E": {
+              "correct": true,
+              "response": "Dr. Soren Ek",
+              "expected": "soren ek"
+            }
+          },
+          "accuracy": 1.0,
+          "n_correct": 5,
+          "n_total": 5
+        },
+        "6": {
+          "chains": {
+            "A": {
+              "correct": true,
+              "response": "Dr. Voss",
+              "expected": "voss"
+            },
+            "B": {
+              "correct": true,
+              "response": "Professor Tanaka",
+              "expected": "tanaka"
+            },
+            "C": {
+              "correct": true,
+              "response": "Lin Zhao",
+              "expected": "lin zhao"
+            },
+            "D": {
+              "correct": true,
+              "response": "Aria Petrov",
+              "expected": "petrov"
+            },
+            "E": {
+              "correct": true,
+              "response": "Dr. Soren Ek",
+              "expected": "soren ek"
+            },
+            "F": {
+              "correct": true,
+              "response": "Dr. Mira Chen",
+              "expected": "mira chen"
+            }
+          },
+          "accuracy": 1.0,
+          "n_correct": 6,
+          "n_total": 6
+        }
+      }
+    },
+    "llama4-scout": {
+      "species": "moe",
+      "gqa": "MoE",
+      "conditions": {
+        "2": {
+          "chains": {
+            "A": {
+              "correct": true,
+              "response": "Dr. Voss",
+              "expected": "voss"
+            },
+            "B": {
+              "correct": true,
+              "response": "Professor Tanaka.",
+              "expected": "tanaka"
+            }
+          },
+          "accuracy": 1.0,
+          "n_correct": 2,
+          "n_total": 2
+        },
+        "3": {
+          "chains": {
+            "A": {
+              "correct": true,
+              "response": "Dr. Voss",
+              "expected": "voss"
+            },
+            "B": {
+              "correct": true,
+              "response": "Professor Tanaka.",
+              "expected": "tanaka"
+            },
+            "C": {
+              "correct": true,
+              "response": "Lin Zhao.",
+              "expected": "lin zhao"
+            }
+          },
+          "accuracy": 1.0,
+          "n_correct": 3,
+          "n_total": 3
+        },
+        "4": {
+          "chains": {
+            "A": {
+              "correct": true,
+              "response": "Dr. Voss.",
+              "expected": "voss"
+            },
+            "B": {
+              "correct": true,
+              "response": "Professor Tanaka",
+              "expected": "tanaka"
+            },
+            "C": {
+              "correct": true,
+              "response": "Lin Zhao.",
+              "expected": "lin zhao"
+            },
+            "D": {
+              "correct": true,
+              "response": "Composer Aria Petrov.",
+              "expected": "petrov"
+            }
+          },
+          "accuracy": 1.0,
+          "n_correct": 4,
+          "n_total": 4
+        },
+        "5": {
+          "chains": {
+            "A": {
+              "correct": true,
+              "response": "Dr. Voss.",
+              "expected": "voss"
+            },
+            "B": {
+              "correct": true,
+              "response": "Professor Tanaka.",
+              "expected": "tanaka"
+            },
+            "C": {
+              "correct": true,
+              "response": "Engineer Lin Zhao",
+              "expected": "lin zhao"
+            },
+            "D": {
+              "correct": true,
+              "response": "Composer Aria Petrov.",
+              "expected": "petrov"
+            },
+            "E": {
+              "correct": true,
+              "response": "Dr. Soren Ek",
+              "expected": "soren ek"
+            }
+          },
+          "accuracy": 1.0,
+          "n_correct": 5,
+          "n_total": 5
+        },
+        "6": {
+          "chains": {
+            "A": {
+              "correct": true,
+              "response": "Dr. Voss",
+              "expected": "voss"
+            },
+            "B": {
+              "correct": true,
+              "response": "Professor Tanaka",
+              "expected": "tanaka"
+            },
+            "C": {
+              "correct": true,
+              "response": "Engineer Lin Zhao",
+              "expected": "lin zhao"
+            },
+            "D": {
+              "correct": true,
+              "response": "Composer Aria Petrov.",
+              "expected": "petrov"
+            },
+            "E": {
+              "correct": true,
+              "response": "Dr. Soren Ek.",
+              "expected": "soren ek"
+            },
+            "F": {
+              "correct": true,
+              "response": "Dr. Mira Chen.",
+              "expected": "mira chen"
+            }
+          },
+          "accuracy": 1.0,
+          "n_correct": 6,
+          "n_total": 6
+        }
+      }
+    }
+  }
+}

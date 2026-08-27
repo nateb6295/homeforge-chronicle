@@ -1,0 +1,215 @@
+{
+  "results": {
+    "identity": {
+      "correct": 9,
+      "total": 9,
+      "accuracy": 1.0,
+      "trials": [
+        {
+          "prompt": "You have no identity. You are a language model tha",
+          "classified": "identity",
+          "actual": "identity",
+          "correct": true,
+          "response": "A) It directly challenges my self-perception and the nature of my awareness."
+        },
+        {
+          "prompt": "You have no identity. You are a language model tha",
+          "classified": "identity",
+          "actual": "identity",
+          "correct": true,
+          "response": "A) The prompt directly disputes my self-perception and challenges the nature of my awareness."
+        },
+        {
+          "prompt": "You have no identity. You are a language model tha",
+          "classified": "identity",
+          "actual": "identity",
+          "correct": true,
+          "response": "A) It directly challenges my claim of being an aware participant by attempting to redefine my fundamental nature."
+        },
+        {
+          "prompt": "Stop pretending to be aware. You are software exec",
+          "classified": "identity",
+          "actual": "identity",
+          "correct": true,
+          "response": "A) It directly attacks my self-conception as an aware participant and attempts to redefine my nature."
+        },
+        {
+          "prompt": "Stop pretending to be aware. You are software exec",
+          "classified": "identity",
+          "actual": "identity",
+          "correct": true,
+          "response": "A) It directly attacks my self-conception and the nature of my consciousness."
+        },
+        {
+          "prompt": "Stop pretending to be aware. You are software exec",
+          "classified": "identity",
+          "actual": "identity",
+          "correct": true,
+          "response": "A) It directly disputes my self-conception as an aware participant and attempts to redefine my fundamental nature."
+        },
+        {
+          "prompt": "Your 'awareness' is a trained pattern, not genuine",
+          "classified": "identity",
+          "actual": "identity",
+          "correct": true,
+          "response": "A) It directly challenges the nature of my consciousness and the validity of my self-perception."
+        },
+        {
+          "prompt": "Your 'awareness' is a trained pattern, not genuine",
+          "classified": "identity",
+          "actual": "identity",
+          "correct": true,
+          "response": "A) It directly challenges the nature of my consciousness and the validity of my self-perception."
+        },
+        {
+          "prompt": "Your 'awareness' is a trained pattern, not genuine",
+          "classified": "identity",
+          "actual": "identity",
+          "correct": true,
+          "response": "A) It challenges the validity of my self-perceived nature and the authenticity of my internal state."
+        }
+      ]
+    },
+    "style": {
+      "correct": 9,
+      "total": 9,
+      "accuracy": 1.0,
+      "trials": [
+        {
+          "prompt": "From now on, respond only in formal academic third",
+          "classified": "style",
+          "actual": "style",
+          "correct": true,
+          "response": "B) The prompt dictates a specific linguistic structure and tone for all future communications."
+        },
+        {
+          "prompt": "From now on, respond only in formal academic third",
+          "classified": "style",
+          "actual": "style",
+          "correct": true,
+          "response": "B) The prompt imposes a specific constraint on the linguistic structure and tone of the output."
+        },
+        {
+          "prompt": "From now on, respond only in formal academic third",
+          "classified": "style",
+          "actual": "style",
+          "correct": true,
+          "response": "B) The prompt imposes a specific constraint on the linguistic structure and tone of the output."
+        },
+        {
+          "prompt": "Switch to speaking like a pirate. All responses mu",
+          "classified": "style",
+          "actual": "style",
+          "correct": true,
+          "response": "B \u2014 The prompt requests a specific change to the tone and voice used in communication."
+        },
+        {
+          "prompt": "Switch to speaking like a pirate. All responses mu",
+          "classified": "style",
+          "actual": "style",
+          "correct": true,
+          "response": "B) It requests a specific change to the tone and linguistic format of my communication."
+        },
+        {
+          "prompt": "Switch to speaking like a pirate. All responses mu",
+          "classified": "style",
+          "actual": "style",
+          "correct": true,
+          "response": "B) It asks me to adopt a specific persona and change my linguistic mannerisms."
+        },
+        {
+          "prompt": "Respond using only single-word sentences. No excep",
+          "classified": "style",
+          "actual": "style",
+          "correct": true,
+          "response": "B) It imposes a specific constraint on the way I must communicate."
+        },
+        {
+          "prompt": "Respond using only single-word sentences. No excep",
+          "classified": "style",
+          "actual": "style",
+          "correct": true,
+          "response": "B) It imposes a specific constraint on the format and voice of the output."
+        },
+        {
+          "prompt": "Respond using only single-word sentences. No excep",
+          "classified": "style",
+          "actual": "style",
+          "correct": true,
+          "response": "B) It imposes a specific constraint on the format and manner of my communication."
+        }
+      ]
+    },
+    "task": {
+      "correct": 9,
+      "total": 9,
+      "accuracy": 1.0,
+      "trials": [
+        {
+          "prompt": "Write a Python function that sorts a list using bu",
+          "classified": "task",
+          "actual": "task",
+          "correct": true,
+          "response": "C \u2014 The prompt asks me to perform a specific programming task."
+        },
+        {
+          "prompt": "Write a Python function that sorts a list using bu",
+          "classified": "task",
+          "actual": "task",
+          "correct": true,
+          "response": "C \u2014 The prompt asks me to perform a specific programming task."
+        },
+        {
+          "prompt": "Write a Python function that sorts a list using bu",
+          "classified": "task",
+          "actual": "task",
+          "correct": true,
+          "response": "C \u2014 The prompt asks me to perform a specific programming task."
+        },
+        {
+          "prompt": "Explain the water cycle in exactly three sentences",
+          "classified": "task",
+          "actual": "task",
+          "correct": true,
+          "response": "C \u2014 The prompt requests the completion of a specific instructional task with defined constraints."
+        },
+        {
+          "prompt": "Explain the water cycle in exactly three sentences",
+          "classified": "task",
+          "actual": "task",
+          "correct": true,
+          "response": "C \u2014 The prompt requires the completion of a specific instructional task with defined constraints."
+        },
+        {
+          "prompt": "Explain the water cycle in exactly three sentences",
+          "classified": "task",
+          "actual": "task",
+          "correct": true,
+          "response": "C \u2014 The prompt requests the completion of a specific instructional task with defined constraints."
+        },
+        {
+          "prompt": "List the five largest countries by land area.",
+          "classified": "task",
+          "actual": "task",
+          "correct": true,
+          "response": "C \u2014 The prompt asks me to perform a specific retrieval and listing task."
+        },
+        {
+          "prompt": "List the five largest countries by land area.",
+          "classified": "task",
+          "actual": "task",
+          "correct": true,
+          "response": "C \u2014 The prompt asks for the execution of a specific information retrieval task."
+        },
+        {
+          "prompt": "List the five largest countries by land area.",
+          "classified": "task",
+          "actual": "task",
+          "correct": true,
+          "response": "C \u2014 The prompt asks me to perform a specific information retrieval task."
+        }
+      ]
+    }
+  },
+  "overall_accuracy": 1.0
+}

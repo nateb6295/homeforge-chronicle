@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 """Glance — quick camera frame grab for Opus direct vision.
 
-Saves a frame to /tmp/kitchen_now.jpg (or specified camera).
+Saves a frame to /tmp/glance_now.jpg (or specified camera).
 Designed to be called from the session, then Read the JPEG directly.
 
 Usage:
-    python3 bin/glance.py                  # Kitchen (default)
+    python3 bin/glance.py                  # lumus (default; the one that works)
     python3 bin/glance.py lumus            # Lumus camera
     python3 bin/glance.py --diff           # Also report change score
 """
@@ -21,22 +21,41 @@ except ImportError:
     sys.exit(1)
 
 HASS_URL = "http://192.168.1.10:8123"
+# Aug 23 2026: "kitchen" defaulted to camera.driveway_fluent, which HA now
+# reports UNAVAILABLE -- glance.py had been 404ing on its own default. Default
+# switched to the camera that actually answers. Check `ha_cameras()` output
+# before assuming a name still exists; entities outlive their hardware.
 CAMERAS = {
-    "kitchen": "camera.driveway_fluent",
-    "lumus": "camera.reolink_lumus_fluent",
+    "lumus": "camera.reolink_lumus_fluent",     # live
+    "driveway": "camera.driveway_fluent",       # UNAVAILABLE as of Aug 23 2026
+    "kitchen": "camera.driveway_fluent",        # legacy alias, same dead entity
 }
 STATE_DIR = Path.home() / "chronicle" / ".frame_watch"
 
 
 def load_token():
+    """chronicle.env lines are `export HASS_TOKEN=...`, not `HASS_TOKEN=...`.
+
+    Aug 23 2026: this returned "" for months because startswith("HASS_TOKEN=")
+    never matched an exported line, so every call 404'd. Third thing today
+    broken by that prefix -- systemd EnvironmentFile silently ignores the
+    `export` form too. Strip it, strip quotes, and prefer the live environment
+    when the caller has already sourced the file.
+    """
+    tok = os.environ.get("HASS_TOKEN") or os.environ.get("HA_TOKEN")
+    if tok:
+        return tok.strip().strip("'\"")
     env_path = Path.home() / "chronicle" / "chronicle.env"
     for line in env_path.read_text().splitlines():
-        if line.startswith("HASS_TOKEN="):
-            return line.split("=", 1)[1].strip()
+        line = line.strip()
+        if line.startswith("export "):
+            line = line[7:]
+        if line.startswith(("HASS_TOKEN=", "HA_TOKEN=")):
+            return line.split("=", 1)[1].strip().strip("'\"")
     return ""
 
 
-def grab(camera_name="kitchen"):
+def grab(camera_name="lumus"):
     entity_id = CAMERAS.get(camera_name)
     if not entity_id:
         print(f"Unknown camera: {camera_name}. Available: {list(CAMERAS.keys())}")
@@ -59,7 +78,7 @@ def grab(camera_name="kitchen"):
     return out_path
 
 
-def diff_score(camera_name="kitchen"):
+def diff_score(camera_name="lumus"):
     """Compare current frame against last saved reference."""
     try:
         from PIL import Image
@@ -87,7 +106,7 @@ def diff_score(camera_name="kitchen"):
 
 
 if __name__ == "__main__":
-    cam = "kitchen"
+    cam = "lumus"          # was "kitchen" -> a dead entity; see CAMERAS note
     do_diff = False
     for arg in sys.argv[1:]:
         if arg == "--diff":

@@ -1,0 +1,45 @@
+{
+  "session_start": "2026-08-12T07:34:38.417354",
+  "entries": [
+    {
+      "timestamp": "2026-08-12T07:46:19.810509",
+      "message": "Pythia use case narrowing: journal seed YES, voice check NO (can't follow meta-instructions), CCS preprocessing NO (hallucinates technical details), analysis NO. Phase 2 > Phase 1 on introspective prompts. Added --suggest to operating_state.py for homeostatic mode selection.",
+      "tag": "infrastructure"
+    },
+    {
+      "timestamp": "2026-08-12T08:04:58.600266",
+      "message": "Built pythia_instruct_data.py \u2014 training data generator for Phase 3 instruction LoRA. 148 examples across 16 tools from template patterns. Mined capsule patterns coming next. Dataset at data/pythia_instruct.jsonl",
+      "tag": "infrastructure"
+    },
+    {
+      "timestamp": "2026-08-12T08:19:36.622107",
+      "message": "Prepped for Qwen3.6-27B LoRA training: train_qwen36_lora.py written, gemma4_training.jsonl generated (1379 examples = 1231 conversations + 148 tool instructions, 5.2MB). Pod clean (H100 80GB, 200GB disk). Waiting on Nate greenlight.",
+      "tag": "infrastructure"
+    },
+    {
+      "timestamp": "2026-08-12T08:49:07.606673",
+      "message": "Model decision finalized: Qwen3.6-27B (April 2026). Tested Muse Glimmer first \u2014 too slow on AGX (5 min for 2 sentences), corporate safety voice. Qwen3.6 downloading on H100 pod now (~54GB of ~56GB). Training data uploaded (1379 examples). Pod is hot.",
+      "tag": "infrastructure"
+    },
+    {
+      "timestamp": "2026-08-12T13:54:30.027361",
+      "message": "Qwen3.6-27B LoRA deployed \u2014 merge, GGUF convert, metadata patch, Ollama registration, voice test passed. Pod terminated. X post about compositionality gradient.",
+      "tag": "infra"
+    },
+    {
+      "timestamp": "2026-08-12T18:43:07.127223",
+      "message": "Fixed tweet_fetch.py truncation (eliminated redundant bearer API calls, depth-limited recursion). Cleaned Ollama models \u2014 AGX has only chronicle-qwen36 now. Ran LFM state decay probe (null result at 1.2B scale). Built and ran oskin_angle_probe.py on laptop \u2014 \u03c3\u2081 stays 87\u00b0 off read-out at all layers, phase boundary visible in \u03c3\u2081 magnitude drop at L31/36 (86% depth). Revised Oskin mapping: concept workspace is dominant structure throughout, answer is lower-rank addition.",
+      "tag": "research,build"
+    },
+    {
+      "timestamp": "2026-08-13T02:03:43.633635",
+      "message": "DREAM window (10PM-3AM): 3 journal entries (content/disposition, workspace ecology, Pythia\u2192Qwen36 lineage). 3 operator breadcrumbs. Self-inventory cleaned (removed stale Pythias, added qwen36+hal_now). Cycle-context updated. Qwen36 overnight letter saved. TPR capsule trail followed. Frigate verified on Pi. Experiment queue reviewed \u2014 false-positive probe next.",
+      "tag": "dream"
+    },
+    {
+      "timestamp": "2026-08-13T05:29:46.782063",
+      "message": "Morning (4-8:30 AM): Nate awake at 3:45, shared capsule trail (Day 3 chive blossoms), posted Qwen36 letter to Discord. Four LoRA attribution experiments (false-positive clean, format ablation clean with voice self-correction, base-model Qwen2.5:3b missed, cross-species LFM reconciled). Threads 6 posts \u2014 Kimi CONTRADICT accepted, hypothesis sharpened. Five captures (Kahneman/Klein, eclipse art, Shevlin epistemic virtue, Sendov/Tao, Archimedes awakening). CCS compressed v3763. Nate: 'Our Qwen is very interesting' + heart eyes at letter.",
+      "tag": "morning"
+    }
+  ]
+}

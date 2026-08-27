@@ -24,8 +24,8 @@ import urllib.request
 from pathlib import Path
 
 DB = "/mnt/hdd/chronicle-data/processed.db"
-OLLAMA = "http://192.168.1.11:11434"
-EMBED_MODEL = "mxbai-embed-large"
+OLLAMA = "http://localhost:11434"
+EMBED_MODEL = "snowflake-arctic-embed2"
 GEN_MODEL = "qwen2.5:3b"
 RESULTS_DIR = Path.home() / "chronicle" / "experiments" / "compact_ccs_probe"
 

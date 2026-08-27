@@ -1,0 +1,106 @@
+{
+  "model": "google/gemma-2-2b",
+  "timestamp": "2026-08-22T08:04:57",
+  "protocol": "species_neutral_v1",
+  "architecture": {
+    "num_attention_heads": 8,
+    "num_key_value_heads": 4,
+    "kv_lora_rank": null,
+    "num_hidden_layers": 26
+  },
+  "chance": 0.16666666666666666,
+  "layers": {
+    "0": {
+      "accuracy_k0": 0.8611111111111112,
+      "accuracy_k1": 0.9583333333333334,
+      "accuracy_cosine": 0.7777777777777778,
+      "sigma_ratio": 4.424413681030273,
+      "sigma1_role": -0.1129032258064516,
+      "sigma1_label": "NOISE"
+    },
+    "4": {
+      "accuracy_k0": 0.9027777777777778,
+      "accuracy_k1": 0.9166666666666666,
+      "accuracy_cosine": 0.8888888888888888,
+      "sigma_ratio": 1.736115574836731,
+      "sigma1_role": -0.01538461538461533,
+      "sigma1_label": "neutral"
+    },
+    "8": {
+      "accuracy_k0": 0.8472222222222222,
+      "accuracy_k1": 0.8194444444444444,
+      "accuracy_cosine": 0.8611111111111112,
+      "sigma_ratio": 1.2122414112091064,
+      "sigma1_role": 0.032786885245901655,
+      "sigma1_label": "neutral"
+    },
+    "12": {
+      "accuracy_k0": 0.7777777777777778,
+      "accuracy_k1": 0.8333333333333334,
+      "accuracy_cosine": 0.8055555555555556,
+      "sigma_ratio": 1.0757092237472534,
+      "sigma1_role": -0.07142857142857145,
+      "sigma1_label": "NOISE"
+    },
+    "16": {
+      "accuracy_k0": 0.7777777777777778,
+      "accuracy_k1": 0.7916666666666666,
+      "accuracy_cosine": 0.7916666666666666,
+      "sigma_ratio": 1.2302970886230469,
+      "sigma1_role": -0.017857142857142794,
+      "sigma1_label": "neutral"
+    },
+    "20": {
+      "accuracy_k0": 0.9305555555555556,
+      "accuracy_k1": 0.9444444444444444,
+      "accuracy_cosine": 0.9444444444444444,
+      "sigma_ratio": 1.2089686393737793,
+      "sigma1_role": -0.014925373134328304,
+      "sigma1_label": "neutral"
+    },
+    "24": {
+      "accuracy_k0": 1.0,
+      "accuracy_k1": 1.0,
+      "accuracy_cosine": 1.0,
+      "sigma_ratio": 1.0971826314926147,
+      "sigma1_role": 0.0,
+      "sigma1_label": "neutral"
+    },
+    "25": {
+      "accuracy_k0": 1.0,
+      "accuracy_k1": 0.9444444444444444,
+      "accuracy_cosine": 1.0,
+      "sigma_ratio": 1.1568633317947388,
+      "sigma1_role": 0.05555555555555558,
+      "sigma1_label": "SIGNAL"
+    }
+  },
+  "species": "MIXED",
+  "species_reasoning": "no clear pattern (role -0.042/0.006)",
+  "role_profile": {
+    "scores": [
+      -0.1129032258064516,
+      -0.01538461538461533,
+      0.032786885245901655,
+      -0.07142857142857145,
+      -0.017857142857142794,
+      -0.014925373134328304,
+      0.0,
+      0.05555555555555558
+    ],
+    "layers": [
+      0,
+      4,
+      8,
+      12,
+      16,
+      20,
+      24,
+      25
+    ],
+    "early_mean": -0.04173238184343418,
+    "late_mean": 0.005693259891021121
+  },
+  "f106_prediction": "SORTER",
+  "f106_match": false
+}

@@ -21,8 +21,8 @@ import urllib.request
 from pathlib import Path
 
 DB = "/mnt/hdd/chronicle-data/processed.db"
-OLLAMA = "http://192.168.1.11:11434/api/embeddings"
-MODEL = "nomic-embed-text"  # Must match model used for capsule_embeddings
+OLLAMA = "http://localhost:11434/api/embeddings"
+MODEL = "snowflake-arctic-embed2"  # Must match model used for capsule_embeddings
 RESULTS_DIR = Path.home() / "chronicle" / "experiments" / "embedding_audit"
 
 # Canonical probe queries — stable anchors for drift detection

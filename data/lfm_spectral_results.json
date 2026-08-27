@@ -1,0 +1,30 @@
+{
+  "timestamp": "2026-08-12T16:06:42",
+  "model": "lfm25-1.2b-q8.gguf",
+  "meta": {
+    "version": 3,
+    "n_tensors": 148,
+    "n_kv": 34
+  },
+  "architecture": {
+    "embedding": 2,
+    "attention": 52,
+    "mlp": 64,
+    "other": 10,
+    "ssm": 20
+  },
+  "results": [
+    {
+      "sigma_1": 1501236.8569150849,
+      "sigma_2": 183458.63046756916,
+      "ratio_12": 8.182972112508304,
+      "top5_ratio": 0.03853611758978826,
+      "spectral_entropy": 7.544970479848235,
+      "effective_rank": 1891.2069078786817,
+      "n_singular": 2176,
+      "decay_rate": -0.10666491157614601,
+      "name": "token_embd.weight",
+      "layer_type": "embedding",
+      "block": -1,
+      "shape": [
+        

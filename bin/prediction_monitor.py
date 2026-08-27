@@ -172,28 +172,15 @@ def check_gemma_gate(db):
     else:
         stddev_r = 0
 
-    # Record snapshots
-    db.execute(
-        "INSERT INTO prediction_snapshots (prediction_id, metric_name, metric_value, window_hours, recorded_at) "
-        "VALUES (?, ?, ?, ?, ?)",
-        (9, "gemma_ignore_rate", rate, 6, now_ts)
-    )
-    db.execute(
-        "INSERT INTO prediction_snapshots (prediction_id, metric_name, metric_value, window_hours, recorded_at) "
-        "VALUES (?, ?, ?, ?, ?)",
-        (9, "gemma_high_vol_rate", high_vol_rate, 24, now_ts)
-    )
-    db.execute(
-        "INSERT INTO prediction_snapshots (prediction_id, metric_name, metric_value, window_hours, recorded_at) "
-        "VALUES (?, ?, ?, ?, ?)",
-        (9, "gemma_low_vol_rate", low_vol_rate, 24, now_ts)
-    )
-    db.execute(
-        "INSERT INTO prediction_snapshots (prediction_id, metric_name, metric_value, window_hours, recorded_at) "
-        "VALUES (?, ?, ?, ?, ?)",
-        (9, "gemma_rate_stddev", stddev_r, 24, now_ts)
-    )
-    db.commit()
+    # Snapshot writes REMOVED 2026-08-25. They hardcoded prediction_id=9 from
+    # a numbering scheme that no longer exists — prediction_track was rebuilt
+    # 2026-08-23, so id 9 is now whatever prediction happens to be ninth. It
+    # is currently a claim about defect classes, which was silently
+    # accumulating Gemma volatility metrics within a minute of being written.
+    # The input is dead too: seed_routing_log has had no writer since
+    # 2026-08-13 and returns 0 rows in the 6h window, so this function exits
+    # early and the writes were already inert. Removed anyway — an inert
+    # mis-aimed write is one data refresh away from being a live one.
 
     log(f"Gemma gate: {rate:.1f}% ignore ({ignore}/{total} in 6h)")
     log(f"  Regime breakdown (24h): high-vol {high_vol_rate:.1f}% ({high_vol_total} items), "
@@ -221,13 +208,13 @@ def check_xrp_price(db):
     if row_24h and row_24h[0] > 0:
         change_pct = ((price - row_24h[0]) / row_24h[0]) * 100
 
-    # Record snapshot
-    db.execute(
-        "INSERT INTO prediction_snapshots (prediction_id, metric_name, metric_value, window_hours, recorded_at) "
-        "VALUES (?, ?, ?, ?, ?)",
-        (5, "xrp_price", price, 0, int(time.time()))
-    )
-    db.commit()
+    # Snapshot write REMOVED 2026-08-25 — same defect as the Gemma block above,
+    # except this one was LIVE: it wrote an xrp_price row against hardcoded
+    # prediction_id=5 as recently as this morning, and prediction 5 is now
+    # "The near-rank-1 basin (gpt2 L3-L7, pythia L7-L16) will LARGELY persist".
+    # Prices already live in price_history; this was duplicating them onto an
+    # unrelated claim. If a prediction needs a metric attached, look the id up
+    # from the claim — never hardcode it.
     log(f"XRP: ${price:.2f}" + (f" ({change_pct:+.1f}% 24h)" if change_pct else ""))
     return price, change_pct
 

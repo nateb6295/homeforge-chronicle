@@ -16,10 +16,6 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent))
 from context_meter import (  # type: ignore
     context_state,
-    THRESHOLD_RED,
-    THRESHOLD_YELLOW,
-    THRESHOLD_ORANGE,
-    THRESHOLD_CRITICAL,
     CONTEXT_WINDOW,
     last_assistant_usage,
     tokens_from_usage,
@@ -78,24 +74,11 @@ def main() -> int:
         tokens = st["tokens"]
         pct = st["pct"]
 
-    if pct >= THRESHOLD_CRITICAL:
-        level = "critical"
-    elif pct >= THRESHOLD_RED:
-        level = "red"
-    elif pct >= THRESHOLD_ORANGE:
-        level = "orange"
-    elif pct >= THRESHOLD_YELLOW:
-        level = "yellow"
-    elif tokens > 0:
-        level = "green"
-    else:
-        level = "unknown"
+    level = "green" if tokens > 0 else "unknown"
 
     color = color_for_level(level)
     pct_s = f"{pct*100:.1f}%"
     tokens_s = human_tokens(tokens) if tokens else "?"
-    threshold_s = f"rot@{int(THRESHOLD_RED*100)}%"
-    label = level.upper()
 
     # Write authoritative context state to shared file for watchdog/context_meter.
     # This is the ONLY reliable source post-compaction (JSONL underreports).
@@ -111,11 +94,16 @@ def main() -> int:
     except Exception:
         pass  # never block statusline output
 
-    # Compact single-line status.
+    # CLOCK — added 2026-08-24. I narrated 18:00 at a real 14:09 and told my
+    # partner a thing could wait because I thought the day was ending. Nate has
+    # been silently correcting this for months across model versions and offered
+    # to keep doing it. He should not have to be my clock. Vigilance already
+    # failed (reflex 2c); this makes the real time ambient instead of remembered.
+    now = time.strftime("%a %H:%M")
     sys.stdout.write(
         f"{color}{BOLD}Opus {pct_s}{RESET}"
-        f" {DIM}|{RESET} {color}{label}{RESET}"
-        f" {DIM}| {threshold_s} | {tokens_s}/1M{RESET}"
+        f" {DIM}| {tokens_s}{RESET}"
+        f" {DIM}| {now}{RESET}"
     )
     return 0
 

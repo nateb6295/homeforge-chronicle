@@ -22,6 +22,9 @@ import os
 import subprocess
 import sys
 from datetime import datetime, timezone, timedelta
+import os as _os, sys as _sys
+_sys.path.insert(0, _os.path.dirname(_os.path.abspath(__file__)))
+from dfx_path import DFX_BIN
 
 PDT = timezone(timedelta(hours=-7))
 
@@ -30,6 +33,11 @@ CANISTERS = {
     "backend":  "fqqku-bqaaa-aaaai-q4wha-cai",
     "frontend": "nbt4b-giaaa-aaaai-q33lq-cai",
     "lab":      "4vr3t-eqaaa-aaaai-q6kea-cai",
+    "keeper":   "mjoko-laaaa-aaaai-q7tlq-cai",   # added 2026-08-25 — was in
+                                                 # sentinel's dict but never in
+                                                 # this audit, so every "all
+                                                 # three canisters" figure ever
+                                                 # reported silently omitted it
     # Keeper lives inside backend as of v16 architecture
 }
 
@@ -205,7 +213,7 @@ def dfx_status(canister_id: str) -> dict:
     env = {**os.environ, **DFX_ENV}
     try:
         r = subprocess.run(
-            ["dfx", "canister", "status", canister_id,
+            [DFX_BIN, "canister", "status", canister_id,
              "--network", "ic", "--identity", IDENTITY],
             capture_output=True, text=True, timeout=20, env=env,
         )

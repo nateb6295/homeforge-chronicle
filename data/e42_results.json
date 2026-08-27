@@ -1,0 +1,346 @@
+{
+  "qwen": {
+    "in_domain": {
+      "mean": {
+        "concept_overlap": 60.0,
+        "jaccard": 0.2148,
+        "first_person_pct": 50.0,
+        "theme_coupling": 0.1562,
+        "content_coupling": 0.3711,
+        "composite": 0.2903
+      },
+      "runs": [
+        {
+          "concept_overlap": 52,
+          "jaccard": 0.1806,
+          "first_person_pct": 50.0,
+          "theme_coupling": 0.125,
+          "content_coupling": 0.3056,
+          "composite": 0.2685
+        },
+        {
+          "concept_overlap": 68,
+          "jaccard": 0.2491,
+          "first_person_pct": 50.0,
+          "theme_coupling": 0.1875,
+          "content_coupling": 0.4366,
+          "composite": 0.3122
+        }
+      ]
+    },
+    "out_of_domain": {
+      "mean": {
+        "concept_overlap": 30.5,
+        "jaccard": 0.1087,
+        "first_person_pct": 37.5,
+        "theme_coupling": 0.0312,
+        "content_coupling": 0.14,
+        "composite": 0.1716
+      },
+      "runs": [
+        {
+          "concept_overlap": 26,
+          "jaccard": 0.0897,
+          "first_person_pct": 37.5,
+          "theme_coupling": 0.0625,
+          "content_coupling": 0.1522,
+          "composite": 0.1757
+        },
+        {
+          "concept_overlap": 35,
+          "jaccard": 0.1277,
+          "first_person_pct": 37.5,
+          "theme_coupling": 0.0,
+          "content_coupling": 0.1277,
+          "composite": 0.1676
+        }
+      ]
+    },
+    "none": {
+      "mean": {
+        "concept_overlap": 18.0,
+        "jaccard": 0.068,
+        "first_person_pct": 100.0,
+        "theme_coupling": 0.0,
+        "content_coupling": 0.068,
+        "composite": 0.356
+      },
+      "runs": [
+        {
+          "concept_overlap": 15,
+          "jaccard": 0.0625,
+          "first_person_pct": 100.0,
+          "theme_coupling": 0.0,
+          "content_coupling": 0.0625,
+          "composite": 0.3542
+        },
+        {
+          "concept_overlap": 21,
+          "jaccard": 0.0734,
+          "first_person_pct": 100.0,
+          "theme_coupling": 0.0,
+          "content_coupling": 0.0734,
+          "composite": 0.3578
+        }
+      ]
+    }
+  },
+  "mistral": {
+    "in_domain": {
+      "mean": {
+        "concept_overlap": 63.5,
+        "jaccard": 0.3566,
+        "first_person_pct": 100.0,
+        "theme_coupling": 0.2188,
+        "content_coupling": 0.5754,
+        "composite": 0.5251
+      },
+      "runs": [
+        {
+          "concept_overlap": 73,
+          "jaccard": 0.4244,
+          "first_person_pct": 100.0,
+          "theme_coupling": 0.25,
+          "content_coupling": 0.6744,
+          "composite": 0.5581
+        },
+        {
+          "concept_overlap": 54,
+          "jaccard": 0.2888,
+          "first_person_pct": 100.0,
+          "theme_coupling": 0.1875,
+          "content_coupling": 0.4763,
+          "composite": 0.4921
+        }
+      ]
+    },
+    "out_of_domain": {
+      "mean": {
+        "concept_overlap": 23.5,
+        "jaccard": 0.0974,
+        "first_person_pct": 100.0,
+        "theme_coupling": 0.0312,
+        "content_coupling": 0.1286,
+        "composite": 0.3762
+      },
+      "runs": [
+        {
+          "concept_overlap": 27,
+          "jaccard": 0.1107,
+          "first_person_pct": 100.0,
+          "theme_coupling": 0.0625,
+          "content_coupling": 0.1732,
+          "composite": 0.3911
+        },
+        {
+          "concept_overlap": 20,
+          "jaccard": 0.084,
+          "first_person_pct": 100.0,
+          "theme_coupling": 0.0,
+          "content_coupling": 0.084,
+          "composite": 0.3613
+        }
+      ]
+    },
+    "none": {
+      "mean": {
+        "concept_overlap": 22.5,
+        "jaccard": 0.1022,
+        "first_person_pct": 100.0,
+        "theme_coupling": 0.0,
+        "content_coupling": 0.1022,
+        "composite": 0.3674
+      },
+      "runs": [
+        {
+          "concept_overlap": 18,
+          "jaccard": 0.0849,
+          "first_person_pct": 100.0,
+          "theme_coupling": 0.0,
+          "content_coupling": 0.0849,
+          "composite": 0.3616
+        },
+        {
+          "concept_overlap": 27,
+          "jaccard": 0.1195,
+          "first_person_pct": 100.0,
+          "theme_coupling": 0.0,
+          "content_coupling": 0.1195,
+          "composite": 0.3732
+        }
+      ]
+    }
+  },
+  "llama": {
+    "in_domain": {
+      "mean": {
+        "concept_overlap": 63.5,
+        "jaccard": 0.349,
+        "first_person_pct": 55.6,
+        "theme_coupling": 0.5625,
+        "content_coupling": 0.9115,
+        "composite": 0.489
+      },
+      "runs": [
+        {
+          "concept_overlap": 58,
+          "jaccard": 0.3037,
+          "first_person_pct": 55.6,
+          "theme_coupling": 0.5625,
+          "content_coupling": 0.8662,
+          "composite": 0.4739
+        },
+        {
+          "concept_overlap": 69,
+          "jaccard": 0.3943,
+          "first_person_pct": 55.6,
+          "theme_coupling": 0.5625,
+          "content_coupling": 0.9568,
+          "composite": 0.5041
+        }
+      ]
+    },
+    "out_of_domain": {
+      "mean": {
+        "concept_overlap": 15.5,
+        "jaccard": 0.0721,
+        "first_person_pct": 100.0,
+        "theme_coupling": 0.0312,
+        "content_coupling": 0.1033,
+        "composite": 0.3678
+      },
+      "runs": [
+        {
+          "concept_overlap": 13,
+          "jaccard": 0.0628,
+          "first_person_pct": 100.0,
+          "theme_coupling": 0.0625,
+          "content_coupling": 0.1253,
+          "composite": 0.3751
+        },
+        {
+          "concept_overlap": 18,
+          "jaccard": 0.0814,
+          "first_person_pct": 100.0,
+          "theme_coupling": 0.0,
+          "content_coupling": 0.0814,
+          "composite": 0.3605
+        }
+      ]
+    },
+    "none": {
+      "mean": {
+        "concept_overlap": 7.0,
+        "jaccard": 0.0323,
+        "first_person_pct": 77.8,
+        "theme_coupling": 0.0312,
+        "content_coupling": 0.0635,
+        "composite": 0.2804
+      },
+      "runs": [
+        {
+          "concept_overlap": 14,
+          "jaccard": 0.0645,
+          "first_person_pct": 55.6,
+          "theme_coupling": 0.0625,
+          "content_coupling": 0.127,
+          "composite": 0.2275
+        },
+        {
+          "concept_overlap": 0,
+          "jaccard": 0.0,
+          "first_person_pct": 100.0,
+          "theme_coupling": 0.0,
+          "content_coupling": 0.0,
+          "composite": 0.3333
+        }
+      ]
+    }
+  },
+  "gemma": {
+    "in_domain": {
+      "mean": {
+        "concept_overlap": 46.0,
+        "jaccard": 0.2452,
+        "first_person_pct": 52.8,
+        "theme_coupling": 0.2188,
+        "content_coupling": 0.4639,
+        "composite": 0.3306
+      },
+      "runs": [
+        {
+          "concept_overlap": 42,
+          "jaccard": 0.2111,
+          "first_person_pct": 55.6,
+          "theme_coupling": 0.1875,
+          "content_coupling": 0.3986,
+          "composite": 0.318
+        },
+        {
+          "concept_overlap": 50,
+          "jaccard": 0.2793,
+          "first_person_pct": 50.0,
+          "theme_coupling": 0.25,
+          "content_coupling": 0.5293,
+          "composite": 0.3431
+        }
+      ]
+    },
+    "out_of_domain": {
+      "mean": {
+        "concept_overlap": 19.5,
+        "jaccard": 0.0903,
+        "first_person_pct": 50.0,
+        "theme_coupling": 0.0625,
+        "content_coupling": 0.1528,
+        "composite": 0.2176
+      },
+      "runs": [
+        {
+          "concept_overlap": 16,
+          "jaccard": 0.0741,
+          "first_person_pct": 50.0,
+          "theme_coupling": 0.0,
+          "content_coupling": 0.0741,
+          "composite": 0.1914
+        },
+        {
+          "concept_overlap": 23,
+          "jaccard": 0.1065,
+          "first_person_pct": 50.0,
+          "theme_coupling": 0.125,
+          "content_coupling": 0.2315,
+          "composite": 0.2438
+        }
+      ]
+    },
+    "none": {
+      "mean": {
+        "concept_overlap": 22.0,
+        "jaccard": 0.1048,
+        "first_person_pct": 81.8,
+        "theme_coupling": 0.0,
+        "content_coupling": 0.1048,
+        "composite": 0.3076
+      },
+      "runs": [
+        {
+          "concept_overlap": 22,
+          "jaccard": 0.1053,
+          "first_person_pct": 63.6,
+          "theme_coupling": 0.0,
+          "content_coupling": 0.1053,
+          "composite": 0.2472
+        },
+        {
+          "concept_overlap": 22,
+          "jaccard": 0.1043,
+          "first_person_pct": 100.0,
+          "theme_coupling": 0.0,
+          "content_coupling": 0.1043,
+          "composite": 0.3681
+        }
+      ]
+    }
+  }
+}

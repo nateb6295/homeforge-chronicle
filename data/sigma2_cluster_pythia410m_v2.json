@@ -1,0 +1,2144 @@
+{
+  "model": "EleutherAI/pythia-410m",
+  "n_histories": 15,
+  "n_rounds": 5,
+  "timestamp": "2026-08-21T09:25:33",
+  "layers": {
+    "0": {
+      "rounds": {
+        "4": {
+          "sigma1": {
+            "label": "",
+            "mean_pairwise_dist": 0.11537442214432217,
+            "dist_cv": 0.7461078804392299,
+            "total_variance": 0.009669952908198335,
+            "n_histories": 15
+          },
+          "sigma2": {
+            "label": "",
+            "mean_pairwise_dist": 0.20181930386274383,
+            "dist_cv": 0.4180265930704907,
+            "total_variance": 0.022329358662004244,
+            "n_histories": 15
+          },
+          "sigma2_sigma1_ratio": 1.7492551636389737
+        },
+        "0": {
+          "sigma1": {
+            "label": "",
+            "mean_pairwise_dist": 0.051753825445969896,
+            "dist_cv": 0.7529347303748073,
+            "total_variance": 0.001958555773989549,
+            "n_histories": 15
+          },
+          "sigma2": {
+            "label": "",
+            "mean_pairwise_dist": 0.1500120336602676,
+            "dist_cv": 0.3529883669063408,
+            "total_variance": 0.011810202971973278,
+            "n_histories": 15
+          },
+          "sigma2_sigma1_ratio": 2.898568986499765
+        },
+        "1": {
+          "sigma1": {
+            "label": "",
+            "mean_pairwise_dist": 0.0900210337979453,
+            "dist_cv": 0.7182908862872448,
+            "total_variance": 0.005732938736333692,
+            "n_histories": 15
+          },
+          "sigma2": {
+            "label": "",
+            "mean_pairwise_dist": 0.16670654030387957,
+            "dist_cv": 0.4295457493980959,
+            "total_variance": 0.01536210131677477,
+            "n_histories": 15
+          },
+          "sigma2_sigma1_ratio": 1.8518620936177075
+        },
+        "2": {
+          "sigma1": {
+            "label": "",
+            "mean_pairwise_dist": 0.1037781552544662,
+            "dist_cv": 0.7033324359386426,
+            "total_variance": 0.007512178261769674,
+            "n_histories": 15
+          },
+          "sigma2": {
+            "label": "",
+            "mean_pairwise_dist": 0.16619560015260393,
+            "dist_cv": 0.393889149110368,
+            "total_variance": 0.014889623099482389,
+            "n_histories": 15
+          },
+          "sigma2_sigma1_ratio": 1.601450705930779
+        },
+        "3": {
+          "sigma1": {
+            "label": "",
+            "mean_pairwise_dist": 0.10403573158241454,
+            "dist_cv": 0.708557460043007,
+            "total_variance": 0.007586776393052963,
+            "n_histories": 15
+          },
+          "sigma2": {
+            "label": "",
+            "mean_pairwise_dist": 0.17233492692978702,
+            "dist_cv": 0.3733711456555929,
+            "total_variance": 0.015791809505984324,
+            "n_histories": 15
+          },
+          "sigma2_sigma1_ratio": 1.6564974758467268
+        }
+      }
+    },
+    "1": {
+      "rounds": {
+        "4": {
+          "sigma1": {
+            "label": "",
+            "mean_pairwise_dist": 0.10115412743318648,
+            "dist_cv": 0.7933155389803117,
+            "total_variance": 0.007780155211824689,
+            "n_histories": 15
+          },
+          "sigma2": {
+            "label": "",
+            "mean_pairwise_dist": 0.19010862676207596,
+            "dist_cv": 0.3892125697857119,
+            "total_variance": 0.01942089555870178,
+            "n_histories": 15
+          },
+          "sigma2_sigma1_ratio": 1.8793956450240297
+        },
+        "0": {
+          "sigma1": {
+            "label": "",
+            "mean_pairwise_dist": 0.08222650772049314,
+            "dist_cv": 0.7551004490853206,
+            "total_variance": 0.004954262315957805,
+            "n_histories": 15
+          },
+          "sigma2": {
+            "label": "",
+            "mean_pairwise_dist": 0.16599379116869095,
+            "dist_cv": 0.38146534343391125,
+            "total_variance": 0.014729620440498803,
+            "n_histories": 15
+          },
+          "sigma2_sigma1_ratio": 2.0187381851491044
+        },
+        "1": {
+          "sigma1": {
+            "label": "",
+            "mean_pairwise_dist": 0.08985288710821243,
+            "dist_cv": 0.7379100988854741,
+            "total_variance": 0.0058191820985518975,
+            "n_histories": 15
+          },
+          "sigma2": {
+            "label": "",
+            "mean_pairwise_dist": 0.15109939549613272,
+            "dist_cv": 0.39894455608315466,
+            "total_variance": 0.012350211828718406,
+            "n_histories": 15
+          },
+          "sigma2_sigma1_ratio": 1.6816309435443766
+        },
+        "2": {
+          "sigma1": {
+            "label": "",
+            "mean_pairwise_dist": 0.1122180856409527,
+            "dist_cv": 0.8186810582236594,
+            "total_variance": 0.009815468380831697,
+            "n_histories": 15
+          },
+          "sigma2": {
+            "label": "",
+            "mean_pairwise_dist": 0.1760703684037454,
+            "dist_cv": 0.38996050324159914,
+            "total_variance": 0.01666701747632196,
+            "n_histories": 15
+          },
+          "sigma2_sigma1_ratio": 1.569001709850862
+        },
+        "3": {
+          "sigma1": {
+            "label": "",
+            "mean_pairwise_dist": 0.10422919463543664,
+            "dist_cv": 0.8135583059064554,
+            "total_variance": 0.008425282143468086,
+            "n_histories": 15
+          },
+          "sigma2": {
+            "label": "",
+            "mean_pairwise_dist": 0.17024509739648447,
+            "dist_cv": 0.3737763820522204,
+            "total_variance": 0.015415226308694492,
+            "n_histories": 15
+          },
+          "sigma2_sigma1_ratio": 1.6333724713945548
+        }
+      }
+    },
+    "2": {
+      "rounds": {
+        "4": {
+          "sigma1": {
+            "label": "",
+            "mean_pairwise_dist": 0.11989757730847313,
+            "dist_cv": 0.6951601793312969,
+            "total_variance": 0.009950416801661885,
+            "n_histories": 15
+          },
+          "sigma2": {
+            "label": "",
+            "mean_pairwise_dist": 0.2743012911075076,
+            "dist_cv": 0.43032389201833066,
+            "total_variance": 0.04161465559683118,
+            "n_histories": 15
+          },
+          "sigma2_sigma1_ratio": 2.2877967765187126
+        },
+        "0": {
+          "sigma1": {
+            "label": "",
+            "mean_pairwise_dist": 0.08950826298622858,
+            "dist_cv": 0.7321821928850237,
+            "total_variance": 0.005743146801540524,
+            "n_histories": 15
+          },
+          "sigma2": {
+            "label": "",
+            "mean_pairwise_dist": 0.19438873818542968,
+            "dist_cv": 0.4569593908514982,
+            "total_variance": 0.021316097777155665,
+            "n_histories": 15
+          },
+          "sigma2_sigma1_ratio": 2.1717407028462117
+        },
+        "1": {
+          "sigma1": {
+            "label": "",
+            "mean_pairwise_dist": 0.09100960720153083,
+            "dist_cv": 0.690386582590801,
+            "total_variance": 0.005707606414069252,
+            "n_histories": 15
+          },
+          "sigma2": {
+            "label": "",
+            "mean_pairwise_dist": 0.20018278301787343,
+            "dist_cv": 0.40156946692042045,
+            "total_variance": 0.02171645633433042,
+            "n_histories": 15
+          },
+          "sigma2_sigma1_ratio": 2.199578582452649
+        },
+        "2": {
+          "sigma1": {
+            "label": "",
+            "mean_pairwise_dist": 0.11416469670477368,
+            "dist_cv": 0.7020084576206044,
+            "total_variance": 0.009079808319324582,
+            "n_histories": 15
+          },
+          "sigma2": {
+            "label": "",
+            "mean_pairwise_dist": 0.22116504534973414,
+            "dist_cv": 0.38551913490022927,
+            "total_variance": 0.026219114754040554,
+            "n_histories": 15
+          },
+          "sigma2_sigma1_ratio": 1.9372455018028512
+        },
+        "3": {
+          "sigma1": {
+            "label": "",
+            "mean_pairwise_dist": 0.10202112680389767,
+            "dist_cv": 0.7686520693977036,
+            "total_variance": 0.007726978333952141,
+            "n_histories": 15
+          },
+          "sigma2": {
+            "label": "",
+            "mean_pairwise_dist": 0.24978251787838646,
+            "dist_cv": 0.4288969297104764,
+            "total_variance": 0.034471895625504186,
+            "n_histories": 15
+          },
+          "sigma2_sigma1_ratio": 2.448341098149972
+        }
+      }
+    },
+    "3": {
+      "rounds": {
+        "4": {
+          "sigma1": {
+            "label": "",
+            "mean_pairwise_dist": 0.0824654397510347,
+            "dist_cv": 0.6927516086079523,
+            "total_variance": 0.004696610189112896,
+            "n_histories": 15
+          },
+          "sigma2": {
+            "label": "",
+            "mean_pairwise_dist": 0.2297763525830769,
+            "dist_cv": 0.429545022360201,
+            "total_variance": 0.02918473682454182,
+            "n_histories": 15
+          },
+          "sigma2_sigma1_ratio": 2.786335136247914
+        },
+        "0": {
+          "sigma1": {
+            "label": "",
+            "mean_pairwise_dist": 0.13674459287098475,
+            "dist_cv": 0.6934019874306399,
+            "total_variance": 0.012921869908417925,
+            "n_histories": 15
+          },
+          "sigma2": {
+            "label": "",
+            "mean_pairwise_dist": 0.1838125059646729,
+            "dist_cv": 0.3783291803160529,
+            "total_variance": 0.018024102279350702,
+            "n_histories": 15
+          },
+          "sigma2_sigma1_ratio": 1.344203101351695
+        },
+        "1": {
+          "sigma1": {
+            "label": "",
+            "mean_pairwise_dist": 0.109310363587879,
+            "dist_cv": 0.727832976532144,
+            "total_variance": 0.008529966406233606,
+            "n_histories": 15
+          },
+          "sigma2": {
+            "label": "",
+            "mean_pairwise_dist": 0.181586828359144,
+            "dist_cv": 0.48121796791838595,
+            "total_variance": 0.018951117622498737,
+            "n_histories": 15
+          },
+          "sigma2_sigma1_ratio": 1.6612041368523913
+        },
+        "2": {
+          "sigma1": {
+            "label": "",
+            "mean_pairwise_dist": 0.1052143985316867,
+            "dist_cv": 0.808429718195384,
+            "total_variance": 0.008542337534499421,
+            "n_histories": 15
+          },
+          "sigma2": {
+            "label": "",
+            "mean_pairwise_dist": 0.19219954999507677,
+            "dist_cv": 0.3771979637037933,
+            "total_variance": 0.019691710485630537,
+            "n_histories": 15
+          },
+          "sigma2_sigma1_ratio": 1.8267418955450205
+        },
+        "3": {
+          "sigma1": {
+            "label": "",
+            "mean_pairwise_dist": 0.07495088236672538,
+            "dist_cv": 0.6888065583963007,
+            "total_variance": 0.0038653751399310003,
+            "n_histories": 15
+          },
+          "sigma2": {
+            "label": "",
+            "mean_pairwise_dist": 0.22032681350358024,
+            "dist_cv": 0.4029480009763567,
+            "total_variance": 0.026332057443739405,
+            "n_histories": 15
+          },
+          "sigma2_sigma1_ratio": 2.939616002538661
+        }
+      }
+    },
+    "4": {
+      "rounds": {
+        "4": {
+          "sigma1": {
+            "label": "",
+            "mean_pairwise_dist": 0.16298593680063883,
+            "dist_cv": 0.7026289996271264,
+            "total_variance": 0.018516836720732264,
+            "n_histories": 15
+          },
+          "sigma2": {
+            "label": "",
+            "mean_pairwise_dist": 0.38744675212438207,
+            "dist_cv": 0.4240503801957528,
+            "total_variance": 0.08265061983498026,
+            "n_histories": 15
+          },
+          "sigma2_sigma1_ratio": 2.3771790345358528
+        },
+        "0": {
+          "sigma1": {
+            "label": "",
+            "mean_pairwise_dist": 0.11039966685431345,
+            "dist_cv": 0.7235845083733415,
+            "total_variance": 0.008665747166744472,
+            "n_histories": 15
+          },
+          "sigma2": {
+            "label": "",
+            "mean_pairwise_dist": 0.23135784084304223,
+            "dist_cv": 0.44738988207293023,
+            "total_variance": 0.029978751649580446,
+            "n_histories": 15
+          },
+          "sigma2_sigma1_ratio": 2.095638938283978
+        },
+        "1": {
+          "sigma1": {
+            "label": "",
+            "mean_pairwise_dist": 0.13161968957810175,
+            "dist_cv": 0.6568626142291906,
+            "total_variance": 0.011572582868976368,
+            "n_histories": 15
+          },
+          "sigma2": {
+            "label": "",
+            "mean_pairwise_dist": 0.24022544813969113,
+            "dist_cv": 0.5701019245617135,
+            "total_variance": 0.03568338083577929,
+            "n_histories": 15
+          },
+          "sigma2_sigma1_ratio": 1.8251482641176495
+        },
+        "2": {
+          "sigma1": {
+            "label": "",
+            "mean_pairwise_dist": 0.14751449255716234,
+            "dist_cv": 0.7081124683462667,
+            "total_variance": 0.015246821026388923,
+            "n_histories": 15
+          },
+          "sigma2": {
+            "label": "",
+            "mean_pairwise_dist": 0.319076005733869,
+            "dist_cv": 0.4011184968361571,
+            "total_variance": 0.05515544686532538,
+            "n_histories": 15
+          },
+          "sigma2_sigma1_ratio": 2.163014629860348
+        },
+        "3": {
+          "sigma1": {
+            "label": "",
+            "mean_pairwise_dist": 0.1688431367987678,
+            "dist_cv": 0.6506150921718792,
+            "total_variance": 0.018935206852997957,
+            "n_histories": 15
+          },
+          "sigma2": {
+            "label": "",
+            "mean_pairwise_dist": 0.36287036029839204,
+            "dist_cv": 0.4533331876015125,
+            "total_variance": 0.07407658331356468,
+            "n_histories": 15
+          },
+          "sigma2_sigma1_ratio": 2.1491567081933325
+        }
+      }
+    },
+    "5": {
+      "rounds": {
+        "4": {
+          "sigma1": {
+            "label": "",
+            "mean_pairwise_dist": 0.19625598731495086,
+            "dist_cv": 0.6751638307955844,
+            "total_variance": 0.026167853980575452,
+            "n_histories": 15
+          },
+          "sigma2": {
+            "label": "",
+            "mean_pairwise_dist": 0.40921221731679963,
+            "dist_cv": 0.6839781991558807,
+            "total_variance": 0.1147040077482383,
+            "n_histories": 15
+          },
+          "sigma2_sigma1_ratio": 2.085094180854661
+        },
+        "0": {
+          "sigma1": {
+            "label": "",
+            "mean_pairwise_dist": 0.09841649958065578,
+            "dist_cv": 0.7029643684427701,
+            "total_variance": 0.006753663166465144,
+            "n_histories": 15
+          },
+          "sigma2": {
+            "label": "",
+            "mean_pairwise_dist": 0.24240065550029108,
+            "dist_cv": 0.48871618409933065,
+            "total_variance": 0.03396962951938158,
+            "n_histories": 15
+          },
+          "sigma2_sigma1_ratio": 2.463008299287605
+        },
+        "1": {
+          "sigma1": {
+            "label": "",
+            "mean_pairwise_dist": 0.10248389187313262,
+            "dist_cv": 0.6923781128449227,
+            "total_variance": 0.007251033822359398,
+            "n_histories": 15
+          },
+          "sigma2": {
+            "label": "",
+            "mean_pairwise_dist": 0.2448500333265139,
+            "dist_cv": 0.3922216119639739,
+            "total_variance": 0.03228136391202454,
+            "n_histories": 15
+          },
+          "sigma2_sigma1_ratio": 2.3891562723896578
+        },
+        "2": {
+          "sigma1": {
+            "label": "",
+            "mean_pairwise_dist": 0.12382052115031651,
+            "dist_cv": 0.6897088465234421,
+            "total_variance": 0.0105581933594343,
+            "n_histories": 15
+          },
+          "sigma2": {
+            "label": "",
+            "mean_pairwise_dist": 0.25824476775387034,
+            "dist_cv": 0.40097602735403765,
+            "total_variance": 0.03612604544073329,
+            "n_histories": 15
+          },
+          "sigma2_sigma1_ratio": 2.085637866374353
+        },
+        "3": {
+          "sigma1": {
+            "label": "",
+            "mean_pairwise_dist": 0.14888929753076463,
+            "dist_cv": 0.6900036679855044,
+            "total_variance": 0.015270421066159081,
+            "n_histories": 15
+          },
+          "sigma2": {
+            "label": "",
+            "mean_pairwise_dist": 0.2793366260004235,
+            "dist_cv": 0.3923191722028384,
+            "total_variance": 0.0420180714401264,
+            "n_histories": 15
+          },
+          "sigma2_sigma1_ratio": 1.876136367391291
+        }
+      }
+    },
+    "6": {
+      "rounds": {
+        "4": {
+          "sigma1": {
+            "label": "",
+            "mean_pairwise_dist": 0.28142349407786416,
+            "dist_cv": 0.7317171735826586,
+            "total_variance": 0.05674816904441127,
+            "n_histories": 15
+          },
+          "sigma2": {
+            "label": "",
+            "mean_pairwise_dist": 0.5082311673261067,
+            "dist_cv": 0.7462706342361749,
+            "total_variance": 0.1876703348000713,
+            "n_histories": 15
+          },
+          "sigma2_sigma1_ratio": 1.805930129646164
+        },
+        "0": {
+          "sigma1": {
+            "label": "",
+            "mean_pairwise_dist": 0.24805883566538492,
+            "dist_cv": 0.7657575162915564,
+            "total_variance": 0.04555380526523726,
+            "n_histories": 15
+          },
+          "sigma2": {
+            "label": "",
+            "mean_pairwise_dist": 0.4273488892404876,
+            "dist_cv": 0.44852153733142663,
+            "total_variance": 0.10237100910350677,
+            "n_histories": 15
+          },
+          "sigma2_sigma1_ratio": 1.7227722927986162
+        },
+        "1": {
+          "sigma1": {
+            "label": "",
+            "mean_pairwise_dist": 0.209187717239062,
+            "dist_cv": 0.6755508012387512,
+            "total_variance": 0.02974065535682504,
+            "n_histories": 15
+          },
+          "sigma2": {
+            "label": "",
+            "mean_pairwise_dist": 0.3017439276003771,
+            "dist_cv": 0.3773008890444745,
+            "total_variance": 0.04853838377234429,
+            "n_histories": 15
+          },
+          "sigma2_sigma1_ratio": 1.4424552810206124
+        },
+        "2": {
+          "sigma1": {
+            "label": "",
+            "mean_pairwise_dist": 0.21240901123909722,
+            "dist_cv": 0.7039411887714043,
+            "total_variance": 0.03148826367771365,
+            "n_histories": 15
+          },
+          "sigma2": {
+            "label": "",
+            "mean_pairwise_dist": 0.33884734127719196,
+            "dist_cv": 0.4724658278634152,
+            "total_variance": 0.06554218635034573,
+            "n_histories": 15
+          },
+          "sigma2_sigma1_ratio": 1.595258784648473
+        },
+        "3": {
+          "sigma1": {
+            "label": "",
+            "mean_pairwise_dist": 0.21015415361949374,
+            "dist_cv": 0.6735124425429264,
+            "total_variance": 0.029959415163875444,
+            "n_histories": 15
+          },
+          "sigma2": {
+            "label": "",
+            "mean_pairwise_dist": 0.34591948126019284,
+            "dist_cv": 0.43584090886802485,
+            "total_variance": 0.0664489617885233,
+            "n_histories": 15
+          },
+          "sigma2_sigma1_ratio": 1.6460273334493012
+        }
+      }
+    },
+    "7": {
+      "rounds": {
+        "4": {
+          "sigma1": {
+            "label": "",
+            "mean_pairwise_dist": 0.24507571174984888,
+            "dist_cv": 0.7624362527084603,
+            "total_variance": 0.044322482766839616,
+            "n_histories": 15
+          },
+          "sigma2": {
+            "label": "",
+            "mean_pairwise_dist": 0.8035418137404009,
+            "dist_cv": 1.0843539385931604,
+            "total_variance": 0.6556127620206205,
+            "n_histories": 15
+          },
+          "sigma2_sigma1_ratio": 3.278749279866251
+        },
+        "0": {
+          "sigma1": {
+            "label": "",
+            "mean_pairwise_dist": 0.1823819745154608,
+            "dist_cv": 0.6909340221948539,
+            "total_variance": 0.02293325555196722,
+            "n_histories": 15
+          },
+          "sigma2": {
+            "label": "",
+            "mean_pairwise_dist": 0.5152331455580644,
+            "dist_cv": 0.5523178687910151,
+            "total_variance": 0.16167512043062118,
+            "n_histories": 15
+          },
+          "sigma2_sigma1_ratio": 2.8250223008298723
+        },
+        "1": {
+          "sigma1": {
+            "label": "",
+            "mean_pairwise_dist": 0.1804547871862139,
+            "dist_cv": 0.6563455453706214,
+            "total_variance": 0.021742993362696986,
+            "n_histories": 15
+          },
+          "sigma2": {
+            "label": "",
+            "mean_pairwise_dist": 0.32842422408426547,
+            "dist_cv": 0.46547536891330693,
+            "total_variance": 0.0612419469159729,
+            "n_histories": 15
+          },
+          "sigma2_sigma1_ratio": 1.8199806667548346
+        },
+        "2": {
+          "sigma1": {
+            "label": "",
+            "mean_pairwise_dist": 0.21895012571698144,
+            "dist_cv": 0.7089773641515906,
+            "total_variance": 0.03361667051012905,
+            "n_histories": 15
+          },
+          "sigma2": {
+            "label": "",
+            "mean_pairwise_dist": 0.38765410258232014,
+            "dist_cv": 0.41060319035398307,
+            "total_variance": 0.0819520018030098,
+            "n_histories": 15
+          },
+          "sigma2_sigma1_ratio": 1.7705132670549681
+        },
+        "3": {
+          "sigma1": {
+            "label": "",
+            "mean_pairwise_dist": 0.18166495448067074,
+            "dist_cv": 0.7702442805183376,
+            "total_variance": 0.024538057101018956,
+            "n_histories": 15
+          },
+          "sigma2": {
+            "label": "",
+            "mean_pairwise_dist": 0.4029192625795467,
+            "dist_cv": 0.512482573970986,
+            "total_variance": 0.09565811776433096,
+            "n_histories": 15
+          },
+          "sigma2_sigma1_ratio": 2.2179251001360583
+        }
+      }
+    },
+    "8": {
+      "rounds": {
+        "4": {
+          "sigma1": {
+            "label": "",
+            "mean_pairwise_dist": 0.4096311540830703,
+            "dist_cv": 1.0452142010494219,
+            "total_variance": 0.16385230120027747,
+            "n_histories": 15
+          },
+          "sigma2": {
+            "label": "",
+            "mean_pairwise_dist": 0.503256074176391,
+            "dist_cv": 0.5401817644633808,
+            "total_variance": 0.1526788503533565,
+            "n_histories": 15
+          },
+          "sigma2_sigma1_ratio": 1.2285590806198257
+        },
+        "0": {
+          "sigma1": {
+            "label": "",
+            "mean_pairwise_dist": 0.27953082663672313,
+            "dist_cv": 0.7749242373495853,
+            "total_variance": 0.058361162264513246,
+            "n_histories": 15
+          },
+          "sigma2": {
+            "label": "",
+            "mean_pairwise_dist": 0.4023618389688044,
+            "dist_cv": 0.390104176583212,
+            "total_variance": 0.08704847362177881,
+            "n_histories": 15
+          },
+          "sigma2_sigma1_ratio": 1.4394184844155666
+        },
+        "1": {
+          "sigma1": {
+            "label": "",
+            "mean_pairwise_dist": 0.13193887358620054,
+            "dist_cv": 0.7219537608562189,
+            "total_variance": 0.012357868278922797,
+            "n_histories": 15
+          },
+          "sigma2": {
+            "label": "",
+            "mean_pairwise_dist": 0.39485341616656167,
+            "dist_cv": 0.4331405368065276,
+            "total_variance": 0.08640774896209161,
+            "n_histories": 15
+          },
+          "sigma2_sigma1_ratio": 2.992699612592337
+        },
+        "2": {
+          "sigma1": {
+            "label": "",
+            "mean_pairwise_dist": 0.14664549714043026,
+            "dist_cv": 0.9139386971069163,
+            "total_variance": 0.018418213814815797,
+            "n_histories": 15
+          },
+          "sigma2": {
+            "label": "",
+            "mean_pairwise_dist": 0.39318991734412617,
+            "dist_cv": 0.39130918509295537,
+            "total_variance": 0.08319306309772759,
+            "n_histories": 15
+          },
+          "sigma2_sigma1_ratio": 2.6812273458316827
+        },
+        "3": {
+          "sigma1": {
+            "label": "",
+            "mean_pairwise_dist": 0.24479323966162544,
+            "dist_cv": 0.7413628039439816,
+            "total_variance": 0.04333417167798914,
+            "n_histories": 15
+          },
+          "sigma2": {
+            "label": "",
+            "mean_pairwise_dist": 0.39956320827041875,
+            "dist_cv": 0.3718442544560442,
+            "total_variance": 0.08480517370188467,
+            "n_histories": 15
+          },
+          "sigma2_sigma1_ratio": 1.6322477232602708
+        }
+      }
+    },
+    "9": {
+      "rounds": {
+        "4": {
+          "sigma1": {
+            "label": "",
+            "mean_pairwise_dist": 0.27660502379848845,
+            "dist_cv": 1.4164704573471854,
+            "total_variance": 0.10734257721146999,
+            "n_histories": 15
+          },
+          "sigma2": {
+            "label": "",
+            "mean_pairwise_dist": 0.4823237677456606,
+            "dist_cv": 0.4673586709058004,
+            "total_variance": 0.1322764704839583,
+            "n_histories": 15
+          },
+          "sigma2_sigma1_ratio": 1.7437274310775681
+        },
+        "0": {
+          "sigma1": {
+            "label": "",
+            "mean_pairwise_dist": 0.209369463012332,
+            "dist_cv": 0.7154577239138213,
+            "total_variance": 0.03092791983301304,
+            "n_histories": 15
+          },
+          "sigma2": {
+            "label": "",
+            "mean_pairwise_dist": 0.32491469224225433,
+            "dist_cv": 0.3736520951797648,
+            "total_variance": 0.05614408088220499,
+            "n_histories": 15
+          },
+          "sigma2_sigma1_ratio": 1.5518724049453638
+        },
+        "1": {
+          "sigma1": {
+            "label": "",
+            "mean_pairwise_dist": 0.16292743122293835,
+            "dist_cv": 0.678810695676234,
+            "total_variance": 0.018095941908079796,
+            "n_histories": 15
+          },
+          "sigma2": {
+            "label": "",
+            "mean_pairwise_dist": 0.31183741962636735,
+            "dist_cv": 0.38578919519095856,
+            "total_variance": 0.052133904722966265,
+            "n_histories": 15
+          },
+          "sigma2_sigma1_ratio": 1.913965113758374
+        },
+        "2": {
+          "sigma1": {
+            "label": "",
+            "mean_pairwise_dist": 0.12628039121627807,
+            "dist_cv": 0.6747813756739893,
+            "total_variance": 0.010830289658295317,
+            "n_histories": 15
+          },
+          "sigma2": {
+            "label": "",
+            "mean_pairwise_dist": 0.3185801602050447,
+            "dist_cv": 0.44113857139867896,
+            "total_variance": 0.05658064860879267,
+            "n_histories": 15
+          },
+          "sigma2_sigma1_ratio": 2.5227999128315846
+        },
+        "3": {
+          "sigma1": {
+            "label": "",
+            "mean_pairwise_dist": 0.11855069157623109,
+            "dist_cv": 0.8052583034229482,
+            "total_variance": 0.010811559819412345,
+            "n_histories": 15
+          },
+          "sigma2": {
+            "label": "",
+            "mean_pairwise_dist": 0.4415513883950907,
+            "dist_cv": 0.48937360427219356,
+            "total_variance": 0.11277454924775895,
+            "n_histories": 15
+          },
+          "sigma2_sigma1_ratio": 3.724578761640578
+        }
+      }
+    },
+    "10": {
+      "rounds": {
+        "4": {
+          "sigma1": {
+            "label": "",
+            "mean_pairwise_dist": 0.49138391699109757,
+            "dist_cv": 1.4111930823885095,
+            "total_variance": 0.3370797908836146,
+            "n_histories": 15
+          },
+          "sigma2": {
+            "label": "",
+            "mean_pairwise_dist": 0.7578198121190226,
+            "dist_cv": 1.208046370970195,
+            "total_variance": 0.6591186918765157,
+            "n_histories": 15
+          },
+          "sigma2_sigma1_ratio": 1.5422153346108203
+        },
+        "0": {
+          "sigma1": {
+            "label": "",
+            "mean_pairwise_dist": 0.18951040449596587,
+            "dist_cv": 0.6630899587403116,
+            "total_variance": 0.024129113791304665,
+            "n_histories": 15
+          },
+          "sigma2": {
+            "label": "",
+            "mean_pairwise_dist": 0.7171550045026682,
+            "dist_cv": 0.5295552118569524,
+            "total_variance": 0.30731818200362404,
+            "n_histories": 15
+          },
+          "sigma2_sigma1_ratio": 3.784251350376434
+        },
+        "1": {
+          "sigma1": {
+            "label": "",
+            "mean_pairwise_dist": 0.1980860254594258,
+            "dist_cv": 0.8318232034148542,
+            "total_variance": 0.030981098159432365,
+            "n_histories": 15
+          },
+          "sigma2": {
+            "label": "",
+            "mean_pairwise_dist": 0.36021508119125367,
+            "dist_cv": 0.49302830381531537,
+            "total_variance": 0.07527115204878707,
+            "n_histories": 15
+          },
+          "sigma2_sigma1_ratio": 1.8184780080974927
+        },
+        "2": {
+          "sigma1": {
+            "label": "",
+            "mean_pairwise_dist": 0.2674731295733225,
+            "dist_cv": 0.7140580648993341,
+            "total_variance": 0.050409132226377114,
+            "n_histories": 15
+          },
+          "sigma2": {
+            "label": "",
+            "mean_pairwise_dist": 0.3806600288612455,
+            "dist_cv": 0.46380572668228026,
+            "total_variance": 0.0821672939197009,
+            "n_histories": 15
+          },
+          "sigma2_sigma1_ratio": 1.4231711025558473
+        },
+        "3": {
+          "sigma1": {
+            "label": "",
+            "mean_pairwise_dist": 0.20950341281436738,
+            "dist_cv": 0.7227550252426606,
+            "total_variance": 0.03118247473513551,
+            "n_histories": 15
+          },
+          "sigma2": {
+            "label": "",
+            "mean_pairwise_dist": 0.4030295241144253,
+            "dist_cv": 0.3738172324859458,
+            "total_variance": 0.08639448836538646,
+            "n_histories": 15
+          },
+          "sigma2_sigma1_ratio": 1.9237372723811421
+        }
+      }
+    },
+    "11": {
+      "rounds": {
+        "4": {
+          "sigma1": {
+            "label": "",
+            "mean_pairwise_dist": 0.2960122121231897,
+            "dist_cv": 0.7387826960729061,
+            "total_variance": 0.06320905608666003,
+            "n_histories": 15
+          },
+          "sigma2": {
+            "label": "",
+            "mean_pairwise_dist": 0.40950039263331556,
+            "dist_cv": 0.3950906578958938,
+            "total_variance": 0.09047103535928466,
+            "n_histories": 15
+          },
+          "sigma2_sigma1_ratio": 1.3833901971738827
+        },
+        "0": {
+          "sigma1": {
+            "label": "",
+            "mean_pairwise_dist": 0.17010847386859712,
+            "dist_cv": 0.7255491309990661,
+            "total_variance": 0.02061261843981047,
+            "n_histories": 15
+          },
+          "sigma2": {
+            "label": "",
+            "mean_pairwise_dist": 0.38875070175516535,
+            "dist_cv": 0.39171564959174776,
+            "total_variance": 0.08134757185932491,
+            "n_histories": 15
+          },
+          "sigma2_sigma1_ratio": 2.2853106178997917
+        },
+        "1": {
+          "sigma1": {
+            "label": "",
+            "mean_pairwise_dist": 0.30802340024993535,
+            "dist_cv": 0.8658824832322933,
+            "total_variance": 0.07747307944703076,
+            "n_histories": 15
+          },
+          "sigma2": {
+            "label": "",
+            "mean_pairwise_dist": 0.365719885817358,
+            "dist_cv": 0.4070167969170151,
+            "total_variance": 0.07275734146138436,
+            "n_histories": 15
+          },
+          "sigma2_sigma1_ratio": 1.1873120204564833
+        },
+        "2": {
+          "sigma1": {
+            "label": "",
+            "mean_pairwise_dist": 0.3642996138050443,
+            "dist_cv": 0.7179215375936041,
+            "total_variance": 0.09385442079045964,
+            "n_histories": 15
+          },
+          "sigma2": {
+            "label": "",
+            "mean_pairwise_dist": 0.4368343102007188,
+            "dist_cv": 0.47028602085463594,
+            "total_variance": 0.10874668192249141,
+            "n_histories": 15
+          },
+          "sigma2_sigma1_ratio": 1.199107255476205
+        },
+        "3": {
+          "sigma1": {
+            "label": "",
+            "mean_pairwise_dist": 0.3179434676965078,
+            "dist_cv": 0.7207520426391173,
+            "total_variance": 0.07168075726451321,
+            "n_histories": 15
+          },
+          "sigma2": {
+            "label": "",
+            "mean_pairwise_dist": 0.410821371563939,
+            "dist_cv": 0.44747990771397916,
+            "total_variance": 0.09453231791515733,
+            "n_histories": 15
+          },
+          "sigma2_sigma1_ratio": 1.2921208113225824
+        }
+      }
+    },
+    "12": {
+      "rounds": {
+        "4": {
+          "sigma1": {
+            "label": "",
+            "mean_pairwise_dist": 0.15689053535461425,
+            "dist_cv": 0.7543781788655723,
+            "total_variance": 0.018023832362146094,
+            "n_histories": 15
+          },
+          "sigma2": {
+            "label": "",
+            "mean_pairwise_dist": 0.7452890871347901,
+            "dist_cv": 1.275376073709874,
+            "total_variance": 0.6808440102654624,
+            "n_histories": 15
+          },
+          "sigma2_sigma1_ratio": 4.750376337076046
+        },
+        "0": {
+          "sigma1": {
+            "label": "",
+            "mean_pairwise_dist": 0.1535643566222418,
+            "dist_cv": 0.6590134404925772,
+            "total_variance": 0.015784369523071298,
+            "n_histories": 15
+          },
+          "sigma2": {
+            "label": "",
+            "mean_pairwise_dist": 0.511690279161621,
+            "dist_cv": 0.4786871335195801,
+            "total_variance": 0.1501837523325195,
+            "n_histories": 15
+          },
+          "sigma2_sigma1_ratio": 3.3320901417712205
+        },
+        "1": {
+          "sigma1": {
+            "label": "",
+            "mean_pairwise_dist": 0.26428711073739186,
+            "dist_cv": 0.6813367361962048,
+            "total_variance": 0.047727095687866414,
+            "n_histories": 15
+          },
+          "sigma2": {
+            "label": "",
+            "mean_pairwise_dist": 0.3974696143415985,
+            "dist_cv": 0.48678698745454807,
+            "total_variance": 0.09119496382699907,
+            "n_histories": 15
+          },
+          "sigma2_sigma1_ratio": 1.5039311341450545
+        },
+        "2": {
+          "sigma1": {
+            "label": "",
+            "mean_pairwise_dist": 0.2130700497400193,
+            "dist_cv": 0.75854177640224,
+            "total_variance": 0.03337632182562348,
+            "n_histories": 15
+          },
+          "sigma2": {
+            "label": "",
+            "mean_pairwise_dist": 0.4369384029354432,
+            "dist_cv": 0.4943536804839001,
+            "total_variance": 0.11086696995933079,
+            "n_histories": 15
+          },
+          "sigma2_sigma1_ratio": 2.0506795922914196
+        },
+        "3": {
+          "sigma1": {
+            "label": "",
+            "mean_pairwise_dist": 0.20238611698150635,
+            "dist_cv": 0.7333081429810485,
+            "total_variance": 0.029393504158948362,
+            "n_histories": 15
+          },
+          "sigma2": {
+            "label": "",
+            "mean_pairwise_dist": 0.4478014123300189,
+            "dist_cv": 0.4375767338191002,
+            "total_variance": 0.11149670914099435,
+            "n_histories": 15
+          },
+          "sigma2_sigma1_ratio": 2.212609336981732
+        }
+      }
+    },
+    "13": {
+      "rounds": {
+        "4": {
+          "sigma1": {
+            "label": "",
+            "mean_pairwise_dist": 0.33629374312502996,
+            "dist_cv": 0.6916883349638121,
+            "total_variance": 0.07802718347455959,
+            "n_histories": 15
+          },
+          "sigma2": {
+            "label": "",
+            "mean_pairwise_dist": 0.5793862401032486,
+            "dist_cv": 0.5341275413923053,
+            "total_variance": 0.20134693225576655,
+            "n_histories": 15
+          },
+          "sigma2_sigma1_ratio": 1.7228576260354447
+        },
+        "0": {
+          "sigma1": {
+            "label": "",
+            "mean_pairwise_dist": 0.1950104179836455,
+            "dist_cv": 0.7646366876977596,
+            "total_variance": 0.028122960832304,
+            "n_histories": 15
+          },
+          "sigma2": {
+            "label": "",
+            "mean_pairwise_dist": 0.37512577575755746,
+            "dist_cv": 0.40128208663399395,
+            "total_variance": 0.07624353617743727,
+            "n_histories": 15
+          },
+          "sigma2_sigma1_ratio": 1.9236191555502198
+        },
+        "1": {
+          "sigma1": {
+            "label": "",
+            "mean_pairwise_dist": 0.31448470850785576,
+            "dist_cv": 0.7951731552885641,
+            "total_variance": 0.07533658336115015,
+            "n_histories": 15
+          },
+          "sigma2": {
+            "label": "",
+            "mean_pairwise_dist": 0.5075978071069518,
+            "dist_cv": 0.4360746276102711,
+            "total_variance": 0.14310407467461625,
+            "n_histories": 15
+          },
+          "sigma2_sigma1_ratio": 1.6140619661730418
+        },
+        "2": {
+          "sigma1": {
+            "label": "",
+            "mean_pairwise_dist": 0.357856034381049,
+            "dist_cv": 0.6711032444194055,
+            "total_variance": 0.08667725378127972,
+            "n_histories": 15
+          },
+          "sigma2": {
+            "label": "",
+            "mean_pairwise_dist": 0.6459995730731026,
+            "dist_cv": 0.5767545508716604,
+            "total_variance": 0.25952905282730065,
+            "n_histories": 15
+          },
+          "sigma2_sigma1_ratio": 1.8051940189017905
+        },
+        "3": {
+          "sigma1": {
+            "label": "",
+            "mean_pairwise_dist": 0.3776560686883472,
+            "dist_cv": 0.704352827570163,
+            "total_variance": 0.09957815747307257,
+            "n_histories": 15
+          },
+          "sigma2": {
+            "label": "",
+            "mean_pairwise_dist": 0.5906541958089598,
+            "dist_cv": 0.592419152400456,
+            "total_variance": 0.21994596724211207,
+            "n_histories": 15
+          },
+          "sigma2_sigma1_ratio": 1.56400027597593
+        }
+      }
+    },
+    "14": {
+      "rounds": {
+        "4": {
+          "sigma1": {
+            "label": "",
+            "mean_pairwise_dist": 0.19870340355804988,
+            "dist_cv": 0.7482534685396813,
+            "total_variance": 0.02874150390351944,
+            "n_histories": 15
+          },
+          "sigma2": {
+            "label": "",
+            "mean_pairwise_dist": 1.0136321523753298,
+            "dist_cv": 1.3249979053151708,
+            "total_variance": 1.3212554086743447,
+            "n_histories": 15
+          },
+          "sigma2_sigma1_ratio": 5.101231955340315
+        },
+        "0": {
+          "sigma1": {
+            "label": "",
+            "mean_pairwise_dist": 0.20676229908352806,
+            "dist_cv": 0.6757818422007106,
+            "total_variance": 0.02906122863832721,
+            "n_histories": 15
+          },
+          "sigma2": {
+            "label": "",
+            "mean_pairwise_dist": 0.8171291778969058,
+            "dist_cv": 0.5758832725006984,
+            "total_variance": 0.4149306854074385,
+            "n_histories": 15
+          },
+          "sigma2_sigma1_ratio": 3.9520221100443402
+        },
+        "1": {
+          "sigma1": {
+            "label": "",
+            "mean_pairwise_dist": 0.1337903204418364,
+            "dist_cv": 0.6777007871560724,
+            "total_variance": 0.012189736291371012,
+            "n_histories": 15
+          },
+          "sigma2": {
+            "label": "",
+            "mean_pairwise_dist": 0.3779474145592047,
+            "dist_cv": 0.4173584032360298,
+            "total_variance": 0.07827213675657102,
+            "n_histories": 15
+          },
+          "sigma2_sigma1_ratio": 2.8249234550643005
+        },
+        "2": {
+          "sigma1": {
+            "label": "",
+            "mean_pairwise_dist": 0.1446051679906391,
+            "dist_cv": 0.7128150204559026,
+            "total_variance": 0.014716551772163123,
+            "n_histories": 15
+          },
+          "sigma2": {
+            "label": "",
+            "mean_pairwise_dist": 0.3720396486941517,
+            "dist_cv": 0.4008606084342569,
+            "total_variance": 0.07497236068960211,
+            "n_histories": 15
+          },
+          "sigma2_sigma1_ratio": 2.5727963502725966
+        },
+        "3": {
+          "sigma1": {
+            "label": "",
+            "mean_pairwise_dist": 0.14273966550827027,
+            "dist_cv": 0.6652907407901881,
+            "total_variance": 0.01371657244832017,
+            "n_histories": 15
+          },
+          "sigma2": {
+            "label": "",
+            "mean_pairwise_dist": 0.49681864446851165,
+            "dist_cv": 0.4001075591317016,
+            "total_variance": 0.13362655123616904,
+            "n_histories": 15
+          },
+          "sigma2_sigma1_ratio": 3.4805927445000697
+        }
+      }
+    },
+    "15": {
+      "rounds": {
+        "4": {
+          "sigma1": {
+            "label": "",
+            "mean_pairwise_dist": 0.3755606153181621,
+            "dist_cv": 1.2022890186325281,
+            "total_variance": 0.16096606745926986,
+            "n_histories": 15
+          },
+          "sigma2": {
+            "label": "",
+            "mean_pairwise_dist": 0.7571857959529256,
+            "dist_cv": 0.8746165497202282,
+            "total_variance": 0.4722208032129548,
+            "n_histories": 15
+          },
+          "sigma2_sigma1_ratio": 2.0161480327479198
+        },
+        "0": {
+          "sigma1": {
+            "label": "",
+            "mean_pairwise_dist": 0.33948798860822404,
+            "dist_cv": 0.6894918127766221,
+            "total_variance": 0.07935331611591039,
+            "n_histories": 15
+          },
+          "sigma2": {
+            "label": "",
+            "mean_pairwise_dist": 0.49161814086037725,
+            "dist_cv": 0.6308968347935452,
+            "total_variance": 0.15768098553433055,
+            "n_histories": 15
+          },
+          "sigma2_sigma1_ratio": 1.4481164495127479
+        },
+        "1": {
+          "sigma1": {
+            "label": "",
+            "mean_pairwise_dist": 0.3152964814787819,
+            "dist_cv": 0.7068537398005945,
+            "total_variance": 0.06957171118555877,
+            "n_histories": 15
+          },
+          "sigma2": {
+            "label": "",
+            "mean_pairwise_dist": 0.35848554152406953,
+            "dist_cv": 0.5184058691271389,
+            "total_variance": 0.07608942321137109,
+            "n_histories": 15
+          },
+          "sigma2_sigma1_ratio": 1.1369792004307415
+        },
+        "2": {
+          "sigma1": {
+            "label": "",
+            "mean_pairwise_dist": 0.2457687068553198,
+            "dist_cv": 0.7012356483596337,
+            "total_variance": 0.04204850809106678,
+            "n_histories": 15
+          },
+          "sigma2": {
+            "label": "",
+            "mean_pairwise_dist": 0.44519823893006444,
+            "dist_cv": 0.40112763293043907,
+            "total_variance": 0.10737662054082368,
+            "n_histories": 15
+          },
+          "sigma2_sigma1_ratio": 1.8114520943099581
+        },
+        "3": {
+          "sigma1": {
+            "label": "",
+            "mean_pairwise_dist": 0.2529704282681147,
+            "dist_cv": 0.7421945061747253,
+            "total_variance": 0.04631448501385087,
+            "n_histories": 15
+          },
+          "sigma2": {
+            "label": "",
+            "mean_pairwise_dist": 0.5238465247838892,
+            "dist_cv": 0.47504768247575246,
+            "total_variance": 0.15695985109629282,
+            "n_histories": 15
+          },
+          "sigma2_sigma1_ratio": 2.070781664731199
+        }
+      }
+    },
+    "16": {
+      "rounds": {
+        "4": {
+          "sigma1": {
+            "label": "",
+            "mean_pairwise_dist": 0.21003799381710234,
+            "dist_cv": 0.6810609366912159,
+            "total_variance": 0.03013681144079615,
+            "n_histories": 15
+          },
+          "sigma2": {
+            "label": "",
+            "mean_pairwise_dist": 0.5675738891267721,
+            "dist_cv": 0.43184871767774013,
+            "total_variance": 0.17836797926681658,
+            "n_histories": 15
+          },
+          "sigma2_sigma1_ratio": 2.7022439061705272
+        },
+        "0": {
+          "sigma1": {
+            "label": "",
+            "mean_pairwise_dist": 0.24294788326535907,
+            "dist_cv": 0.6630575650425367,
+            "total_variance": 0.03965413988655344,
+            "n_histories": 15
+          },
+          "sigma2": {
+            "label": "",
+            "mean_pairwise_dist": 0.5235600887310592,
+            "dist_cv": 0.3639876965626666,
+            "total_variance": 0.1448682080751913,
+            "n_histories": 15
+          },
+          "sigma2_sigma1_ratio": 2.1550304595315173
+        },
+        "1": {
+          "sigma1": {
+            "label": "",
+            "mean_pairwise_dist": 0.28296415294919697,
+            "dist_cv": 0.6784095822266802,
+            "total_variance": 0.0545624336574414,
+            "n_histories": 15
+          },
+          "sigma2": {
+            "label": "",
+            "mean_pairwise_dist": 0.40592028167567906,
+            "dist_cv": 0.428043571733015,
+            "total_variance": 0.0909817450255188,
+            "n_histories": 15
+          },
+          "sigma2_sigma1_ratio": 1.4345289935192058
+        },
+        "2": {
+          "sigma1": {
+            "label": "",
+            "mean_pairwise_dist": 0.25452017869268145,
+            "dist_cv": 0.8047290724009553,
+            "total_variance": 0.049808111111302074,
+            "n_histories": 15
+          },
+          "sigma2": {
+            "label": "",
+            "mean_pairwise_dist": 0.5139612833492554,
+            "dist_cv": 0.5482042861394039,
+            "total_variance": 0.160319842432509,
+            "n_histories": 15
+          },
+          "sigma2_sigma1_ratio": 2.01933412819068
+        },
+        "3": {
+          "sigma1": {
+            "label": "",
+            "mean_pairwise_dist": 0.22415692408879598,
+            "dist_cv": 0.7091405733624407,
+            "total_variance": 0.03523996797765212,
+            "n_histories": 15
+          },
+          "sigma2": {
+            "label": "",
+            "mean_pairwise_dist": 0.5290572944707422,
+            "dist_cv": 0.5126224411826396,
+            "total_variance": 0.16494550959889426,
+            "n_histories": 15
+          },
+          "sigma2_sigma1_ratio": 2.360209466583973
+        }
+      }
+    },
+    "17": {
+      "rounds": {
+        "4": {
+          "sigma1": {
+            "label": "",
+            "mean_pairwise_dist": 0.3340804894765218,
+            "dist_cv": 0.7692579596434836,
+            "total_variance": 0.08290600660014923,
+            "n_histories": 15
+          },
+          "sigma2": {
+            "label": "",
+            "mean_pairwise_dist": 0.6736145369021993,
+            "dist_cv": 0.5066751272933109,
+            "total_variance": 0.26611423127945877,
+            "n_histories": 15
+          },
+          "sigma2_sigma1_ratio": 2.016324083325155
+        },
+        "0": {
+          "sigma1": {
+            "label": "",
+            "mean_pairwise_dist": 0.4121621779033116,
+            "dist_cv": 0.7084305413474583,
+            "total_variance": 0.1190629129969095,
+            "n_histories": 15
+          },
+          "sigma2": {
+            "label": "",
+            "mean_pairwise_dist": 0.5780341752114636,
+            "dist_cv": 0.49391982084706404,
+            "total_variance": 0.1939630961117429,
+            "n_histories": 15
+          },
+          "sigma2_sigma1_ratio": 1.402443518742322
+        },
+        "1": {
+          "sigma1": {
+            "label": "",
+            "mean_pairwise_dist": 0.3483731894266038,
+            "dist_cv": 0.7195457228095367,
+            "total_variance": 0.085959788988123,
+            "n_histories": 15
+          },
+          "sigma2": {
+            "label": "",
+            "mean_pairwise_dist": 0.6152646498590318,
+            "dist_cv": 0.3563286612257197,
+            "total_variance": 0.19908709388182586,
+            "n_histories": 15
+          },
+          "sigma2_sigma1_ratio": 1.7661079220680003
+        },
+        "2": {
+          "sigma1": {
+            "label": "",
+            "mean_pairwise_dist": 0.3249601046244303,
+            "dist_cv": 0.8579492152257495,
+            "total_variance": 0.08555311369796445,
+            "n_histories": 15
+          },
+          "sigma2": {
+            "label": "",
+            "mean_pairwise_dist": 0.6456966516209922,
+            "dist_cv": 0.33979761599274544,
+            "total_variance": 0.21702951153958028,
+            "n_histories": 15
+          },
+          "sigma2_sigma1_ratio": 1.9870028419905574
+        },
+        "3": {
+          "sigma1": {
+            "label": "",
+            "mean_pairwise_dist": 0.284484813326881,
+            "dist_cv": 0.7335639950347014,
+            "total_variance": 0.058091699713002355,
+            "n_histories": 15
+          },
+          "sigma2": {
+            "label": "",
+            "mean_pairwise_dist": 0.7038306386777409,
+            "dist_cv": 0.5254203880092714,
+            "total_variance": 0.29499622180909935,
+            "n_histories": 15
+          },
+          "sigma2_sigma1_ratio": 2.474053465981027
+        }
+      }
+    },
+    "18": {
+      "rounds": {
+        "4": {
+          "sigma1": {
+            "label": "",
+            "mean_pairwise_dist": 0.49611235686710903,
+            "dist_cv": 0.7567357177078888,
+            "total_variance": 0.18063365014170085,
+            "n_histories": 15
+          },
+          "sigma2": {
+            "label": "",
+            "mean_pairwise_dist": 0.7512253120206961,
+            "dist_cv": 0.773090830185633,
+            "total_variance": 0.42075969576411426,
+            "n_histories": 15
+          },
+          "sigma2_sigma1_ratio": 1.5142241499751645
+        },
+        "0": {
+          "sigma1": {
+            "label": "",
+            "mean_pairwise_dist": 0.3040286018734887,
+            "dist_cv": 0.6863900748435023,
+            "total_variance": 0.06345810686009082,
+            "n_histories": 15
+          },
+          "sigma2": {
+            "label": "",
+            "mean_pairwise_dist": 0.7386185440629928,
+            "dist_cv": 0.41437103568758415,
+            "total_variance": 0.29830797814589843,
+            "n_histories": 15
+          },
+          "sigma2_sigma1_ratio": 2.4294376886533864
+        },
+        "1": {
+          "sigma1": {
+            "label": "",
+            "mean_pairwise_dist": 0.3739422627857753,
+            "dist_cv": 0.7306816199592336,
+            "total_variance": 0.10009484111199066,
+            "n_histories": 15
+          },
+          "sigma2": {
+            "label": "",
+            "mean_pairwise_dist": 0.7145591516124093,
+            "dist_cv": 0.4425700125872985,
+            "total_variance": 0.284948566039945,
+            "n_histories": 15
+          },
+          "sigma2_sigma1_ratio": 1.9108809635424364
+        },
+        "2": {
+          "sigma1": {
+            "label": "",
+            "mean_pairwise_dist": 0.396527285802932,
+            "dist_cv": 0.6631238324770176,
+            "total_variance": 0.1056415976064887,
+            "n_histories": 15
+          },
+          "sigma2": {
+            "label": "",
+            "mean_pairwise_dist": 0.6835978438914118,
+            "dist_cv": 0.37813191832632703,
+            "total_variance": 0.24925748265401493,
+            "n_histories": 15
+          },
+          "sigma2_sigma1_ratio": 1.723961674755349
+        },
+        "3": {
+          "sigma1": {
+            "label": "",
+            "mean_pairwise_dist": 0.43246889398211524,
+            "dist_cv": 0.7226841865092701,
+            "total_variance": 0.13286448702705952,
+            "n_histories": 15
+          },
+          "sigma2": {
+            "label": "",
+            "mean_pairwise_dist": 0.6693732572813001,
+            "dist_cv": 0.4888509485926824,
+            "total_variance": 0.25906343928608216,
+            "n_histories": 15
+          },
+          "sigma2_sigma1_ratio": 1.547795151144911
+        }
+      }
+    },
+    "19": {
+      "rounds": {
+        "4": {
+          "sigma1": {
+            "label": "",
+            "mean_pairwise_dist": 0.35595563763663884,
+            "dist_cv": 0.7120501456774707,
+            "total_variance": 0.08910790345599585,
+            "n_histories": 15
+          },
+          "sigma2": {
+            "label": "",
+            "mean_pairwise_dist": 0.7872309122629576,
+            "dist_cv": 0.5180070259030648,
+            "total_variance": 0.36681219214771893,
+            "n_histories": 15
+          },
+          "sigma2_sigma1_ratio": 2.2115983813842743
+        },
+        "0": {
+          "sigma1": {
+            "label": "",
+            "mean_pairwise_dist": 0.29575959160214377,
+            "dist_cv": 0.7099232025968997,
+            "total_variance": 0.06139453025404145,
+            "n_histories": 15
+          },
+          "sigma2": {
+            "label": "",
+            "mean_pairwise_dist": 0.957434186282149,
+            "dist_cv": 0.47015550480905927,
+            "total_variance": 0.5223441530511581,
+            "n_histories": 15
+          },
+          "sigma2_sigma1_ratio": 3.2372041791509183
+        },
+        "1": {
+          "sigma1": {
+            "label": "",
+            "mean_pairwise_dist": 0.2908922768774487,
+            "dist_cv": 0.6849305773430933,
+            "total_variance": 0.05801380614902823,
+            "n_histories": 15
+          },
+          "sigma2": {
+            "label": "",
+            "mean_pairwise_dist": 1.063424038816698,
+            "dist_cv": 0.4897379990690654,
+            "total_variance": 0.654314477792145,
+            "n_histories": 15
+          },
+          "sigma2_sigma1_ratio": 3.6557314269953602
+        },
+        "2": {
+          "sigma1": {
+            "label": "",
+            "mean_pairwise_dist": 0.4532394176437741,
+            "dist_cv": 0.6908756807192002,
+            "total_variance": 0.14162291559943171,
+            "n_histories": 15
+          },
+          "sigma2": {
+            "label": "",
+            "mean_pairwise_dist": 0.9334990393314809,
+            "dist_cv": 0.4760114792886635,
+            "total_variance": 0.4988073724927262,
+            "n_histories": 15
+          },
+          "sigma2_sigma1_ratio": 2.0596157412310676
+        },
+        "3": {
+          "sigma1": {
+            "label": "",
+            "mean_pairwise_dist": 0.39868627105440413,
+            "dist_cv": 0.6898513913783547,
+            "total_variance": 0.10947747873343396,
+            "n_histories": 15
+          },
+          "sigma2": {
+            "label": "",
+            "mean_pairwise_dist": 0.8839608240434557,
+            "dist_cv": 0.5170154996698563,
+            "total_variance": 0.46211915942683224,
+            "n_histories": 15
+          },
+          "sigma2_sigma1_ratio": 2.2171840065722086
+        }
+      }
+    },
+    "20": {
+      "rounds": {
+        "4": {
+          "sigma1": {
+            "label": "",
+            "mean_pairwise_dist": 0.5467014616443997,
+            "dist_cv": 1.2774382273982798,
+            "total_variance": 0.36708625606753137,
+            "n_histories": 15
+          },
+          "sigma2": {
+            "label": "",
+            "mean_pairwise_dist": 0.7262060315949765,
+            "dist_cv": 0.5577701498840165,
+            "total_variance": 0.3226746141051092,
+            "n_histories": 15
+          },
+          "sigma2_sigma1_ratio": 1.3283411192606267
+        },
+        "0": {
+          "sigma1": {
+            "label": "",
+            "mean_pairwise_dist": 0.3821065706866128,
+            "dist_cv": 0.6847179380477348,
+            "total_variance": 0.10008059665987838,
+            "n_histories": 15
+          },
+          "sigma2": {
+            "label": "",
+            "mean_pairwise_dist": 0.834215748307585,
+            "dist_cv": 0.4669034449985323,
+            "total_variance": 0.39555822498619003,
+            "n_histories": 15
+          },
+          "sigma2_sigma1_ratio": 2.183201787371127
+        },
+        "1": {
+          "sigma1": {
+            "label": "",
+            "mean_pairwise_dist": 0.3295416451635815,
+            "dist_cv": 0.6693722413382355,
+            "total_variance": 0.07338608311900062,
+            "n_histories": 15
+          },
+          "sigma2": {
+            "label": "",
+            "mean_pairwise_dist": 0.8500051199107408,
+            "dist_cv": 0.5105531680981706,
+            "total_variance": 0.42505918047669716,
+            "n_histories": 15
+          },
+          "sigma2_sigma1_ratio": 2.57935569639725
+        },
+        "2": {
+          "sigma1": {
+            "label": "",
+            "mean_pairwise_dist": 0.23848450169676827,
+            "dist_cv": 0.7109793166220592,
+            "total_variance": 0.03995815584667714,
+            "n_histories": 15
+          },
+          "sigma2": {
+            "label": "",
+            "mean_pairwise_dist": 0.9777872169710426,
+            "dist_cv": 0.5153165565950946,
+            "total_variance": 0.5646446212890637,
+            "n_histories": 15
+          },
+          "sigma2_sigma1_ratio": 4.100003185130635
+        },
+        "3": {
+          "sigma1": {
+            "label": "",
+            "mean_pairwise_dist": 0.2838187237580617,
+            "dist_cv": 0.719419928557782,
+            "total_variance": 0.057047442344001956,
+            "n_histories": 15
+          },
+          "sigma2": {
+            "label": "",
+            "mean_pairwise_dist": 0.7964952435473727,
+            "dist_cv": 0.5306034018180585,
+            "total_variance": 0.37940697463861206,
+            "n_histories": 15
+          },
+          "sigma2_sigma1_ratio": 2.806352000742916
+        }
+      }
+    },
+    "21": {
+      "rounds": {
+        "4": {
+          "sigma1": {
+            "label": "",
+            "mean_pairwise_dist": 0.7517999001911708,
+            "dist_cv": 0.868963545872189,
+            "total_variance": 0.4629270854402539,
+            "n_histories": 15
+          },
+          "sigma2": {
+            "label": "",
+            "mean_pairwise_dist": 0.8880507671314962,
+            "dist_cv": 0.6134043068017195,
+            "total_variance": 0.5065057553847025,
+            "n_histories": 15
+          },
+          "sigma2_sigma1_ratio": 1.1812328876175104
+        },
+        "0": {
+          "sigma1": {
+            "label": "",
+            "mean_pairwise_dist": 0.6138842764354887,
+            "dist_cv": 0.8090372529386646,
+            "total_variance": 0.29097615909899766,
+            "n_histories": 15
+          },
+          "sigma2": {
+            "label": "",
+            "mean_pairwise_dist": 0.95010804140516,
+            "dist_cv": 0.4182749936362645,
+            "total_variance": 0.49496401030232406,
+            "n_histories": 15
+          },
+          "sigma2_sigma1_ratio": 1.5476989356482307
+        },
+        "1": {
+          "sigma1": {
+            "label": "",
+            "mean_pairwise_dist": 0.605308959597633,
+            "dist_cv": 0.6939864363568203,
+            "total_variance": 0.2533360465806572,
+            "n_histories": 15
+          },
+          "sigma2": {
+            "label": "",
+            "mean_pairwise_dist": 1.106924914689694,
+            "dist_cv": 0.4558071386689186,
+            "total_variance": 0.690595591166204,
+            "n_histories": 15
+          },
+          "sigma2_sigma1_ratio": 1.8286940858146734
+        },
+        "2": {
+          "sigma1": {
+            "label": "",
+            "mean_pairwise_dist": 0.6263501507895334,
+            "dist_cv": 0.66355560709185,
+            "total_variance": 0.2636913821959389,
+            "n_histories": 15
+          },
+          "sigma2": {
+            "label": "",
+            "mean_pairwise_dist": 1.0448411095382348,
+            "dist_cv": 0.46206990350970056,
+            "total_variance": 0.6182300934626017,
+            "n_histories": 15
+          },
+          "sigma2_sigma1_ratio": 1.6681421854123715
+        },
+        "3": {
+          "sigma1": {
+            "label": "",
+            "mean_pairwise_dist": 0.5922624292827788,
+            "dist_cv": 0.7956750504839648,
+            "total_variance": 0.2673299420555581,
+            "n_histories": 15
+          },
+          "sigma2": {
+            "label": "",
+            "mean_pairwise_dist": 1.0110543025276402,
+            "dist_cv": 0.4873571127186633,
+            "total_variance": 0.5903463769406643,
+            "n_histories": 15
+          },
+          "sigma2_sigma1_ratio": 1.7071052499164967
+        }
+      }
+    },
+    "22": {
+      "rounds": {
+        "4": {
+          "sigma1": {
+            "label": "",
+            "mean_pairwise_dist": 0.4978832409495399,
+            "dist_cv": 0.7095652574521863,
+            "total_variance": 0.1739243050370542,
+            "n_histories": 15
+          },
+          "sigma2": {
+            "label": "",
+            "mean_pairwise_dist": 1.0421416703971575,
+            "dist_cv": 0.5823005254456939,
+            "total_variance": 0.6786796859119444,
+            "n_histories": 15
+          },
+          "sigma2_sigma1_ratio": 2.0931447063779824
+        },
+        "0": {
+          "sigma1": {
+            "label": "",
+            "mean_pairwise_dist": 0.6201534918376378,
+            "dist_cv": 0.702551619202739,
+            "total_variance": 0.26806079535367583,
+            "n_histories": 15
+          },
+          "sigma2": {
+            "label": "",
+            "mean_pairwise_dist": 0.9968706412323455,
+            "dist_cv": 0.42106541670631137,
+            "total_variance": 0.545971650306018,
+            "n_histories": 15
+          },
+          "sigma2_sigma1_ratio": 1.6074579183899687
+        },
+        "1": {
+          "sigma1": {
+            "label": "",
+            "mean_pairwise_dist": 0.5811051936376662,
+            "dist_cv": 0.6651359944103236,
+            "total_variance": 0.22730227496618596,
+            "n_histories": 15
+          },
+          "sigma2": {
+            "label": "",
+            "mean_pairwise_dist": 1.282239775129144,
+            "dist_cv": 0.4824424305698816,
+            "total_variance": 0.9458462090724911,
+            "n_histories": 15
+          },
+          "sigma2_sigma1_ratio": 2.206553630818171
+        },
+        "2": {
+          "sigma1": {
+            "label": "",
+            "mean_pairwise_dist": 0.5686536422797612,
+            "dist_cv": 0.6683038988090075,
+            "total_variance": 0.2183031130770879,
+            "n_histories": 15
+          },
+          "sigma2": {
+            "label": "",
+            "mean_pairwise_dist": 1.163193872918767,
+            "dist_cv": 0.44780449918506776,
+            "total_variance": 0.758025125308287,
+            "n_histories": 15
+          },
+          "sigma2_sigma1_ratio": 2.0455225927172673
+        },
+        "3": {
+          "sigma1": {
+            "label": "",
+            "mean_pairwise_dist": 0.4807873396646409,
+            "dist_cv": 0.7929039732477743,
+            "total_variance": 0.1756924287455604,
+            "n_histories": 15
+          },
+          "sigma2": {
+            "label": "",
+            "mean_pairwise_dist": 1.0911987628309876,
+            "dist_cv": 0.5076319964071677,
+            "total_variance": 0.6988568121172312,
+            "n_histories": 15
+          },
+          "sigma2_sigma1_ratio": 2.2696079380234107
+        }
+      }
+    },
+    "23": {
+      "rounds": {
+        "4": {
+          "sigma1": {
+            "label": "",
+            "mean_pairwise_dist": 1.1462923197519213,
+            "dist_cv": 0.7634168168607595,
+            "total_variance": 0.970565890753041,
+            "n_histories": 15
+          },
+          "sigma2": {
+            "label": "",
+            "mean_pairwise_dist": 2.9928960061396905,
+            "dist_cv": 0.43675002359736326,
+            "total_variance": 4.977495055130278,
+            "n_histories": 15
+          },
+          "sigma2_sigma1_ratio": 2.610936106181288
+        },
+        "0": {
+          "sigma1": {
+            "label": "",
+            "mean_pairwise_dist": 0.8803520191283453,
+            "dist_cv": 0.7842922184784994,
+            "total_variance": 0.5841478308063281,
+            "n_histories": 15
+          },
+          "sigma2": {
+            "label": "",
+            "mean_pairwise_dist": 3.0479022613613234,
+            "dist_cv": 0.4880962550155649,
+            "total_variance": 5.368005659349203,
+            "n_histories": 15
+          },
+          "sigma2_sigma1_ratio": 3.462140365206296
+        },
+        "1": {
+          "sigma1": {
+            "label": "",
+            "mean_pairwise_dist": 1.215534175577618,
+            "dist_cv": 0.658573929641737,
+            "total_variance": 0.9885652893130534,
+            "n_histories": 15
+          },
+          "sigma2": {
+            "label": "",
+            "mean_pairwise_dist": 2.9171190186008986,
+            "dist_cv": 0.46922260201159866,
+            "total_variance": 4.845463963520508,
+            "n_histories": 15
+          },
+          "sigma2_sigma1_ratio": 2.3998659000884994
+        },
+        "2": {
+          "sigma1": {
+            "label": "",
+            "mean_pairwise_dist": 1.1414946607181005,
+            "dist_cv": 0.7109680638110185,
+            "total_variance": 0.9154365904713793,
+            "n_histories": 15
+          },
+          "sigma2": {
+            "label": "",
+            "mean_pairwise_dist": 3.0531904852777867,
+            "dist_cv": 0.4507370690622728,
+            "total_variance": 5.234068189295761,
+            "n_histories": 15
+          },
+          "sigma2_sigma1_ratio": 2.67473041274638
+        },
+        "3": {
+          "sigma1": {
+            "label": "",
+            "mean_pairwise_dist": 1.2104370508875166,
+            "dist_cv": 0.7508462940954755,
+            "total_variance": 1.0692127265357811,
+            "n_histories": 15
+          },
+          "sigma2": {
+            "label": "",
+            "mean_pairwise_dist": 2.701499598128889,
+            "dist_cv": 0.4762380412537244,
+            "total_variance": 4.178220049138371,
+            "n_histories": 15
+          },
+          "sigma2_sigma1_ratio": 2.2318381578991753
+        }
+      }
+    }
+  }
+}

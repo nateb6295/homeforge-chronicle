@@ -3,8 +3,8 @@
 embedding_bridge.py — Cross-space embedding bridge.
 
 Gap #6: Chronicle uses two embedding models in separate spaces:
-  - nomic-embed-text (768d): capsule_embeddings table (10K+ vectors)
-  - mxbai-embed-large (1024d): nav scoring, coherence checking
+  - snowflake-arctic-embed2 (1024d): capsule_embeddings table (32K+ vectors)
+  - snowflake-arctic-embed2 (1024d): nav scoring, coherence checking
 
 This tool bridges them by:
 1. Routing queries to the correct model for each space
@@ -29,19 +29,19 @@ import time
 import urllib.request
 
 DB = "/mnt/hdd/chronicle-data/processed.db"
-OLLAMA = os.environ.get("OLLAMA_URL", "http://192.168.1.11:11434")
+OLLAMA = os.environ.get("OLLAMA_URL", "http://localhost:11434")
 
 # Canonical model assignments
 MODELS = {
     "capsule": {
-        "model": "nomic-embed-text",
-        "dims": 768,
-        "bytes_per_vec": 3072,  # 768 * 4
+        "model": "snowflake-arctic-embed2",
+        "dims": 1024,
+        "bytes_per_vec": 4096,  # 1024 * 4
         "table": "capsule_embeddings",
         "purpose": "Persistent memory search (capsules, knowledge graph)",
     },
     "nav": {
-        "model": "mxbai-embed-large",
+        "model": "snowflake-arctic-embed2",
         "dims": 1024,
         "bytes_per_vec": 4096,  # 1024 * 4
         "purpose": "Navigation scoring (CCS quality, coherence, calibration)",
@@ -70,7 +70,7 @@ def cosine(a, b):
 
 
 def search_capsules(query, top_k=5):
-    """Search capsule embedding space using nomic-embed-text."""
+    """Search capsule embedding space using snowflake-arctic-embed2."""
     model_cfg = MODELS["capsule"]
     q_vec = embed(query, model_cfg["model"])
 
@@ -116,7 +116,7 @@ def show_status():
     print("EMBEDDING SPACE STATUS")
     print("=" * 50)
     print()
-    print(f"Capsule space (nomic-embed-text, {MODELS['capsule']['dims']}d):")
+    print(f"Capsule space (snowflake-arctic-embed2, {MODELS['capsule']['dims']}d):")
     print(f"  Vectors: {cap_count:,}")
     print(f"  Actual dims: {cap_dim_val}")
     if len(dim_groups) > 1:
@@ -127,7 +127,7 @@ def show_status():
         print(f"  Dimensions: consistent")
 
     print()
-    print(f"Nav space (mxbai-embed-large, {MODELS['nav']['dims']}d):")
+    print(f"Nav space (snowflake-arctic-embed2, {MODELS['nav']['dims']}d):")
     print(f"  Usage: calibration_nav_score.py, coherence_watch.py")
     print(f"  Storage: ephemeral (computed per query, not persisted)")
 
@@ -138,8 +138,8 @@ def show_status():
 
     print()
     print("RULES:")
-    print("  - Capsule queries MUST use nomic-embed-text")
-    print("  - Nav scoring MUST use mxbai-embed-large")
+    print("  - Capsule queries MUST use snowflake-arctic-embed2")
+    print("  - Nav scoring MUST use snowflake-arctic-embed2")
     print("  - Never cosine-compare vectors from different models")
     print("  - New tools: check which space you're in before choosing a model")
 
@@ -162,8 +162,8 @@ def check_mismatches():
         except Exception:
             continue
 
-        uses_nomic = "nomic-embed-text" in content or "nomic" in content.lower()
-        uses_mxbai = "mxbai-embed-large" in content or "mxbai" in content.lower()
+        uses_nomic = "snowflake-arctic-embed2" in content or "nomic" in content.lower()
+        uses_mxbai = "snowflake-arctic-embed2" in content or "mxbai" in content.lower()
         uses_capsule_embed = "capsule_embeddings" in content
         uses_nav = "calibration" in content.lower() and "embed" in content.lower()
 
@@ -200,7 +200,7 @@ def dual_search(query, top_k=5):
     print(f"Dual-space search: {query[:60]}...\n")
 
     # Capsule space
-    print(f"--- Capsule space (nomic-embed-text) ---")
+    print(f"--- Capsule space (snowflake-arctic-embed2) ---")
     try:
         results = search_capsules(query, top_k)
         for sim, cid, text, topic in results:
@@ -211,7 +211,7 @@ def dual_search(query, top_k=5):
     print()
 
     # Nav space — just show the embedding, can't search stored vectors
-    print(f"--- Nav space (mxbai-embed-large) ---")
+    print(f"--- Nav space (snowflake-arctic-embed2) ---")
     try:
         vec = embed(query, MODELS["nav"]["model"])
         print(f"  Embedded OK ({len(vec)}d)")

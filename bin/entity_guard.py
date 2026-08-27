@@ -55,14 +55,81 @@ MAX_REPLACE = 2
 # Minimum persistence (fraction of history) to be considered "load-bearing"
 LOAD_BEARING_THRESHOLD = 0.3
 
-# Maximum entity slots (variable-capacity: compressor decides 5-15)
-MAX_ENTITIES = 15
+# Maximum entity slots (variable-capacity: compressor decides 5-25)
+MAX_ENTITIES = 25
 
 # Minimum persistence to qualify for dormant instead of drop
 DORMANT_PERSISTENCE_THRESHOLD = 0.15
 
 # Grace period: new entities are protected from deletion for this many compressions
 GRACE_PERIOD = 5
+
+
+def entity_retention_score(entity: dict, connectivity: dict, persistence: dict,
+                           cross_field_refs: set = None) -> float:
+    """Weighted retention score for cap enforcement.
+
+    All entities compete on the same scale. Type bonuses ensure agents/threads
+    are naturally prioritized without needing separate protected categories.
+    """
+    name = entity.get("name", "").lower()
+    conn = connectivity.get(name, 0)
+    p = persistence.get(name, 0)
+    salience = entity.get("salience", 0.5)
+
+    etype = classify_entity_type(entity.get("name", ""))
+    type_bonus = {"agent": 0.5, "thread": 0.2}.get(etype, 0.0)
+
+    xref = 0.2 if (cross_field_refs and name in cross_field_refs) else 0.0
+    freshness = 0.1 if p == 0 and salience >= 0.4 else 0.0
+
+    return salience * 0.25 + conn * 0.15 + p * 0.15 + xref + type_bonus + freshness
+
+
+def find_cross_field_references(db_path: str = None) -> set:
+    """Find entity names referenced in gist, goal, episodic, or predictive_cue.
+
+    Uses fuzzy matching: breaks entity names into key terms and checks
+    if any appear in the non-entity CCS fields.
+    """
+    _db = db_path or str(DB)
+    try:
+        conn = sqlite3.connect(_db)
+        row = conn.execute(
+            "SELECT semantic_gist, goal_orientation, episodic_trace, "
+            "predictive_cue, focal_entities "
+            "FROM cognitive_state WHERE id = 1"
+        ).fetchone()
+        conn.close()
+        if not row:
+            return set()
+        text_fields = " ".join(str(f) for f in row[:4] if f).lower()
+        ent_raw = row[4]
+        if not ent_raw:
+            return set()
+        entities = json.loads(ent_raw) if isinstance(ent_raw, str) else ent_raw
+        if not isinstance(entities, list):
+            return set()
+        referenced = set()
+        for e in entities:
+            if not isinstance(e, dict):
+                continue
+            name = e.get("name", "")
+            if not name:
+                continue
+            name_lower = name.lower()
+            if name_lower in text_fields:
+                referenced.add(name_lower)
+                continue
+            terms = re.split(r'[\s\-_/()]+', name_lower)
+            significant = [t for t in terms if len(t) >= 3 and t not in {
+                "the", "and", "for", "with", "test", "model", "based",
+            }]
+            if significant and any(t in text_fields for t in significant):
+                referenced.add(name_lower)
+        return referenced
+    except Exception:
+        return set()
 
 
 def extract_entity_list(snap_or_field) -> list[dict]:
@@ -180,7 +247,7 @@ def classify_entity_type(name: str) -> str:
     name_lower = name.lower().strip()
     if re.search(r'\.(py|rs|js|md|sh|toml|json)$', name_lower):
         return "file"
-    if name_lower in {"nate", "hermes", "gemma"}:
+    if name_lower in {"nate", "hermes", "gemma", "mistral", "mistral large"}:
         return "agent"
     if "thread" in name_lower:
         return "thread"
@@ -204,8 +271,20 @@ def check_staleness(entity_name: str, context: str = "", window: int = 100) -> b
     """
     name_lower = entity_name.lower().strip()
 
+    # Build partial match prefixes (handles "Thread #320" matching
+    # "Thread #320 Ecology of Identity" — natural abbreviation in context)
+    name_parts = name_lower.split()
+    prefixes = [name_lower]
+    if len(name_parts) >= 2:
+        prefixes.append(" ".join(name_parts[:2]))
+    if len(name_parts) >= 3:
+        prefixes.append(" ".join(name_parts[:3]))
+
+    def _matches(text_lower: str) -> bool:
+        return any(p in text_lower for p in prefixes)
+
     # Check if mentioned in current session context
-    if context and name_lower in context.lower():
+    if context and _matches(context.lower()):
         return False
 
     # Check recent activity feed
@@ -218,7 +297,7 @@ def check_staleness(entity_name: str, context: str = "", window: int = 100) -> b
         db.close()
 
         for row in rows:
-            if name_lower in row[0].lower():
+            if _matches(row[0].lower()):
                 return False
     except Exception:
         # If we can't check, assume not stale (conservative)
@@ -344,7 +423,7 @@ def enforce_quota(
         for name in protected_dropped:
             guarded.append(old_by_name[name])
         if len(guarded) > MAX_ENTITIES:
-            guarded.sort(key=lambda e: e.get("salience", 0.5), reverse=True)
+            guarded.sort(key=lambda e: entity_retention_score(e, connectivity, persistence), reverse=True)
             guarded = guarded[:MAX_ENTITIES]
         return guarded
 
@@ -427,18 +506,20 @@ def enforce_quota(
     dormant = [e for e in guarded if e.get("dormant")]
 
     if len(active) > MAX_ENTITIES:
-        active.sort(key=lambda e: e.get("salience", 0.5), reverse=True)
+        active.sort(key=lambda e: entity_retention_score(e, connectivity, persistence), reverse=True)
         active = active[:MAX_ENTITIES]
 
     if len(dormant) > DORMANT_SLOTS:
-        dormant.sort(key=lambda e: e.get("salience", 0.5), reverse=True)
+        dormant.sort(key=lambda e: entity_retention_score(e, connectivity, persistence), reverse=True)
         dormant = dormant[:DORMANT_SLOTS]
 
     return active + dormant
 
 
-DECAY_THRESHOLD = 15   # compressions without change before decay eligible
-MAX_DECAY_PER_CYCLE = 2  # max entities removed by proactive decay per compression
+DECAY_THRESHOLD = 10   # compressions without change before decay eligible (was 15; lowered to match ~half-life of 8.8)
+MAX_DECAY_PER_CYCLE = 2  # max entities removed by proactive decay per compression (normal)
+MAX_DECAY_HIGH_STALENESS = 5  # max entities removed when staleness ratio > 50%
+STALENESS_RATIO_THRESHOLD = 0.5  # fraction of stale entities that triggers aggressive decay
 
 
 def proactive_decay(
@@ -454,6 +535,12 @@ def proactive_decay(
     zero to identity coherence. The entity guard's staleness check only fires
     when the compressor tries to drop entities, but the compressor has learned
     to retain everything. This creates a self-reinforcing accumulation loop.
+
+    FORGE-informed adaptive rate (2026-05-19): when overall staleness exceeds
+    STALENESS_RATIO_THRESHOLD (50%), increase max_decay to prevent accumulation.
+    Matches FORGE finding that tau=-11.0 (intervene only on catastrophic state)
+    beats tau=-1.1 (intervene on everything). High staleness IS the catastrophic
+    state that warrants aggressive intervention.
 
     This function runs EVERY compression and removes entities that are both:
     1. Frozen: unchanged in entity list for > decay_threshold compressions
@@ -502,9 +589,15 @@ def proactive_decay(
 
     decay_candidates.sort(key=lambda x: (x[1], -x[2]))
 
+    staleness_ratio = len(decay_candidates) / max(len(entities), 1)
+    effective_max = max_decay
+    if staleness_ratio > STALENESS_RATIO_THRESHOLD:
+        effective_max = MAX_DECAY_HIGH_STALENESS
+        print(f"  ADAPTIVE DECAY: {staleness_ratio:.0%} staleness > {STALENESS_RATIO_THRESHOLD:.0%} threshold → max_decay={effective_max}")
+
     decayed = []
     kept = list(entities)
-    for ent, salience, frozen_for in decay_candidates[:max_decay]:
+    for ent, salience, frozen_for in decay_candidates[:effective_max]:
         kept = [e for e in kept if e["name"].lower().strip() != ent["name"].lower().strip()]
         decayed.append(ent["name"])
         print(f"  DECAY: {ent['name']} (salience={salience:.2f}, frozen={frozen_for} compressions)")

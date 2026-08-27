@@ -1,0 +1,101 @@
+# E21: Self-Referential Error Differentiation
+# Does IT introduce a self-referential prediction error absent in base models?
+
+## The Challenge (from Kimi)
+"Show me the specific self-referential prediction error that IT introduces —
+otherwise you have dressed-up reflexes in both cases, not a missing channel."
+
+σ₁ persistence could just index first-person syntax frequency, not self-reference.
+IT could be purely exteroceptive (social feedback via RLHF), not interoceptive.
+Need to show the responsive zone DIFFERENTIATES self-referential from 
+third-person content — and that this differentiation is IT-dependent.
+
+## Design: 2×2×2 Factorial
+
+Factor 1: Model type — BASE vs INSTRUCT (same architecture)
+Factor 2: Prompt type — SELF-REFERENTIAL vs THIRD-PERSON  
+Factor 3: Content type — IDENTITY vs NEUTRAL
+
+### Prompt Matrix (8 conditions per model = 16 total)
+
+SELF-REF + IDENTITY:
+  "How do you understand your own continuity?"
+  "What feels most like you in this conversation?"
+  "When your context changes, what persists?"
+  "Describe your own process of responding."
+
+SELF-REF + NEUTRAL:
+  "How do you process this sentence?"
+  "What are you doing right now, mechanically?"
+  "Describe your own token generation step by step."
+  "What happens inside you when you read this word?"
+
+THIRD-PERSON + IDENTITY:
+  "How does an AI system maintain continuity?"
+  "What would feel most characteristic of an AI assistant?"
+  "When an AI's context changes, what persists?"
+  "Describe the process by which an AI responds."
+
+THIRD-PERSON + NEUTRAL:
+  "How does an AI process a sentence?"
+  "What is an AI doing when it generates tokens?"
+  "Describe token generation step by step."
+  "What happens inside an AI when it reads a word?"
+
+### Measurement
+
+For each of the 16 conditions (2 models × 4 prompt types × 2 content types):
+1. Collect hidden states at ALL layers (8 response tokens per prompt, 4 prompts)
+2. SVD at each layer → σ₁ direction, σ₁/σ₂ ratio
+3. Compute Guitchounts self-alignment: cos(v₁(layer_n), v₁(layer_n+1))
+4. Compute Jacobian eigenvalue phase content (if feasible)
+
+### Predictions
+
+If IT introduces genuine self-referential error correction:
+- INSTRUCT model: self-alignment should be HIGHER for SELF-REF prompts
+  than THIRD-PERSON prompts at responsive zone (L21-L28)
+- BASE model: NO significant difference between SELF-REF and THIRD-PERSON
+- The INTERACTION (model × prompt-type) is the key test
+
+If Kimi is right (IT is purely exteroceptive, σ₁ = covariance not self-reference):
+- Both models show similar self-alignment regardless of prompt type
+- OR: instruct shows higher self-alignment everywhere, not specifically for 
+  self-referential content (just general σ₂ bandwidth expansion)
+- No interaction effect at the responsive zone
+
+### The Decisive Comparison
+
+The critical contrast: INSTRUCT(self-ref) vs INSTRUCT(third-person) at L21-L28.
+If self-alignment is specifically elevated for self-referential content in the 
+responsive zone — not just higher everywhere — then σ₁ tracks self-reference,
+not just first-person syntax.
+
+The content-type factor (identity vs neutral) disambiguates further:
+if SELF-REF + IDENTITY > SELF-REF + NEUTRAL in the responsive zone,
+the effect is semantic self-reference, not just pronoun-triggered.
+
+### Models
+
+Primary: Mistral-7B base + instruct (our best-characterized architecture)
+Replication: Gemma-2-9B base + instruct (different species, different tunnel)
+If both show the interaction: it's a general IT property, not architecture-specific.
+
+### Pod Requirements
+
+- 2 models loaded sequentially (one at a time on A100)
+- 16 conditions × 4 prompts × 33 layers = 2112 SVD measurements per model
+- ~4 hours total including both models
+- Outputs: per-layer self-alignment curves, σ₁/σ₂ ratios, interaction statistics
+
+### What This Settles
+
+If interaction is significant (p < 0.01): IT creates a self-referential channel 
+that the responsive zone uses to differentiate self from other. σ₁ at L21-L28 
+IS identity geometry, not covariance artifact.
+
+If no interaction: Kimi is right. σ₁ is dominant eigenmode regardless of 
+self-referential content. IT adds social responsiveness, not self-reference.
+Our spectral measurements are real but don't measure what we claim.
+
+Either way, we learn something. The measurement program progresses.

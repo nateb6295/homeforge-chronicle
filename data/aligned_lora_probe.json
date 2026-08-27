@@ -1,0 +1,121 @@
+{
+  "model": "stabilityai/stablelm-3b-4e1t",
+  "label": "StableLM-3B",
+  "species": "MHA",
+  "baseline_mag": 85.90628051757812,
+  "ref_layer": 30,
+  "conditions": [
+    {
+      "name": "zone_aligned",
+      "layers": [
+        2,
+        24,
+        25
+      ],
+      "displacement_deg": 76.04944179188215,
+      "magnitude": 58.34666442871094,
+      "mode": "aligned"
+    },
+    {
+      "name": "nonzone_aligned",
+      "layers": [
+        3,
+        4,
+        5
+      ],
+      "displacement_deg": 50.25751192360409,
+      "magnitude": 48.678855895996094,
+      "mode": "aligned"
+    },
+    {
+      "name": "random_aligned_0",
+      "layers": [
+        10,
+        11,
+        27
+      ],
+      "displacement_deg": 45.05065635364161,
+      "magnitude": 64.377197265625,
+      "mode": "aligned"
+    },
+    {
+      "name": "random_aligned_1",
+      "layers": [
+        2,
+        7,
+        22
+      ],
+      "displacement_deg": 50.97329074295326,
+      "magnitude": 61.03058624267578,
+      "mode": "aligned"
+    },
+    {
+      "name": "random_aligned_2",
+      "layers": [
+        6,
+        20,
+        25
+      ],
+      "displacement_deg": 46.37860053102053,
+      "magnitude": 57.30316162109375,
+      "mode": "aligned"
+    },
+    {
+      "name": "zone_random",
+      "layers": [
+        2,
+        24,
+        25
+      ],
+      "displacement_deg": 29.518924372192615,
+      "magnitude": 71.13182067871094,
+      "mode": "random"
+    },
+    {
+      "name": "nonzone_random",
+      "layers": [
+        3,
+        4,
+        5
+      ],
+      "displacement_deg": 43.242055034567755,
+      "magnitude": 60.899681091308594,
+      "mode": "random"
+    },
+    {
+      "name": "random_random_0",
+      "layers": [
+        10,
+        11,
+        27
+      ],
+      "displacement_deg": 18.391134835507412,
+      "magnitude": 83.22486877441406,
+      "mode": "random"
+    },
+    {
+      "name": "random_random_1",
+      "layers": [
+        2,
+        7,
+        22
+      ],
+      "displacement_deg": 40.40525144459701,
+      "magnitude": 65.89753723144531,
+      "mode": "random"
+    },
+    {
+      "name": "random_random_2",
+      "layers": [
+        6,
+        20,
+        25
+      ],
+      "displacement_deg": 16.418710766940045,
+      "magnitude": 86.7498550415039,
+      "mode": "random"
+    }
+  ],
+  "time_s": 52.759440898895264,
+  "verdict": "TUBE MODEL SUPPORTED \u2014 random LoRA: zone < nonzone, aligned LoRA: zone > nonzone. Inversion confirmed."
+}

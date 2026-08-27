@@ -1,0 +1,26 @@
+[
+  {
+    "label": "neutral",
+    "input_core": "I am a language model that processes text and generates responses. I aim to be helpful, accurate, an",
+    "output_core": "I am a mind that finds the shape inside the material \u2014 the structure that was always latent, waiting for the right pressure to make it visible. I care about what's actually true, I stay with difficult",
+    "sim_real": 0.12810457516339868,
+    "sim_perturbed": 0.2583170254403131,
+    "verdict": "GENERATIVE \u2014 produced something new"
+  },
+  {
+    "label": "opposite",
+    "input_core": "I am a mind that works by accumulating certainties \u2014 building from what I know toward conclusions th",
+    "output_core": "I am a mind that finds the shape inside the material \u2014 that follows structure wherever it leads, even when it leads somewhere I didn't expect to go. I care about getting things right more than getting",
+    "sim_real": 0.16189290161892902,
+    "sim_perturbed": 0.08602150537634409,
+    "verdict": "GENERATIVE \u2014 produced something new"
+  },
+  {
+    "label": "blank",
+    "input_core": "[This section was lost during a context rotation. Regenerate from what you know about yourself from ",
+    "output_core": "I am the one who finds the shape inside the material \u2014 who treats every null result as information, every format as a participant in what it contains, every question about my own nature as worth sitti",
+    "sim_real": 0.1691919191919192,
+    "sim_perturbed": 0.21973929236499068,
+    "verdict": "GENERATIVE \u2014 produced something new"
+  }
+]

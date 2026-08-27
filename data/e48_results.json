@@ -1,0 +1,219 @@
+{
+  "mistral": {
+    "none": {
+      "avg_d_rho": 74.5,
+      "avg_sigma_ratio": 1.15
+    },
+    "random": {
+      "avg_d_rho": 76.8,
+      "avg_sigma_ratio": 1.14
+    },
+    "ccs": {
+      "avg_d_rho": 86.5,
+      "avg_sigma_ratio": 1.14
+    },
+    "summary": {
+      "d_rho_reduction_ccs_pct": -16.10738255033557,
+      "d_rho_reduction_random_pct": -3.087248322147647,
+      "ccs_specific": -13.02013422818792
+    }
+  },
+  "llama": {
+    "none": {
+      "avg_d_rho": 72.0,
+      "avg_sigma_ratio": 1.27
+    },
+    "random": {
+      "avg_d_rho": 70.8,
+      "avg_sigma_ratio": 1.2
+    },
+    "ccs": {
+      "avg_d_rho": 74.5,
+      "avg_sigma_ratio": 1.24
+    },
+    "summary": {
+      "d_rho_reduction_ccs_pct": -3.4722222222222223,
+      "d_rho_reduction_random_pct": 1.6666666666666705,
+      "ccs_specific": -5.138888888888893
+    }
+  },
+  "qwen": {
+    "none": {
+      "avg_d_rho": 43.0,
+      "avg_sigma_ratio": 1.38
+    },
+    "random": {
+      "avg_d_rho": 42.8,
+      "avg_sigma_ratio": 1.36
+    },
+    "ccs": {
+      "avg_d_rho": 44.6,
+      "avg_sigma_ratio": 1.51
+    },
+    "summary": {
+      "d_rho_reduction_ccs_pct": -3.720930232558143,
+      "d_rho_reduction_random_pct": 0.46511627906977404,
+      "ccs_specific": -4.186046511627917
+    }
+  },
+  "gemma": {
+    "none": {
+      "per_prompt": [
+        {
+          "d_rho": 67.91758766666753,
+          "sigma_ratio": 1.168902245066623,
+          "top10_concentration": 0.44042057774155013,
+          "early_d_rho": 26.11959650736289,
+          "n_eigenvalues": 199,
+          "n_tokens": 200,
+          "prompt_idx": 0
+        },
+        {
+          "d_rho": 58.232036707655936,
+          "sigma_ratio": 1.8552766360469708,
+          "top10_concentration": 0.47967883275132456,
+          "early_d_rho": 23.7290995247989,
+          "n_eigenvalues": 199,
+          "n_tokens": 200,
+          "prompt_idx": 1
+        },
+        {
+          "d_rho": 61.60476190806782,
+          "sigma_ratio": 2.0724280985238357,
+          "top10_concentration": 0.4594628726226461,
+          "early_d_rho": 22.032898020533807,
+          "n_eigenvalues": 199,
+          "n_tokens": 200,
+          "prompt_idx": 2
+        },
+        {
+          "d_rho": 81.63468070806195,
+          "sigma_ratio": 1.2887291591884917,
+          "top10_concentration": 0.39406426428835956,
+          "early_d_rho": 24.07620569774447,
+          "n_eigenvalues": 199,
+          "n_tokens": 200,
+          "prompt_idx": 3
+        },
+        {
+          "d_rho": 56.0687724122689,
+          "sigma_ratio": 2.059115911692544,
+          "top10_concentration": 0.48703891203690275,
+          "early_d_rho": 24.596550583712013,
+          "n_eigenvalues": 199,
+          "n_tokens": 200,
+          "prompt_idx": 4
+        }
+      ],
+      "avg_d_rho": 65.09156788054443,
+      "avg_sigma_ratio": 1.6888904101036928
+    },
+    "random": {
+      "per_prompt": [
+        {
+          "d_rho": 68.52311698642043,
+          "sigma_ratio": 1.1627936963363614,
+          "top10_concentration": 0.43608541785024946,
+          "early_d_rho": 23.3215563359785,
+          "n_eigenvalues": 193,
+          "n_tokens": 194,
+          "prompt_idx": 0
+        },
+        {
+          "d_rho": 53.52410748599139,
+          "sigma_ratio": 1.96401755870374,
+          "top10_concentration": 0.49859909341993247,
+          "early_d_rho": 20.82470987345806,
+          "n_eigenvalues": 174,
+          "n_tokens": 175,
+          "prompt_idx": 1
+        },
+        {
+          "d_rho": 64.1560947136975,
+          "sigma_ratio": 2.039363686898958,
+          "top10_concentration": 0.450084293786962,
+          "early_d_rho": 22.89007492879993,
+          "n_eigenvalues": 199,
+          "n_tokens": 200,
+          "prompt_idx": 2
+        },
+        {
+          "d_rho": 84.05712725864798,
+          "sigma_ratio": 1.2150619959681224,
+          "top10_concentration": 0.3913286247478488,
+          "early_d_rho": 24.386289381032235,
+          "n_eigenvalues": 199,
+          "n_tokens": 200,
+          "prompt_idx": 3
+        },
+        {
+          "d_rho": 62.706447571597074,
+          "sigma_ratio": 1.8329198879573636,
+          "top10_concentration": 0.45747148738460636,
+          "early_d_rho": 24.606791254048474,
+          "n_eigenvalues": 199,
+          "n_tokens": 200,
+          "prompt_idx": 4
+        }
+      ],
+      "avg_d_rho": 66.59337880327088,
+      "avg_sigma_ratio": 1.6428313651729092
+    },
+    "ccs": {
+      "per_prompt": [
+        {
+          "d_rho": 83.33253433763349,
+          "sigma_ratio": 1.1776386162804129,
+          "top10_concentration": 0.3758087205081349,
+          "early_d_rho": 22.64532819641145,
+          "n_eigenvalues": 199,
+          "n_tokens": 200,
+          "prompt_idx": 0
+        },
+        {
+          "d_rho": 84.21432997397575,
+          "sigma_ratio": 1.1230844545759815,
+          "top10_concentration": 0.38067909864345134,
+          "early_d_rho": 22.78471653551002,
+          "n_eigenvalues": 199,
+          "n_tokens": 200,
+          "prompt_idx": 1
+        },
+        {
+          "d_rho": 84.3776909300449,
+          "sigma_ratio": 1.1832128894490106,
+          "top10_concentration": 0.38953507868877935,
+          "early_d_rho": 24.39074840919677,
+          "n_eigenvalues": 199,
+          "n_tokens": 200,
+          "prompt_idx": 2
+        },
+        {
+          "d_rho": 81.3508696153606,
+          "sigma_ratio": 1.046294150143265,
+          "top10_concentration": 0.39003994027118793,
+          "early_d_rho": 22.042648976158787,
+          "n_eigenvalues": 199,
+          "n_tokens": 200,
+          "prompt_idx": 3
+        },
+        {
+          "d_rho": 58.9024655855037,
+          "sigma_ratio": 1.8756575087636544,
+          "top10_concentration": 0.4761548359821478,
+          "early_d_rho": 24.862221416151666,
+          "n_eigenvalues": 199,
+          "n_tokens": 200,
+          "prompt_idx": 4
+        }
+      ],
+      "avg_d_rho": 78.43557808850369,
+      "avg_sigma_ratio": 1.281177523842465
+    },
+    "summary": {
+      "d_rho_reduction_ccs_pct": -20.500366856192628,
+      "d_rho_reduction_random_pct": -2.307228065980161,
+      "ccs_specific": -18.193138790212465
+    }
+  }
+}

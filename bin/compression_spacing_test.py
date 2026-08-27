@@ -32,8 +32,8 @@ import requests
 from pathlib import Path
 
 DB = Path("/mnt/hdd/chronicle-data/processed.db")
-OLLAMA_URL = "http://192.168.1.11:11434"
-MODEL = "mxbai-embed-large"
+OLLAMA_URL = "http://localhost:11434"
+MODEL = "snowflake-arctic-embed2"
 
 
 def get_embedding(text: str) -> list:

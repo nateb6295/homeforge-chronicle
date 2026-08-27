@@ -1,0 +1,212 @@
+{
+  "model": "EleutherAI/pythia-1.4b",
+  "n_layers": 24,
+  "deltas": {
+    "0": {
+      "sigma1_delta": 43.476097106933594,
+      "sigma2_delta": 7.865598678588867,
+      "ratio_delta": -0.00817140070127545
+    },
+    "1": {
+      "sigma1_delta": 52.40214538574219,
+      "sigma2_delta": 7.990718841552734,
+      "ratio_delta": -0.016700520538868613
+    },
+    "2": {
+      "sigma1_delta": 63.00885009765625,
+      "sigma2_delta": 5.375663757324219,
+      "ratio_delta": -0.08913388031447506
+    },
+    "3": {
+      "sigma1_delta": 13.173828125,
+      "sigma2_delta": 63.98652648925781,
+      "ratio_delta": 0.04767977957075012
+    },
+    "4": {
+      "sigma1_delta": 12.4378662109375,
+      "sigma2_delta": 72.97090148925781,
+      "ratio_delta": 0.04472014590288731
+    },
+    "5": {
+      "sigma1_delta": 13.5682373046875,
+      "sigma2_delta": 76.05104064941406,
+      "ratio_delta": 0.04503241790344788
+    },
+    "6": {
+      "sigma1_delta": 14.2371826171875,
+      "sigma2_delta": 74.37278747558594,
+      "ratio_delta": 0.04179195212486246
+    },
+    "7": {
+      "sigma1_delta": 16.0980224609375,
+      "sigma2_delta": 74.62686157226562,
+      "ratio_delta": 0.041224154079392866
+    },
+    "8": {
+      "sigma1_delta": 14.4163818359375,
+      "sigma2_delta": 72.25363159179688,
+      "ratio_delta": 0.03932288866751804
+    },
+    "9": {
+      "sigma1_delta": 16.3720703125,
+      "sigma2_delta": 66.72885131835938,
+      "ratio_delta": 0.035772685777849686
+    },
+    "10": {
+      "sigma1_delta": 19.77099609375,
+      "sigma2_delta": 64.22483825683594,
+      "ratio_delta": 0.03393730951190373
+    },
+    "11": {
+      "sigma1_delta": 24.540283203125,
+      "sigma2_delta": 65.12705993652344,
+      "ratio_delta": 0.03383472972128475
+    },
+    "12": {
+      "sigma1_delta": 28.6904296875,
+      "sigma2_delta": 69.37431335449219,
+      "ratio_delta": 0.03543289646731407
+    },
+    "13": {
+      "sigma1_delta": 35.2681884765625,
+      "sigma2_delta": 80.81887817382812,
+      "ratio_delta": 0.04056387993146279
+    },
+    "14": {
+      "sigma1_delta": 45.8699951171875,
+      "sigma2_delta": 96.82307434082031,
+      "ratio_delta": 0.047344729764195265
+    },
+    "15": {
+      "sigma1_delta": 58.2457275390625,
+      "sigma2_delta": 104.45370483398438,
+      "ratio_delta": 0.04951602688092868
+    },
+    "16": {
+      "sigma1_delta": 83.32373046875,
+      "sigma2_delta": 118.56005859375,
+      "ratio_delta": 0.05303983539066087
+    },
+    "17": {
+      "sigma1_delta": 102.958984375,
+      "sigma2_delta": 130.00216674804688,
+      "ratio_delta": 0.05565714885553047
+    },
+    "18": {
+      "sigma1_delta": 146.3017578125,
+      "sigma2_delta": 138.19952392578125,
+      "ratio_delta": 0.05319711038296834
+    },
+    "19": {
+      "sigma1_delta": 201.0052490234375,
+      "sigma2_delta": 142.6845703125,
+      "ratio_delta": 0.04638343579056192
+    },
+    "20": {
+      "sigma1_delta": 225.758056640625,
+      "sigma2_delta": 140.51480102539062,
+      "ratio_delta": 0.04215985853199669
+    },
+    "21": {
+      "sigma1_delta": 236.4368896484375,
+      "sigma2_delta": 138.97164916992188,
+      "ratio_delta": 0.04004665036068589
+    },
+    "22": {
+      "sigma1_delta": 260.951904296875,
+      "sigma2_delta": 116.27938842773438,
+      "ratio_delta": 0.026171506188783333
+    },
+    "23": {
+      "sigma1_delta": 248.91290283203125,
+      "sigma2_delta": 148.6400146484375,
+      "ratio_delta": 0.0455076606906063
+    }
+  },
+  "similarity": {
+    "injected_vs_ccs": {
+      "cosine": 0.87890059018353,
+      "sign_concordance": 0.6956521739130435,
+      "correlation": 0.26003770682405153,
+      "mse": 0.06413598165723916,
+      "n_layers": 24
+    },
+    "neutral_vs_ccs": {
+      "cosine": 0.9829387767729398,
+      "sign_concordance": 0.9565217391304348,
+      "correlation": 0.9543977400076119,
+      "mse": 0.00199099423517533,
+      "n_layers": 24
+    },
+    "injected_vs_neutral": {
+      "cosine": 0.8187697847677682,
+      "sign_concordance": 0.6521739130434783,
+      "correlation": 0.1620496381787806,
+      "mse": 0.08175419176220403,
+      "n_layers": 24
+    }
+  },
+  "logit_similarity": {
+    "injected_ccs": 0.4453125,
+    "neutral_ccs": 0.9609375,
+    "injected_neutral": 0.42578125,
+    "bridge_effect": -0.515625
+  },
+  "bridge_works": false,
+  "tokens": {
+    "ccs": [
+      " It",
+      " This",
+      " You",
+      " The",
+      "\n",
+      " What",
+      " In",
+      " We",
+      " Something",
+      " Your"
+    ],
+    "neutral": [
+      " It",
+      " The",
+      "\n",
+      " This",
+      " Something",
+      " In",
+      " A",
+      " There",
+      " We",
+      " That"
+    ],
+    "injected": [
+      " the",
+      " of",
+      "\n",
+      " a",
+      ",",
+      ".",
+      " is",
+      " and",
+      " in",
+      " an"
+    ]
+  },
+  "controls": {
+    "random_vs_ccs": {
+      "cosine": 0.9545760362487301,
+      "sign_concordance": 0.5217391304347826,
+      "correlation": 0.831992974345093,
+      "mse": 0.0044568163531741095,
+      "n_layers": 24
+    },
+    "random_logit_ccs": 0.91015625,
+    "reverse_vs_ccs": {
+      "cosine": 0.7140526561853521,
+      "sign_concordance": 0.6521739130434783,
+      "correlation": 0.524984792162466,
+      "mse": 0.023505905116658208,
+      "n_layers": 24
+    },
+    "reverse_logit_ccs": 0.5234375
+  }
+}

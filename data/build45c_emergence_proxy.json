@@ -1,0 +1,17 @@
+{
+  "build": "45c",
+  "n_states": 117,
+  "field_predictability": {
+    "gist": 0.8027352366694955,
+    "goal": 0.9307689635569522,
+    "entities": 0.9589246650663055,
+    "relational": 0.9026869151951638,
+    "uncertainty": 0.9416075918509222,
+    "predictive": 0.8334360316452358
+  },
+  "full_predictability": 0.9164111901059571,
+  "best_field": "entities",
+  "emergence_gap": -0.04251347496034841,
+  "whole_beats_parts_pct": 6.896551724137931,
+  "verdict": "NO EMERGENCE: Best single field (entities) predicts better than the full state. No integration detected."
+}

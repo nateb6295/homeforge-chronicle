@@ -1,0 +1,80 @@
+{
+  "EleutherAI/pythia-410m": {
+    "label": "Pythia-410M",
+    "n_layers": 24,
+    "n_params": 405334016,
+    "mean_kl": 0.0008002859928334752,
+    "layers": [
+      {
+        "layer": 6,
+        "relative_depth": 0.25,
+        "sigma1": 15.73261547088623,
+        "kl_divergence": 0.00012368499301373959
+      },
+      {
+        "layer": 12,
+        "relative_depth": 0.5,
+        "sigma1": 6.591805458068848,
+        "kl_divergence": 0.0010562713723629713
+      },
+      {
+        "layer": 18,
+        "relative_depth": 0.75,
+        "sigma1": 6.797897815704346,
+        "kl_divergence": 0.001220901613123715
+      }
+    ]
+  },
+  "EleutherAI/pythia-1b": {
+    "label": "Pythia-1B",
+    "n_layers": 16,
+    "n_params": 1011781632,
+    "mean_kl": 0.0009401332257160296,
+    "layers": [
+      {
+        "layer": 4,
+        "relative_depth": 0.25,
+        "sigma1": 14.821391105651855,
+        "kl_divergence": 0.00021062252926640213
+      },
+      {
+        "layer": 8,
+        "relative_depth": 0.5,
+        "sigma1": 11.893330574035645,
+        "kl_divergence": 0.0012662532972171903
+      },
+      {
+        "layer": 12,
+        "relative_depth": 0.75,
+        "sigma1": 12.639875411987305,
+        "kl_divergence": 0.0013435238506644964
+      }
+    ]
+  },
+  "EleutherAI/pythia-2.8b": {
+    "label": "Pythia-2.8B",
+    "n_layers": 32,
+    "n_params": 2775208960,
+    "mean_kl": 0.00040349973520884913,
+    "layers": [
+      {
+        "layer": 8,
+        "relative_depth": 0.25,
+        "sigma1": 13.227156639099121,
+        "kl_divergence": 0.00019841076573356986
+      },
+      {
+        "layer": 16,
+        "relative_depth": 0.5,
+        "sigma1": 13.51144027709961,
+        "kl_divergence": 0.0006014849059283733
+      },
+      {
+        "layer": 24,
+        "relative_depth": 0.75,
+        "sigma1": 11.170541763305664,
+        "kl_divergence": 0.00041060353396460414
+      }
+    ]
+  }
+}

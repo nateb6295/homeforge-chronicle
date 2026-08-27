@@ -25,8 +25,8 @@ import sys
 import requests
 
 DB_PATH = os.environ.get("CHRONICLE_DB", "/mnt/hdd/chronicle-data/processed.db")
-OLLAMA_URL = os.environ.get("CHRONICLE_OLLAMA_URL", "http://192.168.1.11:11434")
-EMBED_MODEL = "mxbai-embed-large"
+OLLAMA_URL = os.environ.get("CHRONICLE_OLLAMA_URL", "http://localhost:11434")
+EMBED_MODEL = "snowflake-arctic-embed2"
 
 # Fields to ablate. Each entry: (field_name, description)
 ABLATION_FIELDS = [

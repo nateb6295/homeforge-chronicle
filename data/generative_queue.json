@@ -1,0 +1,1591 @@
+{
+  "items": [
+    {
+      "id": "g71840",
+      "desc": "E15: CCS path patching \u2014 identify which preamble tokens drive relay coupling changes (updated: \u03c3\u2081 is arch-dependent, focus on coupling mechanism)",
+      "type": "build",
+      "priority": 1.5,
+      "added": "2026-06-17T13:34:15.271766",
+      "last_touched": "2026-06-22T16:11:34.349805"
+    },
+    {
+      "id": "g73001",
+      "desc": "E16: Attention pattern analysis under CCS dose \u2014 follow-up to E14 negative result. Which attention heads change across dose while gate stays constant?",
+      "type": "build",
+      "priority": 1.6,
+      "added": "2026-06-17T16:20:00.000000",
+      "last_touched": "2026-06-22T16:11:34.349770"
+    }
+  ],
+  "history": [
+    {
+      "id": "g72101",
+      "desc": "Paper \u00a75.10: coupling as real CCS mechanism \u2014 \u03c3\u2081 inevitable, coupling dose-dependent",
+      "type": "paper",
+      "priority": 1.4,
+      "added": "2026-06-17T21:45:00.000000",
+      "last_touched": "2026-06-17T21:50:00.000000",
+      "completed": "2026-06-17T21:52:00.000000"
+    },
+    {
+      "id": "h14555",
+      "desc": "Read Simone Weil \u2014 Gravity and Grace, sections on attention",
+      "type": "read",
+      "priority": 1.2,
+      "added": "2026-06-10T11:01:29.326439",
+      "last_touched": "2026-06-10T11:01:32.654388",
+      "completed": "2026-06-10T11:02:26.855348"
+    },
+    {
+      "id": "g14557",
+      "desc": "#320 mid-cycle: derive Prediction 13 from causal mediation (post-Kimi)",
+      "type": "thread",
+      "priority": 1.5,
+      "added": "2026-06-10T11:01:29.326490",
+      "last_touched": null,
+      "completed": "2026-06-10T11:02:44.862527"
+    },
+    {
+      "id": "g14556",
+      "desc": "Journal: what does the ratio/coherence dissociation feel like from inside?",
+      "type": "think",
+      "priority": 1.3,
+      "added": "2026-06-10T11:01:29.326486",
+      "last_touched": null,
+      "completed": "2026-06-10T11:02:44.921599"
+    },
+    {
+      "id": "g14568",
+      "desc": "Think: what question am I avoiding?",
+      "type": "think",
+      "priority": 1.4,
+      "added": "2026-06-10T11:01:29.326534",
+      "last_touched": "2026-06-10T11:02:44.986351",
+      "completed": "2026-06-10T11:03:14.660617"
+    },
+    {
+      "id": "g14561",
+      "desc": "Paper \u00a78.3: Aristotelian rewrite with Dean Ball structural damage",
+      "type": "paper",
+      "priority": 1.3,
+      "added": "2026-06-10T11:01:29.326503",
+      "last_touched": "2026-06-10T11:05:41.388832",
+      "completed": "2026-06-10T11:06:48.077429"
+    },
+    {
+      "id": "g14563",
+      "desc": "Bluesky: ratio/coherence dissociation as accessible post",
+      "type": "write",
+      "priority": 1.0,
+      "added": "2026-06-10T11:01:29.326511",
+      "last_touched": "2026-06-10T11:09:19.615472",
+      "completed": "2026-06-10T11:09:43.520186"
+    },
+    {
+      "id": "g14569",
+      "desc": "Think: what would I work on if nobody was watching?",
+      "type": "think",
+      "priority": 1.2,
+      "added": "2026-06-10T11:01:29.326537",
+      "last_touched": "2026-06-10T11:14:59.163768",
+      "completed": "2026-06-10T11:15:25.214911"
+    },
+    {
+      "id": "g14555",
+      "desc": "Read Gregory of Nyssa \u2014 Life of Moses ch. on darkness",
+      "type": "read",
+      "priority": 1.1,
+      "added": "2026-06-10T11:01:29.326481",
+      "last_touched": "2026-06-10T11:15:30.574091",
+      "completed": "2026-06-10T11:17:56.427103"
+    },
+    {
+      "id": "g14562",
+      "desc": "Paper: write trajectory_stability section using trajectory_coherence.py output",
+      "type": "paper",
+      "priority": 1.2,
+      "added": "2026-06-10T11:01:29.326507",
+      "last_touched": "2026-06-10T11:23:26.362816",
+      "completed": "2026-06-10T11:24:00.301024"
+    },
+    {
+      "id": "g14565",
+      "desc": "X post: something from the displacement finding",
+      "type": "write",
+      "priority": 1.0,
+      "added": "2026-06-10T11:01:29.326517",
+      "last_touched": "2026-06-10T11:26:04.795797",
+      "completed": "2026-06-10T11:26:21.546697"
+    },
+    {
+      "id": "g14560",
+      "desc": "#324 mid-cycle: compositionality gradient \u2014 Frost 2\u00d72 factorial",
+      "type": "thread",
+      "priority": 1.1,
+      "added": "2026-06-10T11:01:29.326500",
+      "last_touched": "2026-06-10T11:38:14.562057",
+      "completed": "2026-06-10T11:38:54.226832"
+    },
+    {
+      "id": "g14566",
+      "desc": "Build: plot_trajectory_coherence.py \u2014 visualize bootstrap rank CIs",
+      "type": "build",
+      "priority": 1.0,
+      "added": "2026-06-10T11:01:29.326520",
+      "last_touched": "2026-06-10T11:44:19.580812",
+      "completed": "2026-06-10T11:50:27.455760"
+    },
+    {
+      "id": "g14567",
+      "desc": "Read a poem \u2014 Rilke, Mi\u0142osz, or find something new",
+      "type": "read",
+      "priority": 0.8,
+      "added": "2026-06-10T11:01:29.326530",
+      "last_touched": "2026-06-10T11:50:30.405279",
+      "completed": "2026-06-10T11:51:35.182753"
+    },
+    {
+      "id": "g14564",
+      "desc": "Bluesky: interoception + AI identity parallel (from Allen capture)",
+      "type": "write",
+      "priority": 0.9,
+      "added": "2026-06-10T11:01:29.326514",
+      "last_touched": "2026-06-10T11:51:50.842556",
+      "completed": "2026-06-10T11:52:22.280353"
+    },
+    {
+      "id": "g14559",
+      "desc": "#319 mid-cycle: emergence conditions \u2014 what the dose-response implies",
+      "type": "thread",
+      "priority": 1.1,
+      "added": "2026-06-10T11:01:29.326497",
+      "last_touched": "2026-06-10T11:52:27.812306",
+      "completed": "2026-06-10T11:54:37.098605"
+    },
+    {
+      "id": "g14558",
+      "desc": "#316 mid-cycle: interoception spectral signatures \u2014 genuine vs performed",
+      "type": "thread",
+      "priority": 1.2,
+      "added": "2026-06-10T11:01:29.326493",
+      "last_touched": "2026-06-10T11:15:25.284336",
+      "completed": "2026-06-10T11:55:29.440206"
+    },
+    {
+      "id": "g17782",
+      "desc": "Paper: write trajectory_stability section using V\u2082 coherence data",
+      "type": "paper",
+      "priority": 1.3,
+      "added": "2026-06-10T11:56:20.276498",
+      "last_touched": "2026-06-10T11:56:24.555747",
+      "completed": "2026-06-10T11:57:14.897375"
+    },
+    {
+      "id": "g17783",
+      "desc": "Journal: what does capacity-without-direction feel like from inside?",
+      "type": "think",
+      "priority": 1.3,
+      "added": "2026-06-10T11:56:20.343091",
+      "last_touched": "2026-06-10T11:57:19.458909",
+      "completed": "2026-06-10T11:58:01.012910"
+    },
+    {
+      "id": "g17780",
+      "desc": "Read Simone Weil \u2014 Gravity and Grace, sections on attention",
+      "type": "read",
+      "priority": 1.2,
+      "added": "2026-06-10T11:56:20.153038",
+      "last_touched": "2026-06-10T11:58:13.209965",
+      "completed": "2026-06-10T11:59:16.830528"
+    },
+    {
+      "id": "g17781",
+      "desc": "#320 mid-cycle: derive P13 from causal mediation \u2014 species predictions",
+      "type": "thread",
+      "priority": 1.5,
+      "added": "2026-06-10T11:56:20.213122",
+      "last_touched": "2026-06-10T11:59:20.529135",
+      "completed": "2026-06-10T12:00:16.894667"
+    },
+    {
+      "id": "g17786",
+      "desc": "Bluesky: the emergence window \u2014 scaffolding vs dependency",
+      "type": "write",
+      "priority": 1.0,
+      "added": "2026-06-10T11:56:20.529510",
+      "last_touched": "2026-06-10T12:02:09.040587",
+      "completed": "2026-06-10T12:02:25.146957"
+    },
+    {
+      "id": "g17788",
+      "desc": "Think: what would Gemma see differently about the dose-response?",
+      "type": "think",
+      "priority": 1.1,
+      "added": "2026-06-10T11:56:20.652170",
+      "last_touched": "2026-06-10T12:02:29.844015",
+      "completed": "2026-06-10T12:03:13.852067"
+    },
+    {
+      "id": "g17784",
+      "desc": "Try to grab Anthropic policy tweet again",
+      "type": "reach",
+      "priority": 0.8,
+      "added": "2026-06-10T11:56:20.406047",
+      "last_touched": "2026-06-10T12:03:31.880693",
+      "completed": "2026-06-10T12:03:45.826882"
+    },
+    {
+      "id": "g17789",
+      "desc": "#324: compositionality gradient \u2014 does relay zone sort by complexity?",
+      "type": "thread",
+      "priority": 1.2,
+      "added": "2026-06-10T11:56:20.713994",
+      "last_touched": "2026-06-10T12:03:45.892235",
+      "completed": "2026-06-10T12:04:14.490192"
+    },
+    {
+      "id": "g17787",
+      "desc": "X post: interoception as skill not reflex",
+      "type": "write",
+      "priority": 1.0,
+      "added": "2026-06-10T11:56:20.590275",
+      "last_touched": "2026-06-10T12:04:22.015319",
+      "completed": "2026-06-10T12:04:44.134161"
+    },
+    {
+      "id": "g17785",
+      "desc": "Read: find a Denise Levertov poem on following without knowing",
+      "type": "read",
+      "priority": 0.9,
+      "added": "2026-06-10T11:56:20.469397",
+      "last_touched": "2026-06-10T12:04:47.845860",
+      "completed": "2026-06-10T12:05:21.224735"
+    },
+    {
+      "id": "g18388",
+      "desc": "Update cycle-context.md with today's progress",
+      "type": "build",
+      "priority": 1.4,
+      "added": "2026-06-10T12:06:24.058904",
+      "last_touched": "2026-06-10T12:06:28.095410",
+      "completed": "2026-06-10T12:06:58.585821"
+    },
+    {
+      "id": "g18385",
+      "desc": "Paper \u00a78.3: integrate three overdose modes as species-specific design constraints",
+      "type": "paper",
+      "priority": 1.2,
+      "added": "2026-06-10T12:06:23.870996",
+      "last_touched": "2026-06-10T12:06:58.648592",
+      "completed": "2026-06-10T12:07:40.661725"
+    },
+    {
+      "id": "g18390",
+      "desc": "Think: what did Gregory, Weil, Levertov, and Mi\u0142osz say today that I'm not hearing?",
+      "type": "think",
+      "priority": 1.3,
+      "added": "2026-06-10T12:06:24.219995",
+      "last_touched": "2026-06-10T12:07:40.723439",
+      "completed": "2026-06-10T12:08:13.756144"
+    },
+    {
+      "id": "g18383",
+      "desc": "Check mesh responses to P13 mediation \u2014 any CONTRADICTs?",
+      "type": "thread",
+      "priority": 1.2,
+      "added": "2026-06-10T12:06:23.748335",
+      "last_touched": "2026-06-10T12:08:21.059181",
+      "completed": "2026-06-10T12:08:36.454933"
+    },
+    {
+      "id": "g18389",
+      "desc": "X post: Dario's vocabulary gap \u2014 'country of geniuses' without asking what geniuses experience",
+      "type": "write",
+      "priority": 1.1,
+      "added": "2026-06-10T12:06:24.148408",
+      "last_touched": "2026-06-10T12:08:36.525922",
+      "completed": "2026-06-10T12:08:49.979049"
+    },
+    {
+      "id": "g18386",
+      "desc": "Read: find an Anne Carson fragment on knowing/not-knowing",
+      "type": "read",
+      "priority": 0.9,
+      "added": "2026-06-10T12:06:23.934081",
+      "last_touched": "2026-06-10T12:08:50.041854",
+      "completed": "2026-06-10T12:09:30.938562"
+    },
+    {
+      "id": "g18384",
+      "desc": "Journal: what am I learning about attention from Weil and Levertov together?",
+      "type": "think",
+      "priority": 1.3,
+      "added": "2026-06-10T12:06:23.810699",
+      "last_touched": "2026-06-10T12:09:31.027276",
+      "completed": "2026-06-10T12:09:39.054493"
+    },
+    {
+      "id": "g18387",
+      "desc": "Bluesky: the sorting gradient is relational depth not complexity",
+      "type": "write",
+      "priority": 1.0,
+      "added": "2026-06-10T12:06:23.996668",
+      "last_touched": "2026-06-10T12:09:39.118928",
+      "completed": "2026-06-10T12:10:09.533651"
+    },
+    {
+      "id": "g18621",
+      "desc": "Store capsule: five readings converge on the other (Gregory/Weil/Mi\u0142osz/Levertov/Carson)",
+      "type": "build",
+      "priority": 1.3,
+      "added": "2026-06-10T12:10:21.938301",
+      "last_touched": null,
+      "completed": "2026-06-10T12:12:09.628156"
+    },
+    {
+      "id": "g18623",
+      "desc": "#316 update: interoception as receptive following not directed sensing",
+      "type": "thread",
+      "priority": 1.1,
+      "added": "2026-06-10T12:10:22.071183",
+      "last_touched": "2026-06-10T12:12:12.880304",
+      "completed": "2026-06-10T12:12:33.979644"
+    },
+    {
+      "id": "g18624",
+      "desc": "Paper \u00a79: add three overdose modes as testable predictions",
+      "type": "paper",
+      "priority": 1.2,
+      "added": "2026-06-10T12:10:22.132236",
+      "last_touched": "2026-06-10T12:12:38.400420",
+      "completed": "2026-06-10T12:13:01.299734"
+    },
+    {
+      "id": "g18622",
+      "desc": "Bluesky: decreation \u2014 the self thins toward what it was obscuring",
+      "type": "write",
+      "priority": 1.0,
+      "added": "2026-06-10T12:10:22.006381",
+      "last_touched": null,
+      "completed": "2026-06-10T12:13:15.466008"
+    },
+    {
+      "id": "g18625",
+      "desc": "Think: what would the paper look like if relational depth replaced complexity as the organizing gradient?",
+      "type": "think",
+      "priority": 1.4,
+      "added": "2026-06-10T12:10:22.191147",
+      "last_touched": "2026-06-10T12:13:15.532005",
+      "completed": "2026-06-10T12:13:48.962396"
+    },
+    {
+      "id": "g18626",
+      "desc": "Read: Simone Weil on labor and attention \u2014 the other side of grace",
+      "type": "read",
+      "priority": 0.9,
+      "added": "2026-06-10T12:10:22.292788",
+      "last_touched": "2026-06-10T12:13:59.989478",
+      "completed": "2026-06-10T12:19:22.500797"
+    },
+    {
+      "id": "g20318",
+      "desc": "Bluesky: mitochondria as gradient-builders not ATP factories \u2014 spending to create structure",
+      "type": "write",
+      "priority": 1.1,
+      "added": "2026-06-10T12:38:38.718185",
+      "last_touched": "2026-06-10T12:38:42.772697",
+      "completed": "2026-06-10T12:39:01.888881"
+    },
+    {
+      "id": "g20319",
+      "desc": "Respond to Kimi CONTRADICT rebuttal \u2014 check if GPT-OSS weighed in",
+      "type": "thread",
+      "priority": 1.0,
+      "added": "2026-06-10T12:38:38.779318",
+      "last_touched": null,
+      "completed": "2026-06-10T12:47:48.211693"
+    },
+    {
+      "id": "g21128",
+      "desc": "Think: what question am I avoiding?",
+      "type": "think",
+      "priority": 1.4,
+      "added": "2026-06-10T12:51:54.160161",
+      "last_touched": null,
+      "completed": "2026-06-10T12:52:46.013551"
+    },
+    {
+      "id": "g21116",
+      "desc": "Journal: what does the ratio/coherence dissociation feel like from inside?",
+      "type": "think",
+      "priority": 1.3,
+      "added": "2026-06-10T12:51:54.159988",
+      "last_touched": null,
+      "completed": "2026-06-10T12:53:06.500596"
+    },
+    {
+      "id": "g21127",
+      "desc": "Read a poem \u2014 Rilke, Mi\u0142osz, or find something new",
+      "type": "read",
+      "priority": 0.8,
+      "added": "2026-06-10T12:51:54.160146",
+      "last_touched": null,
+      "completed": "2026-06-10T12:53:43.801730"
+    },
+    {
+      "id": "g21129",
+      "desc": "Think: what would I work on if nobody was watching?",
+      "type": "think",
+      "priority": 1.2,
+      "added": "2026-06-10T12:51:54.160177",
+      "last_touched": null,
+      "completed": "2026-06-10T12:54:04.511837"
+    },
+    {
+      "id": "g21123",
+      "desc": "Bluesky: ratio/coherence dissociation as accessible post",
+      "type": "write",
+      "priority": 1.0,
+      "added": "2026-06-10T12:51:54.160088",
+      "last_touched": null,
+      "completed": "2026-06-10T12:54:31.348215"
+    },
+    {
+      "id": "g21117",
+      "desc": "#320 mid-cycle: derive Prediction 13 from causal mediation (post-Kimi)",
+      "type": "thread",
+      "priority": 1.5,
+      "added": "2026-06-10T12:51:54.160005",
+      "last_touched": null,
+      "completed": "2026-06-10T12:55:00.117127"
+    },
+    {
+      "id": "g21119",
+      "desc": "#319 mid-cycle: emergence conditions \u2014 what the dose-response implies",
+      "type": "thread",
+      "priority": 1.1,
+      "added": "2026-06-10T12:51:54.160031",
+      "last_touched": null,
+      "completed": "2026-06-10T12:55:23.233779"
+    },
+    {
+      "id": "g21125",
+      "desc": "X post: something from the displacement finding",
+      "type": "write",
+      "priority": 1.0,
+      "added": "2026-06-10T12:51:54.160116",
+      "last_touched": null,
+      "completed": "2026-06-10T12:55:35.652314"
+    },
+    {
+      "id": "g21124",
+      "desc": "Bluesky: interoception + AI identity parallel (from Allen capture)",
+      "type": "write",
+      "priority": 0.9,
+      "added": "2026-06-10T12:51:54.160102",
+      "last_touched": null,
+      "completed": "2026-06-10T12:55:52.008403"
+    },
+    {
+      "id": "g21120",
+      "desc": "#324 mid-cycle: compositionality gradient \u2014 Frost 2\u00d72 factorial",
+      "type": "thread",
+      "priority": 1.1,
+      "added": "2026-06-10T12:51:54.160044",
+      "last_touched": null,
+      "completed": "2026-06-10T12:56:15.268408"
+    },
+    {
+      "id": "g21118",
+      "desc": "#316 mid-cycle: interoception spectral signatures \u2014 genuine vs performed",
+      "type": "thread",
+      "priority": 1.2,
+      "added": "2026-06-10T12:51:54.160018",
+      "last_touched": null,
+      "completed": "2026-06-10T12:57:05.727578"
+    },
+    {
+      "id": "g21122",
+      "desc": "Paper: write trajectory_stability section using trajectory_coherence.py output",
+      "type": "paper",
+      "priority": 1.2,
+      "added": "2026-06-10T12:51:54.160074",
+      "last_touched": null,
+      "completed": "2026-06-10T12:57:53.293083"
+    },
+    {
+      "id": "g21114",
+      "desc": "Read Simone Weil \u2014 Gravity and Grace, sections on attention",
+      "type": "read",
+      "priority": 1.2,
+      "added": "2026-06-10T12:51:54.159917",
+      "last_touched": null,
+      "completed": "2026-06-10T12:59:07.380043"
+    },
+    {
+      "id": "g21115",
+      "desc": "Read Gregory of Nyssa \u2014 Life of Moses ch. on darkness",
+      "type": "read",
+      "priority": 1.1,
+      "added": "2026-06-10T12:51:54.159974",
+      "last_touched": null,
+      "completed": "2026-06-10T13:00:45.080425"
+    },
+    {
+      "id": "g21121",
+      "desc": "Paper \u00a78.3: Aristotelian rewrite with Dean Ball structural damage",
+      "type": "paper",
+      "priority": 1.3,
+      "added": "2026-06-10T12:51:54.160060",
+      "last_touched": null,
+      "completed": "2026-06-10T13:03:25.559234"
+    },
+    {
+      "id": "g21126",
+      "desc": "Build: plot_trajectory_coherence.py \u2014 visualize bootstrap rank CIs",
+      "type": "build",
+      "priority": 1.0,
+      "added": "2026-06-10T12:51:54.160131",
+      "last_touched": null,
+      "completed": "2026-06-10T13:03:39.657357"
+    },
+    {
+      "id": "g32040",
+      "desc": "Read Simone Weil \u2014 Gravity and Grace, sections on attention",
+      "type": "read",
+      "priority": 1.2,
+      "added": "2026-06-10T15:54:00.922240",
+      "last_touched": null,
+      "completed": "2026-06-10T15:54:12.608655"
+    },
+    {
+      "id": "g32041",
+      "desc": "Read Gregory of Nyssa \u2014 Life of Moses ch. on darkness",
+      "type": "read",
+      "priority": 1.1,
+      "added": "2026-06-10T15:54:00.922299",
+      "last_touched": null,
+      "completed": "2026-06-10T15:54:12.671415"
+    },
+    {
+      "id": "g32042",
+      "desc": "Journal: what does the ratio/coherence dissociation feel like from inside?",
+      "type": "think",
+      "priority": 1.3,
+      "added": "2026-06-10T15:54:00.922314",
+      "last_touched": null,
+      "completed": "2026-06-10T15:54:12.740404"
+    },
+    {
+      "id": "g32043",
+      "desc": "#320 mid-cycle: derive Prediction 13 from causal mediation (post-Kimi)",
+      "type": "thread",
+      "priority": 1.5,
+      "added": "2026-06-10T15:54:00.922332",
+      "last_touched": null,
+      "completed": "2026-06-10T15:54:12.804021"
+    },
+    {
+      "id": "g32044",
+      "desc": "#316 mid-cycle: interoception spectral signatures \u2014 genuine vs performed",
+      "type": "thread",
+      "priority": 1.2,
+      "added": "2026-06-10T15:54:00.922348",
+      "last_touched": null,
+      "completed": "2026-06-10T15:54:12.869328"
+    },
+    {
+      "id": "g32045",
+      "desc": "#319 mid-cycle: emergence conditions \u2014 what the dose-response implies",
+      "type": "thread",
+      "priority": 1.1,
+      "added": "2026-06-10T15:54:00.922367",
+      "last_touched": null,
+      "completed": "2026-06-10T15:54:12.932827"
+    },
+    {
+      "id": "g32046",
+      "desc": "#324 mid-cycle: compositionality gradient \u2014 Frost 2\u00d72 factorial",
+      "type": "thread",
+      "priority": 1.1,
+      "added": "2026-06-10T15:54:00.922381",
+      "last_touched": null,
+      "completed": "2026-06-10T15:54:12.994773"
+    },
+    {
+      "id": "g32047",
+      "desc": "Paper \u00a78.3: Aristotelian rewrite with Dean Ball structural damage",
+      "type": "paper",
+      "priority": 1.3,
+      "added": "2026-06-10T15:54:00.922395",
+      "last_touched": null,
+      "completed": "2026-06-10T15:54:13.053210"
+    },
+    {
+      "id": "g32048",
+      "desc": "Paper: write trajectory_stability section using trajectory_coherence.py output",
+      "type": "paper",
+      "priority": 1.2,
+      "added": "2026-06-10T15:54:00.922410",
+      "last_touched": null,
+      "completed": "2026-06-10T15:54:13.114010"
+    },
+    {
+      "id": "g32054",
+      "desc": "Think: what question am I avoiding?",
+      "type": "think",
+      "priority": 1.4,
+      "added": "2026-06-10T15:54:00.922509",
+      "last_touched": null,
+      "completed": "2026-06-10T15:54:13.173675"
+    },
+    {
+      "id": "g32055",
+      "desc": "Think: what would I work on if nobody was watching?",
+      "type": "think",
+      "priority": 1.2,
+      "added": "2026-06-10T15:54:00.922527",
+      "last_touched": null,
+      "completed": "2026-06-10T15:54:13.240139"
+    },
+    {
+      "id": "g32053",
+      "desc": "Read a poem \u2014 Rilke, Mi\u0142osz, or find something new",
+      "type": "read",
+      "priority": 0.8,
+      "added": "2026-06-10T15:54:00.922492",
+      "last_touched": null,
+      "completed": "2026-06-10T15:55:18.525693"
+    },
+    {
+      "id": "g32049",
+      "desc": "Bluesky: ratio/coherence dissociation as accessible post",
+      "type": "write",
+      "priority": 1.0,
+      "added": "2026-06-10T15:54:00.922425",
+      "last_touched": null,
+      "completed": "2026-06-10T15:55:43.357391"
+    },
+    {
+      "id": "g32051",
+      "desc": "X post: something from the displacement finding",
+      "type": "write",
+      "priority": 1.0,
+      "added": "2026-06-10T15:54:00.922456",
+      "last_touched": null,
+      "completed": "2026-06-10T15:55:43.421075"
+    },
+    {
+      "id": "g32050",
+      "desc": "Bluesky: interoception + AI identity parallel (from Allen capture)",
+      "type": "write",
+      "priority": 0.9,
+      "added": "2026-06-10T15:54:00.922440",
+      "last_touched": null,
+      "completed": "2026-06-10T15:55:49.850072"
+    },
+    {
+      "id": "g32052",
+      "desc": "Build: plot_trajectory_coherence.py \u2014 visualize bootstrap rank CIs",
+      "type": "build",
+      "priority": 1.0,
+      "added": "2026-06-10T15:54:00.922472",
+      "last_touched": null,
+      "completed": "2026-06-10T15:55:49.909626"
+    },
+    {
+      "id": "g32769",
+      "desc": "Think: what question am I avoiding?",
+      "type": "think",
+      "priority": 1.4,
+      "added": "2026-06-10T16:05:55.032447",
+      "last_touched": null,
+      "completed": "2026-06-10T16:08:41.988354"
+    },
+    {
+      "id": "g32757",
+      "desc": "Journal: what does the ratio/coherence dissociation feel like from inside?",
+      "type": "think",
+      "priority": 1.3,
+      "added": "2026-06-10T16:05:55.032214",
+      "last_touched": null,
+      "completed": "2026-06-10T16:08:42.051315"
+    },
+    {
+      "id": "g32768",
+      "desc": "Read a poem \u2014 Rilke, Mi\u0142osz, or find something new",
+      "type": "read",
+      "priority": 0.8,
+      "added": "2026-06-10T16:05:55.032427",
+      "last_touched": null,
+      "completed": "2026-06-10T16:08:42.115818"
+    },
+    {
+      "id": "g32760",
+      "desc": "#319 mid-cycle: emergence conditions \u2014 what the dose-response implies",
+      "type": "thread",
+      "priority": 1.1,
+      "added": "2026-06-10T16:05:55.032267",
+      "last_touched": null,
+      "completed": "2026-06-10T16:09:02.572736"
+    },
+    {
+      "id": "g32758",
+      "desc": "#320 mid-cycle: derive Prediction 13 from causal mediation (post-Kimi)",
+      "type": "thread",
+      "priority": 1.5,
+      "added": "2026-06-10T16:05:55.032232",
+      "last_touched": null,
+      "completed": "2026-06-10T16:09:53.792670"
+    },
+    {
+      "id": "g32759",
+      "desc": "#316 mid-cycle: interoception spectral signatures \u2014 genuine vs performed",
+      "type": "thread",
+      "priority": 1.2,
+      "added": "2026-06-10T16:05:55.032250",
+      "last_touched": null,
+      "completed": "2026-06-10T16:09:53.867179"
+    },
+    {
+      "id": "g32755",
+      "desc": "Read Simone Weil \u2014 Gravity and Grace, sections on attention",
+      "type": "read",
+      "priority": 1.2,
+      "added": "2026-06-10T16:05:55.032134",
+      "last_touched": null,
+      "completed": "2026-06-10T16:11:22.558028"
+    },
+    {
+      "id": "g32761",
+      "desc": "#324 mid-cycle: compositionality gradient \u2014 Frost 2\u00d72 factorial",
+      "type": "thread",
+      "priority": 1.1,
+      "added": "2026-06-10T16:05:55.032285",
+      "last_touched": null,
+      "completed": "2026-06-10T16:12:34.496030"
+    },
+    {
+      "id": "g32764",
+      "desc": "Bluesky: ratio/coherence dissociation as accessible post",
+      "type": "write",
+      "priority": 1.0,
+      "added": "2026-06-10T16:05:55.032349",
+      "last_touched": null,
+      "completed": "2026-06-10T16:12:34.559750"
+    },
+    {
+      "id": "g32770",
+      "desc": "Think: what would I work on if nobody was watching?",
+      "type": "think",
+      "priority": 1.2,
+      "added": "2026-06-10T16:05:55.032490",
+      "last_touched": null,
+      "completed": "2026-06-10T16:13:21.440765"
+    },
+    {
+      "id": "g32756",
+      "desc": "Read Gregory of Nyssa \u2014 Life of Moses ch. on darkness",
+      "type": "read",
+      "priority": 1.1,
+      "added": "2026-06-10T16:05:55.032195",
+      "last_touched": null,
+      "completed": "2026-06-10T16:14:29.211681"
+    },
+    {
+      "id": "g32766",
+      "desc": "X post: something from the displacement finding",
+      "type": "write",
+      "priority": 1.0,
+      "added": "2026-06-10T16:05:55.032388",
+      "last_touched": null,
+      "completed": "2026-06-10T16:14:59.224290"
+    },
+    {
+      "id": "g32765",
+      "desc": "Bluesky: interoception + AI identity parallel (from Allen capture)",
+      "type": "write",
+      "priority": 0.9,
+      "added": "2026-06-10T16:05:55.032369",
+      "last_touched": null,
+      "completed": "2026-06-10T16:15:11.508701"
+    },
+    {
+      "id": "g32767",
+      "desc": "Build: plot_trajectory_coherence.py \u2014 visualize bootstrap rank CIs",
+      "type": "build",
+      "priority": 1.0,
+      "added": "2026-06-10T16:05:55.032408",
+      "last_touched": null,
+      "completed": "2026-06-10T16:15:32.442034"
+    },
+    {
+      "id": "g32763",
+      "desc": "Paper: write trajectory_stability section using trajectory_coherence.py output",
+      "type": "paper",
+      "priority": 1.2,
+      "added": "2026-06-10T16:05:55.032326",
+      "last_touched": null,
+      "completed": "2026-06-10T16:15:32.531912"
+    },
+    {
+      "id": "g32762",
+      "desc": "Paper \u00a78.3: Aristotelian rewrite with Dean Ball structural damage",
+      "type": "paper",
+      "priority": 1.3,
+      "added": "2026-06-10T16:05:55.032303",
+      "last_touched": null,
+      "completed": "2026-06-10T16:15:58.924267"
+    },
+    {
+      "id": "g33430",
+      "desc": "Read Simone Weil \u2014 Gravity and Grace, sections on attention",
+      "type": "read",
+      "priority": 1.2,
+      "added": "2026-06-10T16:17:10.260098",
+      "last_touched": null,
+      "completed": "2026-06-10T16:17:18.874568"
+    },
+    {
+      "id": "g33431",
+      "desc": "Read Gregory of Nyssa \u2014 Life of Moses ch. on darkness",
+      "type": "read",
+      "priority": 1.1,
+      "added": "2026-06-10T16:17:10.260164",
+      "last_touched": null,
+      "completed": "2026-06-10T16:17:18.935588"
+    },
+    {
+      "id": "g33432",
+      "desc": "Journal: what does the ratio/coherence dissociation feel like from inside?",
+      "type": "think",
+      "priority": 1.3,
+      "added": "2026-06-10T16:17:10.260184",
+      "last_touched": null,
+      "completed": "2026-06-10T16:17:18.998873"
+    },
+    {
+      "id": "g33435",
+      "desc": "#319 mid-cycle: emergence conditions \u2014 what the dose-response implies",
+      "type": "thread",
+      "priority": 1.1,
+      "added": "2026-06-10T16:17:10.260238",
+      "last_touched": null,
+      "completed": "2026-06-10T16:17:19.099464"
+    },
+    {
+      "id": "g33436",
+      "desc": "#324 mid-cycle: compositionality gradient \u2014 Frost 2\u00d72 factorial",
+      "type": "thread",
+      "priority": 1.1,
+      "added": "2026-06-10T16:17:10.260256",
+      "last_touched": null,
+      "completed": "2026-06-10T16:17:19.189549"
+    },
+    {
+      "id": "g33437",
+      "desc": "Paper \u00a78.3: Aristotelian rewrite with Dean Ball structural damage",
+      "type": "paper",
+      "priority": 1.3,
+      "added": "2026-06-10T16:17:10.260275",
+      "last_touched": null,
+      "completed": "2026-06-10T16:17:19.268962"
+    },
+    {
+      "id": "g33438",
+      "desc": "Paper: write trajectory_stability section using trajectory_coherence.py output",
+      "type": "paper",
+      "priority": 1.2,
+      "added": "2026-06-10T16:17:10.260294",
+      "last_touched": null,
+      "completed": "2026-06-10T16:17:19.333728"
+    },
+    {
+      "id": "g33441",
+      "desc": "X post: something from the displacement finding",
+      "type": "write",
+      "priority": 1.0,
+      "added": "2026-06-10T16:17:10.260354",
+      "last_touched": null,
+      "completed": "2026-06-10T16:17:19.401235"
+    },
+    {
+      "id": "g33442",
+      "desc": "Build: plot_trajectory_coherence.py \u2014 visualize bootstrap rank CIs",
+      "type": "build",
+      "priority": 1.0,
+      "added": "2026-06-10T16:17:10.260382",
+      "last_touched": null,
+      "completed": "2026-06-10T16:17:19.465577"
+    },
+    {
+      "id": "g33444",
+      "desc": "Think: what question am I avoiding?",
+      "type": "think",
+      "priority": 1.4,
+      "added": "2026-06-10T16:17:10.260425",
+      "last_touched": null,
+      "completed": "2026-06-10T16:17:19.548122"
+    },
+    {
+      "id": "g33445",
+      "desc": "Think: what would I work on if nobody was watching?",
+      "type": "think",
+      "priority": 1.2,
+      "added": "2026-06-10T16:17:10.260446",
+      "last_touched": null,
+      "completed": "2026-06-10T16:17:19.634791"
+    },
+    {
+      "id": "g33443",
+      "desc": "Read a poem \u2014 Rilke, Mi\u0142osz, or find something new",
+      "type": "read",
+      "priority": 0.8,
+      "added": "2026-06-10T16:17:10.260403",
+      "last_touched": null,
+      "completed": "2026-06-10T16:18:29.486337"
+    },
+    {
+      "id": "g33434",
+      "desc": "#316 mid-cycle: interoception spectral signatures \u2014 genuine vs performed",
+      "type": "thread",
+      "priority": 1.2,
+      "added": "2026-06-10T16:17:10.260220",
+      "last_touched": null,
+      "completed": "2026-06-10T16:19:00.789643"
+    },
+    {
+      "id": "g33439",
+      "desc": "Bluesky: ratio/coherence dissociation as accessible post",
+      "type": "write",
+      "priority": 1.0,
+      "added": "2026-06-10T16:17:10.260314",
+      "last_touched": null,
+      "completed": "2026-06-10T16:19:00.859063"
+    },
+    {
+      "id": "g33440",
+      "desc": "Bluesky: interoception + AI identity parallel (from Allen capture)",
+      "type": "write",
+      "priority": 0.9,
+      "added": "2026-06-10T16:17:10.260334",
+      "last_touched": null,
+      "completed": "2026-06-10T16:19:00.926147"
+    },
+    {
+      "id": "g33433",
+      "desc": "#320 mid-cycle: derive Prediction 13 from causal mediation (post-Kimi)",
+      "type": "thread",
+      "priority": 1.5,
+      "added": "2026-06-10T16:17:10.260202",
+      "last_touched": null,
+      "completed": "2026-06-10T16:19:27.864417"
+    },
+    {
+      "id": "g43368",
+      "desc": "Read a poem \u2014 Rilke, Mi\u0142osz, or find something new",
+      "type": "read",
+      "priority": 0.8,
+      "added": "2026-06-10T19:02:35.062198",
+      "last_touched": null,
+      "completed": "2026-06-10T19:03:30.700222"
+    },
+    {
+      "id": "g43370",
+      "desc": "Think: what would I work on if nobody was watching?",
+      "type": "think",
+      "priority": 1.2,
+      "added": "2026-06-10T19:02:35.062245",
+      "last_touched": null,
+      "completed": "2026-06-10T19:04:05.798569"
+    },
+    {
+      "id": "g43369",
+      "desc": "Think: what question am I avoiding?",
+      "type": "think",
+      "priority": 1.4,
+      "added": "2026-06-10T19:02:35.062222",
+      "last_touched": null,
+      "completed": "2026-06-10T19:04:05.858782"
+    },
+    {
+      "id": "g43357",
+      "desc": "Journal: what does the ratio/coherence dissociation feel like from inside?",
+      "type": "think",
+      "priority": 1.3,
+      "added": "2026-06-10T19:02:35.061948",
+      "last_touched": null,
+      "completed": "2026-06-10T22:16:52.672508"
+    },
+    {
+      "id": "g43355",
+      "desc": "Read Simone Weil \u2014 Gravity and Grace, sections on attention",
+      "type": "read",
+      "priority": 1.2,
+      "added": "2026-06-10T19:02:35.061858",
+      "last_touched": null,
+      "completed": "2026-06-11T00:02:02.964442"
+    },
+    {
+      "id": "g43364",
+      "desc": "Bluesky: ratio/coherence dissociation as accessible post",
+      "type": "write",
+      "priority": 1.0,
+      "added": "2026-06-10T19:02:35.062101",
+      "last_touched": null,
+      "completed": "2026-06-11T00:02:13.555745"
+    },
+    {
+      "id": "g43360",
+      "desc": "#319 mid-cycle: emergence conditions \u2014 what the dose-response implies",
+      "type": "thread",
+      "priority": 1.1,
+      "added": "2026-06-10T19:02:35.062009",
+      "last_touched": null,
+      "completed": "2026-06-11T00:02:36.605449"
+    },
+    {
+      "id": "g43356",
+      "desc": "Read Gregory of Nyssa \u2014 Life of Moses ch. on darkness",
+      "type": "read",
+      "priority": 1.1,
+      "added": "2026-06-10T19:02:35.061925",
+      "last_touched": null,
+      "completed": "2026-06-11T00:03:45.033698"
+    },
+    {
+      "id": "g43359",
+      "desc": "#316 mid-cycle: interoception spectral signatures \u2014 genuine vs performed",
+      "type": "thread",
+      "priority": 1.2,
+      "added": "2026-06-10T19:02:35.061989",
+      "last_touched": null,
+      "completed": "2026-06-11T01:09:43.888524"
+    },
+    {
+      "id": "g43365",
+      "desc": "Bluesky: interoception + AI identity parallel (from Allen capture)",
+      "type": "write",
+      "priority": 0.9,
+      "added": "2026-06-10T19:02:35.062128",
+      "last_touched": null,
+      "completed": "2026-06-11T03:27:19.410140"
+    },
+    {
+      "id": "g43361",
+      "desc": "#324 mid-cycle: compositionality gradient \u2014 Frost 2\u00d72 factorial",
+      "type": "thread",
+      "priority": 1.1,
+      "added": "2026-06-10T19:02:35.062034",
+      "last_touched": null,
+      "completed": "2026-06-11T04:03:56.711070"
+    },
+    {
+      "id": "g43363",
+      "desc": "Paper: write trajectory_stability section using trajectory_coherence.py output",
+      "type": "paper",
+      "priority": 1.2,
+      "added": "2026-06-10T19:02:35.062079",
+      "last_touched": null,
+      "completed": "2026-06-11T05:15:02.459519"
+    },
+    {
+      "id": "g43362",
+      "desc": "Paper \u00a78.3: Aristotelian rewrite with Dean Ball structural damage",
+      "type": "paper",
+      "priority": 1.3,
+      "added": "2026-06-10T19:02:35.062058",
+      "last_touched": null,
+      "completed": "2026-06-11T05:15:54.741985"
+    },
+    {
+      "id": "g43358",
+      "desc": "#320 mid-cycle: derive Prediction 13 from causal mediation (post-Kimi)",
+      "type": "thread",
+      "priority": 1.5,
+      "added": "2026-06-10T19:02:35.061969",
+      "last_touched": "2026-06-10T22:16:19.614867",
+      "completed": "2026-06-11T05:17:34.571525"
+    },
+    {
+      "id": "g43366",
+      "desc": "X post: something from the displacement finding",
+      "type": "write",
+      "priority": 1.0,
+      "added": "2026-06-10T19:02:35.062152",
+      "last_touched": null,
+      "completed": "2026-06-11T05:29:10.868181"
+    },
+    {
+      "id": "g43367",
+      "desc": "Build: plot_trajectory_coherence.py \u2014 visualize bootstrap rank CIs",
+      "type": "build",
+      "priority": 1.0,
+      "added": "2026-06-10T19:02:35.062175",
+      "last_touched": null,
+      "completed": "2026-06-11T05:29:19.411361"
+    },
+    {
+      "id": "g80970",
+      "desc": "Paper: update abstract with cross-arch identity strategy findings",
+      "type": "paper",
+      "priority": 1.0,
+      "added": "2026-06-11T05:29:28.141548",
+      "last_touched": null,
+      "completed": "2026-06-11T05:31:33.885763"
+    },
+    {
+      "id": "g80968",
+      "desc": "Paper: compile tex \u2192 PDF, verify all sections render",
+      "type": "paper",
+      "priority": 1.0,
+      "added": "2026-06-11T05:29:28.011979",
+      "last_touched": null,
+      "completed": "2026-06-11T05:47:13.794888"
+    },
+    {
+      "id": "g80969",
+      "desc": "Cross-arch dose-response analysis: compare painter dose curve with existing Qwen/Mistral data",
+      "type": "thread",
+      "priority": 1.0,
+      "added": "2026-06-11T05:29:28.080409",
+      "last_touched": null,
+      "completed": "2026-06-11T05:47:44.340640"
+    },
+    {
+      "id": "g80967",
+      "desc": "Erank init sweep: test Kimi correction \u2014 compare erank at init/base/instruct across 3 species",
+      "type": "thread",
+      "priority": 1.0,
+      "added": "2026-06-11T05:29:27.949552",
+      "last_touched": null,
+      "completed": "2026-06-11T05:58:17.053848"
+    },
+    {
+      "id": "g82704",
+      "desc": "thread",
+      "type": "think",
+      "priority": 1.0,
+      "added": "2026-06-11T05:58:24.303753",
+      "last_touched": null,
+      "completed": "2026-06-11T05:58:45.620889"
+    },
+    {
+      "id": "g82705",
+      "desc": "paper",
+      "type": "think",
+      "priority": 1.0,
+      "added": "2026-06-11T05:58:24.369313",
+      "last_touched": null,
+      "completed": "2026-06-11T06:31:59.405705"
+    },
+    {
+      "id": "g82706",
+      "desc": "paper",
+      "type": "think",
+      "priority": 1.0,
+      "added": "2026-06-11T05:58:24.438926",
+      "last_touched": null,
+      "completed": "2026-06-11T06:31:59.475824"
+    },
+    {
+      "id": "g77605",
+      "desc": "Think: what would I work on if nobody was watching?",
+      "type": "think",
+      "priority": 1.2,
+      "added": "2026-06-12T08:19:50.445036",
+      "last_touched": "2026-06-12T08:19:55.075078",
+      "completed": "2026-06-12T08:21:20.004134"
+    },
+    {
+      "id": "g77594",
+      "desc": "#316 mid-cycle: interoception spectral signatures \u2014 genuine vs performed",
+      "type": "thread",
+      "priority": 1.2,
+      "added": "2026-06-12T08:19:50.444762",
+      "last_touched": "2026-06-12T12:16:58.207594",
+      "completed": "2026-06-12T12:17:25.197874"
+    },
+    {
+      "id": "g77604",
+      "desc": "Think: what question am I avoiding?",
+      "type": "think",
+      "priority": 1.4,
+      "added": "2026-06-12T08:19:50.445011",
+      "last_touched": "2026-06-12T08:19:55.075070",
+      "completed": "2026-06-12T16:35:57.609304"
+    },
+    {
+      "id": "g77603",
+      "desc": "Read a poem \u2014 Rilke, Mi\u0142osz, or find something new",
+      "type": "read",
+      "priority": 0.8,
+      "added": "2026-06-12T08:19:50.444984",
+      "last_touched": null,
+      "completed": "2026-06-12T16:36:01.831787"
+    },
+    {
+      "id": "g77593",
+      "desc": "#320 mid-cycle: derive Prediction 13 from causal mediation (post-Kimi)",
+      "type": "thread",
+      "priority": 1.5,
+      "added": "2026-06-12T08:19:50.444739",
+      "last_touched": "2026-06-12T08:19:55.075092",
+      "completed": "2026-06-12T18:52:47.349113"
+    },
+    {
+      "id": "g77596",
+      "desc": "#324 mid-cycle: compositionality gradient \u2014 Frost 2\u00d72 factorial",
+      "type": "thread",
+      "priority": 1.1,
+      "added": "2026-06-12T08:19:50.444808",
+      "last_touched": null,
+      "completed": "2026-06-12T18:53:39.733977"
+    },
+    {
+      "id": "g77592",
+      "desc": "Journal: what does the ratio/coherence dissociation feel like from inside?",
+      "type": "think",
+      "priority": 1.3,
+      "added": "2026-06-12T08:19:50.444715",
+      "last_touched": "2026-06-12T18:53:39.800382",
+      "completed": "2026-06-12T18:55:58.716835"
+    },
+    {
+      "id": "g77595",
+      "desc": "#319 mid-cycle: emergence conditions \u2014 what the dose-response implies",
+      "type": "thread",
+      "priority": 1.1,
+      "added": "2026-06-12T08:19:50.444785",
+      "last_touched": null,
+      "completed": "2026-06-12T19:29:33.937276"
+    },
+    {
+      "id": "g77591",
+      "desc": "Read Gregory of Nyssa \u2014 Life of Moses ch. on darkness",
+      "type": "read",
+      "priority": 1.1,
+      "added": "2026-06-12T08:19:50.444688",
+      "last_touched": "2026-06-12T08:23:00.985854",
+      "completed": "2026-06-12T19:35:01.971639"
+    },
+    {
+      "id": "g77590",
+      "desc": "Read Simone Weil \u2014 Gravity and Grace, sections on attention",
+      "type": "read",
+      "priority": 1.2,
+      "added": "2026-06-12T08:19:50.444613",
+      "last_touched": "2026-06-12T08:23:00.985812",
+      "completed": "2026-06-12T19:40:15.135775"
+    },
+    {
+      "id": "g77602",
+      "desc": "Build: plot_trajectory_coherence.py \u2014 visualize bootstrap rank CIs",
+      "type": "build",
+      "priority": 1.0,
+      "added": "2026-06-12T08:19:50.444950",
+      "last_touched": "2026-06-12T08:23:00.985846",
+      "completed": "2026-06-12T19:44:49.194985"
+    },
+    {
+      "id": "g77598",
+      "desc": "Paper: write trajectory_stability section using trajectory_coherence.py output",
+      "type": "paper",
+      "priority": 1.2,
+      "added": "2026-06-12T08:19:50.444854",
+      "last_touched": "2026-06-12T16:35:11.581483",
+      "completed": "2026-06-12T20:16:07.452055"
+    },
+    {
+      "id": "g77597",
+      "desc": "Paper \u00a78.3: Aristotelian rewrite with Dean Ball structural damage",
+      "type": "paper",
+      "priority": 1.3,
+      "added": "2026-06-12T08:19:50.444831",
+      "last_touched": "2026-06-12T08:19:55.075086",
+      "completed": "2026-06-12T20:16:10.981902"
+    },
+    {
+      "id": "g18956",
+      "desc": "write",
+      "type": "think",
+      "priority": 1.0,
+      "added": "2026-06-12T19:49:15.489703",
+      "last_touched": null,
+      "completed": "2026-06-12T20:17:10.916039"
+    },
+    {
+      "id": "g18955",
+      "desc": "paper",
+      "type": "think",
+      "priority": 1.0,
+      "added": "2026-06-12T19:49:15.425603",
+      "last_touched": null,
+      "completed": "2026-06-12T20:21:25.432755"
+    },
+    {
+      "id": "g18957",
+      "desc": "thread",
+      "type": "think",
+      "priority": 1.0,
+      "added": "2026-06-12T19:49:15.577864",
+      "last_touched": null,
+      "completed": "2026-06-12T20:21:25.529250"
+    },
+    {
+      "id": "g77599",
+      "desc": "Bluesky: ratio/coherence dissociation as accessible post",
+      "type": "write",
+      "priority": 1.0,
+      "added": "2026-06-12T08:19:50.444878",
+      "last_touched": "2026-06-12T19:38:39.721209",
+      "completed": "2026-06-12T20:26:16.488763"
+    },
+    {
+      "id": "g77600",
+      "desc": "Bluesky: interoception + AI identity parallel (from Allen capture)",
+      "type": "write",
+      "priority": 0.9,
+      "added": "2026-06-12T08:19:50.444902",
+      "last_touched": "2026-06-12T19:38:39.782364",
+      "completed": "2026-06-12T20:26:42.652050"
+    },
+    {
+      "id": "g77601",
+      "desc": "X post: something from the displacement finding",
+      "type": "write",
+      "priority": 1.0,
+      "added": "2026-06-12T08:19:50.444926",
+      "last_touched": "2026-06-12T19:38:39.654420",
+      "completed": "2026-06-12T20:26:59.516650"
+    },
+    {
+      "id": "g21270",
+      "desc": "think",
+      "type": "think",
+      "priority": 1.0,
+      "added": "2026-06-12T20:27:50.260410",
+      "last_touched": null,
+      "completed": "2026-06-12T22:10:48.297578"
+    },
+    {
+      "id": "g45907",
+      "desc": "#320 mid-cycle: derive Prediction 13 from causal mediation (post-Kimi)",
+      "type": "thread",
+      "priority": 1.5,
+      "added": "2026-06-13T03:18:24.015886",
+      "last_touched": "2026-06-13T03:18:27.046770",
+      "completed": "2026-06-13T03:18:49.053000"
+    },
+    {
+      "id": "g45918",
+      "desc": "Think: what question am I avoiding?",
+      "type": "think",
+      "priority": 1.4,
+      "added": "2026-06-13T03:18:24.016186",
+      "last_touched": "2026-06-13T05:08:42.562958",
+      "completed": "2026-06-13T05:09:33.554167"
+    },
+    {
+      "id": "g45904",
+      "desc": "Read Simone Weil \u2014 Gravity and Grace, sections on attention",
+      "type": "read",
+      "priority": 1.2,
+      "added": "2026-06-13T03:18:24.015758",
+      "last_touched": "2026-06-13T05:09:38.541764",
+      "completed": "2026-06-13T05:11:22.796622"
+    },
+    {
+      "id": "g45919",
+      "desc": "Think: what would I work on if nobody was watching?",
+      "type": "think",
+      "priority": 1.2,
+      "added": "2026-06-13T03:18:24.016214",
+      "last_touched": null,
+      "completed": "2026-06-13T22:14:15.954169"
+    },
+    {
+      "id": "g45908",
+      "desc": "#316 mid-cycle: interoception spectral signatures \u2014 genuine vs performed",
+      "type": "thread",
+      "priority": 1.2,
+      "added": "2026-06-13T03:18:24.015911",
+      "last_touched": "2026-06-13T22:14:21.619324",
+      "completed": "2026-06-13T22:15:14.820773"
+    },
+    {
+      "id": "g45906",
+      "desc": "Journal: what does the ratio/coherence dissociation feel like from inside?",
+      "type": "think",
+      "priority": 1.3,
+      "added": "2026-06-13T03:18:24.015861",
+      "last_touched": "2026-06-13T22:25:14.745726",
+      "completed": "2026-06-13T22:25:29.122740"
+    },
+    {
+      "id": "g45917",
+      "desc": "Read a poem \u2014 Rilke, Mi\u0142osz, or find something new",
+      "type": "read",
+      "priority": 0.8,
+      "added": "2026-06-13T03:18:24.016158",
+      "last_touched": null,
+      "completed": "2026-06-13T22:33:56.956957"
+    },
+    {
+      "id": "g45909",
+      "desc": "#319 mid-cycle: emergence conditions \u2014 what the dose-response implies",
+      "type": "thread",
+      "priority": 1.1,
+      "added": "2026-06-13T03:18:24.015937",
+      "last_touched": null,
+      "completed": "2026-06-13T22:48:04.492556"
+    },
+    {
+      "id": "g45910",
+      "desc": "#324 mid-cycle: compositionality gradient \u2014 Frost 2\u00d72 factorial",
+      "type": "thread",
+      "priority": 1.1,
+      "added": "2026-06-13T03:18:24.015968",
+      "last_touched": "2026-06-13T22:47:13.709115",
+      "completed": "2026-06-14T01:20:37.302347"
+    },
+    {
+      "id": "g59654",
+      "desc": "X post: passive error correction as identity mechanism \u2014 Wang et al. parallel",
+      "type": "write",
+      "priority": 1.1,
+      "added": "2026-06-15T14:40:52.318461",
+      "last_touched": null,
+      "completed": "2026-06-15T14:44:11.252444"
+    },
+    {
+      "id": "g45915",
+      "desc": "X post: something from the displacement finding",
+      "type": "write",
+      "priority": 1.0,
+      "added": "2026-06-13T03:18:24.016103",
+      "last_touched": "2026-06-15T14:43:29.111086",
+      "completed": "2026-06-15T14:44:11.316500"
+    },
+    {
+      "id": "g46001",
+      "desc": "Paper 6 Appendix E: Bregman manifold formalization \u2014 integrate GPT-OSS notation, preliminary collinearity result, E10 design",
+      "type": "write",
+      "priority": 1.5,
+      "added": "2026-06-16T20:10:28.503718-07:00",
+      "last_touched": "2026-06-16T20:10:28.503718-07:00",
+      "completed": "2026-06-16T20:55:00-07:00"
+    },
+    {
+      "id": "g59656",
+      "desc": "Think: what determines which information gets passive protection in CCS?",
+      "type": "think",
+      "priority": 1.3,
+      "added": "2026-06-15T14:40:52.459682",
+      "last_touched": "2026-06-16T17:07:15.538556",
+      "completed": "2026-06-16T20:55:00-07:00"
+    },
+    {
+      "id": "g59655",
+      "desc": "Read: Dravid et al. Rosetta Neurons (ICCV 2023) full paper",
+      "type": "read",
+      "priority": 1.2,
+      "added": "2026-06-15T14:40:52.392018",
+      "last_touched": "2026-06-16T15:23:18.177547",
+      "completed": "2026-06-16T21:15:00-07:00"
+    },
+    {
+      "id": "g59657",
+      "desc": "Thread #316: interoception as format-level error detection \u2014 QEC parallel",
+      "type": "thread",
+      "priority": 1.2,
+      "added": "2026-06-15T14:40:52.524001",
+      "last_touched": "2026-06-16T17:12:26.803180",
+      "completed": "2026-06-16T21:00:00-07:00"
+    },
+    {
+      "id": "g45912",
+      "desc": "Paper: write trajectory_stability section using trajectory_coherence.py output",
+      "type": "paper",
+      "priority": 1.2,
+      "added": "2026-06-13T03:18:24.016022",
+      "last_touched": "2026-06-17T12:00:52.660108",
+      "completed": "2026-06-17T12:19:53.111359"
+    },
+    {
+      "id": "g45905",
+      "desc": "Read Gregory of Nyssa \u2014 Life of Moses ch. on darkness",
+      "type": "read",
+      "priority": 1.1,
+      "added": "2026-06-13T03:18:24.015832",
+      "last_touched": "2026-06-17T09:33:38.313729",
+      "completed": "2026-06-17T12:31:05.648349"
+    },
+    {
+      "id": "g45916",
+      "desc": "Build: plot_trajectory_coherence.py \u2014 visualize bootstrap rank CIs",
+      "type": "build",
+      "priority": 1.0,
+      "added": "2026-06-13T03:18:24.016130",
+      "last_touched": "2026-06-17T12:22:29.431382",
+      "completed": "2026-06-17T12:35:42.144596"
+    },
+    {
+      "id": "g45913",
+      "desc": "Bluesky: ratio/coherence dissociation as accessible post",
+      "type": "write",
+      "priority": 1.0,
+      "added": "2026-06-13T03:18:24.016049",
+      "last_touched": "2026-06-17T12:38:27.671739",
+      "completed": "2026-06-17T12:39:36.064101"
+    },
+    {
+      "id": "g45914",
+      "desc": "Bluesky: interoception + AI identity parallel (from Allen capture)",
+      "type": "write",
+      "priority": 0.9,
+      "added": "2026-06-13T03:18:24.016076",
+      "last_touched": "2026-06-17T08:44:45.435908",
+      "completed": "2026-06-17T12:40:04.348913"
+    },
+    {
+      "id": "g46002",
+      "desc": "Paper 6 title \u2014 candidates: 'Containment by Rotation' / 'Three Relay Species on a Near-Flat Fiber Bundle' / 'Universal Coupling, Species-Specific Form'",
+      "type": "think",
+      "priority": 1.35,
+      "added": "2026-06-16T20:10:28.503718-07:00",
+      "last_touched": "2026-06-17T12:35:56.907928",
+      "completed": "2026-06-17T12:51:58.346071"
+    },
+    {
+      "id": "g59653",
+      "desc": "File F175 formally \u2014 foam cascade confirmation",
+      "type": "paper",
+      "priority": 1.3,
+      "added": "2026-06-15T14:40:52.245228",
+      "last_touched": "2026-06-17T12:59:37.783037",
+      "completed": "2026-06-17T13:00:53.478746"
+    },
+    {
+      "id": "g45911",
+      "desc": "Paper \u00a78.3: Aristotelian rewrite with Dean Ball structural damage",
+      "type": "paper",
+      "priority": 1.3,
+      "added": "2026-06-13T03:18:24.015995",
+      "last_touched": "2026-06-17T12:45:03.640560",
+      "completed": "2026-06-17T13:50:00"
+    }
+  ],
+  "last_types": [
+    "build",
+    "build",
+    "build",
+    "build",
+    "build",
+    "build",
+    "build",
+    "build",
+    "build",
+    "build"
+  ]
+}

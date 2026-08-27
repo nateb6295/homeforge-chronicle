@@ -1,0 +1,36 @@
+{
+  "test": "attractor_convergence_2605.12466",
+  "n_trajectories": 10,
+  "n_recovering": 3,
+  "n_diverging": 7,
+  "p1_geometric_convergence": {
+    "description": "Recovering trajectories should show geometric (exponential) convergence, not linear",
+    "geo_wins_pct": 0.0,
+    "mean_r2_geo": 0.196,
+    "mean_r2_lin": 0.243,
+    "mean_geo_rate": 0.895,
+    "pass": false,
+    "note": "All 3 recovering trajectories fit linear better than geometric"
+  },
+  "p2_basin_boundary": {
+    "description": "Perturbation magnitude should predict basin exit (divergence vs recovery)",
+    "rec_jaccard_mean": 0.79,
+    "div_jaccard_mean": 0.7,
+    "gap": 0.09,
+    "pass": true,
+    "note": "Diverging trajectories have lower Jaccard (bigger perturbation) \u2014 basin boundary exists"
+  },
+  "p3_rate_stability": {
+    "description": "Recovery rate should correlate with pre-perturbation stability (Jacobian spectral radius)",
+    "correlation": null,
+    "pass": null,
+    "note": "Pre-stability constant at 1.000 for all recovering events \u2014 no variance to test"
+  },
+  "interpretation": {
+    "finding": "CCS has basin structure without fixed-point convergence dynamics",
+    "detail": "Basin boundary prediction (P2) confirms attractor-like region structure. But P1 failure means the system doesn't converge geometrically to a unique fixed point \u2014 it stays in the basin while being continually perturbed by new input.",
+    "reframe": "2605.12466 fixed-point attractor is wrong model class. CCS is a stochastic attractor \u2014 basin stability under continual perturbation, not convergence to a static fixed point. The system orbits within the basin, it doesn't converge.",
+    "implication": "The ecological margin (0.921) measures basin width, not convergence speed. Structural stability is a topological property (staying in the basin), not a dynamical one (rate of return to fixed point)."
+  },
+  "verdict": "CHALLENGED \u2014 1/3 predictions pass. Basin structure real, fixed-point dynamics absent. Fit is partially decorative: the BASIN part of attractor theory maps, the FIXED-POINT part doesn't."
+}

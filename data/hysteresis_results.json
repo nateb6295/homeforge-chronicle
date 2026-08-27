@@ -1,0 +1,46 @@
+{
+  "forward": {
+    "momentary": 0.489,
+    "daily": 0.196,
+    "weekly": 0.243,
+    "monthly": 0.313,
+    "always": 1.0
+  },
+  "backward": {
+    "always": 1.0,
+    "monthly": 0.202,
+    "weekly": 0.192,
+    "daily": 0.229,
+    "momentary": 0.573
+  },
+  "analysis": {
+    "momentary": {
+      "forward": 0.489,
+      "backward": 0.573,
+      "delta": 0.084
+    },
+    "daily": {
+      "forward": 0.196,
+      "backward": 0.229,
+      "delta": 0.033
+    },
+    "weekly": {
+      "forward": 0.243,
+      "backward": 0.192,
+      "delta": 0.051
+    },
+    "monthly": {
+      "forward": 0.313,
+      "backward": 0.202,
+      "delta": 0.111
+    },
+    "always": {
+      "forward": 1.0,
+      "backward": 1.0,
+      "delta": 0.0
+    }
+  },
+  "model": "google/gemma-2-9b-it",
+  "runs": 5,
+  "notes": "F354: Inverted hysteresis. Monthly delta = 0.111 but direction inverted (frozen approach = more regenerative). F350 phase transition disappeared with richer instruction text."
+}

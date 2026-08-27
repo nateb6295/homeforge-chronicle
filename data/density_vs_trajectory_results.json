@@ -1,0 +1,13 @@
+{
+  "test": "density_vs_trajectory_v2_ranking",
+  "n_snapshots": 77,
+  "high_overlap_pairs": 747,
+  "same_ranking_mean": 0.8353724085338294,
+  "same_ranking_n": 12,
+  "mid_ranking_mean": 0.7903071684803252,
+  "mid_ranking_n": 12,
+  "diff_ranking_mean": 0.771972311391925,
+  "diff_ranking_n": 12,
+  "ranking_gap": 0.06340009714190442,
+  "density_sim_correlation": 0.4144293011262702
+}

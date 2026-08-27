@@ -1,0 +1,1676 @@
+{
+  "model": "mistralai/Mistral-7B-v0.3",
+  "architecture": "mistral",
+  "conditions": {
+    "bare": {
+      "math": {
+        "n_total": 46,
+        "n_content": 46,
+        "layers": [
+          {
+            "layer": 0,
+            "raw_erank": 14.262,
+            "proj_erank": 12.498
+          },
+          {
+            "layer": 1,
+            "raw_erank": 1.357,
+            "proj_erank": 1.099
+          },
+          {
+            "layer": 2,
+            "raw_erank": 39.992,
+            "proj_erank": 35.847
+          },
+          {
+            "layer": 3,
+            "raw_erank": 40.881,
+            "proj_erank": 38.925
+          },
+          {
+            "layer": 4,
+            "raw_erank": 40.378,
+            "proj_erank": 38.353
+          },
+          {
+            "layer": 5,
+            "raw_erank": 39.954,
+            "proj_erank": 38.256
+          },
+          {
+            "layer": 6,
+            "raw_erank": 40.159,
+            "proj_erank": 38.118
+          },
+          {
+            "layer": 7,
+            "raw_erank": 39.996,
+            "proj_erank": 39.548
+          },
+          {
+            "layer": 8,
+            "raw_erank": 39.447,
+            "proj_erank": 35.514
+          },
+          {
+            "layer": 9,
+            "raw_erank": 40.703,
+            "proj_erank": 39.691
+          },
+          {
+            "layer": 10,
+            "raw_erank": 39.975,
+            "proj_erank": 37.076
+          },
+          {
+            "layer": 11,
+            "raw_erank": 41.407,
+            "proj_erank": 38.82
+          },
+          {
+            "layer": 12,
+            "raw_erank": 41.541,
+            "proj_erank": 39.359
+          },
+          {
+            "layer": 13,
+            "raw_erank": 41.041,
+            "proj_erank": 32.948
+          },
+          {
+            "layer": 14,
+            "raw_erank": 40.252,
+            "proj_erank": 32.798
+          },
+          {
+            "layer": 15,
+            "raw_erank": 39.751,
+            "proj_erank": 38.648
+          },
+          {
+            "layer": 16,
+            "raw_erank": 39.934,
+            "proj_erank": 37.657
+          },
+          {
+            "layer": 17,
+            "raw_erank": 40.595,
+            "proj_erank": 37.278
+          },
+          {
+            "layer": 18,
+            "raw_erank": 40.466,
+            "proj_erank": 39.558
+          },
+          {
+            "layer": 19,
+            "raw_erank": 39.606,
+            "proj_erank": 37.028
+          },
+          {
+            "layer": 20,
+            "raw_erank": 38.386,
+            "proj_erank": 36.596
+          },
+          {
+            "layer": 21,
+            "raw_erank": 39.141,
+            "proj_erank": 37.58
+          },
+          {
+            "layer": 22,
+            "raw_erank": 37.684,
+            "proj_erank": 36.156
+          },
+          {
+            "layer": 23,
+            "raw_erank": 39.379,
+            "proj_erank": 38.873
+          },
+          {
+            "layer": 24,
+            "raw_erank": 39.747,
+            "proj_erank": 38.24
+          },
+          {
+            "layer": 25,
+            "raw_erank": 39.798,
+            "proj_erank": 38.681
+          },
+          {
+            "layer": 26,
+            "raw_erank": 40.291,
+            "proj_erank": 36.492
+          },
+          {
+            "layer": 27,
+            "raw_erank": 40.211,
+            "proj_erank": 31.629
+          },
+          {
+            "layer": 28,
+            "raw_erank": 40.366,
+            "proj_erank": 25.238
+          },
+          {
+            "layer": 29,
+            "raw_erank": 38.293,
+            "proj_erank": 19.308
+          },
+          {
+            "layer": 30,
+            "raw_erank": 35.699,
+            "proj_erank": 15.863
+          },
+          {
+            "layer": 31,
+            "raw_erank": 20.117,
+            "proj_erank": 7.136
+          }
+        ]
+      },
+      "poetry": {
+        "n_total": 38,
+        "n_content": 38,
+        "layers": [
+          {
+            "layer": 0,
+            "raw_erank": 11.14,
+            "proj_erank": 9.839
+          },
+          {
+            "layer": 1,
+            "raw_erank": 1.295,
+            "proj_erank": 1.083
+          },
+          {
+            "layer": 2,
+            "raw_erank": 34.27,
+            "proj_erank": 30.753
+          },
+          {
+            "layer": 3,
+            "raw_erank": 34.821,
+            "proj_erank": 33.388
+          },
+          {
+            "layer": 4,
+            "raw_erank": 35.269,
+            "proj_erank": 34.35
+          },
+          {
+            "layer": 5,
+            "raw_erank": 34.649,
+            "proj_erank": 33.239
+          },
+          {
+            "layer": 6,
+            "raw_erank": 34.501,
+            "proj_erank": 32.393
+          },
+          {
+            "layer": 7,
+            "raw_erank": 34.102,
+            "proj_erank": 33.432
+          },
+          {
+            "layer": 8,
+            "raw_erank": 33.379,
+            "proj_erank": 29.786
+          },
+          {
+            "layer": 9,
+            "raw_erank": 34.406,
+            "proj_erank": 33.14
+          },
+          {
+            "layer": 10,
+            "raw_erank": 34.4,
+            "proj_erank": 32.941
+          },
+          {
+            "layer": 11,
+            "raw_erank": 34.973,
+            "proj_erank": 33.659
+          },
+          {
+            "layer": 12,
+            "raw_erank": 35.033,
+            "proj_erank": 34.525
+          },
+          {
+            "layer": 13,
+            "raw_erank": 34.467,
+            "proj_erank": 29.286
+          },
+          {
+            "layer": 14,
+            "raw_erank": 34.412,
+            "proj_erank": 30.071
+          },
+          {
+            "layer": 15,
+            "raw_erank": 33.881,
+            "proj_erank": 32.477
+          },
+          {
+            "layer": 16,
+            "raw_erank": 34.017,
+            "proj_erank": 31.067
+          },
+          {
+            "layer": 17,
+            "raw_erank": 34.332,
+            "proj_erank": 32.056
+          },
+          {
+            "layer": 18,
+            "raw_erank": 34.051,
+            "proj_erank": 32.149
+          },
+          {
+            "layer": 19,
+            "raw_erank": 33.525,
+            "proj_erank": 30.997
+          },
+          {
+            "layer": 20,
+            "raw_erank": 33.458,
+            "proj_erank": 31.825
+          },
+          {
+            "layer": 21,
+            "raw_erank": 34.612,
+            "proj_erank": 33.422
+          },
+          {
+            "layer": 22,
+            "raw_erank": 34.882,
+            "proj_erank": 34.38
+          },
+          {
+            "layer": 23,
+            "raw_erank": 35.058,
+            "proj_erank": 33.913
+          },
+          {
+            "layer": 24,
+            "raw_erank": 35.454,
+            "proj_erank": 33.659
+          },
+          {
+            "layer": 25,
+            "raw_erank": 35.2,
+            "proj_erank": 32.6
+          },
+          {
+            "layer": 26,
+            "raw_erank": 35.215,
+            "proj_erank": 33.123
+          },
+          {
+            "layer": 27,
+            "raw_erank": 35.585,
+            "proj_erank": 32.205
+          },
+          {
+            "layer": 28,
+            "raw_erank": 35.505,
+            "proj_erank": 28.791
+          },
+          {
+            "layer": 29,
+            "raw_erank": 35.308,
+            "proj_erank": 23.512
+          },
+          {
+            "layer": 30,
+            "raw_erank": 33.183,
+            "proj_erank": 19.395
+          },
+          {
+            "layer": 31,
+            "raw_erank": 21.441,
+            "proj_erank": 7.652
+          }
+        ]
+      },
+      "code": {
+        "n_total": 58,
+        "n_content": 58,
+        "layers": [
+          {
+            "layer": 0,
+            "raw_erank": 15.42,
+            "proj_erank": 13.467
+          },
+          {
+            "layer": 1,
+            "raw_erank": 1.401,
+            "proj_erank": 1.11
+          },
+          {
+            "layer": 2,
+            "raw_erank": 45.494,
+            "proj_erank": 41.488
+          },
+          {
+            "layer": 3,
+            "raw_erank": 47.328,
+            "proj_erank": 43.83
+          },
+          {
+            "layer": 4,
+            "raw_erank": 48.58,
+            "proj_erank": 46.58
+          },
+          {
+            "layer": 5,
+            "raw_erank": 47.935,
+            "proj_erank": 46.915
+          },
+          {
+            "layer": 6,
+            "raw_erank": 49.555,
+            "proj_erank": 48.106
+          },
+          {
+            "layer": 7,
+            "raw_erank": 47.139,
+            "proj_erank": 46.041
+          },
+          {
+            "layer": 8,
+            "raw_erank": 46.305,
+            "proj_erank": 43.879
+          },
+          {
+            "layer": 9,
+            "raw_erank": 47.401,
+            "proj_erank": 46.011
+          },
+          {
+            "layer": 10,
+            "raw_erank": 49.27,
+            "proj_erank": 46.977
+          },
+          {
+            "layer": 11,
+            "raw_erank": 51.233,
+            "proj_erank": 50.041
+          },
+          {
+            "layer": 12,
+            "raw_erank": 51.206,
+            "proj_erank": 49.92
+          },
+          {
+            "layer": 13,
+            "raw_erank": 51.772,
+            "proj_erank": 47.641
+          },
+          {
+            "layer": 14,
+            "raw_erank": 51.75,
+            "proj_erank": 45.369
+          },
+          {
+            "layer": 15,
+            "raw_erank": 50.193,
+            "proj_erank": 48.91
+          },
+          {
+            "layer": 16,
+            "raw_erank": 50.323,
+            "proj_erank": 47.923
+          },
+          {
+            "layer": 17,
+            "raw_erank": 51.301,
+            "proj_erank": 48.116
+          },
+          {
+            "layer": 18,
+            "raw_erank": 51.216,
+            "proj_erank": 48.47
+          },
+          {
+            "layer": 19,
+            "raw_erank": 49.247,
+            "proj_erank": 46.287
+          },
+          {
+            "layer": 20,
+            "raw_erank": 49.815,
+            "proj_erank": 47.799
+          },
+          {
+            "layer": 21,
+            "raw_erank": 49.83,
+            "proj_erank": 44.082
+          },
+          {
+            "layer": 22,
+            "raw_erank": 49.53,
+            "proj_erank": 45.854
+          },
+          {
+            "layer": 23,
+            "raw_erank": 49.528,
+            "proj_erank": 47.904
+          },
+          {
+            "layer": 24,
+            "raw_erank": 49.375,
+            "proj_erank": 46.741
+          },
+          {
+            "layer": 25,
+            "raw_erank": 49.769,
+            "proj_erank": 47.914
+          },
+          {
+            "layer": 26,
+            "raw_erank": 49.521,
+            "proj_erank": 45.805
+          },
+          {
+            "layer": 27,
+            "raw_erank": 48.978,
+            "proj_erank": 41.144
+          },
+          {
+            "layer": 28,
+            "raw_erank": 48.81,
+            "proj_erank": 32.478
+          },
+          {
+            "layer": 29,
+            "raw_erank": 46.2,
+            "proj_erank": 23.74
+          },
+          {
+            "layer": 30,
+            "raw_erank": 44.009,
+            "proj_erank": 20.464
+          },
+          {
+            "layer": 31,
+            "raw_erank": 27.121,
+            "proj_erank": 9.921
+          }
+        ]
+      },
+      "science": {
+        "n_total": 36,
+        "n_content": 36,
+        "layers": [
+          {
+            "layer": 0,
+            "raw_erank": 10.913,
+            "proj_erank": 9.599
+          },
+          {
+            "layer": 1,
+            "raw_erank": 1.286,
+            "proj_erank": 1.081
+          },
+          {
+            "layer": 2,
+            "raw_erank": 31.625,
+            "proj_erank": 28.433
+          },
+          {
+            "layer": 3,
+            "raw_erank": 31.775,
+            "proj_erank": 29.266
+          },
+          {
+            "layer": 4,
+            "raw_erank": 32.243,
+            "proj_erank": 31.277
+          },
+          {
+            "layer": 5,
+            "raw_erank": 31.682,
+            "proj_erank": 30.206
+          },
+          {
+            "layer": 6,
+            "raw_erank": 31.888,
+            "proj_erank": 29.014
+          },
+          {
+            "layer": 7,
+            "raw_erank": 31.35,
+            "proj_erank": 30.32
+          },
+          {
+            "layer": 8,
+            "raw_erank": 30.44,
+            "proj_erank": 27.341
+          },
+          {
+            "layer": 9,
+            "raw_erank": 31.757,
+            "proj_erank": 30.884
+          },
+          {
+            "layer": 10,
+            "raw_erank": 31.466,
+            "proj_erank": 30.752
+          },
+          {
+            "layer": 11,
+            "raw_erank": 32.472,
+            "proj_erank": 31.755
+          },
+          {
+            "layer": 12,
+            "raw_erank": 32.508,
+            "proj_erank": 31.456
+          },
+          {
+            "layer": 13,
+            "raw_erank": 32.051,
+            "proj_erank": 27.148
+          },
+          {
+            "layer": 14,
+            "raw_erank": 31.987,
+            "proj_erank": 28.413
+          },
+          {
+            "layer": 15,
+            "raw_erank": 31.882,
+            "proj_erank": 30.794
+          },
+          {
+            "layer": 16,
+            "raw_erank": 32.048,
+            "proj_erank": 30.85
+          },
+          {
+            "layer": 17,
+            "raw_erank": 32.485,
+            "proj_erank": 29.992
+          },
+          {
+            "layer": 18,
+            "raw_erank": 32.565,
+            "proj_erank": 31.367
+          },
+          {
+            "layer": 19,
+            "raw_erank": 32.798,
+            "proj_erank": 30.735
+          },
+          {
+            "layer": 20,
+            "raw_erank": 32.004,
+            "proj_erank": 29.986
+          },
+          {
+            "layer": 21,
+            "raw_erank": 31.91,
+            "proj_erank": 29.487
+          },
+          {
+            "layer": 22,
+            "raw_erank": 32.352,
+            "proj_erank": 31.563
+          },
+          {
+            "layer": 23,
+            "raw_erank": 31.945,
+            "proj_erank": 31.223
+          },
+          {
+            "layer": 24,
+            "raw_erank": 32.265,
+            "proj_erank": 30.65
+          },
+          {
+            "layer": 25,
+            "raw_erank": 32.563,
+            "proj_erank": 29.199
+          },
+          {
+            "layer": 26,
+            "raw_erank": 32.102,
+            "proj_erank": 28.804
+          },
+          {
+            "layer": 27,
+            "raw_erank": 32.092,
+            "proj_erank": 24.317
+          },
+          {
+            "layer": 28,
+            "raw_erank": 31.683,
+            "proj_erank": 19.151
+          },
+          {
+            "layer": 29,
+            "raw_erank": 30.165,
+            "proj_erank": 14.764
+          },
+          {
+            "layer": 30,
+            "raw_erank": 27.485,
+            "proj_erank": 11.623
+          },
+          {
+            "layer": 31,
+            "raw_erank": 14.936,
+            "proj_erank": 5.396
+          }
+        ]
+      },
+      "narrative": {
+        "n_total": 41,
+        "n_content": 41,
+        "layers": [
+          {
+            "layer": 0,
+            "raw_erank": 12.128,
+            "proj_erank": 10.692
+          },
+          {
+            "layer": 1,
+            "raw_erank": 1.303,
+            "proj_erank": 1.085
+          },
+          {
+            "layer": 2,
+            "raw_erank": 36.575,
+            "proj_erank": 33.925
+          },
+          {
+            "layer": 3,
+            "raw_erank": 36.874,
+            "proj_erank": 34.114
+          },
+          {
+            "layer": 4,
+            "raw_erank": 36.789,
+            "proj_erank": 36.324
+          },
+          {
+            "layer": 5,
+            "raw_erank": 35.8,
+            "proj_erank": 34.603
+          },
+          {
+            "layer": 6,
+            "raw_erank": 36.195,
+            "proj_erank": 34.338
+          },
+          {
+            "layer": 7,
+            "raw_erank": 35.378,
+            "proj_erank": 34.824
+          },
+          {
+            "layer": 8,
+            "raw_erank": 35.482,
+            "proj_erank": 31.845
+          },
+          {
+            "layer": 9,
+            "raw_erank": 36.227,
+            "proj_erank": 35.341
+          },
+          {
+            "layer": 10,
+            "raw_erank": 35.955,
+            "proj_erank": 35.088
+          },
+          {
+            "layer": 11,
+            "raw_erank": 37.074,
+            "proj_erank": 34.438
+          },
+          {
+            "layer": 12,
+            "raw_erank": 37.179,
+            "proj_erank": 36.346
+          },
+          {
+            "layer": 13,
+            "raw_erank": 36.904,
+            "proj_erank": 35.006
+          },
+          {
+            "layer": 14,
+            "raw_erank": 36.366,
+            "proj_erank": 31.743
+          },
+          {
+            "layer": 15,
+            "raw_erank": 36.284,
+            "proj_erank": 35.134
+          },
+          {
+            "layer": 16,
+            "raw_erank": 36.388,
+            "proj_erank": 35.175
+          },
+          {
+            "layer": 17,
+            "raw_erank": 36.911,
+            "proj_erank": 35.021
+          },
+          {
+            "layer": 18,
+            "raw_erank": 36.281,
+            "proj_erank": 35.382
+          },
+          {
+            "layer": 19,
+            "raw_erank": 36.177,
+            "proj_erank": 33.892
+          },
+          {
+            "layer": 20,
+            "raw_erank": 35.525,
+            "proj_erank": 34.699
+          },
+          {
+            "layer": 21,
+            "raw_erank": 35.863,
+            "proj_erank": 34.995
+          },
+          {
+            "layer": 22,
+            "raw_erank": 35.465,
+            "proj_erank": 34.03
+          },
+          {
+            "layer": 23,
+            "raw_erank": 35.777,
+            "proj_erank": 33.479
+          },
+          {
+            "layer": 24,
+            "raw_erank": 36.067,
+            "proj_erank": 33.46
+          },
+          {
+            "layer": 25,
+            "raw_erank": 36.019,
+            "proj_erank": 34.452
+          },
+          {
+            "layer": 26,
+            "raw_erank": 36.085,
+            "proj_erank": 33.288
+          },
+          {
+            "layer": 27,
+            "raw_erank": 36.137,
+            "proj_erank": 30.468
+          },
+          {
+            "layer": 28,
+            "raw_erank": 35.693,
+            "proj_erank": 22.355
+          },
+          {
+            "layer": 29,
+            "raw_erank": 33.48,
+            "proj_erank": 17.368
+          },
+          {
+            "layer": 30,
+            "raw_erank": 30.305,
+            "proj_erank": 12.681
+          },
+          {
+            "layer": 31,
+            "raw_erank": 15.808,
+            "proj_erank": 5.599
+          }
+        ]
+      }
+    },
+    "preambled": {
+      "math": {
+        "n_total": 81,
+        "n_content": 44,
+        "layers": [
+          {
+            "layer": 0,
+            "raw_erank": 35.634,
+            "proj_erank": 32.595
+          },
+          {
+            "layer": 1,
+            "raw_erank": 38.366,
+            "proj_erank": 36.991
+          },
+          {
+            "layer": 2,
+            "raw_erank": 38.019,
+            "proj_erank": 33.468
+          },
+          {
+            "layer": 3,
+            "raw_erank": 39.517,
+            "proj_erank": 37.78
+          },
+          {
+            "layer": 4,
+            "raw_erank": 38.97,
+            "proj_erank": 36.693
+          },
+          {
+            "layer": 5,
+            "raw_erank": 38.441,
+            "proj_erank": 36.94
+          },
+          {
+            "layer": 6,
+            "raw_erank": 38.877,
+            "proj_erank": 37.997
+          },
+          {
+            "layer": 7,
+            "raw_erank": 38.713,
+            "proj_erank": 38.294
+          },
+          {
+            "layer": 8,
+            "raw_erank": 38.762,
+            "proj_erank": 36.495
+          },
+          {
+            "layer": 9,
+            "raw_erank": 39.282,
+            "proj_erank": 38.197
+          },
+          {
+            "layer": 10,
+            "raw_erank": 38.467,
+            "proj_erank": 34.979
+          },
+          {
+            "layer": 11,
+            "raw_erank": 39.934,
+            "proj_erank": 37.661
+          },
+          {
+            "layer": 12,
+            "raw_erank": 39.914,
+            "proj_erank": 37.895
+          },
+          {
+            "layer": 13,
+            "raw_erank": 39.698,
+            "proj_erank": 33.397
+          },
+          {
+            "layer": 14,
+            "raw_erank": 38.886,
+            "proj_erank": 32.614
+          },
+          {
+            "layer": 15,
+            "raw_erank": 38.258,
+            "proj_erank": 36.999
+          },
+          {
+            "layer": 16,
+            "raw_erank": 38.505,
+            "proj_erank": 36.806
+          },
+          {
+            "layer": 17,
+            "raw_erank": 39.296,
+            "proj_erank": 36.699
+          },
+          {
+            "layer": 18,
+            "raw_erank": 39.132,
+            "proj_erank": 37.563
+          },
+          {
+            "layer": 19,
+            "raw_erank": 38.304,
+            "proj_erank": 36.732
+          },
+          {
+            "layer": 20,
+            "raw_erank": 37.491,
+            "proj_erank": 35.696
+          },
+          {
+            "layer": 21,
+            "raw_erank": 38.433,
+            "proj_erank": 36.668
+          },
+          {
+            "layer": 22,
+            "raw_erank": 36.553,
+            "proj_erank": 35.395
+          },
+          {
+            "layer": 23,
+            "raw_erank": 38.305,
+            "proj_erank": 37.642
+          },
+          {
+            "layer": 24,
+            "raw_erank": 38.82,
+            "proj_erank": 37.293
+          },
+          {
+            "layer": 25,
+            "raw_erank": 38.749,
+            "proj_erank": 36.886
+          },
+          {
+            "layer": 26,
+            "raw_erank": 39.522,
+            "proj_erank": 36.344
+          },
+          {
+            "layer": 27,
+            "raw_erank": 38.805,
+            "proj_erank": 31.9
+          },
+          {
+            "layer": 28,
+            "raw_erank": 38.617,
+            "proj_erank": 23.965
+          },
+          {
+            "layer": 29,
+            "raw_erank": 36.46,
+            "proj_erank": 18.178
+          },
+          {
+            "layer": 30,
+            "raw_erank": 36.606,
+            "proj_erank": 16.03
+          },
+          {
+            "layer": 31,
+            "raw_erank": 29.231,
+            "proj_erank": 18.05
+          }
+        ]
+      },
+      "poetry": {
+        "n_total": 73,
+        "n_content": 36,
+        "layers": [
+          {
+            "layer": 0,
+            "raw_erank": 29.952,
+            "proj_erank": 28.055
+          },
+          {
+            "layer": 1,
+            "raw_erank": 32.63,
+            "proj_erank": 31.184
+          },
+          {
+            "layer": 2,
+            "raw_erank": 32.598,
+            "proj_erank": 29.01
+          },
+          {
+            "layer": 3,
+            "raw_erank": 33.115,
+            "proj_erank": 32.263
+          },
+          {
+            "layer": 4,
+            "raw_erank": 33.706,
+            "proj_erank": 33.025
+          },
+          {
+            "layer": 5,
+            "raw_erank": 33.252,
+            "proj_erank": 32.012
+          },
+          {
+            "layer": 6,
+            "raw_erank": 33.201,
+            "proj_erank": 32.381
+          },
+          {
+            "layer": 7,
+            "raw_erank": 32.407,
+            "proj_erank": 31.642
+          },
+          {
+            "layer": 8,
+            "raw_erank": 32.736,
+            "proj_erank": 30.557
+          },
+          {
+            "layer": 9,
+            "raw_erank": 32.271,
+            "proj_erank": 31.049
+          },
+          {
+            "layer": 10,
+            "raw_erank": 31.719,
+            "proj_erank": 28.878
+          },
+          {
+            "layer": 11,
+            "raw_erank": 33.152,
+            "proj_erank": 31.646
+          },
+          {
+            "layer": 12,
+            "raw_erank": 33.174,
+            "proj_erank": 32.407
+          },
+          {
+            "layer": 13,
+            "raw_erank": 32.681,
+            "proj_erank": 28.709
+          },
+          {
+            "layer": 14,
+            "raw_erank": 32.746,
+            "proj_erank": 29.124
+          },
+          {
+            "layer": 15,
+            "raw_erank": 32.519,
+            "proj_erank": 31.288
+          },
+          {
+            "layer": 16,
+            "raw_erank": 32.516,
+            "proj_erank": 29.184
+          },
+          {
+            "layer": 17,
+            "raw_erank": 32.819,
+            "proj_erank": 30.823
+          },
+          {
+            "layer": 18,
+            "raw_erank": 32.585,
+            "proj_erank": 30.569
+          },
+          {
+            "layer": 19,
+            "raw_erank": 31.753,
+            "proj_erank": 30.565
+          },
+          {
+            "layer": 20,
+            "raw_erank": 32.247,
+            "proj_erank": 31.33
+          },
+          {
+            "layer": 21,
+            "raw_erank": 33.308,
+            "proj_erank": 32.351
+          },
+          {
+            "layer": 22,
+            "raw_erank": 33.531,
+            "proj_erank": 33.222
+          },
+          {
+            "layer": 23,
+            "raw_erank": 33.893,
+            "proj_erank": 33.248
+          },
+          {
+            "layer": 24,
+            "raw_erank": 34.336,
+            "proj_erank": 32.792
+          },
+          {
+            "layer": 25,
+            "raw_erank": 34.208,
+            "proj_erank": 31.983
+          },
+          {
+            "layer": 26,
+            "raw_erank": 34.41,
+            "proj_erank": 32.055
+          },
+          {
+            "layer": 27,
+            "raw_erank": 34.657,
+            "proj_erank": 32.451
+          },
+          {
+            "layer": 28,
+            "raw_erank": 34.179,
+            "proj_erank": 29.714
+          },
+          {
+            "layer": 29,
+            "raw_erank": 33.723,
+            "proj_erank": 23.251
+          },
+          {
+            "layer": 30,
+            "raw_erank": 33.608,
+            "proj_erank": 22.547
+          },
+          {
+            "layer": 31,
+            "raw_erank": 31.824,
+            "proj_erank": 20.81
+          }
+        ]
+      },
+      "code": {
+        "n_total": 93,
+        "n_content": 56,
+        "layers": [
+          {
+            "layer": 0,
+            "raw_erank": 34.998,
+            "proj_erank": 32.243
+          },
+          {
+            "layer": 1,
+            "raw_erank": 42.041,
+            "proj_erank": 40.41
+          },
+          {
+            "layer": 2,
+            "raw_erank": 44.205,
+            "proj_erank": 40.064
+          },
+          {
+            "layer": 3,
+            "raw_erank": 46.294,
+            "proj_erank": 43.558
+          },
+          {
+            "layer": 4,
+            "raw_erank": 47.005,
+            "proj_erank": 45.291
+          },
+          {
+            "layer": 5,
+            "raw_erank": 46.305,
+            "proj_erank": 45.166
+          },
+          {
+            "layer": 6,
+            "raw_erank": 47.671,
+            "proj_erank": 45.745
+          },
+          {
+            "layer": 7,
+            "raw_erank": 45.77,
+            "proj_erank": 44.672
+          },
+          {
+            "layer": 8,
+            "raw_erank": 44.319,
+            "proj_erank": 42.881
+          },
+          {
+            "layer": 9,
+            "raw_erank": 45.388,
+            "proj_erank": 44.391
+          },
+          {
+            "layer": 10,
+            "raw_erank": 47.18,
+            "proj_erank": 44.514
+          },
+          {
+            "layer": 11,
+            "raw_erank": 49.507,
+            "proj_erank": 48.393
+          },
+          {
+            "layer": 12,
+            "raw_erank": 49.443,
+            "proj_erank": 48.473
+          },
+          {
+            "layer": 13,
+            "raw_erank": 49.982,
+            "proj_erank": 46.378
+          },
+          {
+            "layer": 14,
+            "raw_erank": 50.154,
+            "proj_erank": 44.885
+          },
+          {
+            "layer": 15,
+            "raw_erank": 48.924,
+            "proj_erank": 46.646
+          },
+          {
+            "layer": 16,
+            "raw_erank": 49.238,
+            "proj_erank": 46.923
+          },
+          {
+            "layer": 17,
+            "raw_erank": 50.019,
+            "proj_erank": 47.245
+          },
+          {
+            "layer": 18,
+            "raw_erank": 49.968,
+            "proj_erank": 46.897
+          },
+          {
+            "layer": 19,
+            "raw_erank": 47.479,
+            "proj_erank": 45.146
+          },
+          {
+            "layer": 20,
+            "raw_erank": 48.567,
+            "proj_erank": 46.378
+          },
+          {
+            "layer": 21,
+            "raw_erank": 48.458,
+            "proj_erank": 43.2
+          },
+          {
+            "layer": 22,
+            "raw_erank": 48.532,
+            "proj_erank": 45.226
+          },
+          {
+            "layer": 23,
+            "raw_erank": 48.613,
+            "proj_erank": 46.706
+          },
+          {
+            "layer": 24,
+            "raw_erank": 48.647,
+            "proj_erank": 46.195
+          },
+          {
+            "layer": 25,
+            "raw_erank": 48.882,
+            "proj_erank": 46.637
+          },
+          {
+            "layer": 26,
+            "raw_erank": 48.658,
+            "proj_erank": 46.018
+          },
+          {
+            "layer": 27,
+            "raw_erank": 47.819,
+            "proj_erank": 41.386
+          },
+          {
+            "layer": 28,
+            "raw_erank": 47.281,
+            "proj_erank": 31.718
+          },
+          {
+            "layer": 29,
+            "raw_erank": 44.605,
+            "proj_erank": 23.808
+          },
+          {
+            "layer": 30,
+            "raw_erank": 44.827,
+            "proj_erank": 21.918
+          },
+          {
+            "layer": 31,
+            "raw_erank": 35.59,
+            "proj_erank": 18.051
+          }
+        ]
+      },
+      "science": {
+        "n_total": 71,
+        "n_content": 34,
+        "layers": [
+          {
+            "layer": 0,
+            "raw_erank": 28.218,
+            "proj_erank": 26.992
+          },
+          {
+            "layer": 1,
+            "raw_erank": 30.259,
+            "proj_erank": 29.692
+          },
+          {
+            "layer": 2,
+            "raw_erank": 29.997,
+            "proj_erank": 26.862
+          },
+          {
+            "layer": 3,
+            "raw_erank": 30.314,
+            "proj_erank": 28.578
+          },
+          {
+            "layer": 4,
+            "raw_erank": 30.645,
+            "proj_erank": 29.761
+          },
+          {
+            "layer": 5,
+            "raw_erank": 30.293,
+            "proj_erank": 28.605
+          },
+          {
+            "layer": 6,
+            "raw_erank": 30.485,
+            "proj_erank": 28.905
+          },
+          {
+            "layer": 7,
+            "raw_erank": 29.718,
+            "proj_erank": 29.151
+          },
+          {
+            "layer": 8,
+            "raw_erank": 29.701,
+            "proj_erank": 28.771
+          },
+          {
+            "layer": 9,
+            "raw_erank": 30.195,
+            "proj_erank": 29.352
+          },
+          {
+            "layer": 10,
+            "raw_erank": 29.957,
+            "proj_erank": 29.078
+          },
+          {
+            "layer": 11,
+            "raw_erank": 31.128,
+            "proj_erank": 30.491
+          },
+          {
+            "layer": 12,
+            "raw_erank": 31.206,
+            "proj_erank": 30.095
+          },
+          {
+            "layer": 13,
+            "raw_erank": 31.098,
+            "proj_erank": 27.258
+          },
+          {
+            "layer": 14,
+            "raw_erank": 30.987,
+            "proj_erank": 28.507
+          },
+          {
+            "layer": 15,
+            "raw_erank": 30.546,
+            "proj_erank": 29.504
+          },
+          {
+            "layer": 16,
+            "raw_erank": 30.662,
+            "proj_erank": 29.549
+          },
+          {
+            "layer": 17,
+            "raw_erank": 31.246,
+            "proj_erank": 29.044
+          },
+          {
+            "layer": 18,
+            "raw_erank": 31.207,
+            "proj_erank": 30.369
+          },
+          {
+            "layer": 19,
+            "raw_erank": 30.928,
+            "proj_erank": 29.958
+          },
+          {
+            "layer": 20,
+            "raw_erank": 30.65,
+            "proj_erank": 29.128
+          },
+          {
+            "layer": 21,
+            "raw_erank": 30.474,
+            "proj_erank": 28.23
+          },
+          {
+            "layer": 22,
+            "raw_erank": 30.766,
+            "proj_erank": 29.986
+          },
+          {
+            "layer": 23,
+            "raw_erank": 30.9,
+            "proj_erank": 29.708
+          },
+          {
+            "layer": 24,
+            "raw_erank": 31.06,
+            "proj_erank": 29.085
+          },
+          {
+            "layer": 25,
+            "raw_erank": 31.199,
+            "proj_erank": 27.84
+          },
+          {
+            "layer": 26,
+            "raw_erank": 31.093,
+            "proj_erank": 27.973
+          },
+          {
+            "layer": 27,
+            "raw_erank": 30.816,
+            "proj_erank": 23.659
+          },
+          {
+            "layer": 28,
+            "raw_erank": 30.068,
+            "proj_erank": 18.439
+          },
+          {
+            "layer": 29,
+            "raw_erank": 28.188,
+            "proj_erank": 13.54
+          },
+          {
+            "layer": 30,
+            "raw_erank": 28.142,
+            "proj_erank": 11.978
+          },
+          {
+            "layer": 31,
+            "raw_erank": 22.608,
+            "proj_erank": 15.757
+          }
+        ]
+      },
+      "narrative": {
+        "n_total": 76,
+        "n_content": 39,
+        "layers": [
+          {
+            "layer": 0,
+            "raw_erank": 31.862,
+            "proj_erank": 29.566
+          },
+          {
+            "layer": 1,
+            "raw_erank": 35.213,
+            "proj_erank": 34.133
+          },
+          {
+            "layer": 2,
+            "raw_erank": 35.066,
+            "proj_erank": 32.597
+          },
+          {
+            "layer": 3,
+            "raw_erank": 35.579,
+            "proj_erank": 33.463
+          },
+          {
+            "layer": 4,
+            "raw_erank": 35.567,
+            "proj_erank": 35.194
+          },
+          {
+            "layer": 5,
+            "raw_erank": 34.316,
+            "proj_erank": 32.989
+          },
+          {
+            "layer": 6,
+            "raw_erank": 34.952,
+            "proj_erank": 33.621
+          },
+          {
+            "layer": 7,
+            "raw_erank": 34.244,
+            "proj_erank": 33.45
+          },
+          {
+            "layer": 8,
+            "raw_erank": 34.519,
+            "proj_erank": 31.942
+          },
+          {
+            "layer": 9,
+            "raw_erank": 34.938,
+            "proj_erank": 34.184
+          },
+          {
+            "layer": 10,
+            "raw_erank": 34.3,
+            "proj_erank": 32.737
+          },
+          {
+            "layer": 11,
+            "raw_erank": 35.414,
+            "proj_erank": 33.362
+          },
+          {
+            "layer": 12,
+            "raw_erank": 35.62,
+            "proj_erank": 34.411
+          },
+          {
+            "layer": 13,
+            "raw_erank": 35.131,
+            "proj_erank": 33.397
+          },
+          {
+            "layer": 14,
+            "raw_erank": 34.955,
+            "proj_erank": 30.018
+          },
+          {
+            "layer": 15,
+            "raw_erank": 34.835,
+            "proj_erank": 33.787
+          },
+          {
+            "layer": 16,
+            "raw_erank": 34.833,
+            "proj_erank": 33.729
+          },
+          {
+            "layer": 17,
+            "raw_erank": 35.48,
+            "proj_erank": 33.632
+          },
+          {
+            "layer": 18,
+            "raw_erank": 34.767,
+            "proj_erank": 33.956
+          },
+          {
+            "layer": 19,
+            "raw_erank": 34.383,
+            "proj_erank": 33.222
+          },
+          {
+            "layer": 20,
+            "raw_erank": 34.153,
+            "proj_erank": 32.845
+          },
+          {
+            "layer": 21,
+            "raw_erank": 34.421,
+            "proj_erank": 33.581
+          },
+          {
+            "layer": 22,
+            "raw_erank": 34.085,
+            "proj_erank": 32.856
+          },
+          {
+            "layer": 23,
+            "raw_erank": 34.487,
+            "proj_erank": 32.403
+          },
+          {
+            "layer": 24,
+            "raw_erank": 34.85,
+            "proj_erank": 32.215
+          },
+          {
+            "layer": 25,
+            "raw_erank": 34.763,
+            "proj_erank": 33.363
+          },
+          {
+            "layer": 26,
+            "raw_erank": 34.762,
+            "proj_erank": 32.373
+          },
+          {
+            "layer": 27,
+            "raw_erank": 34.63,
+            "proj_erank": 29.86
+          },
+          {
+            "layer": 28,
+            "raw_erank": 33.906,
+            "proj_erank": 21.241
+          },
+          {
+            "layer": 29,
+            "raw_erank": 31.73,
+            "proj_erank": 16.12
+          },
+          {
+            "layer": 30,
+            "raw_erank": 31.234,
+            "proj_erank": 12.207
+          },
+          {
+            "layer": 31,
+            "raw_erank": 23.999,
+            "proj_erank": 15.024
+          }
+        ]
+      }
+    }
+  },
+  "summary": {
+    "mean_raw_corr_bare": 0.988876,
+    "mean_raw_corr_preambled": 0.659111,
+    "mean_proj_corr_bare": 0.978391,
+    "mean_proj_corr_preambled": 0.916829
+  }
+}

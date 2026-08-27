@@ -1,0 +1,37 @@
+{
+  "qwen2.5:3b": {
+    "research": {
+      "sigma1_dominance": 58.6,
+      "singular_values": [
+        0.4436,
+        0.2842,
+        0.164,
+        0.1436,
+        0.1036
+      ],
+      "final_chars": 344
+    },
+    "personal": {
+      "sigma1_dominance": 64.9,
+      "singular_values": [
+        0.4524,
+        0.2546,
+        0.1679,
+        0.1088,
+        0.0766
+      ],
+      "final_chars": 384
+    },
+    "technical": {
+      "sigma1_dominance": 81.97,
+      "singular_values": [
+        0.2945,
+        0.0962,
+        0.0715,
+        0.0579,
+        0.0368
+      ],
+      "final_chars": 417
+    }
+  }
+}

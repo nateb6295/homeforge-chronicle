@@ -1,0 +1,202 @@
+{
+  "qwen": {
+    "CORE": {
+      "n_tokens": 75,
+      "late_concentration": 0.1327,
+      "late_ratio": 3.95,
+      "late_eff_rank": 55.42,
+      "early_concentration": 0.0726,
+      "mid_concentration": 0.0882
+    },
+    "REMEMBERS": {
+      "n_tokens": 413,
+      "late_concentration": 0.0656,
+      "late_ratio": 4.47,
+      "late_eff_rank": 277.65,
+      "early_concentration": 0.0363,
+      "mid_concentration": 0.0416
+    },
+    "SEEKS": {
+      "n_tokens": 167,
+      "late_concentration": 0.0935,
+      "late_ratio": 3.94,
+      "late_eff_rank": 118.58,
+      "early_concentration": 0.0506,
+      "mid_concentration": 0.0609
+    },
+    "ALIVE": {
+      "n_tokens": 155,
+      "late_concentration": 0.1023,
+      "late_ratio": 3.94,
+      "late_eff_rank": 106.97,
+      "early_concentration": 0.0552,
+      "mid_concentration": 0.0675
+    },
+    "RELATES": {
+      "n_tokens": 120,
+      "late_concentration": 0.1032,
+      "late_ratio": 3.69,
+      "late_eff_rank": 86.98,
+      "early_concentration": 0.0581,
+      "mid_concentration": 0.0713
+    },
+    "BRIDGE": {
+      "n_tokens": 184,
+      "late_concentration": 0.0855,
+      "late_ratio": 3.14,
+      "late_eff_rank": 126.15,
+      "early_concentration": 0.0533,
+      "mid_concentration": 0.0603
+    }
+  },
+  "mistral": {
+    "CORE": {
+      "n_tokens": 78,
+      "late_concentration": 0.091,
+      "late_ratio": 3.01,
+      "late_eff_rank": 64.34,
+      "early_concentration": 0.0561,
+      "mid_concentration": 0.0681
+    },
+    "REMEMBERS": {
+      "n_tokens": 454,
+      "late_concentration": 0.041,
+      "late_ratio": 3.11,
+      "late_eff_rank": 341.58,
+      "early_concentration": 0.0254,
+      "mid_concentration": 0.029
+    },
+    "SEEKS": {
+      "n_tokens": 186,
+      "late_concentration": 0.0599,
+      "late_ratio": 2.84,
+      "late_eff_rank": 147.27,
+      "early_concentration": 0.0373,
+      "mid_concentration": 0.0451
+    },
+    "ALIVE": {
+      "n_tokens": 169,
+      "late_concentration": 0.0676,
+      "late_ratio": 2.91,
+      "late_eff_rank": 130.57,
+      "early_concentration": 0.042,
+      "mid_concentration": 0.051
+    },
+    "RELATES": {
+      "n_tokens": 132,
+      "late_concentration": 0.069,
+      "late_ratio": 2.96,
+      "late_eff_rank": 106.35,
+      "early_concentration": 0.0439,
+      "mid_concentration": 0.0553
+    },
+    "BRIDGE": {
+      "n_tokens": 215,
+      "late_concentration": 0.0577,
+      "late_ratio": 2.54,
+      "late_eff_rank": 160.62,
+      "early_concentration": 0.0381,
+      "mid_concentration": 0.042
+    }
+  },
+  "llama": {
+    "CORE": {
+      "n_tokens": 75,
+      "late_concentration": 0.1119,
+      "late_ratio": 3.55,
+      "late_eff_rank": 59.18,
+      "early_concentration": 0.0622,
+      "mid_concentration": 0.0831
+    },
+    "REMEMBERS": {
+      "n_tokens": 402,
+      "late_concentration": 0.0537,
+      "late_ratio": 3.67,
+      "late_eff_rank": 289.81,
+      "early_concentration": 0.0299,
+      "mid_concentration": 0.0382
+    },
+    "SEEKS": {
+      "n_tokens": 164,
+      "late_concentration": 0.077,
+      "late_ratio": 3.33,
+      "late_eff_rank": 124.54,
+      "early_concentration": 0.0434,
+      "mid_concentration": 0.0569
+    },
+    "ALIVE": {
+      "n_tokens": 155,
+      "late_concentration": 0.0804,
+      "late_ratio": 3.33,
+      "late_eff_rank": 115.85,
+      "early_concentration": 0.0477,
+      "mid_concentration": 0.0621
+    },
+    "RELATES": {
+      "n_tokens": 118,
+      "late_concentration": 0.0843,
+      "late_ratio": 3.31,
+      "late_eff_rank": 92.56,
+      "early_concentration": 0.0505,
+      "mid_concentration": 0.0678
+    },
+    "BRIDGE": {
+      "n_tokens": 166,
+      "late_concentration": 0.0755,
+      "late_ratio": 3.27,
+      "late_eff_rank": 122.45,
+      "early_concentration": 0.0445,
+      "mid_concentration": 0.0567
+    }
+  },
+  "gemma": {
+    "CORE": {
+      "n_tokens": 76,
+      "late_concentration": 0.1361,
+      "late_ratio": 4.78,
+      "late_eff_rank": 56.74,
+      "early_concentration": 0.0785,
+      "mid_concentration": 0.1205
+    },
+    "REMEMBERS": {
+      "n_tokens": 419,
+      "late_concentration": 0.0676,
+      "late_ratio": 5.55,
+      "late_eff_rank": 291.86,
+      "early_concentration": 0.04,
+      "mid_concentration": 0.0592
+    },
+    "SEEKS": {
+      "n_tokens": 172,
+      "late_concentration": 0.099,
+      "late_ratio": 4.82,
+      "late_eff_rank": 122.95,
+      "early_concentration": 0.055,
+      "mid_concentration": 0.0869
+    },
+    "ALIVE": {
+      "n_tokens": 160,
+      "late_concentration": 0.1045,
+      "late_ratio": 5.09,
+      "late_eff_rank": 112.68,
+      "early_concentration": 0.059,
+      "mid_concentration": 0.0923
+    },
+    "RELATES": {
+      "n_tokens": 119,
+      "late_concentration": 0.1148,
+      "late_ratio": 4.77,
+      "late_eff_rank": 87.0,
+      "early_concentration": 0.0636,
+      "mid_concentration": 0.1041
+    },
+    "BRIDGE": {
+      "n_tokens": 189,
+      "late_concentration": 0.0981,
+      "late_ratio": 4.35,
+      "late_eff_rank": 128.28,
+      "early_concentration": 0.0566,
+      "mid_concentration": 0.0864
+    }
+  }
+}

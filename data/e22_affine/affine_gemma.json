@@ -1,0 +1,2064 @@
+{
+  "model": "google/gemma-2-9b",
+  "architecture": "gemma",
+  "layers": {
+    "L0": {
+      "bare": {
+        "erank": 15.865,
+        "top_svs": [
+          580.3994,
+          231.1967,
+          159.5254,
+          69.1902,
+          59.5686,
+          52.8092,
+          43.853,
+          40.4811,
+          39.6467,
+          39.2934
+        ],
+        "sv_concentration": 0.3082,
+        "translation_mag": 45.2335,
+        "rotation_mag": 1.4142,
+        "cosine_sim": 0.330436,
+        "frob_norm": 670.7368
+      },
+      "ccs": {
+        "erank": 37.284,
+        "top_svs": [
+          671.4113,
+          317.1588,
+          229.1609,
+          105.1614,
+          88.3925,
+          71.8167,
+          67.7403,
+          61.5027,
+          56.2772,
+          51.9671
+        ],
+        "sv_concentration": 0.1998,
+        "translation_mag": 52.6188,
+        "rotation_mag": 1.4142,
+        "cosine_sim": 0.206429,
+        "frob_norm": 832.6349
+      },
+      "ccs_effect": {
+        "erank_delta": 21.419,
+        "translation_delta": 7.3853,
+        "cosine_delta": -0.124007,
+        "frob_delta": 161.8981,
+        "concentration_delta": -0.1084
+      }
+    },
+    "L1": {
+      "bare": {
+        "erank": 23.523,
+        "top_svs": [
+          202.208,
+          137.0945,
+          66.1506,
+          54.758,
+          49.8782,
+          47.3715,
+          44.3491,
+          42.4421,
+          38.5505,
+          37.771
+        ],
+        "sv_concentration": 0.1643,
+        "translation_mag": 32.3631,
+        "rotation_mag": 1.4142,
+        "cosine_sim": 0.604798,
+        "frob_norm": 303.151
+      },
+      "ccs": {
+        "erank": 52.477,
+        "top_svs": [
+          285.5491,
+          156.3836,
+          88.4979,
+          62.6735,
+          58.9291,
+          52.9576,
+          50.4938,
+          49.2239,
+          47.4742,
+          46.2269
+        ],
+        "sv_concentration": 0.1181,
+        "translation_mag": 32.2924,
+        "rotation_mag": 1.4142,
+        "cosine_sim": 0.629642,
+        "frob_norm": 421.2316
+      },
+      "ccs_effect": {
+        "erank_delta": 28.954,
+        "translation_delta": -0.0707,
+        "cosine_delta": 0.024844,
+        "frob_delta": 118.0806,
+        "concentration_delta": -0.0462
+      }
+    },
+    "L2": {
+      "bare": {
+        "erank": 21.266,
+        "top_svs": [
+          232.5708,
+          135.093,
+          52.6914,
+          49.9413,
+          47.2537,
+          41.4683,
+          39.0689,
+          35.459,
+          35.2269,
+          33.6492
+        ],
+        "sv_concentration": 0.2078,
+        "translation_mag": 40.4368,
+        "rotation_mag": 1.4142,
+        "cosine_sim": 0.615921,
+        "frob_norm": 309.0273
+      },
+      "ccs": {
+        "erank": 47.995,
+        "top_svs": [
+          362.1262,
+          141.3121,
+          53.5717,
+          50.0915,
+          45.9838,
+          44.7807,
+          43.1907,
+          41.6852,
+          40.5137,
+          38.8915
+        ],
+        "sv_concentration": 0.1675,
+        "translation_mag": 41.8282,
+        "rotation_mag": 1.4142,
+        "cosine_sim": 0.521187,
+        "frob_norm": 445.2253
+      },
+      "ccs_effect": {
+        "erank_delta": 26.729,
+        "translation_delta": 1.3914,
+        "cosine_delta": -0.094734,
+        "frob_delta": 136.198,
+        "concentration_delta": -0.0403
+      }
+    },
+    "L3": {
+      "bare": {
+        "erank": 21.329,
+        "top_svs": [
+          265.7043,
+          90.7435,
+          50.8475,
+          49.6709,
+          41.7698,
+          37.5896,
+          34.8231,
+          33.5747,
+          31.6124,
+          30.2875
+        ],
+        "sv_concentration": 0.2411,
+        "translation_mag": 46.8259,
+        "rotation_mag": 1.4142,
+        "cosine_sim": 0.611043,
+        "frob_norm": 316.9875
+      },
+      "ccs": {
+        "erank": 49.332,
+        "top_svs": [
+          396.8312,
+          95.3779,
+          69.968,
+          59.2956,
+          51.2547,
+          47.9883,
+          45.4311,
+          41.03,
+          39.7877,
+          37.6729
+        ],
+        "sv_concentration": 0.1752,
+        "translation_mag": 46.0173,
+        "rotation_mag": 1.4142,
+        "cosine_sim": 0.519832,
+        "frob_norm": 468.946
+      },
+      "ccs_effect": {
+        "erank_delta": 28.003,
+        "translation_delta": -0.8086,
+        "cosine_delta": -0.091211,
+        "frob_delta": 151.9585,
+        "concentration_delta": -0.0659
+      }
+    },
+    "L4": {
+      "bare": {
+        "erank": 23.552,
+        "top_svs": [
+          220.8052,
+          54.684,
+          48.8082,
+          43.1328,
+          40.601,
+          39.3813,
+          37.0891,
+          36.2475,
+          33.6578,
+          31.2303
+        ],
+        "sv_concentration": 0.2112,
+        "translation_mag": 38.2607,
+        "rotation_mag": 1.4142,
+        "cosine_sim": 0.788736,
+        "frob_norm": 272.7578
+      },
+      "ccs": {
+        "erank": 53.867,
+        "top_svs": [
+          334.9803,
+          75.0571,
+          58.3642,
+          54.2388,
+          47.7963,
+          47.054,
+          44.6048,
+          41.7163,
+          40.2025,
+          38.6752
+        ],
+        "sv_concentration": 0.1494,
+        "translation_mag": 38.5096,
+        "rotation_mag": 1.4142,
+        "cosine_sim": 0.709912,
+        "frob_norm": 415.5752
+      },
+      "ccs_effect": {
+        "erank_delta": 30.315,
+        "translation_delta": 0.2489,
+        "cosine_delta": -0.078824,
+        "frob_delta": 142.8174,
+        "concentration_delta": -0.0618
+      }
+    },
+    "L5": {
+      "bare": {
+        "erank": 23.448,
+        "top_svs": [
+          301.6924,
+          74.2909,
+          61.6385,
+          56.4611,
+          55.5724,
+          55.0243,
+          48.791,
+          45.065,
+          43.9671,
+          43.0136
+        ],
+        "sv_concentration": 0.2146,
+        "translation_mag": 52.1653,
+        "rotation_mag": 1.4142,
+        "cosine_sim": 0.69753,
+        "frob_norm": 369.817
+      },
+      "ccs": {
+        "erank": 52.848,
+        "top_svs": [
+          463.1791,
+          82.3866,
+          68.4746,
+          66.8689,
+          63.1481,
+          58.5035,
+          55.3715,
+          53.5988,
+          52.5745,
+          50.9789
+        ],
+        "sv_concentration": 0.1589,
+        "translation_mag": 53.29,
+        "rotation_mag": 1.4142,
+        "cosine_sim": 0.583749,
+        "frob_norm": 559.274
+      },
+      "ccs_effect": {
+        "erank_delta": 29.4,
+        "translation_delta": 1.1247,
+        "cosine_delta": -0.113781,
+        "frob_delta": 189.457,
+        "concentration_delta": -0.0557
+      }
+    },
+    "L6": {
+      "bare": {
+        "erank": 24.49,
+        "top_svs": [
+          217.6511,
+          137.6747,
+          83.2868,
+          60.1469,
+          58.7153,
+          51.5785,
+          48.9026,
+          46.6145,
+          44.6054,
+          41.9372
+        ],
+        "sv_concentration": 0.1577,
+        "translation_mag": 37.6434,
+        "rotation_mag": 1.4142,
+        "cosine_sim": 0.876699,
+        "frob_norm": 329.3211
+      },
+      "ccs": {
+        "erank": 56.469,
+        "top_svs": [
+          322.4458,
+          148.0284,
+          96.2849,
+          77.5889,
+          68.597,
+          63.4187,
+          57.8181,
+          56.937,
+          55.0205,
+          52.1399
+        ],
+        "sv_concentration": 0.1131,
+        "translation_mag": 37.1682,
+        "rotation_mag": 1.4142,
+        "cosine_sim": 0.843755,
+        "frob_norm": 472.0309
+      },
+      "ccs_effect": {
+        "erank_delta": 31.979,
+        "translation_delta": -0.4752,
+        "cosine_delta": -0.032944,
+        "frob_delta": 142.7098,
+        "concentration_delta": -0.0446
+      }
+    },
+    "L7": {
+      "bare": {
+        "erank": 24.859,
+        "top_svs": [
+          248.3394,
+          86.2071,
+          74.2721,
+          68.0928,
+          63.5665,
+          58.5433,
+          48.6384,
+          46.26,
+          45.7304,
+          44.8293
+        ],
+        "sv_concentration": 0.1763,
+        "translation_mag": 42.8503,
+        "rotation_mag": 1.4142,
+        "cosine_sim": 0.906398,
+        "frob_norm": 338.1549
+      },
+      "ccs": {
+        "erank": 57.354,
+        "top_svs": [
+          355.4376,
+          98.8233,
+          82.7855,
+          75.1545,
+          69.6677,
+          67.1187,
+          62.4523,
+          60.5038,
+          58.1738,
+          56.8159
+        ],
+        "sv_concentration": 0.1196,
+        "translation_mag": 40.6694,
+        "rotation_mag": 1.4142,
+        "cosine_sim": 0.87726,
+        "frob_norm": 491.826
+      },
+      "ccs_effect": {
+        "erank_delta": 32.495,
+        "translation_delta": -2.1809,
+        "cosine_delta": -0.029138,
+        "frob_delta": 153.6711,
+        "concentration_delta": -0.0567
+      }
+    },
+    "L8": {
+      "bare": {
+        "erank": 28.059,
+        "top_svs": [
+          139.1652,
+          91.3943,
+          77.3568,
+          70.9611,
+          65.8234,
+          58.6866,
+          56.5493,
+          54.4697,
+          50.9104,
+          47.3797
+        ],
+        "sv_concentration": 0.0996,
+        "translation_mag": 24.0839,
+        "rotation_mag": 1.4142,
+        "cosine_sim": 0.973817,
+        "frob_norm": 283.5605
+      },
+      "ccs": {
+        "erank": 64.192,
+        "top_svs": [
+          186.8688,
+          94.7952,
+          92.1878,
+          87.9592,
+          82.0788,
+          74.7202,
+          70.9531,
+          67.9822,
+          64.4055,
+          61.2408
+        ],
+        "sv_concentration": 0.0608,
+        "translation_mag": 21.4557,
+        "rotation_mag": 1.4142,
+        "cosine_sim": 0.969828,
+        "frob_norm": 417.6633
+      },
+      "ccs_effect": {
+        "erank_delta": 36.133,
+        "translation_delta": -2.6282,
+        "cosine_delta": -0.003989,
+        "frob_delta": 134.1028,
+        "concentration_delta": -0.0388
+      }
+    },
+    "L9": {
+      "bare": {
+        "erank": 26.027,
+        "top_svs": [
+          175.8044,
+          141.8529,
+          99.2541,
+          68.3849,
+          61.3745,
+          59.3761,
+          56.3203,
+          55.6439,
+          48.0816,
+          46.6797
+        ],
+        "sv_concentration": 0.1206,
+        "translation_mag": 30.3668,
+        "rotation_mag": 1.4142,
+        "cosine_sim": 0.966692,
+        "frob_norm": 322.0424
+      },
+      "ccs": {
+        "erank": 60.17,
+        "top_svs": [
+          267.7181,
+          147.3643,
+          104.5485,
+          94.6394,
+          83.7847,
+          77.9144,
+          69.8601,
+          66.776,
+          64.9577,
+          62.1658
+        ],
+        "sv_concentration": 0.0846,
+        "translation_mag": 30.3222,
+        "rotation_mag": 1.4142,
+        "cosine_sim": 0.95323,
+        "frob_norm": 472.3723
+      },
+      "ccs_effect": {
+        "erank_delta": 34.143,
+        "translation_delta": -0.0446,
+        "cosine_delta": -0.013462,
+        "frob_delta": 150.3299,
+        "concentration_delta": -0.036
+      }
+    },
+    "L10": {
+      "bare": {
+        "erank": 24.812,
+        "top_svs": [
+          274.9774,
+          107.9459,
+          75.5194,
+          71.0853,
+          64.3566,
+          58.395,
+          55.7215,
+          50.0,
+          48.7558,
+          47.8568
+        ],
+        "sv_concentration": 0.1783,
+        "translation_mag": 47.2337,
+        "rotation_mag": 1.4142,
+        "cosine_sim": 0.917364,
+        "frob_norm": 372.4608
+      },
+      "ccs": {
+        "erank": 57.658,
+        "top_svs": [
+          402.2586,
+          111.5852,
+          100.2544,
+          89.6113,
+          83.8324,
+          74.9948,
+          70.5184,
+          67.7119,
+          64.7235,
+          62.1116
+        ],
+        "sv_concentration": 0.1191,
+        "translation_mag": 46.133,
+        "rotation_mag": 1.4142,
+        "cosine_sim": 0.891313,
+        "frob_norm": 557.4172
+      },
+      "ccs_effect": {
+        "erank_delta": 32.846,
+        "translation_delta": -1.1007,
+        "cosine_delta": -0.026051,
+        "frob_delta": 184.9564,
+        "concentration_delta": -0.0592
+      }
+    },
+    "L11": {
+      "bare": {
+        "erank": 25.704,
+        "top_svs": [
+          239.0968,
+          121.7771,
+          93.5389,
+          80.8612,
+          75.7877,
+          74.9919,
+          72.7482,
+          64.9334,
+          57.5324,
+          53.9413
+        ],
+        "sv_concentration": 0.1446,
+        "translation_mag": 40.9206,
+        "rotation_mag": 1.4142,
+        "cosine_sim": 0.953017,
+        "frob_norm": 373.3432
+      },
+      "ccs": {
+        "erank": 59.813,
+        "top_svs": [
+          327.6258,
+          132.3564,
+          112.4415,
+          109.0135,
+          95.9202,
+          91.2953,
+          79.5121,
+          78.6957,
+          75.2749,
+          73.0403
+        ],
+        "sv_concentration": 0.0922,
+        "translation_mag": 37.268,
+        "rotation_mag": 1.4142,
+        "cosine_sim": 0.946188,
+        "frob_norm": 538.6752
+      },
+      "ccs_effect": {
+        "erank_delta": 34.109,
+        "translation_delta": -3.6526,
+        "cosine_delta": -0.006829,
+        "frob_delta": 165.332,
+        "concentration_delta": -0.0524
+      }
+    },
+    "L12": {
+      "bare": {
+        "erank": 27.13,
+        "top_svs": [
+          182.6638,
+          106.4606,
+          76.5725,
+          75.6142,
+          71.7596,
+          64.2883,
+          61.125,
+          55.1481,
+          54.2347,
+          48.1005
+        ],
+        "sv_concentration": 0.1216,
+        "translation_mag": 31.7876,
+        "rotation_mag": 1.4142,
+        "cosine_sim": 0.976208,
+        "frob_norm": 318.8969
+      },
+      "ccs": {
+        "erank": 62.893,
+        "top_svs": [
+          245.3621,
+          109.8976,
+          104.3111,
+          97.0505,
+          87.2558,
+          78.0851,
+          76.21,
+          69.6942,
+          68.8854,
+          65.959
+        ],
+        "sv_concentration": 0.0737,
+        "translation_mag": 28.2488,
+        "rotation_mag": 1.4142,
+        "cosine_sim": 0.97375,
+        "frob_norm": 469.6039
+      },
+      "ccs_effect": {
+        "erank_delta": 35.763,
+        "translation_delta": -3.5388,
+        "cosine_delta": -0.002458,
+        "frob_delta": 150.707,
+        "concentration_delta": -0.0479
+      }
+    },
+    "L13": {
+      "bare": {
+        "erank": 26.435,
+        "top_svs": [
+          227.157,
+          146.0941,
+          109.353,
+          88.4952,
+          81.9362,
+          76.3099,
+          65.6859,
+          63.4653,
+          57.3796,
+          55.4397
+        ],
+        "sv_concentration": 0.1275,
+        "translation_mag": 33.873,
+        "rotation_mag": 1.4142,
+        "cosine_sim": 0.981462,
+        "frob_norm": 389.267
+      },
+      "ccs": {
+        "erank": 62.362,
+        "top_svs": [
+          274.3117,
+          165.3966,
+          121.5714,
+          110.3915,
+          101.4204,
+          93.5941,
+          83.1823,
+          82.1714,
+          76.4597,
+          73.44
+        ],
+        "sv_concentration": 0.0725,
+        "translation_mag": 28.2818,
+        "rotation_mag": 1.4142,
+        "cosine_sim": 0.981729,
+        "frob_norm": 538.9788
+      },
+      "ccs_effect": {
+        "erank_delta": 35.927,
+        "translation_delta": -5.5912,
+        "cosine_delta": 0.000267,
+        "frob_delta": 149.7118,
+        "concentration_delta": -0.055
+      }
+    },
+    "L14": {
+      "bare": {
+        "erank": 23.675,
+        "top_svs": [
+          395.6819,
+          154.1854,
+          113.6697,
+          88.2686,
+          85.1195,
+          76.2579,
+          65.9993,
+          64.7799,
+          60.9853,
+          56.7018
+        ],
+        "sv_concentration": 0.1963,
+        "translation_mag": 36.2178,
+        "rotation_mag": 1.4142,
+        "cosine_sim": 0.985221,
+        "frob_norm": 514.2484
+      },
+      "ccs": {
+        "erank": 59.389,
+        "top_svs": [
+          406.4768,
+          197.3371,
+          124.6628,
+          117.1116,
+          106.7862,
+          91.52,
+          89.6011,
+          81.656,
+          77.6375,
+          74.9677
+        ],
+        "sv_concentration": 0.0994,
+        "translation_mag": 26.8625,
+        "rotation_mag": 1.4142,
+        "cosine_sim": 0.985702,
+        "frob_norm": 636.9835
+      },
+      "ccs_effect": {
+        "erank_delta": 35.714,
+        "translation_delta": -9.3553,
+        "cosine_delta": 0.000481,
+        "frob_delta": 122.7351,
+        "concentration_delta": -0.0969
+      }
+    },
+    "L15": {
+      "bare": {
+        "erank": 23.281,
+        "top_svs": [
+          434.1271,
+          181.5008,
+          130.6498,
+          98.2949,
+          88.6696,
+          84.0223,
+          73.1931,
+          70.547,
+          66.197,
+          63.0124
+        ],
+        "sv_concentration": 0.1979,
+        "translation_mag": 45.2677,
+        "rotation_mag": 1.4142,
+        "cosine_sim": 0.984986,
+        "frob_norm": 566.4779
+      },
+      "ccs": {
+        "erank": 57.994,
+        "top_svs": [
+          462.1388,
+          229.9875,
+          137.7236,
+          129.1981,
+          114.1745,
+          95.8034,
+          93.317,
+          88.8414,
+          84.0416,
+          82.8391
+        ],
+        "sv_concentration": 0.1053,
+        "translation_mag": 36.766,
+        "rotation_mag": 1.4142,
+        "cosine_sim": 0.981597,
+        "frob_norm": 704.4537
+      },
+      "ccs_effect": {
+        "erank_delta": 34.713,
+        "translation_delta": -8.5017,
+        "cosine_delta": -0.003389,
+        "frob_delta": 137.9758,
+        "concentration_delta": -0.0926
+      }
+    },
+    "L16": {
+      "bare": {
+        "erank": 27.166,
+        "top_svs": [
+          244.0716,
+          162.0692,
+          105.8209,
+          95.3168,
+          86.0298,
+          79.6998,
+          77.5235,
+          73.3693,
+          68.557,
+          66.7724
+        ],
+        "sv_concentration": 0.1209,
+        "translation_mag": 29.052,
+        "rotation_mag": 1.4142,
+        "cosine_sim": 0.992211,
+        "frob_norm": 429.5711
+      },
+      "ccs": {
+        "erank": 63.948,
+        "top_svs": [
+          273.4647,
+          208.0368,
+          135.8657,
+          118.6346,
+          105.3129,
+          100.7866,
+          96.3617,
+          91.457,
+          88.5136,
+          83.8317
+        ],
+        "sv_concentration": 0.062,
+        "translation_mag": 25.3917,
+        "rotation_mag": 1.4142,
+        "cosine_sim": 0.99029,
+        "frob_norm": 608.1967
+      },
+      "ccs_effect": {
+        "erank_delta": 36.782,
+        "translation_delta": -3.6603,
+        "cosine_delta": -0.001921,
+        "frob_delta": 178.6256,
+        "concentration_delta": -0.0589
+      }
+    },
+    "L17": {
+      "bare": {
+        "erank": 28.011,
+        "top_svs": [
+          231.4139,
+          155.1534,
+          125.2193,
+          105.811,
+          90.9918,
+          85.8628,
+          83.2607,
+          81.5547,
+          79.1445,
+          75.7662
+        ],
+        "sv_concentration": 0.1056,
+        "translation_mag": 37.4441,
+        "rotation_mag": 1.4142,
+        "cosine_sim": 0.988384,
+        "frob_norm": 448.7518
+      },
+      "ccs": {
+        "erank": 63.897,
+        "top_svs": [
+          320.0803,
+          219.2821,
+          165.932,
+          142.2222,
+          122.9461,
+          113.0527,
+          111.2077,
+          107.281,
+          100.2374,
+          94.0068
+        ],
+        "sv_concentration": 0.0639,
+        "translation_mag": 35.3151,
+        "rotation_mag": 1.4142,
+        "cosine_sim": 0.982969,
+        "frob_norm": 692.4893
+      },
+      "ccs_effect": {
+        "erank_delta": 35.886,
+        "translation_delta": -2.129,
+        "cosine_delta": -0.005415,
+        "frob_delta": 243.7375,
+        "concentration_delta": -0.0417
+      }
+    },
+    "L18": {
+      "bare": {
+        "erank": 26.611,
+        "top_svs": [
+          247.4247,
+          155.8951,
+          138.2182,
+          107.14,
+          89.0649,
+          80.1366,
+          75.6331,
+          70.6256,
+          68.1312,
+          65.7964
+        ],
+        "sv_concentration": 0.1225,
+        "translation_mag": 41.3201,
+        "rotation_mag": 1.4142,
+        "cosine_sim": 0.989969,
+        "frob_norm": 437.2263
+      },
+      "ccs": {
+        "erank": 62.929,
+        "top_svs": [
+          298.3405,
+          174.5241,
+          159.0377,
+          146.6237,
+          131.9897,
+          109.2627,
+          96.751,
+          95.7218,
+          90.36,
+          87.7213
+        ],
+        "sv_concentration": 0.0668,
+        "translation_mag": 33.5866,
+        "rotation_mag": 1.4142,
+        "cosine_sim": 0.987864,
+        "frob_norm": 627.0078
+      },
+      "ccs_effect": {
+        "erank_delta": 36.318,
+        "translation_delta": -7.7335,
+        "cosine_delta": -0.002105,
+        "frob_delta": 189.7815,
+        "concentration_delta": -0.0557
+      }
+    },
+    "L19": {
+      "bare": {
+        "erank": 27.301,
+        "top_svs": [
+          226.3164,
+          150.4065,
+          117.6415,
+          96.8438,
+          84.5068,
+          80.7625,
+          76.824,
+          68.8965,
+          68.3996,
+          65.1852
+        ],
+        "sv_concentration": 0.1151,
+        "translation_mag": 37.8841,
+        "rotation_mag": 1.4142,
+        "cosine_sim": 0.990066,
+        "frob_norm": 414.4531
+      },
+      "ccs": {
+        "erank": 63.03,
+        "top_svs": [
+          306.3773,
+          177.5569,
+          149.5734,
+          138.8993,
+          126.3035,
+          106.2498,
+          97.7218,
+          94.3824,
+          89.0374,
+          84.7066
+        ],
+        "sv_concentration": 0.0692,
+        "translation_mag": 34.6084,
+        "rotation_mag": 1.4142,
+        "cosine_sim": 0.988054,
+        "frob_norm": 622.6567
+      },
+      "ccs_effect": {
+        "erank_delta": 35.729,
+        "translation_delta": -3.2757,
+        "cosine_delta": -0.002012,
+        "frob_delta": 208.2036,
+        "concentration_delta": -0.0459
+      }
+    },
+    "L20": {
+      "bare": {
+        "erank": 27.589,
+        "top_svs": [
+          215.2881,
+          140.2807,
+          125.4277,
+          104.4307,
+          91.3457,
+          82.127,
+          78.2672,
+          73.7537,
+          70.7232,
+          70.0421
+        ],
+        "sv_concentration": 0.1072,
+        "translation_mag": 35.8675,
+        "rotation_mag": 1.4142,
+        "cosine_sim": 0.992506,
+        "frob_norm": 416.3223
+      },
+      "ccs": {
+        "erank": 63.751,
+        "top_svs": [
+          292.134,
+          167.9719,
+          146.6903,
+          131.1285,
+          129.146,
+          106.2237,
+          97.5554,
+          97.1677,
+          88.8826,
+          88.0773
+        ],
+        "sv_concentration": 0.0656,
+        "translation_mag": 32.6029,
+        "rotation_mag": 1.4142,
+        "cosine_sim": 0.991599,
+        "frob_norm": 616.3575
+      },
+      "ccs_effect": {
+        "erank_delta": 36.162,
+        "translation_delta": -3.2646,
+        "cosine_delta": -0.000907,
+        "frob_delta": 200.0352,
+        "concentration_delta": -0.0416
+      }
+    },
+    "L21": {
+      "bare": {
+        "erank": 27.217,
+        "top_svs": [
+          282.7744,
+          147.8039,
+          116.7217,
+          106.4469,
+          96.974,
+          88.4188,
+          85.2737,
+          81.2366,
+          80.7155,
+          76.9591
+        ],
+        "sv_concentration": 0.1273,
+        "translation_mag": 47.8177,
+        "rotation_mag": 1.4142,
+        "cosine_sim": 0.987841,
+        "frob_norm": 473.3711
+      },
+      "ccs": {
+        "erank": 62.906,
+        "top_svs": [
+          372.3918,
+          182.7221,
+          150.5448,
+          137.193,
+          123.8467,
+          116.1981,
+          111.3943,
+          102.2779,
+          97.9992,
+          94.0088
+        ],
+        "sv_concentration": 0.0769,
+        "translation_mag": 42.3536,
+        "rotation_mag": 1.4142,
+        "cosine_sim": 0.984853,
+        "frob_norm": 689.2318
+      },
+      "ccs_effect": {
+        "erank_delta": 35.689,
+        "translation_delta": -5.4641,
+        "cosine_delta": -0.002988,
+        "frob_delta": 215.8607,
+        "concentration_delta": -0.0504
+      }
+    },
+    "L22": {
+      "bare": {
+        "erank": 27.546,
+        "top_svs": [
+          279.7099,
+          157.0977,
+          155.6528,
+          113.4728,
+          103.2183,
+          91.91,
+          89.0628,
+          83.1026,
+          82.0749,
+          80.666
+        ],
+        "sv_concentration": 0.117,
+        "translation_mag": 47.8954,
+        "rotation_mag": 1.4142,
+        "cosine_sim": 0.989425,
+        "frob_norm": 500.7355
+      },
+      "ccs": {
+        "erank": 63.382,
+        "top_svs": [
+          368.7947,
+          205.323,
+          161.982,
+          155.0493,
+          135.4292,
+          118.0957,
+          112.9576,
+          106.4201,
+          100.9067,
+          96.4429
+        ],
+        "sv_concentration": 0.0717,
+        "translation_mag": 41.9426,
+        "rotation_mag": 1.4142,
+        "cosine_sim": 0.986211,
+        "frob_norm": 722.719
+      },
+      "ccs_effect": {
+        "erank_delta": 35.836,
+        "translation_delta": -5.9528,
+        "cosine_delta": -0.003214,
+        "frob_delta": 221.9835,
+        "concentration_delta": -0.0453
+      }
+    },
+    "L23": {
+      "bare": {
+        "erank": 22.928,
+        "top_svs": [
+          643.5066,
+          308.7015,
+          154.1046,
+          141.9464,
+          122.7515,
+          116.7443,
+          109.2466,
+          103.3761,
+          100.0438,
+          93.7198
+        ],
+        "sv_concentration": 0.2014,
+        "translation_mag": 53.718,
+        "rotation_mag": 1.4142,
+        "cosine_sim": 0.987021,
+        "frob_norm": 839.0007
+      },
+      "ccs": {
+        "erank": 55.8,
+        "top_svs": [
+          718.7225,
+          394.9017,
+          209.0702,
+          168.5128,
+          149.6442,
+          137.1875,
+          134.6517,
+          128.3405,
+          123.3157,
+          117.3567
+        ],
+        "sv_concentration": 0.1148,
+        "translation_mag": 55.1213,
+        "rotation_mag": 1.4142,
+        "cosine_sim": 0.983805,
+        "frob_norm": 1058.7843
+      },
+      "ccs_effect": {
+        "erank_delta": 32.872,
+        "translation_delta": 1.4033,
+        "cosine_delta": -0.003216,
+        "frob_delta": 219.7836,
+        "concentration_delta": -0.0866
+      }
+    },
+    "L24": {
+      "bare": {
+        "erank": 26.601,
+        "top_svs": [
+          375.641,
+          306.0037,
+          159.0536,
+          135.0162,
+          114.8083,
+          111.5577,
+          110.6294,
+          103.5616,
+          97.5913,
+          96.1143
+        ],
+        "sv_concentration": 0.1236,
+        "translation_mag": 52.3796,
+        "rotation_mag": 1.4142,
+        "cosine_sim": 0.987403,
+        "frob_norm": 665.2521
+      },
+      "ccs": {
+        "erank": 62.001,
+        "top_svs": [
+          473.9097,
+          367.3865,
+          196.2692,
+          168.6623,
+          145.024,
+          137.3848,
+          134.6551,
+          123.4126,
+          118.1306,
+          116.7199
+        ],
+        "sv_concentration": 0.075,
+        "translation_mag": 51.4869,
+        "rotation_mag": 1.4142,
+        "cosine_sim": 0.984121,
+        "frob_norm": 918.9632
+      },
+      "ccs_effect": {
+        "erank_delta": 35.4,
+        "translation_delta": -0.8927,
+        "cosine_delta": -0.003282,
+        "frob_delta": 253.7111,
+        "concentration_delta": -0.0486
+      }
+    },
+    "L25": {
+      "bare": {
+        "erank": 26.777,
+        "top_svs": [
+          434.1241,
+          242.3111,
+          171.4037,
+          147.5831,
+          124.8942,
+          117.183,
+          112.4443,
+          107.6364,
+          107.5496,
+          101.1795
+        ],
+        "sv_concentration": 0.1368,
+        "translation_mag": 70.5503,
+        "rotation_mag": 1.4142,
+        "cosine_sim": 0.987533,
+        "frob_norm": 693.6354
+      },
+      "ccs": {
+        "erank": 62.025,
+        "top_svs": [
+          591.9219,
+          267.9817,
+          200.1156,
+          179.6842,
+          159.1912,
+          146.2894,
+          143.1262,
+          136.3087,
+          131.1458,
+          123.4246
+        ],
+        "sv_concentration": 0.088,
+        "translation_mag": 65.9542,
+        "rotation_mag": 1.4142,
+        "cosine_sim": 0.985887,
+        "frob_norm": 989.1716
+      },
+      "ccs_effect": {
+        "erank_delta": 35.248,
+        "translation_delta": -4.5961,
+        "cosine_delta": -0.001646,
+        "frob_delta": 295.5362,
+        "concentration_delta": -0.0488
+      }
+    },
+    "L26": {
+      "bare": {
+        "erank": 24.994,
+        "top_svs": [
+          605.0512,
+          391.506,
+          194.5038,
+          152.5195,
+          136.9453,
+          133.5886,
+          129.9085,
+          120.6036,
+          115.0242,
+          109.2371
+        ],
+        "sv_concentration": 0.1595,
+        "translation_mag": 69.3996,
+        "rotation_mag": 1.4142,
+        "cosine_sim": 0.982662,
+        "frob_norm": 900.6346
+      },
+      "ccs": {
+        "erank": 59.4,
+        "top_svs": [
+          646.3958,
+          572.0189,
+          248.5986,
+          207.7001,
+          184.9147,
+          171.1159,
+          160.9461,
+          156.5108,
+          148.1234,
+          141.377
+        ],
+        "sv_concentration": 0.0827,
+        "translation_mag": 66.9231,
+        "rotation_mag": 1.4142,
+        "cosine_sim": 0.979553,
+        "frob_norm": 1207.8964
+      },
+      "ccs_effect": {
+        "erank_delta": 34.406,
+        "translation_delta": -2.4765,
+        "cosine_delta": -0.003109,
+        "frob_delta": 307.2618,
+        "concentration_delta": -0.0768
+      }
+    },
+    "L27": {
+      "bare": {
+        "erank": 28.391,
+        "top_svs": [
+          420.9488,
+          218.0858,
+          195.8925,
+          165.9677,
+          160.5077,
+          147.8902,
+          143.3024,
+          134.1358,
+          131.1873,
+          127.913
+        ],
+        "sv_concentration": 0.1121,
+        "translation_mag": 71.2768,
+        "rotation_mag": 1.4142,
+        "cosine_sim": 0.981234,
+        "frob_norm": 763.2996
+      },
+      "ccs": {
+        "erank": 64.474,
+        "top_svs": [
+          612.3965,
+          271.5076,
+          228.4691,
+          209.1701,
+          190.4168,
+          178.3167,
+          173.36,
+          164.926,
+          162.0105,
+          157.9472
+        ],
+        "sv_concentration": 0.0744,
+        "translation_mag": 69.6605,
+        "rotation_mag": 1.4142,
+        "cosine_sim": 0.97808,
+        "frob_norm": 1142.1844
+      },
+      "ccs_effect": {
+        "erank_delta": 36.083,
+        "translation_delta": -1.6163,
+        "cosine_delta": -0.003154,
+        "frob_delta": 378.8848,
+        "concentration_delta": -0.0377
+      }
+    },
+    "L28": {
+      "bare": {
+        "erank": 27.59,
+        "top_svs": [
+          453.9484,
+          232.2192,
+          157.5281,
+          150.4848,
+          135.9867,
+          126.9148,
+          120.6747,
+          117.1167,
+          114.9608,
+          110.3547
+        ],
+        "sv_concentration": 0.1316,
+        "translation_mag": 79.2367,
+        "rotation_mag": 1.4142,
+        "cosine_sim": 0.979704,
+        "frob_norm": 732.6138
+      },
+      "ccs": {
+        "erank": 62.467,
+        "top_svs": [
+          666.7452,
+          282.9213,
+          206.1367,
+          173.0181,
+          163.9425,
+          157.9861,
+          151.9321,
+          144.8956,
+          142.0348,
+          133.7454
+        ],
+        "sv_concentration": 0.0894,
+        "translation_mag": 77.0188,
+        "rotation_mag": 1.4142,
+        "cosine_sim": 0.975951,
+        "frob_norm": 1092.0963
+      },
+      "ccs_effect": {
+        "erank_delta": 34.877,
+        "translation_delta": -2.2179,
+        "cosine_delta": -0.003753,
+        "frob_delta": 359.4825,
+        "concentration_delta": -0.0422
+      }
+    },
+    "L29": {
+      "bare": {
+        "erank": 28.455,
+        "top_svs": [
+          415.1981,
+          194.4721,
+          164.1425,
+          149.8885,
+          145.1757,
+          131.3422,
+          128.0915,
+          122.5719,
+          120.6579,
+          116.316
+        ],
+        "sv_concentration": 0.1179,
+        "translation_mag": 71.3568,
+        "rotation_mag": 1.4142,
+        "cosine_sim": 0.984269,
+        "frob_norm": 718.3193
+      },
+      "ccs": {
+        "erank": 63.188,
+        "top_svs": [
+          648.1705,
+          274.0333,
+          200.6258,
+          195.1676,
+          171.1994,
+          167.9554,
+          163.6861,
+          156.1509,
+          155.1939,
+          143.9601
+        ],
+        "sv_concentration": 0.0838,
+        "translation_mag": 73.7064,
+        "rotation_mag": 1.4142,
+        "cosine_sim": 0.980567,
+        "frob_norm": 1109.2865
+      },
+      "ccs_effect": {
+        "erank_delta": 34.733,
+        "translation_delta": 2.3496,
+        "cosine_delta": -0.003702,
+        "frob_delta": 390.9672,
+        "concentration_delta": -0.0341
+      }
+    },
+    "L30": {
+      "bare": {
+        "erank": 28.194,
+        "top_svs": [
+          396.2397,
+          181.6955,
+          152.3259,
+          128.7803,
+          123.0676,
+          121.7239,
+          114.4208,
+          111.6745,
+          107.373,
+          104.771
+        ],
+        "sv_concentration": 0.1246,
+        "translation_mag": 68.2525,
+        "rotation_mag": 1.4142,
+        "cosine_sim": 0.986137,
+        "frob_norm": 658.5779
+      },
+      "ccs": {
+        "erank": 63.134,
+        "top_svs": [
+          609.2955,
+          229.9843,
+          195.4926,
+          180.2046,
+          158.9932,
+          152.6631,
+          149.2029,
+          143.7189,
+          136.8575,
+          131.8895
+        ],
+        "sv_concentration": 0.0854,
+        "translation_mag": 69.594,
+        "rotation_mag": 1.4142,
+        "cosine_sim": 0.983893,
+        "frob_norm": 1026.7122
+      },
+      "ccs_effect": {
+        "erank_delta": 34.94,
+        "translation_delta": 1.3415,
+        "cosine_delta": -0.002244,
+        "frob_delta": 368.1343,
+        "concentration_delta": -0.0392
+      }
+    },
+    "L31": {
+      "bare": {
+        "erank": 27.434,
+        "top_svs": [
+          487.4619,
+          177.1188,
+          164.3928,
+          145.4888,
+          138.8746,
+          130.823,
+          128.1582,
+          123.2748,
+          115.4892,
+          113.3938
+        ],
+        "sv_concentration": 0.1405,
+        "translation_mag": 83.949,
+        "rotation_mag": 1.4142,
+        "cosine_sim": 0.98488,
+        "frob_norm": 745.6035
+      },
+      "ccs": {
+        "erank": 61.093,
+        "top_svs": [
+          756.6078,
+          227.4554,
+          220.2502,
+          181.0687,
+          164.8445,
+          158.3025,
+          152.5306,
+          149.8703,
+          141.4669,
+          137.8159
+        ],
+        "sv_concentration": 0.1,
+        "translation_mag": 86.4265,
+        "rotation_mag": 1.4142,
+        "cosine_sim": 0.982126,
+        "frob_norm": 1149.1398
+      },
+      "ccs_effect": {
+        "erank_delta": 33.659,
+        "translation_delta": 2.4775,
+        "cosine_delta": -0.002754,
+        "frob_delta": 403.5363,
+        "concentration_delta": -0.0405
+      }
+    },
+    "L32": {
+      "bare": {
+        "erank": 26.474,
+        "top_svs": [
+          491.144,
+          205.5789,
+          148.4783,
+          129.2269,
+          116.1378,
+          111.0774,
+          108.2554,
+          106.2424,
+          102.8395,
+          99.0478
+        ],
+        "sv_concentration": 0.1558,
+        "translation_mag": 86.1087,
+        "rotation_mag": 1.4142,
+        "cosine_sim": 0.983917,
+        "frob_norm": 709.5076
+      },
+      "ccs": {
+        "erank": 59.12,
+        "top_svs": [
+          751.3362,
+          261.1893,
+          199.9542,
+          162.2698,
+          147.0621,
+          138.5596,
+          133.3432,
+          130.9415,
+          124.4544,
+          121.9245
+        ],
+        "sv_concentration": 0.1106,
+        "translation_mag": 86.6701,
+        "rotation_mag": 1.4142,
+        "cosine_sim": 0.982242,
+        "frob_norm": 1083.0782
+      },
+      "ccs_effect": {
+        "erank_delta": 32.646,
+        "translation_delta": 0.5614,
+        "cosine_delta": -0.001675,
+        "frob_delta": 373.5706,
+        "concentration_delta": -0.0452
+      }
+    },
+    "L33": {
+      "bare": {
+        "erank": 26.253,
+        "top_svs": [
+          472.0755,
+          179.2201,
+          153.6245,
+          137.6219,
+          128.0254,
+          111.8693,
+          108.3467,
+          103.4866,
+          98.4136,
+          92.7338
+        ],
+        "sv_concentration": 0.1571,
+        "translation_mag": 80.7701,
+        "rotation_mag": 1.4142,
+        "cosine_sim": 0.985547,
+        "frob_norm": 680.5176
+      },
+      "ccs": {
+        "erank": 58.316,
+        "top_svs": [
+          732.7601,
+          242.2108,
+          210.5999,
+          197.7128,
+          158.2192,
+          142.1327,
+          135.1716,
+          133.9628,
+          129.9773,
+          124.0873
+        ],
+        "sv_concentration": 0.111,
+        "translation_mag": 83.537,
+        "rotation_mag": 1.4142,
+        "cosine_sim": 0.983394,
+        "frob_norm": 1061.9688
+      },
+      "ccs_effect": {
+        "erank_delta": 32.063,
+        "translation_delta": 2.7669,
+        "cosine_delta": -0.002153,
+        "frob_delta": 381.4512,
+        "concentration_delta": -0.0461
+      }
+    },
+    "L34": {
+      "bare": {
+        "erank": 26.002,
+        "top_svs": [
+          548.301,
+          167.497,
+          144.777,
+          127.5405,
+          123.0903,
+          121.2557,
+          117.9029,
+          112.1879,
+          108.192,
+          102.6675
+        ],
+        "sv_concentration": 0.1705,
+        "translation_mag": 93.2191,
+        "rotation_mag": 1.4142,
+        "cosine_sim": 0.983131,
+        "frob_norm": 746.7233
+      },
+      "ccs": {
+        "erank": 58.639,
+        "top_svs": [
+          825.913,
+          209.2091,
+          187.0307,
+          175.7369,
+          169.0532,
+          152.2908,
+          143.7847,
+          135.7021,
+          132.8299,
+          129.9013
+        ],
+        "sv_concentration": 0.1175,
+        "translation_mag": 94.2458,
+        "rotation_mag": 1.4142,
+        "cosine_sim": 0.98125,
+        "frob_norm": 1144.0958
+      },
+      "ccs_effect": {
+        "erank_delta": 32.637,
+        "translation_delta": 1.0267,
+        "cosine_delta": -0.001881,
+        "frob_delta": 397.3725,
+        "concentration_delta": -0.053
+      }
+    },
+    "L35": {
+      "bare": {
+        "erank": 25.766,
+        "top_svs": [
+          613.2539,
+          177.5939,
+          159.8331,
+          143.1718,
+          139.0076,
+          130.5912,
+          124.6098,
+          120.2804,
+          115.8625,
+          110.5237
+        ],
+        "sv_concentration": 0.174,
+        "translation_mag": 104.5024,
+        "rotation_mag": 1.4142,
+        "cosine_sim": 0.978486,
+        "frob_norm": 826.6495
+      },
+      "ccs": {
+        "erank": 56.208,
+        "top_svs": [
+          943.7756,
+          216.5197,
+          200.2004,
+          194.9771,
+          177.3334,
+          155.3183,
+          153.5605,
+          140.7394,
+          135.3185,
+          132.9014
+        ],
+        "sv_concentration": 0.1305,
+        "translation_mag": 107.8159,
+        "rotation_mag": 1.4142,
+        "cosine_sim": 0.975621,
+        "frob_norm": 1246.0085
+      },
+      "ccs_effect": {
+        "erank_delta": 30.442,
+        "translation_delta": 3.3135,
+        "cosine_delta": -0.002865,
+        "frob_delta": 419.359,
+        "concentration_delta": -0.0435
+      }
+    },
+    "L36": {
+      "bare": {
+        "erank": 25.551,
+        "top_svs": [
+          597.3059,
+          177.0237,
+          171.2962,
+          152.5184,
+          142.5888,
+          133.2812,
+          129.7745,
+          126.802,
+          113.801,
+          110.9659
+        ],
+        "sv_concentration": 0.1732,
+        "translation_mag": 100.8563,
+        "rotation_mag": 1.4142,
+        "cosine_sim": 0.984056,
+        "frob_norm": 811.5071
+      },
+      "ccs": {
+        "erank": 55.549,
+        "top_svs": [
+          912.6806,
+          225.4656,
+          212.1523,
+          186.3575,
+          165.795,
+          163.3496,
+          149.1831,
+          144.0031,
+          139.7604,
+          134.5493
+        ],
+        "sv_concentration": 0.1304,
+        "translation_mag": 103.6927,
+        "rotation_mag": 1.4142,
+        "cosine_sim": 0.98227,
+        "frob_norm": 1212.2833
+      },
+      "ccs_effect": {
+        "erank_delta": 29.998,
+        "translation_delta": 2.8364,
+        "cosine_delta": -0.001786,
+        "frob_delta": 400.7762,
+        "concentration_delta": -0.0428
+      }
+    },
+    "L37": {
+      "bare": {
+        "erank": 25.613,
+        "top_svs": [
+          736.9355,
+          268.2312,
+          184.2206,
+          173.1217,
+          167.2035,
+          159.4163,
+          151.8662,
+          148.3801,
+          139.1712,
+          130.5938
+        ],
+        "sv_concentration": 0.1727,
+        "translation_mag": 127.2663,
+        "rotation_mag": 1.4142,
+        "cosine_sim": 0.972317,
+        "frob_norm": 1003.2638
+      },
+      "ccs": {
+        "erank": 56.327,
+        "top_svs": [
+          1128.9111,
+          371.149,
+          281.5741,
+          230.3221,
+          208.331,
+          190.0302,
+          186.4786,
+          177.7648,
+          175.2487,
+          167.8867
+        ],
+        "sv_concentration": 0.1248,
+        "translation_mag": 129.374,
+        "rotation_mag": 1.4142,
+        "cosine_sim": 0.970388,
+        "frob_norm": 1537.1479
+      },
+      "ccs_effect": {
+        "erank_delta": 30.714,
+        "translation_delta": 2.1077,
+        "cosine_delta": -0.001929,
+        "frob_delta": 533.8841,
+        "concentration_delta": -0.0479
+      }
+    },
+    "L38": {
+      "bare": {
+        "erank": 25.27,
+        "top_svs": [
+          844.2411,
+          232.4523,
+          212.4412,
+          200.8657,
+          191.0761,
+          181.6447,
+          169.8804,
+          160.8664,
+          157.4956,
+          151.6144
+        ],
+        "sv_concentration": 0.1807,
+        "translation_mag": 144.5883,
+        "rotation_mag": 1.4142,
+        "cosine_sim": 0.964471,
+        "frob_norm": 1118.9911
+      },
+      "ccs": {
+        "erank": 54.512,
+        "top_svs": [
+          1307.726,
+          296.0793,
+          263.1807,
+          239.9826,
+          230.8159,
+          209.2392,
+          201.6518,
+          190.4145,
+          186.0722,
+          184.5172
+        ],
+        "sv_concentration": 0.1387,
+        "translation_mag": 149.7735,
+        "rotation_mag": 1.4142,
+        "cosine_sim": 0.962165,
+        "frob_norm": 1684.9139
+      },
+      "ccs_effect": {
+        "erank_delta": 29.242,
+        "translation_delta": 5.1852,
+        "cosine_delta": -0.002306,
+        "frob_delta": 565.9228,
+        "concentration_delta": -0.042
+      }
+    },
+    "L39": {
+      "bare": {
+        "erank": 24.729,
+        "top_svs": [
+          976.0428,
+          296.1756,
+          277.6353,
+          240.5812,
+          223.6649,
+          196.0871,
+          181.9959,
+          180.6652,
+          172.8142,
+          165.8205
+        ],
+        "sv_concentration": 0.1847,
+        "translation_mag": 171.0246,
+        "rotation_mag": 1.4142,
+        "cosine_sim": 0.958969,
+        "frob_norm": 1289.0935
+      },
+      "ccs": {
+        "erank": 53.424,
+        "top_svs": [
+          1462.7838,
+          351.6064,
+          318.5384,
+          305.4732,
+          281.1259,
+          260.7049,
+          246.5405,
+          235.3993,
+          225.5865,
+          206.6877
+        ],
+        "sv_concentration": 0.1391,
+        "translation_mag": 169.1776,
+        "rotation_mag": 1.4142,
+        "cosine_sim": 0.960412,
+        "frob_norm": 1899.9388
+      },
+      "ccs_effect": {
+        "erank_delta": 28.695,
+        "translation_delta": -1.847,
+        "cosine_delta": 0.001443,
+        "frob_delta": 610.8453,
+        "concentration_delta": -0.0456
+      }
+    },
+    "L40": {
+      "bare": {
+        "erank": 25.109,
+        "top_svs": [
+          1181.5867,
+          481.1296,
+          425.0113,
+          321.8506,
+          293.6514,
+          270.5616,
+          259.7017,
+          237.6678,
+          225.1694,
+          211.6459
+        ],
+        "sv_concentration": 0.1679,
+        "translation_mag": 205.9369,
+        "rotation_mag": 1.4142,
+        "cosine_sim": 0.9438,
+        "frob_norm": 1662.5381
+      },
+      "ccs": {
+        "erank": 54.139,
+        "top_svs": [
+          1749.9016,
+          682.9736,
+          474.7606,
+          434.7547,
+          398.2047,
+          362.5694,
+          333.5565,
+          309.0587,
+          282.3854,
+          275.3949
+        ],
+        "sv_concentration": 0.1235,
+        "translation_mag": 202.0346,
+        "rotation_mag": 1.4142,
+        "cosine_sim": 0.945704,
+        "frob_norm": 2453.9097
+      },
+      "ccs_effect": {
+        "erank_delta": 29.03,
+        "translation_delta": -3.9023,
+        "cosine_delta": 0.001904,
+        "frob_delta": 791.3716,
+        "concentration_delta": -0.0444
+      }
+    },
+    "L41": {
+      "bare": {
+        "erank": 23.121,
+        "top_svs": [
+          1311.2661,
+          896.0632,
+          458.9036,
+          344.503,
+          319.2924,
+          302.7346,
+          301.1258,
+          256.5223,
+          240.5094,
+          234.2952
+        ],
+        "sv_concentration": 0.1695,
+        "translation_mag": 182.0074,
+        "rotation_mag": 1.4142,
+        "cosine_sim": 0.956504,
+        "frob_norm": 1946.3154
+      },
+      "ccs": {
+        "erank": 47.503,
+        "top_svs": [
+          2433.978,
+          1012.1917,
+          568.9756,
+          453.8904,
+          433.63,
+          384.7147,
+          351.1963,
+          343.7983,
+          322.6168,
+          303.7375
+        ],
+        "sv_concentration": 0.157,
+        "translation_mag": 239.4292,
+        "rotation_mag": 1.4142,
+        "cosine_sim": 0.932669,
+        "frob_norm": 3120.6108
+      },
+      "ccs_effect": {
+        "erank_delta": 24.382,
+        "translation_delta": 57.4218,
+        "cosine_delta": -0.023835,
+        "frob_delta": 1174.2954,
+        "concentration_delta": -0.0125
+      }
+    }
+  }
+}

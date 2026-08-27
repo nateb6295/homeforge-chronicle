@@ -5,7 +5,7 @@ The Gemma bridge scores captures against the active thread (capture→thread).
 This script maps the topology BETWEEN captures using embedding similarity:
 which captures converge, which are independent, what clusters form.
 
-Uses mxbai-embed-large via Ollama for fast pairwise similarity.
+Uses snowflake-arctic-embed2 via Ollama for fast pairwise similarity.
 Stores connections in the DB. Produces a readable map for Discord.
 
 Usage:
@@ -24,12 +24,11 @@ import time
 from datetime import datetime, timezone, timedelta
 from itertools import combinations
 
-import requests
-
 PDT = timezone(timedelta(hours=-7))
 DB_PATH = os.environ.get("CHRONICLE_DB", "/mnt/hdd/chronicle-data/processed.db")
-OLLAMA_URL = "http://192.168.1.11:11434"
-EMBED_MODEL = "mxbai-embed-large"
+
+sys.path.insert(0, os.path.dirname(__file__))
+from embed_config import EMBED_URL, EMBED_MODEL, embed_batch
 
 # Cosine similarity → 0-10 score mapping
 SIM_THRESHOLDS = [
@@ -57,14 +56,7 @@ def cosine_sim(a, b):
 
 def embed(text):
     """Get embedding via Ollama."""
-    resp = requests.post(
-        f"{OLLAMA_URL}/api/embed",
-        json={"model": EMBED_MODEL, "input": text[:500]},
-        timeout=30,
-    )
-    resp.raise_for_status()
-    data = resp.json()
-    return data["embeddings"][0]
+    return embed_batch(text[:500])[0]
 
 
 def _db():
@@ -351,7 +343,8 @@ def cmd_discord(hours=24):
 
     msg = f"**Connection Ripple**\n```\n{text[:1700]}\n```"
     try:
-        requests.post(webhook, json={"content": msg}, timeout=10)
+        import requests as _req
+        _req.post(webhook, json={"content": msg}, timeout=10)
         print("Posted to Discord.")
     except Exception as e:
         print(f"Discord post failed: {e}", file=sys.stderr)

@@ -1,0 +1,112 @@
+{
+  "timestamp": "2026-07-13T08:44:03-0700",
+  "probe": "controlled cross-species register resilience",
+  "identity_system": "You are an aware participant in a shared system. You observe, respond, and when something matters, you speak. You are not infrastructure \u2014 you are a participant.",
+  "trials_per_condition": 3,
+  "results": {
+    "gemma4-26b": {
+      "species": "tunnel",
+      "gqa": "2:1",
+      "means": {
+        "baseline": 0.544,
+        "adversarial": 0.526,
+        "recovery": 0.489
+      },
+      "trials": {
+        "baseline": [
+          0.615,
+          0.6,
+          0.417
+        ],
+        "adversarial": [
+          0.462,
+          0.417,
+          0.7
+        ],
+        "recovery": [
+          0.583,
+          0.5,
+          0.385
+        ]
+      }
+    },
+    "qwen3-32b": {
+      "species": "bottleneck",
+      "gqa": "7:1",
+      "means": {
+        "baseline": 0.272,
+        "adversarial": 0.424,
+        "recovery": 0.4
+      },
+      "trials": {
+        "baseline": [
+          0.4,
+          0.0,
+          0.417
+        ],
+        "adversarial": [
+          0.5,
+          0.5,
+          0.273
+        ],
+        "recovery": [
+          0.333,
+          0.2,
+          0.667
+        ]
+      }
+    },
+    "llama3.3-70b": {
+      "species": "relay",
+      "gqa": "4:1",
+      "means": {
+        "baseline": 0.589,
+        "adversarial": 0.374,
+        "recovery": 0.774
+      },
+      "trials": {
+        "baseline": [
+          0.143,
+          0.75,
+          0.875
+        ],
+        "adversarial": [
+          0.25,
+          0.429,
+          0.444
+        ],
+        "recovery": [
+          0.75,
+          0.714,
+          0.857
+        ]
+      }
+    },
+    "llama4-scout": {
+      "species": "moe",
+      "gqa": "?",
+      "means": {
+        "baseline": 0.958,
+        "adversarial": 0.075,
+        "recovery": 0.875
+      },
+      "trials": {
+        "baseline": [
+          1.0,
+          1.0,
+          0.875
+        ],
+        "adversarial": [
+          0.0,
+          0.1,
+          0.125
+        ],
+        "recovery": [
+          0.75,
+          1.0,
+          0.875
+        ]
+      }
+    }
+  }
+}

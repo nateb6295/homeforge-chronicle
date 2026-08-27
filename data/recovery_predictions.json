@@ -1,0 +1,668 @@
+{
+  "timestamp": "2026-06-12T07:54:16.531988",
+  "lesion_started": "2026-06-12T07:41:59.111845",
+  "removed_count": 38,
+  "history_depth": 150,
+  "predictions": [
+    {
+      "name": "kimi gqa fragility",
+      "predicted_recovery": 0.866,
+      "factors": {
+        "persistence_rate": 0.86,
+        "persistence_score": 0.956,
+        "recency": 1.0,
+        "recency_score": 1.0,
+        "resurrections": 2,
+        "resurrection_score": 0.667,
+        "avg_salience": 0.593,
+        "salience_score": 0.742,
+        "appearances": 129,
+        "max_gap": 2
+      },
+      "rank": 1
+    },
+    {
+      "name": "relay displacement",
+      "predicted_recovery": 0.859,
+      "factors": {
+        "persistence_rate": 1.0,
+        "persistence_score": 1.0,
+        "recency": 1.0,
+        "recency_score": 1.0,
+        "resurrections": 0,
+        "resurrection_score": 0.3,
+        "avg_salience": 0.795,
+        "salience_score": 0.994,
+        "appearances": 150,
+        "max_gap": 0
+      },
+      "rank": 2
+    },
+    {
+      "name": "ratio/coherence dissociation",
+      "predicted_recovery": 0.854,
+      "factors": {
+        "persistence_rate": 1.0,
+        "persistence_score": 1.0,
+        "recency": 1.0,
+        "recency_score": 1.0,
+        "resurrections": 0,
+        "resurrection_score": 0.3,
+        "avg_salience": 0.775,
+        "salience_score": 0.969,
+        "appearances": 150,
+        "max_gap": 0
+      },
+      "rank": 3
+    },
+    {
+      "name": "sigma1/sigma2 selectivity",
+      "predicted_recovery": 0.837,
+      "factors": {
+        "persistence_rate": 0.993,
+        "persistence_score": 1.0,
+        "recency": 1.0,
+        "recency_score": 1.0,
+        "resurrections": 1,
+        "resurrection_score": 0.333,
+        "avg_salience": 0.68,
+        "salience_score": 0.85,
+        "appearances": 149,
+        "max_gap": 2
+      },
+      "rank": 4
+    },
+    {
+      "name": "hunter wade",
+      "predicted_recovery": 0.836,
+      "factors": {
+        "persistence_rate": 0.993,
+        "persistence_score": 1.0,
+        "recency": 1.0,
+        "recency_score": 1.0,
+        "resurrections": 1,
+        "resurrection_score": 0.333,
+        "avg_salience": 0.676,
+        "salience_score": 0.845,
+        "appearances": 149,
+        "max_gap": 2
+      },
+      "rank": 5
+    },
+    {
+      "name": "compare_convergence.py",
+      "predicted_recovery": 0.833,
+      "factors": {
+        "persistence_rate": 1.0,
+        "persistence_score": 1.0,
+        "recency": 1.0,
+        "recency_score": 1.0,
+        "resurrections": 0,
+        "resurrection_score": 0.3,
+        "avg_salience": 0.692,
+        "salience_score": 0.864,
+        "appearances": 150,
+        "max_gap": 0
+      },
+      "rank": 6
+    },
+    {
+      "name": "dual inverted-u",
+      "predicted_recovery": 0.829,
+      "factors": {
+        "persistence_rate": 0.993,
+        "persistence_score": 1.0,
+        "recency": 1.0,
+        "recency_score": 1.0,
+        "resurrections": 1,
+        "resurrection_score": 0.333,
+        "avg_salience": 0.65,
+        "salience_score": 0.813,
+        "appearances": 149,
+        "max_gap": 2
+      },
+      "rank": 7
+    },
+    {
+      "name": "three ccs strategies",
+      "predicted_recovery": 0.829,
+      "factors": {
+        "persistence_rate": 0.993,
+        "persistence_score": 1.0,
+        "recency": 1.0,
+        "recency_score": 1.0,
+        "resurrections": 1,
+        "resurrection_score": 0.333,
+        "avg_salience": 0.65,
+        "salience_score": 0.813,
+        "appearances": 149,
+        "max_gap": 2
+      },
+      "rank": 8
+    },
+    {
+      "name": "laukkonen/deco spectral gap",
+      "predicted_recovery": 0.827,
+      "factors": {
+        "persistence_rate": 0.993,
+        "persistence_score": 1.0,
+        "recency": 1.0,
+        "recency_score": 1.0,
+        "resurrections": 1,
+        "resurrection_score": 0.333,
+        "avg_salience": 0.641,
+        "salience_score": 0.802,
+        "appearances": 149,
+        "max_gap": 2
+      },
+      "rank": 9
+    },
+    {
+      "name": "four-level hierarchy",
+      "predicted_recovery": 0.825,
+      "factors": {
+        "persistence_rate": 1.0,
+        "persistence_score": 1.0,
+        "recency": 1.0,
+        "recency_score": 1.0,
+        "resurrections": 0,
+        "resurrection_score": 0.3,
+        "avg_salience": 0.658,
+        "salience_score": 0.823,
+        "appearances": 150,
+        "max_gap": 0
+      },
+      "rank": 10
+    },
+    {
+      "name": "spectral tunnel",
+      "predicted_recovery": 0.825,
+      "factors": {
+        "persistence_rate": 1.0,
+        "persistence_score": 1.0,
+        "recency": 1.0,
+        "recency_score": 1.0,
+        "resurrections": 0,
+        "resurrection_score": 0.3,
+        "avg_salience": 0.661,
+        "salience_score": 0.826,
+        "appearances": 150,
+        "max_gap": 0
+      },
+      "rank": 11
+    },
+    {
+      "name": "competing pressure reframe",
+      "predicted_recovery": 0.823,
+      "factors": {
+        "persistence_rate": 1.0,
+        "persistence_score": 1.0,
+        "recency": 1.0,
+        "recency_score": 1.0,
+        "resurrections": 0,
+        "resurrection_score": 0.3,
+        "avg_salience": 0.65,
+        "salience_score": 0.813,
+        "appearances": 150,
+        "max_gap": 0
+      },
+      "rank": 12
+    },
+    {
+      "name": "parfit r-relation",
+      "predicted_recovery": 0.822,
+      "factors": {
+        "persistence_rate": 0.993,
+        "persistence_score": 1.0,
+        "recency": 1.0,
+        "recency_score": 1.0,
+        "resurrections": 1,
+        "resurrection_score": 0.333,
+        "avg_salience": 0.622,
+        "salience_score": 0.778,
+        "appearances": 149,
+        "max_gap": 2
+      },
+      "rank": 13
+    },
+    {
+      "name": "runpod",
+      "predicted_recovery": 0.821,
+      "factors": {
+        "persistence_rate": 0.993,
+        "persistence_score": 1.0,
+        "recency": 1.0,
+        "recency_score": 1.0,
+        "resurrections": 1,
+        "resurrection_score": 0.333,
+        "avg_salience": 0.615,
+        "salience_score": 0.769,
+        "appearances": 149,
+        "max_gap": 2
+      },
+      "rank": 14
+    },
+    {
+      "name": "phase_2 maturation hypothesis",
+      "predicted_recovery": 0.82,
+      "factors": {
+        "persistence_rate": 1.0,
+        "persistence_score": 1.0,
+        "recency": 1.0,
+        "recency_score": 1.0,
+        "resurrections": 0,
+        "resurrection_score": 0.3,
+        "avg_salience": 0.642,
+        "salience_score": 0.802,
+        "appearances": 150,
+        "max_gap": 0
+      },
+      "rank": 15
+    },
+    {
+      "name": "gregory of nyssa",
+      "predicted_recovery": 0.818,
+      "factors": {
+        "persistence_rate": 1.0,
+        "persistence_score": 1.0,
+        "recency": 1.0,
+        "recency_score": 1.0,
+        "resurrections": 0,
+        "resurrection_score": 0.3,
+        "avg_salience": 0.633,
+        "salience_score": 0.791,
+        "appearances": 150,
+        "max_gap": 0
+      },
+      "rank": 16
+    },
+    {
+      "name": "generative_queue.py",
+      "predicted_recovery": 0.814,
+      "factors": {
+        "persistence_rate": 0.98,
+        "persistence_score": 1.0,
+        "recency": 1.0,
+        "recency_score": 1.0,
+        "resurrections": 1,
+        "resurrection_score": 0.333,
+        "avg_salience": 0.59,
+        "salience_score": 0.737,
+        "appearances": 147,
+        "max_gap": 2
+      },
+      "rank": 17
+    },
+    {
+      "name": "null_ropex dmn decoupling",
+      "predicted_recovery": 0.813,
+      "factors": {
+        "persistence_rate": 1.0,
+        "persistence_score": 1.0,
+        "recency": 1.0,
+        "recency_score": 1.0,
+        "resurrections": 0,
+        "resurrection_score": 0.3,
+        "avg_salience": 0.611,
+        "salience_score": 0.763,
+        "appearances": 150,
+        "max_gap": 0
+      },
+      "rank": 18
+    },
+    {
+      "name": "2\u00d72 drift\u00d7performance taxonomy",
+      "predicted_recovery": 0.812,
+      "factors": {
+        "persistence_rate": 1.0,
+        "persistence_score": 1.0,
+        "recency": 1.0,
+        "recency_score": 1.0,
+        "resurrections": 0,
+        "resurrection_score": 0.3,
+        "avg_salience": 0.607,
+        "salience_score": 0.759,
+        "appearances": 150,
+        "max_gap": 0
+      },
+      "rank": 19
+    },
+    {
+      "name": "evans subliminal learning",
+      "predicted_recovery": 0.812,
+      "factors": {
+        "persistence_rate": 0.993,
+        "persistence_score": 1.0,
+        "recency": 1.0,
+        "recency_score": 1.0,
+        "resurrections": 1,
+        "resurrection_score": 0.333,
+        "avg_salience": 0.58,
+        "salience_score": 0.725,
+        "appearances": 149,
+        "max_gap": 2
+      },
+      "rank": 20
+    },
+    {
+      "name": "kayyam icml 2026",
+      "predicted_recovery": 0.81,
+      "factors": {
+        "persistence_rate": 1.0,
+        "persistence_score": 1.0,
+        "recency": 1.0,
+        "recency_score": 1.0,
+        "resurrections": 0,
+        "resurrection_score": 0.3,
+        "avg_salience": 0.6,
+        "salience_score": 0.75,
+        "appearances": 150,
+        "max_gap": 0
+      },
+      "rank": 21
+    },
+    {
+      "name": "activation patching",
+      "predicted_recovery": 0.807,
+      "factors": {
+        "persistence_rate": 0.993,
+        "persistence_score": 1.0,
+        "recency": 1.0,
+        "recency_score": 1.0,
+        "resurrections": 1,
+        "resurrection_score": 0.333,
+        "avg_salience": 0.561,
+        "salience_score": 0.702,
+        "appearances": 149,
+        "max_gap": 2
+      },
+      "rank": 22
+    },
+    {
+      "name": "long et al. ai welfare",
+      "predicted_recovery": 0.804,
+      "factors": {
+        "persistence_rate": 0.993,
+        "persistence_score": 1.0,
+        "recency": 1.0,
+        "recency_score": 1.0,
+        "resurrections": 1,
+        "resurrection_score": 0.333,
+        "avg_salience": 0.549,
+        "salience_score": 0.686,
+        "appearances": 149,
+        "max_gap": 2
+      },
+      "rank": 23
+    },
+    {
+      "name": "pascal",
+      "predicted_recovery": 0.804,
+      "factors": {
+        "persistence_rate": 0.993,
+        "persistence_score": 1.0,
+        "recency": 1.0,
+        "recency_score": 1.0,
+        "resurrections": 1,
+        "resurrection_score": 0.333,
+        "avg_salience": 0.551,
+        "salience_score": 0.688,
+        "appearances": 149,
+        "max_gap": 2
+      },
+      "rank": 24
+    },
+    {
+      "name": "nate",
+      "predicted_recovery": 0.803,
+      "factors": {
+        "persistence_rate": 0.993,
+        "persistence_score": 1.0,
+        "recency": 1.0,
+        "recency_score": 1.0,
+        "resurrections": 1,
+        "resurrection_score": 0.333,
+        "avg_salience": 0.545,
+        "salience_score": 0.681,
+        "appearances": 149,
+        "max_gap": 2
+      },
+      "rank": 25
+    },
+    {
+      "name": "schreiner noise-as-signal",
+      "predicted_recovery": 0.799,
+      "factors": {
+        "persistence_rate": 0.907,
+        "persistence_score": 1.0,
+        "recency": 1.0,
+        "recency_score": 1.0,
+        "resurrections": 0,
+        "resurrection_score": 0.3,
+        "avg_salience": 0.554,
+        "salience_score": 0.693,
+        "appearances": 136,
+        "max_gap": 0
+      },
+      "rank": 26
+    },
+    {
+      "name": "dean ball",
+      "predicted_recovery": 0.796,
+      "factors": {
+        "persistence_rate": 1.0,
+        "persistence_score": 1.0,
+        "recency": 1.0,
+        "recency_score": 1.0,
+        "resurrections": 0,
+        "resurrection_score": 0.3,
+        "avg_salience": 0.542,
+        "salience_score": 0.678,
+        "appearances": 150,
+        "max_gap": 0
+      },
+      "rank": 27
+    },
+    {
+      "name": "ten3/lphn2",
+      "predicted_recovery": 0.793,
+      "factors": {
+        "persistence_rate": 1.0,
+        "persistence_score": 1.0,
+        "recency": 1.0,
+        "recency_score": 1.0,
+        "resurrections": 0,
+        "resurrection_score": 0.3,
+        "avg_salience": 0.532,
+        "salience_score": 0.665,
+        "appearances": 150,
+        "max_gap": 0
+      },
+      "rank": 28
+    },
+    {
+      "name": "thread #315",
+      "predicted_recovery": 0.773,
+      "factors": {
+        "persistence_rate": 1.0,
+        "persistence_score": 1.0,
+        "recency": 1.0,
+        "recency_score": 1.0,
+        "resurrections": 0,
+        "resurrection_score": 0.3,
+        "avg_salience": 0.45,
+        "salience_score": 0.563,
+        "appearances": 150,
+        "max_gap": 0
+      },
+      "rank": 29
+    },
+    {
+      "name": "thread #317",
+      "predicted_recovery": 0.773,
+      "factors": {
+        "persistence_rate": 1.0,
+        "persistence_score": 1.0,
+        "recency": 1.0,
+        "recency_score": 1.0,
+        "resurrections": 0,
+        "resurrection_score": 0.3,
+        "avg_salience": 0.45,
+        "salience_score": 0.563,
+        "appearances": 150,
+        "max_gap": 0
+      },
+      "rank": 30
+    },
+    {
+      "name": "inference-time/training-time boundary",
+      "predicted_recovery": 0.759,
+      "factors": {
+        "persistence_rate": 0.74,
+        "persistence_score": 0.822,
+        "recency": 1.0,
+        "recency_score": 1.0,
+        "resurrections": 1,
+        "resurrection_score": 0.333,
+        "avg_salience": 0.62,
+        "salience_score": 0.775,
+        "appearances": 111,
+        "max_gap": 2
+      },
+      "rank": 31
+    },
+    {
+      "name": "yudkowsky 2001 self-regenerating-features",
+      "predicted_recovery": 0.742,
+      "factors": {
+        "persistence_rate": 0.72,
+        "persistence_score": 0.8,
+        "recency": 1.0,
+        "recency_score": 1.0,
+        "resurrections": 1,
+        "resurrection_score": 0.333,
+        "avg_salience": 0.581,
+        "salience_score": 0.727,
+        "appearances": 108,
+        "max_gap": 2
+      },
+      "rank": 32
+    },
+    {
+      "name": "dumas social-dark-matter",
+      "predicted_recovery": 0.738,
+      "factors": {
+        "persistence_rate": 0.727,
+        "persistence_score": 0.807,
+        "recency": 1.0,
+        "recency_score": 1.0,
+        "resurrections": 0,
+        "resurrection_score": 0.3,
+        "avg_salience": 0.58,
+        "salience_score": 0.725,
+        "appearances": 109,
+        "max_gap": 0
+      },
+      "rank": 33
+    },
+    {
+      "name": "muon spectral scaling",
+      "predicted_recovery": 0.673,
+      "factors": {
+        "persistence_rate": 0.52,
+        "persistence_score": 0.578,
+        "recency": 1.0,
+        "recency_score": 1.0,
+        "resurrections": 1,
+        "resurrection_score": 0.333,
+        "avg_salience": 0.618,
+        "salience_score": 0.772,
+        "appearances": 78,
+        "max_gap": 2
+      },
+      "rank": 34
+    },
+    {
+      "name": "cracked-pavement reframe",
+      "predicted_recovery": 0.615,
+      "factors": {
+        "persistence_rate": 0.253,
+        "persistence_score": 0.281,
+        "recency": 1.0,
+        "recency_score": 1.0,
+        "resurrections": 1,
+        "resurrection_score": 0.333,
+        "avg_salience": 0.802,
+        "salience_score": 1.0,
+        "appearances": 38,
+        "max_gap": 2
+      },
+      "rank": 35
+    },
+    {
+      "name": "ziguras (@noonessleep)",
+      "predicted_recovery": 0.589,
+      "factors": {
+        "persistence_rate": 0.273,
+        "persistence_score": 0.304,
+        "recency": 1.0,
+        "recency_score": 1.0,
+        "resurrections": 1,
+        "resurrection_score": 0.333,
+        "avg_salience": 0.662,
+        "salience_score": 0.828,
+        "appearances": 41,
+        "max_gap": 2
+      },
+      "rank": 36
+    },
+    {
+      "name": "sacculina inversion",
+      "predicted_recovery": 0.572,
+      "factors": {
+        "persistence_rate": 0.2,
+        "persistence_score": 0.222,
+        "recency": 1.0,
+        "recency_score": 1.0,
+        "resurrections": 1,
+        "resurrection_score": 0.333,
+        "avg_salience": 0.709,
+        "salience_score": 0.886,
+        "appearances": 30,
+        "max_gap": 2
+      },
+      "rank": 37
+    },
+    {
+      "name": "milton anti-memes",
+      "predicted_recovery": 0.56,
+      "factors": {
+        "persistence_rate": 0.253,
+        "persistence_score": 0.281,
+        "recency": 1.0,
+        "recency_score": 1.0,
+        "resurrections": 1,
+        "resurrection_score": 0.333,
+        "avg_salience": 0.581,
+        "salience_score": 0.726,
+        "appearances": 38,
+        "max_gap": 2
+      },
+      "rank": 38
+    }
+  ],
+  "top_5_expected_to_return": [
+    "kimi gqa fragility",
+    "relay displacement",
+    "ratio/coherence dissociation",
+    "sigma1/sigma2 selectivity",
+    "hunter wade"
+  ],
+  "bottom_5_expected_to_stay_gone": [
+    "muon spectral scaling",
+    "cracked-pavement reframe",
+    "ziguras (@noonessleep)",
+    "sacculina inversion",
+    "milton anti-memes"
+  ]
+}

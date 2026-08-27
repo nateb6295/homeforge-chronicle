@@ -1,0 +1,13 @@
+[
+  {
+    "model": "meta-llama/Llama-3.1-8B-Instruct",
+    "n_layers": 32,
+    "peak_layer": 31,
+    "peak_frac": 0.96875,
+    "delta": 0.16665259537395327,
+    "kl_identity": 1.5441808166603248,
+    "kl_echo": 0.7163431014244755,
+    "ratio": 2.1556441509517748,
+    "perm_p": 0.005997001499250375
+  }
+]

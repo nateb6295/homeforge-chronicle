@@ -4,7 +4,7 @@
 
 STATE_FILE="/tmp/operator_dispatch_last_id"
 QUEUE_FILE="/tmp/operator_dispatch_queue.jsonl"
-POLL_INTERVAL=30
+POLL_INTERVAL=10
 
 source ~/chronicle/chronicle.env 2>/dev/null
 

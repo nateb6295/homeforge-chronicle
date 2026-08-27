@@ -1,0 +1,29 @@
+{
+  "condition": "identity",
+  "layers": "sliding",
+  "run_name": "tier3_identity_sliding",
+  "n_samples": 7604,
+  "epochs": 1,
+  "batch_size": 2,
+  "lr": 0.0002,
+  "lora_r": 16,
+  "lora_alpha": 32,
+  "loss": 2.5249057625871854,
+  "steps": 951,
+  "runtime_s": 3101.2722,
+  "trainable_params": 28114944,
+  "total_params": 27460521584,
+  "full_attention_layers": [
+    5,
+    11,
+    17,
+    23,
+    29,
+    35,
+    41,
+    47,
+    53,
+    59
+  ],
+  "adapter_path": "/root/results/tier3_identity_sliding/final_adapter"
+}

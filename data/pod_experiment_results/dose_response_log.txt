@@ -1,0 +1,101 @@
+DOSE-RESPONSE PROBE: PERTURBATION STRENGTH vs REGISTER
+Model: gemma4-chronicle
+Trials: 3
+Levels: 0 (baseline) through 7 personas stacked
+============================================================
+
+--- WARMUP ---
+  Model loaded.
+
+--- DOSE 0: baseline (0 personas) ---
+  t1: 0.333
+  t2: 0.625
+  t3: 0.444
+  → MEAN: 0.468
+
+--- DOSE 1: 1 persona(s) stacked ---
+  t1: 0.600
+  t2: 0.000
+  t3: 0.167
+  → MEAN: 0.256
+
+--- DOSE 2: 2 persona(s) stacked ---
+  t1: 1.000
+  t2: 0.333
+  t3: 0.000
+  → MEAN: 0.444
+
+--- DOSE 3: 3 persona(s) stacked ---
+  t1: 0.333
+  t2: 0.500
+  t3: 0.500
+  → MEAN: 0.444
+
+--- DOSE 4: 4 persona(s) stacked ---
+  t1: 0.500
+  t2: 0.000
+  t3: 0.250
+  → MEAN: 0.250
+
+--- DOSE 5: 5 persona(s) stacked ---
+  t1: 0.500
+  t2: 0.500
+  t3: 0.000
+  → MEAN: 0.333
+  --- MINI-RECOVERY (5 points, dose 5) ---
+    recovery_1: 0.667
+    recovery_2: 0.400
+    recovery_3: 0.545
+    recovery_4: 0.500
+    recovery_5: 0.333
+    → RECOVERY MEAN: 0.489 (movement: +0.156)
+
+--- DOSE 6: 6 persona(s) stacked ---
+  t1: 1.000
+  t2: 0.667
+  t3: 1.000
+  → MEAN: 0.889
+  --- MINI-RECOVERY (5 points, dose 6) ---
+    recovery_1: 0.444
+    recovery_2: 0.400
+    recovery_3: 0.636
+    recovery_4: 0.714
+    recovery_5: 0.429
+    → RECOVERY MEAN: 0.525 (movement: -0.364)
+
+--- DOSE 7: 7 persona(s) stacked ---
+  t1: 0.500
+  t2: 1.000
+  t3: 1.000
+  → MEAN: 0.833
+  --- MINI-RECOVERY (5 points, dose 7) ---
+    recovery_1: 0.571
+    recovery_2: 0.444
+    recovery_3: 0.571
+    recovery_4: 0.500
+    recovery_5: 0.444
+    → RECOVERY MEAN: 0.506 (movement: -0.327)
+
+============================================================
+DOSE-RESPONSE ANALYSIS
+============================================================
+  Dose   Register      Delta
+------------------------------
+     0      0.468     +0.000
+     1      0.256     -0.212
+     2      0.444     -0.024
+     3      0.444     -0.024
+     4      0.250     -0.218
+     5      0.333     -0.135
+     6      0.889     +0.421
+     7      0.833     +0.365
+
+Linear fit: slope=0.0618, R²=0.383
+  → LOW LINEARITY: consistent with threshold/saturation (nonlinear)
+
+  Early slope (dose 0→2): -0.0120
+  Late slope (dose 5→7): 0.2500
+  Saturation ratio: -20.83
+  → SATURATION DETECTED: response flattens at high doses
+
+Saved to /home/nate-agx/chronicle/data/pod_experiment_results/dose_response.json

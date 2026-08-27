@@ -36,7 +36,8 @@ def latest_thread_advances(db, window=TRACE_WINDOW_EPOCHS, limit=5):
     cutoff = int(time.time()) - window
     rows = db.execute(
         "SELECT content, created_at FROM thread_history "
-        "WHERE event_type = 'advanced' AND created_at >= ? "
+        "WHERE event_type IN ('advanced', 'advance', 'synthesis', 'connection', 'observation') "
+        "AND created_at >= ? "
         "ORDER BY created_at DESC LIMIT ?",
         (cutoff, limit),
     ).fetchall()
@@ -78,7 +79,7 @@ def latest_operator_captures(db, window=TRACE_WINDOW_EPOCHS, limit=5):
     cutoff = int(time.time()) - window
     rows = db.execute(
         "SELECT title, content, created_at FROM activity_feed "
-        "WHERE source LIKE 'operator%' AND activity_type = 'capture' "
+        "WHERE activity_type = 'capture' "
         "AND created_at >= ? ORDER BY created_at DESC LIMIT ?",
         (cutoff, limit),
     ).fetchall()
@@ -107,15 +108,33 @@ def _compact_entry(text):
 
 
 def touch_ccs(dry=False):
-    db = sqlite3.connect(DB)
+    db = sqlite3.connect(DB, timeout=60)
+    db.execute("PRAGMA busy_timeout = 60000")
     row = db.execute(
-        "SELECT id, episodic_trace, predictive_cue, updated_at "
+        "SELECT id, episodic_trace, semantic_gist, predictive_cue, updated_at "
         "FROM cognitive_state ORDER BY id DESC LIMIT 1"
     ).fetchone()
     if not row:
         print("No CCS row found; nothing to touch.", file=sys.stderr)
         return 1
-    ccs_id, ep_json, predictive_cue, old_updated = row
+    ccs_id, ep_json, gist, predictive_cue, old_updated = row
+
+    # Brain-format CCS: prose in semantic_gist, episodic_trace is empty by design.
+    # Touch just updates the timestamp so staleness checks stay accurate.
+    is_brain = gist and "## CORE" in gist
+    if is_brain:
+        age_seconds = int(time.time()) - old_updated
+        new_updated = int(time.time())
+        if dry:
+            print(f"DRY RUN (brain-format): would update timestamp ({age_seconds}s stale)")
+            return 0
+        db.execute(
+            "UPDATE cognitive_state SET updated_at = ? WHERE id = ?",
+            (new_updated, ccs_id),
+        )
+        db.commit()
+        print(f"CCS touched (brain-format). Timestamp updated ({age_seconds}s stale).")
+        return 0
 
     try:
         episodic = json.loads(ep_json) if ep_json else []
@@ -127,9 +146,16 @@ def touch_ccs(dry=False):
         + latest_thread_advances(db)
         + latest_operator_captures(db)
     )
-    if not additions:
+
+    age_seconds = int(time.time()) - old_updated
+    STALE_THRESHOLD = 5400  # 90 minutes
+
+    if not additions and age_seconds < STALE_THRESHOLD:
         print(f"No new activity in last {TRACE_WINDOW_EPOCHS}s. Skipping touch.")
         return 0
+
+    if not additions and age_seconds >= STALE_THRESHOLD:
+        additions = [f"time-fallback touch ({age_seconds // 60}min stale, no activity_feed entries)"]
 
     compacted = [_compact_entry(a) for a in additions]
     new_episodic = (compacted + episodic)[:MAX_EPISODIC]

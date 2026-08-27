@@ -1,0 +1,18 @@
+{
+  "model": "anthropic/claude-sonnet-4",
+  "n_completions": 8,
+  "ownership": {
+    "lexical_div": [
+      0.29454234280408575
+    ],
+    "first15_div": [
+      0.6216216216216216
+    ]
+  },
+  "paraphrase": {
+    "lexical_div": [],
+    "first15_div": []
+  },
+  "lex_ratio": Infinity,
+  "f15_ratio": Infinity
+}

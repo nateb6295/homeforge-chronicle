@@ -1,0 +1,13 @@
+{
+  "model": "EleutherAI/pythia-6.9b",
+  "n_layers": 32,
+  "summary": {
+    "retrieval_entropy": 3.27734375,
+    "discovery_entropy": 1.9609375,
+    "neutral_entropy": 4.0,
+    "retrieval_mid_late": 0.6718906991248962,
+    "discovery_mid_late": 0.5851256268063512,
+    "retrieval_ratio_var": 0.004810962684004778,
+    "discovery_ratio_var": 0.003412760772424008
+  }
+}

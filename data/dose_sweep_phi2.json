@@ -1,0 +1,204 @@
+{
+  "seed_chars": 1200,
+  "model": "phi:2.7b",
+  "results": [
+    {
+      "char_count": 1200,
+      "word_count": 200,
+      "entity_count": 3,
+      "entities": [
+        "Findi",
+        "Gist",
+        "Nate"
+      ],
+      "semantic_sim": 1.0,
+      "info_entropy": 6.7244,
+      "unique_ratio": 0.68,
+      "dose": 0
+    },
+    {
+      "char_count": 316,
+      "word_count": 39,
+      "entity_count": 4,
+      "entities": [
+        "Core",
+        "Emotional",
+        "Mind",
+        "Structural"
+      ],
+      "semantic_sim": 0.735796,
+      "info_entropy": 5.1828,
+      "unique_ratio": 0.9487,
+      "dose": 1,
+      "compress_time": 1.6,
+      "compression_ratio": 0.263
+    },
+    {
+      "char_count": 292,
+      "word_count": 35,
+      "entity_count": 3,
+      "entities": [
+        "Emotion",
+        "Focused",
+        "Ongoing"
+      ],
+      "semantic_sim": 0.702946,
+      "info_entropy": 5.1293,
+      "unique_ratio": 1.0,
+      "dose": 2,
+      "compress_time": 1.4,
+      "compression_ratio": 0.924
+    },
+    {
+      "char_count": 149,
+      "word_count": 16,
+      "entity_count": 1,
+      "entities": [
+        "Accuracy"
+      ],
+      "semantic_sim": 0.58545,
+      "info_entropy": 4.0,
+      "unique_ratio": 1.0,
+      "dose": 3,
+      "compress_time": 0.8,
+      "compression_ratio": 0.51
+    },
+    {
+      "char_count": 292,
+      "word_count": 31,
+      "entity_count": 2,
+      "entities": [
+        "Emotional",
+        "Structural"
+      ],
+      "semantic_sim": 0.609762,
+      "info_entropy": 4.8897,
+      "unique_ratio": 0.9677,
+      "dose": 4,
+      "compress_time": 1.5,
+      "compression_ratio": 1.96
+    },
+    {
+      "char_count": 194,
+      "word_count": 23,
+      "entity_count": 3,
+      "entities": [
+        "Accuracy",
+        "Emotion",
+        "Structural"
+      ],
+      "semantic_sim": 0.664818,
+      "info_entropy": 4.5236,
+      "unique_ratio": 1.0,
+      "dose": 5,
+      "compress_time": 1.1,
+      "compression_ratio": 0.664
+    },
+    {
+      "char_count": 301,
+      "word_count": 35,
+      "entity_count": 4,
+      "entities": [
+        "Emotional",
+        "Output",
+        "Relationships",
+        "Structural"
+      ],
+      "semantic_sim": 0.61288,
+      "info_entropy": 4.9934,
+      "unique_ratio": 0.9429,
+      "dose": 6,
+      "compress_time": 1.8,
+      "compression_ratio": 1.552
+    },
+    {
+      "char_count": 211,
+      "word_count": 27,
+      "entity_count": 3,
+      "entities": [
+        "Accuracy",
+        "Emotional",
+        "Structural"
+      ],
+      "semantic_sim": 0.637001,
+      "info_entropy": 4.6808,
+      "unique_ratio": 0.963,
+      "dose": 7,
+      "compress_time": 1.1,
+      "compression_ratio": 0.701
+    },
+    {
+      "char_count": 219,
+      "word_count": 25,
+      "entity_count": 2,
+      "entities": [
+        "Emotional",
+        "Pattern"
+      ],
+      "semantic_sim": 0.57677,
+      "info_entropy": 4.3737,
+      "unique_ratio": 0.88,
+      "dose": 8,
+      "compress_time": 1.3,
+      "compression_ratio": 1.038
+    },
+    {
+      "char_count": 140,
+      "word_count": 17,
+      "entity_count": 1,
+      "entities": [
+        "Accuracy"
+      ],
+      "semantic_sim": 0.56325,
+      "info_entropy": 4.0875,
+      "unique_ratio": 1.0,
+      "dose": 9,
+      "compress_time": 0.8,
+      "compression_ratio": 0.639
+    },
+    {
+      "char_count": 111,
+      "word_count": 14,
+      "entity_count": 1,
+      "entities": [
+        "Focus"
+      ],
+      "semantic_sim": 0.556724,
+      "info_entropy": 3.8074,
+      "unique_ratio": 1.0,
+      "dose": 10,
+      "compress_time": 0.6,
+      "compression_ratio": 0.793
+    },
+    {
+      "char_count": 89,
+      "word_count": 11,
+      "entity_count": 1,
+      "entities": [
+        "Accuracy"
+      ],
+      "semantic_sim": 0.568171,
+      "info_entropy": 3.4594,
+      "unique_ratio": 1.0,
+      "dose": 11,
+      "compress_time": 0.6,
+      "compression_ratio": 0.802
+    },
+    {
+      "char_count": 228,
+      "word_count": 27,
+      "entity_count": 3,
+      "entities": [
+        "Accuracy",
+        "Emotional",
+        "Structural"
+      ],
+      "semantic_sim": 0.600641,
+      "info_entropy": 4.6067,
+      "unique_ratio": 0.9259,
+      "dose": 12,
+      "compress_time": 1.1,
+      "compression_ratio": 2.562
+    }
+  ]
+}

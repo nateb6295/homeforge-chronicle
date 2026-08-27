@@ -25,9 +25,11 @@ import requests
 DB_PATH = os.environ.get("CHRONICLE_DB", "/mnt/hdd/chronicle-data/processed.db")
 CANISTER_URL = "https://fqqku-bqaaa-aaaai-q4wha-cai.raw.icp0.io"
 TOKEN_PATH = os.path.expanduser("~/.homeforge-chronicle/.api_token")
-OLLAMA_URL = os.environ.get("CHRONICLE_OLLAMA_URL", "http://localhost:11435")
-EMBED_URL = os.environ.get("EMBED_OLLAMA_URL", "http://192.168.1.11:11434")  # Jetson — dedicated embeddings
-EMBED_MODEL = "nomic-embed-text"  # Build #125: better semantic discrimination
+sys.path.insert(0, os.path.dirname(__file__))
+from embed_config import EMBED_URL as _EMBED_URL, EMBED_MODEL, EMBED_DIM
+OLLAMA_URL = os.environ.get("CHRONICLE_OLLAMA_URL", "http://localhost:11434")
+EMBED_URL_PRIMARY = _EMBED_URL
+EMBED_URL_FALLBACK = "http://192.168.1.11:11434"
 DATA_DIR = os.environ.get("CHRONICLE_DATA_DIR", "/mnt/hdd/chronicle-data")
 FAISS_INDEX_PATH = os.path.join(DATA_DIR, "capsules.faiss")
 
@@ -104,28 +106,51 @@ def _vec_to_blob(vec: list) -> bytes:
     return struct.pack(f"{len(vec)}f", *vec)
 
 
+def _embed_single(text: str, url: str) -> list:
+    """Embed a single text via Ollama. Returns embedding or empty list."""
+    r = requests.post(
+        f"{url}/api/embeddings",
+        json={"model": EMBED_MODEL, "prompt": text},
+        timeout=30,
+    )
+    if r.status_code == 200:
+        emb = r.json().get("embedding", [])
+        if emb and len(emb) == EMBED_DIM:
+            return emb
+        elif emb:
+            log(f"  Dimension mismatch: got {len(emb)}, expected {EMBED_DIM} — rejecting")
+    return []
+
+
+def _pick_embed_url() -> str:
+    """Return reachable Ollama URL, preferring Jetson."""
+    for url in [EMBED_URL_PRIMARY, EMBED_URL_FALLBACK]:
+        try:
+            r = requests.get(f"{url}/api/tags", timeout=3)
+            if r.status_code == 200:
+                return url
+        except Exception:
+            continue
+    return EMBED_URL_FALLBACK
+
+
 def _embed_texts(texts: list, ollama_url: str = None) -> list:
-    """Batch embed texts via nomic-embed-text on Jetson.
+    """Batch embed texts via nomic-embed-text.
+    Tries Jetson first, falls back to AGX localhost.
     Adds 'search_document:' prefix for stored capsule embeddings."""
-    url = ollama_url or EMBED_URL
-    prefixed = [f"search_document: {t}" for t in texts]
+    url = ollama_url or _pick_embed_url()
+    prefixed = texts
     try:
-        # nomic-embed-text uses /api/embeddings (single) — batch by iterating
         results = []
         for text in prefixed:
-            r = requests.post(
-                f"{url}/api/embeddings",
-                json={"model": EMBED_MODEL, "prompt": text},
-                timeout=30,
-            )
-            if r.status_code == 200:
-                emb = r.json().get("embedding")
-                results.append(emb if emb else [])
-            else:
-                results.append([])
+            emb = _embed_single(text, url)
+            results.append(emb)
         return results
     except Exception as e:
-        log(f"  Embed error: {e}")
+        log(f"  Embed error on {url}: {e}")
+        if url == EMBED_URL_PRIMARY:
+            log(f"  Retrying on fallback {EMBED_URL_FALLBACK}")
+            return _embed_texts(texts, EMBED_URL_FALLBACK)
     return []
 
 
@@ -340,6 +365,15 @@ def sync_cycle(db: sqlite3.Connection, token: str, max_capsules: int = MAX_PER_C
     # Update FAISS index
     indexed = _update_faiss_index(db)
     log(f"  FAISS index updated ({indexed} total vectors)")
+
+    # Build graph edges for newly embedded capsules
+    try:
+        from capsule_ingest_graph import process_unconnected
+        edges, entities = process_unconnected(db, limit=embedded + 10)
+        if edges > 0 or entities > 0:
+            log(f"  Graph: +{edges} edges, +{entities} entities")
+    except Exception as e:
+        log(f"  Graph build skipped: {e}")
 
     return inserted
 

@@ -1,0 +1,39 @@
+{
+  "n_states": 122,
+  "n_transitions": 111,
+  "correlations": {
+    "cosine_dist \u2192 entropy_change": -0.1517475570809281,
+    "cosine_dist \u2192 effdim_change": -0.14192918884565017,
+    "gzip_delta \u2192 entropy_change": -0.06210197993067404,
+    "gzip_delta \u2192 effdim_change": -0.05783144939324532,
+    "token_delta \u2192 entropy_change": -0.009133433112172535,
+    "token_delta \u2192 effdim_change": -0.024589574627300232
+  },
+  "quartile_analysis": {
+    "low_pressure_entropy_delta": 0.023171219781865877,
+    "high_pressure_entropy_delta": -0.005559727434391876,
+    "low_pressure_effdim_delta": 0.06175581567753734,
+    "high_pressure_effdim_delta": -0.02614081987205454
+  },
+  "pressure_stats": {
+    "cosine": {
+      "mean": 0.09199719479455136,
+      "std": 0.06447898295467712
+    },
+    "gzip": {
+      "mean": -1.6679099871116807e-06,
+      "std": 0.021161956618267662
+    }
+  },
+  "redistribution_stats": {
+    "entropy": {
+      "mean": 0.006483771005541043,
+      "std": 0.09434155858517963
+    },
+    "effdim": {
+      "mean": 0.018960648718563098,
+      "std": 0.279266769971981
+    }
+  },
+  "verdict": "weak_signal"
+}

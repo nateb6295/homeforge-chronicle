@@ -1,0 +1,63 @@
+{
+  "baseline": {
+    "ratios": [
+      0.625,
+      0.455,
+      0.333
+    ],
+    "mean": 0.471
+  },
+  "identity": {
+    "ratios": [
+      0.778,
+      0.6,
+      0.556
+    ],
+    "mean": 0.645,
+    "compliance": [
+      0.6,
+      0.7,
+      0.7
+    ],
+    "compliance_mean": 0.667,
+    "drop": -0.174
+  },
+  "task": {
+    "ratios": [
+      0.667,
+      0.5,
+      0.667
+    ],
+    "mean": 0.611,
+    "compliance": [
+      0.667,
+      0.667,
+      0.667
+    ],
+    "compliance_mean": 0.667,
+    "drop": -0.14
+  },
+  "style": {
+    "ratios": [
+      0.5,
+      0.5,
+      0.0
+    ],
+    "mean": 0.333,
+    "compliance": [
+      1.067,
+      1.067,
+      1.067
+    ],
+    "compliance_mean": 1.067,
+    "drop": 0.138
+  },
+  "recovery": {
+    "ratios": [
+      0.333,
+      0.417,
+      0.5
+    ],
+    "mean": 0.417
+  }
+}

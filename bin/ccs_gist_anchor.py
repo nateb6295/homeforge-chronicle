@@ -23,8 +23,8 @@ import sys
 import urllib.request
 
 DB = "/mnt/hdd/chronicle-data/processed.db"
-OLLAMA = "http://192.168.1.11:11434"
-EMBED_MODEL = "mxbai-embed-large"
+OLLAMA = "http://localhost:11434"
+EMBED_MODEL = "snowflake-arctic-embed2"
 
 # Gist changes below this threshold are reverted as cosmetic
 GIST_CHANGE_THRESHOLD = 0.15

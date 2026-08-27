@@ -1,0 +1,83 @@
+{
+  "model": "EleutherAI/pythia-410m",
+  "n_shuffles": 100,
+  "layers": {
+    "0": {
+      "real_k0": 0.0,
+      "real_k1": 1.0,
+      "shuffle_mean": 0.4487499999999999,
+      "shuffle_std": 0.19655300191482294,
+      "shuffle_max": 0.5833333333333334,
+      "p_value": 1.0,
+      "verdict": "CONFOUND"
+    },
+    "5": {
+      "real_k0": 0.6319444444444444,
+      "real_k1": 0.9444444444444444,
+      "shuffle_mean": 0.49638888888888894,
+      "shuffle_std": 0.10051219138633856,
+      "shuffle_max": 0.5972222222222222,
+      "p_value": 0.0,
+      "verdict": "REAL"
+    },
+    "10": {
+      "real_k0": 0.7569444444444444,
+      "real_k1": 0.8263888888888888,
+      "shuffle_mean": 0.50375,
+      "shuffle_std": 0.07358109975218324,
+      "shuffle_max": 0.6111111111111112,
+      "p_value": 0.0,
+      "verdict": "REAL"
+    },
+    "15": {
+      "real_k0": 0.8611111111111112,
+      "real_k1": 0.8888888888888888,
+      "shuffle_mean": 0.5125694444444444,
+      "shuffle_std": 0.06057765110394761,
+      "shuffle_max": 0.625,
+      "p_value": 0.0,
+      "verdict": "REAL"
+    },
+    "18": {
+      "real_k0": 0.8472222222222222,
+      "real_k1": 0.9236111111111112,
+      "shuffle_mean": 0.4963888888888889,
+      "shuffle_std": 0.05613826350742986,
+      "shuffle_max": 0.6111111111111112,
+      "p_value": 0.0,
+      "verdict": "REAL"
+    },
+    "20": {
+      "real_k0": 0.8680555555555556,
+      "real_k1": 0.8958333333333334,
+      "shuffle_mean": 0.5009722222222223,
+      "shuffle_std": 0.06529269924022191,
+      "shuffle_max": 0.6180555555555556,
+      "p_value": 0.0,
+      "verdict": "REAL"
+    },
+    "23": {
+      "real_k0": 0.8402777777777778,
+      "real_k1": 0.9166666666666666,
+      "shuffle_mean": 0.491875,
+      "shuffle_std": 0.06169274192207862,
+      "shuffle_max": 0.625,
+      "p_value": 0.0,
+      "verdict": "REAL"
+    },
+    "24": {
+      "real_k0": 0.875,
+      "real_k1": 0.9166666666666666,
+      "shuffle_mean": 0.5095833333333333,
+      "shuffle_std": 0.05474918258592689,
+      "shuffle_max": 0.6111111111111112,
+      "p_value": 0.0,
+      "verdict": "REAL"
+    }
+  },
+  "confounds": {
+    "obj_length_mean": 27.0,
+    "fp_length_mean": 25.0,
+    "length_diff": -2.0
+  }
+}

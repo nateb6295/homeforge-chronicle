@@ -76,7 +76,7 @@ def post_discord(webhook_url, message):
     req = urllib.request.Request(
         webhook_url,
         data=data,
-        headers={"Content-Type": "application/json"},
+        headers={"Content-Type": "application/json", "User-Agent": "Chronicle/1.0"},
         method="POST",
     )
     try:

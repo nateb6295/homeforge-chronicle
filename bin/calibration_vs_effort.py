@@ -26,7 +26,7 @@ QUESTIONS = [
     "What are the active cognitive threads and what connects them?",
     "What did the most recent experimental builds discover?",
     "What is the current uncertainty or open question driving the next build?",
-    "What is the standing directive on Discord presence?",
+    "What is the current goal or orientation for ongoing work?",
 ]
 
 

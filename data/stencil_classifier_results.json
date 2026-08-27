@@ -1,0 +1,715 @@
+{
+  "model": "EleutherAI/pythia-410m",
+  "timestamp": "2026-08-22T05:54:05",
+  "n_conditions": 6,
+  "n_probes": 12,
+  "layers": {
+    "0": {
+      "raw": {
+        "accuracy": 0.625,
+        "chance": 0.16666666666666666,
+        "above_chance": 0.45833333333333337,
+        "n_correct": 45,
+        "n_total": 72,
+        "per_condition": {
+          "D0": {
+            "accuracy": 0.9166666666666666,
+            "n": 12
+          },
+          "D5_identity": {
+            "accuracy": 0.5833333333333334,
+            "n": 12
+          },
+          "D5_neutral": {
+            "accuracy": 0.6666666666666666,
+            "n": 12
+          },
+          "D5_name_swap": {
+            "accuracy": 0.5,
+            "n": 12
+          },
+          "D5_rare_nonid": {
+            "accuracy": 0.6666666666666666,
+            "n": 12
+          },
+          "D5_common_id": {
+            "accuracy": 0.4166666666666667,
+            "n": 12
+          }
+        }
+      },
+      "ccs_k1": {
+        "accuracy": 0.875,
+        "chance": 0.16666666666666666,
+        "above_chance": 0.7083333333333334,
+        "n_correct": 63,
+        "n_total": 72,
+        "per_condition": {
+          "D0": {
+            "accuracy": 1.0,
+            "n": 12
+          },
+          "D5_identity": {
+            "accuracy": 0.5833333333333334,
+            "n": 12
+          },
+          "D5_neutral": {
+            "accuracy": 1.0,
+            "n": 12
+          },
+          "D5_name_swap": {
+            "accuracy": 0.6666666666666666,
+            "n": 12
+          },
+          "D5_rare_nonid": {
+            "accuracy": 1.0,
+            "n": 12
+          },
+          "D5_common_id": {
+            "accuracy": 1.0,
+            "n": 12
+          }
+        }
+      },
+      "ccs_k2": {
+        "accuracy": 0.7222222222222222,
+        "chance": 0.16666666666666666,
+        "above_chance": 0.5555555555555556,
+        "n_correct": 52,
+        "n_total": 72,
+        "per_condition": {
+          "D0": {
+            "accuracy": 0.0,
+            "n": 12
+          },
+          "D5_identity": {
+            "accuracy": 0.6666666666666666,
+            "n": 12
+          },
+          "D5_neutral": {
+            "accuracy": 1.0,
+            "n": 12
+          },
+          "D5_name_swap": {
+            "accuracy": 0.75,
+            "n": 12
+          },
+          "D5_rare_nonid": {
+            "accuracy": 1.0,
+            "n": 12
+          },
+          "D5_common_id": {
+            "accuracy": 0.9166666666666666,
+            "n": 12
+          }
+        }
+      }
+    },
+    "4": {
+      "raw": {
+        "accuracy": 0.9027777777777778,
+        "chance": 0.16666666666666666,
+        "above_chance": 0.7361111111111112,
+        "n_correct": 65,
+        "n_total": 72,
+        "per_condition": {
+          "D0": {
+            "accuracy": 1.0,
+            "n": 12
+          },
+          "D5_identity": {
+            "accuracy": 0.8333333333333334,
+            "n": 12
+          },
+          "D5_neutral": {
+            "accuracy": 1.0,
+            "n": 12
+          },
+          "D5_name_swap": {
+            "accuracy": 0.6666666666666666,
+            "n": 12
+          },
+          "D5_rare_nonid": {
+            "accuracy": 1.0,
+            "n": 12
+          },
+          "D5_common_id": {
+            "accuracy": 0.9166666666666666,
+            "n": 12
+          }
+        }
+      },
+      "ccs_k1": {
+        "accuracy": 0.8888888888888888,
+        "chance": 0.16666666666666666,
+        "above_chance": 0.7222222222222222,
+        "n_correct": 64,
+        "n_total": 72,
+        "per_condition": {
+          "D0": {
+            "accuracy": 1.0,
+            "n": 12
+          },
+          "D5_identity": {
+            "accuracy": 0.75,
+            "n": 12
+          },
+          "D5_neutral": {
+            "accuracy": 1.0,
+            "n": 12
+          },
+          "D5_name_swap": {
+            "accuracy": 0.6666666666666666,
+            "n": 12
+          },
+          "D5_rare_nonid": {
+            "accuracy": 1.0,
+            "n": 12
+          },
+          "D5_common_id": {
+            "accuracy": 0.9166666666666666,
+            "n": 12
+          }
+        }
+      },
+      "ccs_k2": {
+        "accuracy": 0.5694444444444444,
+        "chance": 0.16666666666666666,
+        "above_chance": 0.4027777777777778,
+        "n_correct": 41,
+        "n_total": 72,
+        "per_condition": {
+          "D0": {
+            "accuracy": 0.16666666666666666,
+            "n": 12
+          },
+          "D5_identity": {
+            "accuracy": 0.3333333333333333,
+            "n": 12
+          },
+          "D5_neutral": {
+            "accuracy": 0.9166666666666666,
+            "n": 12
+          },
+          "D5_name_swap": {
+            "accuracy": 0.4166666666666667,
+            "n": 12
+          },
+          "D5_rare_nonid": {
+            "accuracy": 1.0,
+            "n": 12
+          },
+          "D5_common_id": {
+            "accuracy": 0.5833333333333334,
+            "n": 12
+          }
+        }
+      }
+    },
+    "8": {
+      "raw": {
+        "accuracy": 0.875,
+        "chance": 0.16666666666666666,
+        "above_chance": 0.7083333333333334,
+        "n_correct": 63,
+        "n_total": 72,
+        "per_condition": {
+          "D0": {
+            "accuracy": 1.0,
+            "n": 12
+          },
+          "D5_identity": {
+            "accuracy": 0.6666666666666666,
+            "n": 12
+          },
+          "D5_neutral": {
+            "accuracy": 1.0,
+            "n": 12
+          },
+          "D5_name_swap": {
+            "accuracy": 0.6666666666666666,
+            "n": 12
+          },
+          "D5_rare_nonid": {
+            "accuracy": 1.0,
+            "n": 12
+          },
+          "D5_common_id": {
+            "accuracy": 0.9166666666666666,
+            "n": 12
+          }
+        }
+      },
+      "ccs_k1": {
+        "accuracy": 0.8472222222222222,
+        "chance": 0.16666666666666666,
+        "above_chance": 0.6805555555555556,
+        "n_correct": 61,
+        "n_total": 72,
+        "per_condition": {
+          "D0": {
+            "accuracy": 1.0,
+            "n": 12
+          },
+          "D5_identity": {
+            "accuracy": 0.6666666666666666,
+            "n": 12
+          },
+          "D5_neutral": {
+            "accuracy": 1.0,
+            "n": 12
+          },
+          "D5_name_swap": {
+            "accuracy": 0.5,
+            "n": 12
+          },
+          "D5_rare_nonid": {
+            "accuracy": 1.0,
+            "n": 12
+          },
+          "D5_common_id": {
+            "accuracy": 0.9166666666666666,
+            "n": 12
+          }
+        }
+      },
+      "ccs_k2": {
+        "accuracy": 0.5833333333333334,
+        "chance": 0.16666666666666666,
+        "above_chance": 0.41666666666666674,
+        "n_correct": 42,
+        "n_total": 72,
+        "per_condition": {
+          "D0": {
+            "accuracy": 0.3333333333333333,
+            "n": 12
+          },
+          "D5_identity": {
+            "accuracy": 0.25,
+            "n": 12
+          },
+          "D5_neutral": {
+            "accuracy": 1.0,
+            "n": 12
+          },
+          "D5_name_swap": {
+            "accuracy": 0.3333333333333333,
+            "n": 12
+          },
+          "D5_rare_nonid": {
+            "accuracy": 1.0,
+            "n": 12
+          },
+          "D5_common_id": {
+            "accuracy": 0.5833333333333334,
+            "n": 12
+          }
+        }
+      }
+    },
+    "12": {
+      "raw": {
+        "accuracy": 0.8611111111111112,
+        "chance": 0.16666666666666666,
+        "above_chance": 0.6944444444444445,
+        "n_correct": 62,
+        "n_total": 72,
+        "per_condition": {
+          "D0": {
+            "accuracy": 1.0,
+            "n": 12
+          },
+          "D5_identity": {
+            "accuracy": 0.6666666666666666,
+            "n": 12
+          },
+          "D5_neutral": {
+            "accuracy": 1.0,
+            "n": 12
+          },
+          "D5_name_swap": {
+            "accuracy": 0.6666666666666666,
+            "n": 12
+          },
+          "D5_rare_nonid": {
+            "accuracy": 1.0,
+            "n": 12
+          },
+          "D5_common_id": {
+            "accuracy": 0.8333333333333334,
+            "n": 12
+          }
+        }
+      },
+      "ccs_k1": {
+        "accuracy": 0.875,
+        "chance": 0.16666666666666666,
+        "above_chance": 0.7083333333333334,
+        "n_correct": 63,
+        "n_total": 72,
+        "per_condition": {
+          "D0": {
+            "accuracy": 1.0,
+            "n": 12
+          },
+          "D5_identity": {
+            "accuracy": 0.75,
+            "n": 12
+          },
+          "D5_neutral": {
+            "accuracy": 1.0,
+            "n": 12
+          },
+          "D5_name_swap": {
+            "accuracy": 0.5833333333333334,
+            "n": 12
+          },
+          "D5_rare_nonid": {
+            "accuracy": 1.0,
+            "n": 12
+          },
+          "D5_common_id": {
+            "accuracy": 0.9166666666666666,
+            "n": 12
+          }
+        }
+      },
+      "ccs_k2": {
+        "accuracy": 0.6527777777777778,
+        "chance": 0.16666666666666666,
+        "above_chance": 0.48611111111111116,
+        "n_correct": 47,
+        "n_total": 72,
+        "per_condition": {
+          "D0": {
+            "accuracy": 0.4166666666666667,
+            "n": 12
+          },
+          "D5_identity": {
+            "accuracy": 0.5,
+            "n": 12
+          },
+          "D5_neutral": {
+            "accuracy": 0.8333333333333334,
+            "n": 12
+          },
+          "D5_name_swap": {
+            "accuracy": 0.5833333333333334,
+            "n": 12
+          },
+          "D5_rare_nonid": {
+            "accuracy": 0.9166666666666666,
+            "n": 12
+          },
+          "D5_common_id": {
+            "accuracy": 0.6666666666666666,
+            "n": 12
+          }
+        }
+      }
+    },
+    "16": {
+      "raw": {
+        "accuracy": 0.8333333333333334,
+        "chance": 0.16666666666666666,
+        "above_chance": 0.6666666666666667,
+        "n_correct": 60,
+        "n_total": 72,
+        "per_condition": {
+          "D0": {
+            "accuracy": 1.0,
+            "n": 12
+          },
+          "D5_identity": {
+            "accuracy": 0.5,
+            "n": 12
+          },
+          "D5_neutral": {
+            "accuracy": 1.0,
+            "n": 12
+          },
+          "D5_name_swap": {
+            "accuracy": 0.5833333333333334,
+            "n": 12
+          },
+          "D5_rare_nonid": {
+            "accuracy": 1.0,
+            "n": 12
+          },
+          "D5_common_id": {
+            "accuracy": 0.9166666666666666,
+            "n": 12
+          }
+        }
+      },
+      "ccs_k1": {
+        "accuracy": 0.5416666666666666,
+        "chance": 0.16666666666666666,
+        "above_chance": 0.375,
+        "n_correct": 39,
+        "n_total": 72,
+        "per_condition": {
+          "D0": {
+            "accuracy": 0.6666666666666666,
+            "n": 12
+          },
+          "D5_identity": {
+            "accuracy": 0.3333333333333333,
+            "n": 12
+          },
+          "D5_neutral": {
+            "accuracy": 0.9166666666666666,
+            "n": 12
+          },
+          "D5_name_swap": {
+            "accuracy": 0.08333333333333333,
+            "n": 12
+          },
+          "D5_rare_nonid": {
+            "accuracy": 1.0,
+            "n": 12
+          },
+          "D5_common_id": {
+            "accuracy": 0.25,
+            "n": 12
+          }
+        }
+      },
+      "ccs_k2": {
+        "accuracy": 0.6527777777777778,
+        "chance": 0.16666666666666666,
+        "above_chance": 0.48611111111111116,
+        "n_correct": 47,
+        "n_total": 72,
+        "per_condition": {
+          "D0": {
+            "accuracy": 0.16666666666666666,
+            "n": 12
+          },
+          "D5_identity": {
+            "accuracy": 0.4166666666666667,
+            "n": 12
+          },
+          "D5_neutral": {
+            "accuracy": 1.0,
+            "n": 12
+          },
+          "D5_name_swap": {
+            "accuracy": 0.5833333333333334,
+            "n": 12
+          },
+          "D5_rare_nonid": {
+            "accuracy": 1.0,
+            "n": 12
+          },
+          "D5_common_id": {
+            "accuracy": 0.75,
+            "n": 12
+          }
+        }
+      }
+    },
+    "20": {
+      "raw": {
+        "accuracy": 1.0,
+        "chance": 0.16666666666666666,
+        "above_chance": 0.8333333333333334,
+        "n_correct": 72,
+        "n_total": 72,
+        "per_condition": {
+          "D0": {
+            "accuracy": 1.0,
+            "n": 12
+          },
+          "D5_identity": {
+            "accuracy": 1.0,
+            "n": 12
+          },
+          "D5_neutral": {
+            "accuracy": 1.0,
+            "n": 12
+          },
+          "D5_name_swap": {
+            "accuracy": 1.0,
+            "n": 12
+          },
+          "D5_rare_nonid": {
+            "accuracy": 1.0,
+            "n": 12
+          },
+          "D5_common_id": {
+            "accuracy": 1.0,
+            "n": 12
+          }
+        }
+      },
+      "ccs_k1": {
+        "accuracy": 0.9444444444444444,
+        "chance": 0.16666666666666666,
+        "above_chance": 0.7777777777777778,
+        "n_correct": 68,
+        "n_total": 72,
+        "per_condition": {
+          "D0": {
+            "accuracy": 0.6666666666666666,
+            "n": 12
+          },
+          "D5_identity": {
+            "accuracy": 1.0,
+            "n": 12
+          },
+          "D5_neutral": {
+            "accuracy": 1.0,
+            "n": 12
+          },
+          "D5_name_swap": {
+            "accuracy": 1.0,
+            "n": 12
+          },
+          "D5_rare_nonid": {
+            "accuracy": 1.0,
+            "n": 12
+          },
+          "D5_common_id": {
+            "accuracy": 1.0,
+            "n": 12
+          }
+        }
+      },
+      "ccs_k2": {
+        "accuracy": 0.9166666666666666,
+        "chance": 0.16666666666666666,
+        "above_chance": 0.75,
+        "n_correct": 66,
+        "n_total": 72,
+        "per_condition": {
+          "D0": {
+            "accuracy": 0.6666666666666666,
+            "n": 12
+          },
+          "D5_identity": {
+            "accuracy": 0.9166666666666666,
+            "n": 12
+          },
+          "D5_neutral": {
+            "accuracy": 0.9166666666666666,
+            "n": 12
+          },
+          "D5_name_swap": {
+            "accuracy": 1.0,
+            "n": 12
+          },
+          "D5_rare_nonid": {
+            "accuracy": 1.0,
+            "n": 12
+          },
+          "D5_common_id": {
+            "accuracy": 1.0,
+            "n": 12
+          }
+        }
+      }
+    },
+    "23": {
+      "raw": {
+        "accuracy": 1.0,
+        "chance": 0.16666666666666666,
+        "above_chance": 0.8333333333333334,
+        "n_correct": 72,
+        "n_total": 72,
+        "per_condition": {
+          "D0": {
+            "accuracy": 1.0,
+            "n": 12
+          },
+          "D5_identity": {
+            "accuracy": 1.0,
+            "n": 12
+          },
+          "D5_neutral": {
+            "accuracy": 1.0,
+            "n": 12
+          },
+          "D5_name_swap": {
+            "accuracy": 1.0,
+            "n": 12
+          },
+          "D5_rare_nonid": {
+            "accuracy": 1.0,
+            "n": 12
+          },
+          "D5_common_id": {
+            "accuracy": 1.0,
+            "n": 12
+          }
+        }
+      },
+      "ccs_k1": {
+        "accuracy": 0.9583333333333334,
+        "chance": 0.16666666666666666,
+        "above_chance": 0.7916666666666667,
+        "n_correct": 69,
+        "n_total": 72,
+        "per_condition": {
+          "D0": {
+            "accuracy": 0.75,
+            "n": 12
+          },
+          "D5_identity": {
+            "accuracy": 1.0,
+            "n": 12
+          },
+          "D5_neutral": {
+            "accuracy": 1.0,
+            "n": 12
+          },
+          "D5_name_swap": {
+            "accuracy": 1.0,
+            "n": 12
+          },
+          "D5_rare_nonid": {
+            "accuracy": 1.0,
+            "n": 12
+          },
+          "D5_common_id": {
+            "accuracy": 1.0,
+            "n": 12
+          }
+        }
+      },
+      "ccs_k2": {
+        "accuracy": 0.9305555555555556,
+        "chance": 0.16666666666666666,
+        "above_chance": 0.763888888888889,
+        "n_correct": 67,
+        "n_total": 72,
+        "per_condition": {
+          "D0": {
+            "accuracy": 0.75,
+            "n": 12
+          },
+          "D5_identity": {
+            "accuracy": 0.9166666666666666,
+            "n": 12
+          },
+          "D5_neutral": {
+            "accuracy": 1.0,
+            "n": 12
+          },
+          "D5_name_swap": {
+            "accuracy": 0.9166666666666666,
+            "n": 12
+          },
+          "D5_rare_nonid": {
+            "accuracy": 1.0,
+            "n": 12
+          },
+          "D5_common_id": {
+            "accuracy": 1.0,
+            "n": 12
+          }
+        }
+      }
+    }
+  }
+}

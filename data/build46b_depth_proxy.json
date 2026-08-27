@@ -1,0 +1,31 @@
+{
+  "analysis": "Bennett depth proxy via gzip compression",
+  "n_states": 118,
+  "compression_ratio": {
+    "first20": 0.4164,
+    "last20": 0.3811,
+    "change_pct": -8.5
+  },
+  "trend_slope": -0.000423,
+  "trend_r2": 0.3635,
+  "paired_redundancy": {
+    "first20": 0.3512,
+    "last20": 0.3052,
+    "change_pct": -13.1
+  },
+  "interpretation": "States becoming less compressible = higher information density. Depth manifests as complexity not redundancy. Consistent with dimensional redistribution (Build #45) and Phase 3 decay (Build #46).",
+  "phases": {
+    "phase1": {
+      "ratio": 0.4146,
+      "paired": 0.3498
+    },
+    "phase2": {
+      "ratio": 0.387,
+      "paired": 0.344
+    },
+    "phase3": {
+      "ratio": 0.378,
+      "paired": 0.3068
+    }
+  }
+}

@@ -1,0 +1,174 @@
+{
+  "seed_chars": 1200,
+  "model": "chronicle-qwen36",
+  "results": [
+    {
+      "char_count": 1200,
+      "word_count": 199,
+      "entity_count": 2,
+      "entities": [
+        "Findings",
+        "Nate"
+      ],
+      "semantic_sim": 1.0,
+      "info_entropy": 6.7126,
+      "unique_ratio": 0.6784,
+      "dose": 0
+    },
+    {
+      "char_count": 382,
+      "word_count": 46,
+      "entity_count": 4,
+      "entities": [
+        "Core",
+        "Emotional",
+        "Mind",
+        "Structural"
+      ],
+      "semantic_sim": 0.737676,
+      "info_entropy": 5.2277,
+      "unique_ratio": 0.8913,
+      "dose": 1,
+      "compress_time": 3.7,
+      "compression_ratio": 0.318
+    },
+    {
+      "char_count": 262,
+      "word_count": 30,
+      "entity_count": 4,
+      "entities": [
+        "Cognitive",
+        "Focus",
+        "Patterns",
+        "Tension"
+      ],
+      "semantic_sim": 0.708105,
+      "info_entropy": 4.8402,
+      "unique_ratio": 0.9667,
+      "dose": 2,
+      "compress_time": 1.4,
+      "compression_ratio": 0.686
+    },
+    {
+      "char_count": 261,
+      "word_count": 32,
+      "entity_count": 4,
+      "entities": [
+        "Balance",
+        "Drive",
+        "Emphasis",
+        "Learning"
+      ],
+      "semantic_sim": 0.683077,
+      "info_entropy": 4.9375,
+      "unique_ratio": 0.9688,
+      "dose": 3,
+      "compress_time": 1.4,
+      "compression_ratio": 0.996
+    },
+    {
+      "char_count": 243,
+      "word_count": 29,
+      "entity_count": 4,
+      "entities": [
+        "Accuracy",
+        "Adaptation",
+        "Perspective",
+        "Resilience"
+      ],
+      "semantic_sim": 0.656627,
+      "info_entropy": 4.858,
+      "unique_ratio": 1.0,
+      "dose": 4,
+      "compress_time": 1.4,
+      "compression_ratio": 0.931
+    },
+    {
+      "char_count": 288,
+      "word_count": 34,
+      "entity_count": 2,
+      "entities": [
+        "Emotional",
+        "Structural"
+      ],
+      "semantic_sim": 0.632542,
+      "info_entropy": 5.0286,
+      "unique_ratio": 0.9706,
+      "dose": 5,
+      "compress_time": 1.5,
+      "compression_ratio": 1.185
+    },
+    {
+      "char_count": 154,
+      "word_count": 18,
+      "entity_count": 1,
+      "entities": [
+        "Perspective"
+      ],
+      "semantic_sim": 0.619726,
+      "info_entropy": 4.1699,
+      "unique_ratio": 1.0,
+      "dose": 6,
+      "compress_time": 0.8,
+      "compression_ratio": 0.535
+    },
+    {
+      "char_count": 226,
+      "word_count": 25,
+      "entity_count": 1,
+      "entities": [
+        "Structural"
+      ],
+      "semantic_sim": 0.587473,
+      "info_entropy": 4.5639,
+      "unique_ratio": 0.96,
+      "dose": 7,
+      "compress_time": 1.1,
+      "compression_ratio": 1.468
+    },
+    {
+      "char_count": 159,
+      "word_count": 18,
+      "entity_count": 2,
+      "entities": [
+        "Focus",
+        "Perspective"
+      ],
+      "semantic_sim": 0.626886,
+      "info_entropy": 4.1699,
+      "unique_ratio": 1.0,
+      "dose": 8,
+      "compress_time": 0.8,
+      "compression_ratio": 0.704
+    },
+    {
+      "char_count": 117,
+      "word_count": 16,
+      "entity_count": 1,
+      "entities": [
+        "Shift"
+      ],
+      "semantic_sim": 0.572716,
+      "info_entropy": 4.0,
+      "unique_ratio": 1.0,
+      "dose": 9,
+      "compress_time": 0.7,
+      "compression_ratio": 0.736
+    },
+    {
+      "char_count": 122,
+      "word_count": 15,
+      "entity_count": 2,
+      "entities": [
+        "Focused",
+        "Perspective"
+      ],
+      "semantic_sim": 0.565068,
+      "info_entropy": 3.9069,
+      "unique_ratio": 1.0,
+      "dose": 10,
+      "compress_time": 0.7,
+      "compression_ratio": 1.043
+    }
+  ]
+}

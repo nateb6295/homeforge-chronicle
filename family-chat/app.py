@@ -41,7 +41,7 @@ if os.path.exists(ENV_PATH):
                 k, v = line.split('=', 1)
                 os.environ.setdefault(k.strip(), v.strip())
 
-ANTHROPIC_API_KEY = os.environ.get('ANTHROPIC_API_KEY', '')
+ANTHROPIC_API_KEY = os.environ.get('CHRONICLE_ANTHROPIC_KEY', '') or os.environ.get('ANTHROPIC_API_KEY', '')
 GROQ_API_KEY = os.environ.get('GROQ_API_KEY', '')
 CEREBRAS_API_KEY = os.environ.get('CEREBRAS_API_KEY', '')
 

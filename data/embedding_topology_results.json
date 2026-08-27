@@ -1,0 +1,191 @@
+{
+  "probe": "Build #51 \u2014 Embedding Topology",
+  "timestamp": "2026-05-15 12:19:43",
+  "sample_size": 1595,
+  "families_sampled": {
+    "thread": 300,
+    "other": 300,
+    "feed": 300,
+    "chronicle": 300,
+    "discord": 241,
+    "homeforge": 68,
+    "research": 65,
+    "identity": 21
+  },
+  "inter_family_distances": {
+    "chronicle<->discord": 0.0929,
+    "chronicle<->feed": 0.0744,
+    "chronicle<->homeforge": 0.0724,
+    "chronicle<->identity": 0.0634,
+    "chronicle<->other": 0.0951,
+    "chronicle<->research": 0.0558,
+    "chronicle<->thread": 0.0603,
+    "discord<->feed": 0.0453,
+    "discord<->homeforge": 0.0368,
+    "discord<->identity": 0.0636,
+    "discord<->other": 0.0633,
+    "discord<->research": 0.051,
+    "discord<->thread": 0.0587,
+    "feed<->homeforge": 0.0253,
+    "feed<->identity": 0.054,
+    "feed<->other": 0.0404,
+    "feed<->research": 0.034,
+    "feed<->thread": 0.0412,
+    "homeforge<->identity": 0.0646,
+    "homeforge<->other": 0.0268,
+    "homeforge<->research": 0.0444,
+    "homeforge<->thread": 0.0503,
+    "identity<->other": 0.092,
+    "identity<->research": 0.0262,
+    "identity<->thread": 0.0266,
+    "other<->research": 0.0706,
+    "other<->thread": 0.078,
+    "research<->thread": 0.0163
+  },
+  "intra_family_spreads": {
+    "chronicle": 0.2465,
+    "discord": 0.2859,
+    "feed": 0.4055,
+    "homeforge": 0.3723,
+    "identity": 0.2948,
+    "other": 0.3843,
+    "research": 0.3301,
+    "thread": 0.3052
+  },
+  "gist_to_centroids": {
+    "chronicle": 0.304,
+    "discord": 0.2917,
+    "feed": 0.3186,
+    "homeforge": 0.3139,
+    "identity": 0.27,
+    "other": 0.3491,
+    "research": 0.2644,
+    "thread": 0.2577
+  },
+  "membrane": {
+    "nearest_self_similarity": 0.6984,
+    "nearest_feed_similarity": 0.6333,
+    "membrane_gap": 0.0651
+  },
+  "nearest_feeds": [
+    {
+      "capsule_id": 33581,
+      "topic": "feed/biorxiv",
+      "similarity": 0.6333
+    },
+    {
+      "capsule_id": 31287,
+      "topic": "feed/arxiv",
+      "similarity": 0.6326
+    },
+    {
+      "capsule_id": 37399,
+      "topic": "feed/arxiv",
+      "similarity": 0.6302
+    },
+    {
+      "capsule_id": 29830,
+      "topic": "feed/arxiv",
+      "similarity": 0.6263
+    },
+    {
+      "capsule_id": 35228,
+      "topic": "feed/arxiv",
+      "similarity": 0.6244
+    }
+  ],
+  "nearest_self": [
+    {
+      "capsule_id": 38118,
+      "topic": "thread-322/evidence",
+      "similarity": 0.6984
+    },
+    {
+      "capsule_id": 39328,
+      "topic": "research/two-mode-hypothesis",
+      "similarity": 0.6957
+    },
+    {
+      "capsule_id": 28812,
+      "topic": "thread-318/looped-models",
+      "similarity": 0.695
+    },
+    {
+      "capsule_id": 24938,
+      "topic": "threads/when-does-the-map-become-the-territory?",
+      "similarity": 0.6914
+    },
+    {
+      "capsule_id": 38608,
+      "topic": "chronicle/philosophy",
+      "similarity": 0.6889
+    }
+  ],
+  "feed_subfamilies": {
+    "arxiv": {
+      "count": 105,
+      "gist_similarity": 0.7019,
+      "gist_distance": 0.2981
+    },
+    "biorxiv": {
+      "count": 34,
+      "gist_similarity": 0.6857,
+      "gist_distance": 0.3143
+    },
+    "nature": {
+      "count": 24,
+      "gist_similarity": 0.6148,
+      "gist_distance": 0.3852
+    },
+    "reason": {
+      "count": 23,
+      "gist_similarity": 0.5803,
+      "gist_distance": 0.4197
+    },
+    "coindesk": {
+      "count": 21,
+      "gist_similarity": 0.6182,
+      "gist_distance": 0.3818
+    },
+    "hn": {
+      "count": 17,
+      "gist_similarity": 0.6351,
+      "gist_distance": 0.3649
+    },
+    "economist": {
+      "count": 14,
+      "gist_similarity": 0.5972,
+      "gist_distance": 0.4028
+    },
+    "decrypt": {
+      "count": 12,
+      "gist_similarity": 0.5885,
+      "gist_distance": 0.4115
+    },
+    "ars": {
+      "count": 11,
+      "gist_similarity": 0.6043,
+      "gist_distance": 0.3957
+    },
+    "conversation": {
+      "count": 7,
+      "gist_similarity": 0.6496,
+      "gist_distance": 0.3504
+    },
+    "neuronews": {
+      "count": 7,
+      "gist_similarity": 0.6568,
+      "gist_distance": 0.3432
+    },
+    "lithub": {
+      "count": 6,
+      "gist_similarity": 0.6007,
+      "gist_distance": 0.3993
+    },
+    "aeon": {
+      "count": 3,
+      "gist_similarity": 0.5162,
+      "gist_distance": 0.4838
+    }
+  }
+}

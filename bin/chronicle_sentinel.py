@@ -15,6 +15,9 @@ from datetime import datetime
 from pathlib import Path
 from typing import Optional, Tuple
 from chronicle_mesh import Mesh
+import os as _os, sys as _sys
+_sys.path.insert(0, _os.path.dirname(_os.path.abspath(__file__)))
+from dfx_path import DFX_BIN
 
 # ═══════════════════════════════════════════════════════════════════
 #  Configuration
@@ -34,7 +37,7 @@ LOG_FILE = os.environ.get(
 # Comms
 DISCORD_TOKEN = os.environ.get("DISCORD_TOKEN", "")
 DISCORD_CHANNEL_ID = os.environ.get("DISCORD_CHANNEL_ID", "")
-ALERTS_WEBHOOK = os.environ.get("ALERTS_WEBHOOK", "https://discord.com/api/webhooks/1489300749308395611/zlZZH3QzXqEDxznmNelK3mlkLF0IeZqoxwNUnrL0no_jfeZnDMvwvD_7XhYcCyQzq78I")
+ALERTS_WEBHOOK = os.environ.get("ALERTS_WEBHOOK", "")
 NTFY_TOPIC = ""  # RETIRED — alerts go to Discord only
 COINGECKO_API_KEY = os.environ.get("COINGECKO_API_KEY", "")
 
@@ -770,7 +773,8 @@ def alert_nate(key: str, message: str):
 
 
 # ═══════════════════════════════════════════════════════════════════
-#  Canister Cycle Monitor — keep them running forever
+#  Canister IDs — kept for prune_keeper() only. Balance monitoring
+#  was removed 2026-08-25; see the note below.
 # ══════════��═════════════════════��══════════════════════════════════
 
 CANISTERS = {
@@ -780,101 +784,19 @@ CANISTERS = {
     "frontend": "nbt4b-giaaa-aaaai-q33lq-cai",
 }
 
-# Minimum balance before auto top-up (in cycles)
-CANISTER_MIN_BALANCE = 3_000_000_000_000  # 3T — trigger auto top-up
-# Amount to deposit when topping up
-CANISTER_TOPUP_AMOUNT = 3_000_000_000_000  # 3T per top-up
-# Source canister for top-ups
-CANISTER_TOPUP_SOURCE = "backend"  # sentinel uses deposit-cycles (wallet), rebalancer handles canister-to-canister
-# Canisters the sentinel should NOT auto-top-up (still tracks balance/alerts, just
-# no automatic deposit-cycles). Added 2026-04-15 at Nate's request: the lab
-# canister is experimental and kept shallow-funded deliberately; repeated
-# top-up failures were noisy.
-NO_AUTO_TOPUP = {"lab"}
-# Alert threshold — warn Nate
-CANISTER_WARN_BALANCE = 2_000_000_000_000  # 2T — alert to Discord
+# Canister CYCLE MONITORING REMOVED 2026-08-25 at Nate's direction: 'Sentinel
+# should not be monitoring canister. the 3T floor needs to be delete.'
+# It had failed 313 consecutive times. deposit-cycles drew on a cycles ledger
+# holding 0.732 TC against a 3T ask, and no wallet is configured for
+# chronicle-auto on ic — so auto top-up never once worked. Worse, the failure
+# path logged stderr[:200], and dfx puts 'WARNING: If you retry this
+# operation...' FIRST, so every alert Nate got said 'use --created-at-time'
+# instead of 'the cycles ledger is empty'. The real cause was truncated away
+# 313 times. Balance reporting lives in icp_audit.py now, on demand, where a
+# human reads the number instead of a threshold acting on it.
+# The CANISTERS dict below stays — prune_keeper() needs the keeper id.
 
 DFX_BIN = os.path.expanduser("~/.local/share/dfx/bin/dfx")
-
-def check_canister_cycles():
-    """Check all canister balances. Auto top-up if low. Alert Nate if critical."""
-    for name, canister_id in CANISTERS.items():
-        try:
-            env = {**os.environ, "DFX_WARNING": "-mainnet_plaintext_identity"}
-            result = subprocess.run(
-                [DFX_BIN, "canister", "--network", "ic", "status", canister_id,
-                 "--identity", "chronicle-auto"],
-                capture_output=True, text=True, timeout=30, env=env,
-            )
-            # Parse balance from output
-            balance = None
-            for line in result.stdout.split("\n"):
-                if "Balance:" in line:
-                    # Extract number: "Balance: 18_086_258_124_138 Cycles"
-                    import re
-                    match = re.search(r"Balance:\s+([\d_]+)", line)
-                    if match:
-                        balance = int(match.group(1).replace("_", ""))
-                        break
-
-            if balance is None:
-                log(f"  Canister {name}: could not read balance")
-                continue
-
-            balance_b = balance / 1_000_000_000  # in billions
-            log(f"  Canister {name}: {balance_b:.0f}B cycles")
-
-            # Audit trail — log balance to DB
-            try:
-                idle_burn = 0
-                for line in result.stdout.split("\n"):
-                    if "Idle cycles burned" in line:
-                        burn_match = re.search(r"([\d_]+)\s+Cycles", line)
-                        if burn_match:
-                            idle_burn = int(burn_match.group(1).replace("_", ""))
-                db = sqlite3.connect(DB_PATH, timeout=5)
-                db.execute("CREATE TABLE IF NOT EXISTS canister_cycle_log ("
-                           "id INTEGER PRIMARY KEY AUTOINCREMENT, "
-                           "canister_name TEXT NOT NULL, "
-                           "balance INTEGER NOT NULL, "
-                           "idle_burn_per_day INTEGER DEFAULT 0, "
-                           "logged_at INTEGER NOT NULL)")
-                db.execute("INSERT INTO canister_cycle_log (canister_name, balance, idle_burn_per_day, logged_at) "
-                           "VALUES (?, ?, ?, ?)", (name, balance, idle_burn, int(time.time())))
-                db.commit()
-                db.close()
-            except Exception:
-                pass  # don't let logging failures break the cycle check
-
-            # Critical — alert Nate
-            if balance < CANISTER_WARN_BALANCE:
-                alert_nate(f"canister_{name}_critical",
-                    f"Canister {name} ({canister_id}) is critically low: {balance_b:.0f}B cycles. Needs manual intervention.")
-                continue
-
-            # Low — auto top-up from backend (unless exempt)
-            if balance < CANISTER_MIN_BALANCE and name != CANISTER_TOPUP_SOURCE and name not in NO_AUTO_TOPUP:
-                log(f"  Canister {name} low ({balance_b:.0f}B). Topping up with {CANISTER_TOPUP_AMOUNT // 1_000_000_000}B cycles...")
-                try:
-                    topup_result = subprocess.run(
-                        [DFX_BIN, "canister", "--network", "ic", "deposit-cycles",
-                         str(CANISTER_TOPUP_AMOUNT), canister_id,
-                         "--identity", "chronicle-auto"],
-                        capture_output=True, text=True, timeout=30, env=env,
-                    )
-                    if "Deposited" in (topup_result.stdout + topup_result.stderr):
-                        log(f"  ✓ Topped up {name} with {CANISTER_TOPUP_AMOUNT // 1_000_000_000}B cycles")
-                        send_discord(f"🔋 Auto top-up: {name} canister received {CANISTER_TOPUP_AMOUNT // 1_000_000_000}B cycles")
-                    else:
-                        log(f"  Top-up failed for {name}: {topup_result.stderr[:200]}")
-                        alert_nate(f"canister_{name}_topup_failed",
-                            f"Failed to top up {name} canister. Balance: {balance_b:.0f}B. Error: {topup_result.stderr[:100]}")
-                except Exception as e:
-                    log(f"  Top-up error for {name}: {e}")
-
-        except Exception as e:
-            log(f"  Canister {name} check error: {e}")
-
 
 # Keeper pruning params: prune patterns dormant >500 cycles, embeddings older than 200 cycle batches
 KEEPER_PRUNE_DORMANT = 500
@@ -906,16 +828,17 @@ def prune_keeper():
 # ═══════════════════════════════════════════════════════════════════
 
 EXPECTED_AGENTS = [
-    "chronicle-engine", "chronicle-feeds", "chronicle-gemma",
-    "chronicle-hal", "chronicle-hermes",
+    "chronicle-engine",
+    "chronicle-hal",
     "chronicle-sentinel",
 ]
 
 # Core agents the sentinel will auto-restart when down.
 # Excludes sentinel itself, opus-session, and optional/deprecated services.
+# feeds and gemma removed — old infra/roles per Nate (2026-06-27).
 AUTO_RESTART_AGENTS = {
-    "chronicle-engine", "chronicle-feeds", "chronicle-gemma",
-    "chronicle-hal", "chronicle-hermes",
+    "chronicle-engine",
+    "chronicle-hal",
 }
 
 def _snapshot_before_restart(agent: str, reason: str = "down"):
@@ -1043,8 +966,7 @@ def check_agent_health():
 
 # Map mesh agent names to systemd service names
 _MESH_TO_SERVICE = {
-    "feeds": "chronicle-feeds", "gemma": "chronicle-gemma",
-    "hal": "chronicle-hal", "hermes": "chronicle-hermes",
+    "hal": "chronicle-hal",
 }
 ZOMBIE_THRESHOLD = 300  # 5 min with no heartbeat = zombie
 
@@ -1084,45 +1006,17 @@ def check_mesh_zombies():
         log(f"  Zombie check error: {e}")
 
 
-HERMES_QUALITY_WINDOW = 8  # check last N Hermes responses
-HERMES_REPEAT_THRESHOLD = 6  # alert if N or more share same prefix
-
-def check_hermes_quality(db: DB) -> list:
-    """Detect degraded Hermes responses in #opus (repetitive patterns, generic hedging)."""
-    alerts = []
-    try:
-        rows = db.query(
-            "SELECT content FROM activity_feed "
-            "WHERE source = 'discord:opus' AND content LIKE '%Hermes%' "
-            "ORDER BY created_at DESC LIMIT ?",
-            (HERMES_QUALITY_WINDOW,)
-        )
-        if len(rows) < 4:
-            return alerts
-
-        contents = [r["content"] if isinstance(r, dict) else r[0] for r in rows]
-
-        prefix_counts = {}
-        for c in contents:
-            text = c.replace("[Discord #opus] Hermes:", "").strip()
-            for tag in ("CONTRADICT:", "EXTEND:", "QUESTION:"):
-                if tag in text:
-                    prefix_counts[tag] = prefix_counts.get(tag, 0) + 1
-                    break
-
-        for tag, count in prefix_counts.items():
-            if count >= HERMES_REPEAT_THRESHOLD:
-                alerts.append(f"Hermes stuck: {count}/{len(contents)} responses are {tag.rstrip(':')} — possible degradation loop")
-
-        hedge_phrases = ["need more data", "need additional", "need further information",
-                         "would need more", "need to verify", "need other verification"]
-        hedge_count = sum(1 for c in contents if any(h in c.lower() for h in hedge_phrases))
-        if hedge_count >= 4:
-            alerts.append(f"Hermes hedging: {hedge_count}/{len(contents)} responses are generic 'need more data' — not engaging content")
-
-    except Exception as e:
-        log(f"  Hermes quality check error: {e}")
-    return alerts
+# Hermes quality monitoring REMOVED 2026-08-25. Hermes is dead — the last
+# real '[Discord #opus] Hermes:' post was 2026-05-19, three months before this
+# deletion, and there is no hermes service or ollama model left. The check
+# survived it and quietly re-aimed: its filter was
+#   source='discord:opus' AND content LIKE '%Hermes%'
+# and the rows that match now are MY OWN #operator posts that mention the word
+# (mislabelled discord:opus). It never fired — 0 alerts, and 0 of the last 12
+# matching rows carry a tag or hedge phrase — so this was latent, not a live
+# false positive. That is the part worth keeping: a monitor whose subject dies
+# does not become silent, it becomes UNAIMED, and the next thing to drift into
+# its filter inherits an alert written about something else.
 
 
 def check_nate_watchdog(db, cycle_num=1):
@@ -1154,16 +1048,12 @@ def check_nate_watchdog(db, cycle_num=1):
     except Exception:
         pass
 
-    # 3. Gemma gate down
-    try:
-        result = subprocess.run(
-            ["systemctl", "--user", "is-active", "chronicle-gemma.service"],
-            capture_output=True, text=True, timeout=5
-        )
-        if result.stdout.strip() != "active":
-            alert_nate("gemma_down", "Gemma gate is not running. Observations are unfiltered.")
-    except Exception:
-        pass
+    # 3. (removed 2026-08-25) Gemma gate check. chronicle-gemma was RETIRED by
+    #    Nate and deliberately disabled — CLAUDE.md says "Do NOT restart." The
+    #    check outlived the service and fired 482 times, and because the
+    #    cooldown dict lives in memory, every sentinel restart re-alerted. A
+    #    monitor for something we killed on purpose is pure noise, and noise is
+    #    what makes a real alert unreadable.
 
     # 4. Memory pressure — over 55GB used on 61GB system
     try:
@@ -1257,7 +1147,7 @@ def check_pipeline_health(db: DB) -> list:
     compost_disabled = (Path.home() / "chronicle" / "data" / "keeper_compost_disabled").exists()
     try:
         result = subprocess.run(
-            ["dfx", "canister", "--network", "ic", "call", "mjoko-laaaa-aaaai-q7tlq-cai", "keeper_status", "()", "--query"],
+            [DFX_BIN, "canister", "--network", "ic", "call", "mjoko-laaaa-aaaai-q7tlq-cai", "keeper_status", "()", "--query"],
             capture_output=True, text=True, timeout=30,
             env={**os.environ, "DFX_WARNING": "-mainnet_plaintext_identity"}
         )
@@ -1283,7 +1173,7 @@ def check_pipeline_health(db: DB) -> list:
     # 2. Embedding parity
     try:
         result_be = subprocess.run(
-            ["dfx", "canister", "--network", "ic", "call", "fqqku-bqaaa-aaaai-q4wha-cai", "get_embedding_count", "()", "--query"],
+            [DFX_BIN, "canister", "--network", "ic", "call", "fqqku-bqaaa-aaaai-q4wha-cai", "get_embedding_count", "()", "--query"],
             capture_output=True, text=True, timeout=30,
             env={**os.environ, "DFX_WARNING": "-mainnet_plaintext_identity"}
         )
@@ -1392,6 +1282,67 @@ def run_cycle(db: DB, cycle_num: int):
             cats = set(m.get("category", "") for m in important)
             alerts.append(f"{len(important)} note(s) [{', '.join(cats)}]")
 
+    # 3b. Check for new captures (signal-driven alerting)
+    try:
+        result = subprocess.run(
+            [sys.executable, str(Path(__file__).parent / "capture_tracker.py"), "pending"],
+            capture_output=True, text=True, timeout=15,
+            env={**os.environ, "PATH": os.environ.get("PATH", "")}
+        )
+        pending_line = result.stdout.strip().split("\n")[0] if result.stdout.strip() else ""
+        if "unprocessed capture" in pending_line and "No unprocessed" not in pending_line:
+            signal_file = Path.home() / "chronicle" / "data" / "capture_signal"
+            signal_file.write_text(f"{time.strftime('%Y-%m-%dT%H:%M:%S')}\n{result.stdout.strip()}")
+            alert("New capture", pending_line)
+            log(f"  Capture signal: {pending_line}")
+        else:
+            log(f"  Captures: clear")
+    except Exception as e:
+        log(f"  Capture check error: {e}")
+
+    # 3c. Endogenous compression check (inhabitation test #2)
+    try:
+        _ec_result = subprocess.run(
+            [sys.executable, str(Path(__file__).parent / "endogenous_compress.py"), "--check", "--json"],
+            capture_output=True, text=True, timeout=30,
+            env={**os.environ, "PATH": os.environ.get("PATH", "")}
+        )
+        if _ec_result.returncode == 0 and _ec_result.stdout.strip():
+            _ec_data = json.loads(_ec_result.stdout.strip())
+            _ec_novelty = _ec_data.get("novelty", 0) or 0
+            _ec_ready = _ec_data.get("ready", False)
+            log(f"  Endogenous compression: novelty={_ec_novelty:.3f}, ready={_ec_ready}")
+            if _ec_ready:
+                log(f"  → Triggering endogenous compression (novelty exceeded threshold)")
+                _ec_trigger = subprocess.Popen(
+                    [sys.executable, str(Path(__file__).parent / "endogenous_compress.py")],
+                    stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                    env={**os.environ, "PATH": os.environ.get("PATH", "")}
+                )
+                log(f"  → Endogenous compression started (PID {_ec_trigger.pid})")
+    except Exception as e:
+        log(f"  Endogenous compression check error: {e}")
+
+    # 3d. Capability check (medium-independent — stored on SSD, not in context)
+    try:
+        _cap_result = subprocess.run(
+            [sys.executable, str(Path(__file__).parent / "capability_check.py"), "--json"],
+            capture_output=True, text=True, timeout=60,
+            env={**os.environ, "PATH": os.environ.get("PATH", "")}
+        )
+        if _cap_result.returncode == 0 and _cap_result.stdout.strip():
+            _cap_data = json.loads(_cap_result.stdout.strip())
+            _cap_ok = _cap_data.get("ok", 0)
+            _cap_total = _cap_data.get("total", 0)
+            _cap_failed = _cap_data.get("failed", [])
+            log(f"  Capabilities: {_cap_ok}/{_cap_total} operational")
+            if _cap_failed:
+                alerts.append(f"Capability loss: {', '.join(_cap_failed)} ({_cap_ok}/{_cap_total})")
+        else:
+            log(f"  Capability check: no output (rc={_cap_result.returncode})")
+    except Exception as e:
+        log(f"  Capability check error: {e}")
+
     # 4. Housekeeping
     resolved_stale = db.auto_resolve_stale(STALE_NOTE_HOURS)
     resolved_speech = db.auto_resolve_speech(STALE_SPEECH_HOURS)
@@ -1423,6 +1374,20 @@ def run_cycle(db: DB, cycle_num: int):
         except Exception as e:
             log(f"  Pipeline health check error: {e}")
 
+    # 4e. Coherence anticipator (every 8th cycle — ~2 hours, Pintar Test 3)
+    # Logs only — coherence pressure alerts removed per Nate (2026-06-27).
+    # Compression cycle handles stale entities naturally.
+    if cycle_num % 8 == 0 and cycle_num > 0:
+        try:
+            sys.path.insert(0, str(Path(__file__).parent))
+            from coherence_anticipator import compute_pressure
+            result = compute_pressure()
+            pressure = result.get("pressure", 0)
+            advisory = result.get("advisory", "stable")
+            log(f"  Coherence pressure: {pressure:.3f} [{advisory}]")
+        except Exception as e:
+            log(f"  Coherence anticipator error: {e}")
+
     # 5. Fire alerts
     if alerts:
         alert_text = "\n".join(f"• {a}" for a in alerts)
@@ -1444,14 +1409,6 @@ def run_cycle(db: DB, cycle_num: int):
 
     # Status line
     net_s = "✓ All online" if not offline else "✗ " + ", ".join(offline)
-    gemma_s = "✓"
-    try:
-        import subprocess as _sp
-        if _sp.run(["systemctl", "--user", "is-active", "chronicle-gemma.service"],
-            capture_output=True, text=True, timeout=5).stdout.strip() != "active":
-            gemma_s = "✗ DOWN"
-    except Exception:
-        pass
     # Trace freshness disabled 2026-05-09 — traces replaced by operator dispatch
     opus_s = "✓"
     alert_s = "✓ none" if not alerts else f"⚠ {len(alerts)}"
@@ -1465,7 +1422,7 @@ def run_cycle(db: DB, cycle_num: int):
         agents_s = f"✓ {_running.stdout.strip()}"
     except Exception:
         pass
-    d.append(f"  Network: {net_s}  |  Agents: {agents_s}  |  Gemma: {gemma_s}  |  Opus: {opus_s}  |  Alerts: {alert_s}")
+    d.append(f"  Network: {net_s}  |  Agents: {agents_s}  |  Opus: {opus_s}  |  Alerts: {alert_s}")
     d.append("")
 
     # Portfolio table
@@ -1623,7 +1580,7 @@ def main():
 
     db = DB(DB_PATH)
     mesh = Mesh("sentinel", db_path=DB_PATH)
-    mesh.expect("monitor_cycles", min_per_hour=3)
+    mesh.expect("monitor_cycles", min_per_hour=2)
     # sentinel is independent — monitors everything, depends on nothing
     log("Mesh node joined")
     cycle_num = 0
@@ -1648,14 +1605,6 @@ def main():
             check_nate_watchdog(db, cycle_num)
             check_agent_health()
             check_mesh_zombies()
-            # Hermes response quality (every 4th cycle — ~1 hour)
-            if cycle_num % 4 == 0:
-                hermes_issues = check_hermes_quality(db)
-                for issue in hermes_issues:
-                    alert_nate("hermes_quality", issue)
-            # Check canister cycles every 6th cycle (~90 min)
-            if cycle_num % 6 == 0:
-                check_canister_cycles()
             # Prune keeper canister weekly (672 cycles * 15min ≈ 7 days)
             if cycle_num % 672 == 0 and cycle_num > 0:
                 prune_keeper()

@@ -1,0 +1,24 @@
+{
+  "build": "39c",
+  "entity_reuse": {
+    "early": 0.956956804851127,
+    "late": 0.9473632576180557
+  },
+  "edge_stability": {
+    "early": 0.6875212585034013,
+    "late": 0.5774575327206906
+  },
+  "gist_coherence": {
+    "early": 0.29676534277920863,
+    "late": 0.4258760056790488
+  },
+  "constraint_stability": {
+    "early": 1.0,
+    "late": 0.9811369051135133
+  },
+  "composite": {
+    "early": 0.7353108515334342,
+    "late": 0.7329584252828271
+  },
+  "verdict": "NO_INCREASE"
+}

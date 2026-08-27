@@ -69,8 +69,7 @@ SPEAKER_POLL_INTERVAL = 30  # seconds between speaker availability checks
 MAX_CATCHUP_MESSAGES = 3    # max messages to speak on catchup
 
 # Discord fallback — post voice messages here when no speaker available
-ALERTS_WEBHOOK = os.environ.get("ALERTS_WEBHOOK",
-    "https://discord.com/api/webhooks/1489300749308395611/zlZZH3QzXqEDxznmNelK3mlkLF0IeZqoxwNUnrL0no_jfeZnDMvwvD_7XhYcCyQzq78I")
+ALERTS_WEBHOOK = os.environ.get("ALERTS_WEBHOOK", "")
 
 # Wake config
 WAKE_PLAYER = "media_player.family_room_tv"  # player to try waking

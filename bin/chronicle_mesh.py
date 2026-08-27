@@ -62,6 +62,10 @@ ALIVE_THRESHOLD = 120       # agent is "dead" if no heartbeat in 2 min
 #     vs cadence=3600s mismatch)
 BATCH_AGENTS = {"capsule_sync", "capsule-sync", "reconstruction_pulse"}
 
+# Agents fully exempt from ALL pain signals (degradation, agent_down, etc).
+# These are old infrastructure or old roles that still run but shouldn't alert.
+PAIN_EXEMPT_AGENTS = {"feeds", "gemma"}
+
 # Learned baselines
 BASELINE_WARMUP = 3600      # 1 hour before baselines are trusted
 BASELINE_WINDOW = 14400     # 4 hour rolling window for learning normal
@@ -741,6 +745,11 @@ class Mesh:
         """
         now = int(time.time())
         pain_key = f"{self.agent}:{pain_type}"
+
+        # ── Gate 0: Exempt agents — old infra/roles, no alerts ──
+        if self.agent in PAIN_EXEMPT_AGENTS:
+            self._log(f"EXEMPT [{severity}] {pain_type}: {message}")
+            return
 
         # ── Gate 1: Cascade — agent_down is always root-level ──
         if pain_type not in ("agent_down",):

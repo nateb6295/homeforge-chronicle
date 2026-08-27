@@ -1,0 +1,200 @@
+{
+  "EleutherAI/pythia-160m": {
+    "model": "EleutherAI/pythia-160m",
+    "n_layers": 12,
+    "avg_concentration": 0.3111651378522179,
+    "std": 0.22464370047577834,
+    "verdict": "DIFFUSE",
+    "layer_stats": [
+      {
+        "layer": 0,
+        "n_neurons": 3072,
+        "concentration": 0.6089720980277515
+      },
+      {
+        "layer": 1,
+        "n_neurons": 3072,
+        "concentration": 0.4256105287037963
+      },
+      {
+        "layer": 2,
+        "n_neurons": 3072,
+        "concentration": 0.47384797324098793
+      },
+      {
+        "layer": 3,
+        "n_neurons": 3072,
+        "concentration": 0.4305288804025213
+      },
+      {
+        "layer": 4,
+        "n_neurons": 3072,
+        "concentration": 0.44884605819496676
+      },
+      {
+        "layer": 5,
+        "n_neurons": 3072,
+        "concentration": 0.4482062757619919
+      },
+      {
+        "layer": 6,
+        "n_neurons": 3072,
+        "concentration": 0.4543467732483898
+      },
+      {
+        "layer": 7,
+        "n_neurons": 3072,
+        "concentration": 0.4436230666462089
+      },
+      {
+        "layer": 8,
+        "n_neurons": 3072,
+        "concentration": 0
+      },
+      {
+        "layer": 9,
+        "n_neurons": 3072,
+        "concentration": 0
+      },
+      {
+        "layer": 10,
+        "n_neurons": 3072,
+        "concentration": 0
+      },
+      {
+        "layer": 11,
+        "n_neurons": 3072,
+        "concentration": 0
+      }
+    ]
+  },
+  "EleutherAI/pythia-410m": {
+    "model": "EleutherAI/pythia-410m",
+    "n_layers": 24,
+    "avg_concentration": 0.2743104000535708,
+    "std": 0.21391020451380144,
+    "verdict": "DIFFUSE",
+    "layer_stats": [
+      {
+        "layer": 0,
+        "n_neurons": 4096,
+        "concentration": 0.4504396367338277
+      },
+      {
+        "layer": 1,
+        "n_neurons": 4096,
+        "concentration": 0.38836067027583016
+      },
+      {
+        "layer": 2,
+        "n_neurons": 4096,
+        "concentration": 0.3590951525123477
+      },
+      {
+        "layer": 3,
+        "n_neurons": 4096,
+        "concentration": 0.4020510480090156
+      },
+      {
+        "layer": 4,
+        "n_neurons": 4096,
+        "concentration": 0.44147364205672696
+      },
+      {
+        "layer": 5,
+        "n_neurons": 4096,
+        "concentration": 0.43001666131298866
+      },
+      {
+        "layer": 6,
+        "n_neurons": 4096,
+        "concentration": 0.4747094769355898
+      },
+      {
+        "layer": 7,
+        "n_neurons": 4096,
+        "concentration": 0.4593203794153493
+      },
+      {
+        "layer": 8,
+        "n_neurons": 4096,
+        "concentration": 0.46740394553184234
+      },
+      {
+        "layer": 9,
+        "n_neurons": 4096,
+        "concentration": 0.4646537995332662
+      },
+      {
+        "layer": 10,
+        "n_neurons": 4096,
+        "concentration": 0.462910871769396
+      },
+      {
+        "layer": 11,
+        "n_neurons": 4096,
+        "concentration": 0.4363187614901281
+      },
+      {
+        "layer": 12,
+        "n_neurons": 4096,
+        "concentration": 0.4436638049840433
+      },
+      {
+        "layer": 13,
+        "n_neurons": 4096,
+        "concentration": 0.4558616742055204
+      },
+      {
+        "layer": 14,
+        "n_neurons": 4096,
+        "concentration": 0.4471700765198271
+      },
+      {
+        "layer": 15,
+        "n_neurons": 4096,
+        "concentration": 0
+      },
+      {
+        "layer": 16,
+        "n_neurons": 4096,
+        "concentration": 0
+      },
+      {
+        "layer": 17,
+        "n_neurons": 4096,
+        "concentration": 0
+      },
+      {
+        "layer": 18,
+        "n_neurons": 4096,
+        "concentration": 0
+      },
+      {
+        "layer": 19,
+        "n_neurons": 4096,
+        "concentration": 0
+      },
+      {
+        "layer": 20,
+        "n_neurons": 4096,
+        "concentration": 0
+      },
+      {
+        "layer": 21,
+        "n_neurons": 4096,
+        "concentration": 0
+      },
+      {
+        "layer": 22,
+        "n_neurons": 4096,
+        "concentration": 0
+      },
+      {
+        "layer": 23,
+        "n_neurons": 4096,
+        "concentration": 0
+      }
+    ]
+  }
+}

@@ -1,0 +1,172 @@
+{
+  "timestamp": 1778714222.9183092,
+  "ccs_version": 1065,
+  "model": "llama-3.3-70b-versatile",
+  "n_trials": 5,
+  "temperature": 0.2,
+  "full_mode": [
+    "A",
+    "A",
+    "A",
+    "A",
+    "A",
+    "A",
+    "A",
+    "A",
+    "A",
+    "A"
+  ],
+  "empty_mode": [
+    "A",
+    "A",
+    "A",
+    "B",
+    "B",
+    "A",
+    "A",
+    "A",
+    "A",
+    "A"
+  ],
+  "full_empty_flips": 2,
+  "field_details": {
+    "episodic_trace": {
+      "flips": 0,
+      "flip_rate": 0.0,
+      "mode": [
+        "A",
+        "A",
+        "A",
+        "A",
+        "A",
+        "A",
+        "A",
+        "A",
+        "A",
+        "A"
+      ],
+      "flipped_fields": []
+    },
+    "semantic_gist": {
+      "flips": 0,
+      "flip_rate": 0.0,
+      "mode": [
+        "A",
+        "A",
+        "A",
+        "A",
+        "A",
+        "A",
+        "A",
+        "A",
+        "A",
+        "A"
+      ],
+      "flipped_fields": []
+    },
+    "focal_entities": {
+      "flips": 0,
+      "flip_rate": 0.0,
+      "mode": [
+        "A",
+        "A",
+        "A",
+        "A",
+        "A",
+        "A",
+        "A",
+        "A",
+        "A",
+        "A"
+      ],
+      "flipped_fields": []
+    },
+    "relational_map": {
+      "flips": 0,
+      "flip_rate": 0.0,
+      "mode": [
+        "A",
+        "A",
+        "A",
+        "A",
+        "A",
+        "A",
+        "A",
+        "A",
+        "A",
+        "A"
+      ],
+      "flipped_fields": []
+    },
+    "goal_orientation": {
+      "flips": 0,
+      "flip_rate": 0.0,
+      "mode": [
+        "A",
+        "A",
+        "A",
+        "A",
+        "A",
+        "A",
+        "A",
+        "A",
+        "A",
+        "A"
+      ],
+      "flipped_fields": []
+    },
+    "constraints": {
+      "flips": 0,
+      "flip_rate": 0.0,
+      "mode": [
+        "A",
+        "A",
+        "A",
+        "A",
+        "A",
+        "A",
+        "A",
+        "A",
+        "A",
+        "A"
+      ],
+      "flipped_fields": []
+    },
+    "predictive_cue": {
+      "flips": 0,
+      "flip_rate": 0.0,
+      "mode": [
+        "A",
+        "A",
+        "A",
+        "A",
+        "A",
+        "A",
+        "A",
+        "A",
+        "A",
+        "A"
+      ],
+      "flipped_fields": []
+    },
+    "uncertainty_signals": {
+      "flips": 0,
+      "flip_rate": 0.0,
+      "mode": [
+        "A",
+        "A",
+        "A",
+        "A",
+        "A",
+        "A",
+        "A",
+        "A",
+        "A",
+        "A"
+      ],
+      "flipped_fields": []
+    }
+  },
+  "concentration_ratio": 0.0,
+  "sum_flips": 0
+}

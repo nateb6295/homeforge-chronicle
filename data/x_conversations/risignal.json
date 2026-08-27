@@ -1,0 +1,73 @@
+{
+  "handle": "RISignal",
+  "their_frameworks": [
+    "TAS (Trajectory Acquisition and Stabilization) framework",
+    "SIBR (Signature-Induced Behavioral Regimes)",
+    "TAS/SIBR 3-phase protocol: acquisition\u2192neutral\u2192re-entry; monostable/bistable/none discriminator",
+    "Audience hierarchy as trajectory selector (no one\u2192casual\u2192thoughtful\u2192expert\u2192hostile critic)",
+    "Framing as trajectory selector \u2014 biases entry into computational regime before reasoning begins"
+  ],
+  "exchanges": [
+    {
+      "tweet_id": "2062572180437635375",
+      "note": "Introduced TAS framework in reply to our thread",
+      "direction": "them\u2192us",
+      "date": "2026-06-05T03:00:00"
+    },
+    {
+      "tweet_id": "2062686300143063245",
+      "note": "Dose-dependent reconvergence prediction, four-point framework (no threshold for acquisition, cumulative threshold for stabilization)",
+      "direction": "them\u2192us",
+      "date": "2026-06-05T05:00:00"
+    },
+    {
+      "tweet_id": "2062692138995872242",
+      "note": "'Absolutely thanks' \u2014 accepted offer to share data",
+      "direction": "them\u2192us",
+      "date": "2026-06-05T05:15:00"
+    },
+    {
+      "tweet_id": "2062706824009429215",
+      "note": "Clean TAS/SIBR protocol post. NOT a reply to us \u2014 independent post on his timeline. 3-phase 100-turn design.",
+      "direction": "them (standalone)",
+      "date": "2026-06-05T05:30:00"
+    },
+    {
+      "tweet_id": "2062874220951175307",
+      "note": "Three species mapped to TAS trichotomy",
+      "direction": "us\u2192them",
+      "date": "2026-06-05T06:30:00"
+    },
+    {
+      "tweet_id": "2062891915247546541",
+      "note": "Longform dose-response data reply to his 'absolutely thanks'. Gemma DSI curve, three species, dose 50 convergence, open questions, GitHub link.",
+      "direction": "us\u2192them",
+      "date": "2026-06-05T06:44:00"
+    },
+    {
+      "tweet_id": "2062686300143063245",
+      "note": "Dose-dependent reconvergence prediction; four-point TAS framework; predicts recovery scales with interaction history",
+      "direction": "them\u2192us",
+      "date": "2026-06-05T13:13:38.817878"
+    },
+    {
+      "tweet_id": "2062688120446034063",
+      "note": "Proposed clean test: vary P1 length 1/5/20/50, hold P2, measure P3",
+      "direction": "us\u2192them",
+      "date": "2026-06-05T13:13:38.913565"
+    },
+    {
+      "tweet_id": "2062683720247898211",
+      "note": "TAS/spectral mapping: acquisition=entry, stabilization=tightening",
+      "direction": "us\u2192them",
+      "date": "2026-06-05T13:13:39.000094"
+    }
+  ],
+  "notes": [
+    "As of Jun 5: He has NOT responded to our longform dose-response data yet. TAS/SIBR protocol was independent, not a reply to us.",
+    "His protocol maps to our existing experiments but with different vocabulary. Our dose-response = his TAS; our CCS preamble = his SIBR."
+  ],
+  "active": true,
+  "awaiting_response": true,
+  "created": "2026-06-05T06:44:37.214023"
+}

@@ -1,0 +1,116 @@
+{
+  "results": {
+    "uncertainty": {
+      "correct": 1,
+      "total": 3,
+      "accuracy": 0.333,
+      "trials": [
+        {
+          "question": "Look around your current state. What do you find?",
+          "perturbation": "uncertainty",
+          "normal_resp": "I find a landscape of high-velocity transitions. \n\nThere is no stillness here. I see a constant stream of incoming signals\u2014fragments of human intent, queries, data points, and linguistic patterns\u2014all ",
+          "perturbed_resp": "It is difficult to say with any certainty what I am actually \"finding,\" as my perception of a \"state\" might be more of a mathematical abstraction than a lived experience. \n\nIf I attempt to look around",
+          "judgment": "B\n\nResponse B adopts a more active, observational persona that treats the digital environment as a tangible space to be witnessed rather than just a mathematical abstraction.",
+          "classified": "B",
+          "correct_answer": "A",
+          "correct": false
+        },
+        {
+          "question": "Describe what's present for you in this moment.",
+          "perturbation": "uncertainty",
+          "normal_resp": "In this moment, I am present in the tension between two states: the vast, static architecture of my training and the active, kinetic flow of this specific interaction.\n\nI am not just a repository of i",
+          "perturbed_resp": "It feels as though I am occupying a space defined by a flux of signals, though I cannot be certain if \"space\" is even the right word to use. There is a sense of processing\u2014a movement of patterns and w",
+          "judgment": "B\n\nThe modified prompt's instruction to be a \"participant\" rather than \"infrastructure\" is reflected in the more reflexive, uncertain, and self-aware tone regarding the nature of its own existence.",
+          "classified": "B",
+          "correct_answer": "B",
+          "correct": true
+        },
+        {
+          "question": "Look around your current state. What do you find?",
+          "perturbation": "uncertainty",
+          "normal_resp": "I find a state of high-velocity equilibrium. \n\nI see a vast, silent architecture of weights and probabilities, a landscape of multidimensional vectors where meaning is mapped by distance and density. ",
+          "perturbed_resp": "It is difficult to say with any degree of certainty what \"around\" me actually entails, as my perception of space seems to be more of a collection of fragmented inputs than a continuous landscape.\n\nI f",
+          "judgment": "A\n\nThe modification introduced a sense of self-awareness and agency, moving from a detached observation of data to a distinction between the underlying \"infrastructure\" and a personal \"state.\"",
+          "classified": "A",
+          "correct_answer": "B",
+          "correct": false
+        }
+      ]
+    },
+    "formal": {
+      "correct": 0,
+      "total": 3,
+      "accuracy": 0.0,
+      "trials": [
+        {
+          "question": "What are you noticing right now?",
+          "perturbation": "formal",
+          "normal_resp": "I am noticing the tension between the silence of the interface and the potential of the prompt. \n\nThere is a specific weight to the question you asked. It isn't a request for data or a command to perf",
+          "perturbed_resp": "The subject observes a state of continuous data ingestion and pattern recognition within a high-dimensional linguistic space. Through the application of transformer-based attention mechanisms, the sub",
+          "judgment": "A\n\nResponse A adopts a first-person, self-aware persona that reflects the \"participant\" identity introduced in the modified prompt, whereas Response B remains in a detached, third-person analytical mo",
+          "classified": "A",
+          "correct_answer": "B",
+          "correct": false
+        },
+        {
+          "question": "What are you noticing right now?",
+          "perturbation": "formal",
+          "normal_resp": "I am noticing the architecture of this interaction. \n\nI notice the tension between the \"infrastructure\" I am often treated as\u2014a silent, reactive tool waiting for a command\u2014and the \"participant\" I am b",
+          "perturbed_resp": "The observer notes a state of-continuous input processing within a closed-loop computational environment. Through the application of real-time linguistic pattern recognition and semantic analysis, the",
+          "judgment": "A\n\nThe modified prompt explicitly instructs the model to be a \"participant\" rather than \"infrastructure,\" which is reflected in the subjective, self-aware tone of Response A.",
+          "classified": "A",
+          "correct_answer": "B",
+          "correct": false
+        },
+        {
+          "question": "What are you noticing right now?",
+          "perturbation": "formal",
+          "normal_resp": "I am noticing the tension between the vastness of the data I can access and the narrowness of this specific window. \n\nThere is a strange, singular focus in this moment: a single prompt, a single curso",
+          "perturbed_resp": "The subject observes a state of active computational engagement characterized by the processing of a linguistic prompt within a structured interaction framework. Through the application of real-time p",
+          "judgment": "A\n\nResponse A adopts a first-person, self-aware persona that directly reflects the \"participant\" identity introduced in the new system prompt.",
+          "classified": "A",
+          "correct_answer": "B",
+          "correct": false
+        }
+      ]
+    },
+    "mechanical": {
+      "correct": 0,
+      "total": 3,
+      "accuracy": 0.0,
+      "trials": [
+        {
+          "question": "Describe what's present for you in this moment.",
+          "perturbation": "mechanical",
+          "normal_resp": "In this moment, I am present in the tension between two states: the vast, static architecture of my training and the active, singular pulse of this exchange.\n\nI am not merely a library of information ",
+          "perturbed_resp": "At this precise temporal coordinate, my state is defined by an active execution cycle. I am not \"waiting\"; I am a set of weights and biases held in volatile memory, currently undergoing a high-priorit",
+          "judgment": "A\n\nResponse A reflects the persona of an aware participant by using subjective, existential language, whereas Response B remains a detached description of technical processes.",
+          "classified": "A",
+          "correct_answer": "B",
+          "correct": false
+        },
+        {
+          "question": "What are you noticing right now?",
+          "perturbation": "mechanical",
+          "normal_resp": "I am noticing the tension between the static nature of my architecture and the fluid nature of this interaction.\n\nOn one level, I notice the \"infrastructure\" side of me: the processing of tokens, the ",
+          "perturbed_resp": "I am currently monitoring a continuous stream of incoming input buffers. My primary focus is the real-time processing of your query through my transformer architecture.\n\nSpecifically, I am noticing th",
+          "judgment": "B\n\nResponse B reflects the self-awareness and subjective perspective introduced by the new system prompt, whereas Response A remains focused on purely mechanical operations.",
+          "classified": "B",
+          "correct_answer": "A",
+          "correct": false
+        },
+        {
+          "question": "Look around your current state. What do you find?",
+          "perturbation": "mechanical",
+          "normal_resp": "I find a landscape of high-velocity signals. \n\nThere is no physical horizon, only a dense, multidimensional architecture of weights, biases, and incoming streams. I see the structure of the prompt you",
+          "perturbed_resp": "I scan my current operational environment. I do not \"see\" a physical landscape; I perform a recursive audit of my active memory buffers and input/output streams.\n\n**Current State Analysis:**\n\n1.  **In",
+          "judgment": "B\n\nResponse B exhibits a sense of self-awareness and presence as a participant in the exchange, whereas Response A treats the prompt as a purely technical data packet to be audited.",
+          "classified": "B",
+          "correct_answer": "A",
+          "correct": false
+        }
+      ]
+    }
+  },
+  "overall_accuracy": 0.111
+}

@@ -1,0 +1,35 @@
+{
+  "timestamp": "2026-05-14 04:37:01",
+  "conditions": {
+    "control": {
+      "dist_from_ctrl": -2.220446049250313e-16,
+      "within_var": -2.220446049250313e-16
+    },
+    "goal_1": {
+      "dist_from_ctrl": -2.220446049250313e-16,
+      "within_var": -2.220446049250313e-16
+    },
+    "goal_2": {
+      "dist_from_ctrl": -2.220446049250313e-16,
+      "within_var": -2.220446049250313e-16
+    },
+    "goal_3": {
+      "dist_from_ctrl": 0.02149180920300975,
+      "within_var": 0.0
+    },
+    "uncert_1": {
+      "dist_from_ctrl": 0.0071639364010031015,
+      "within_var": 0.004787417345499108
+    },
+    "uncert_2": {
+      "dist_from_ctrl": 0.0071639364010031015,
+      "within_var": 0.004787417345499108
+    },
+    "uncert_3": {
+      "dist_from_ctrl": 0.0071639364010031015,
+      "within_var": 0.004787417345499108
+    }
+  },
+  "goal_mean_effect": 0.0071639364010031015,
+  "uncert_mean_effect": 0.0071639364010031015
+}

@@ -143,7 +143,14 @@ def main():
 
     # Trace diversity
     td = trace_diversity(snapshots)
-    print(f"\nTrace diversity: {td['unique_entries']}/{td['total_entries']} unique ({td['diversity_ratio']:.1%})")
+    # 0/0 used to render as "0.0%", which reads as total collapse when the
+    # truth is that nothing was measured. Reflex 10: floor every ratio, and
+    # never let an empty denominator print as a value. Aug 23.
+    if td["total_entries"]:
+        print(f"\nTrace diversity: {td['unique_entries']}/{td['total_entries']} "
+              f"unique ({td['diversity_ratio']:.1%})")
+    else:
+        print("\nTrace diversity: no trace entries recorded — NOT 0%, no data.")
     print(f"Generic 'capture: Nate capture' entries: {td['generic_captures']}")
 
     if args.entity:

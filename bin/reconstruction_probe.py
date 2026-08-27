@@ -47,7 +47,7 @@ def claude_dual_task(persona_text):
     Returns dict with 'speak' (first-person rendering) and 'restate'
     (reconstruction of the supplement structure).
     """
-    api_key = os.environ.get("ANTHROPIC_API_KEY")
+    api_key = os.environ.get("CHRONICLE_ANTHROPIC_KEY") or os.environ.get("ANTHROPIC_API_KEY")
     body = json.dumps({
         "model": MODEL,
         "system": persona_text,

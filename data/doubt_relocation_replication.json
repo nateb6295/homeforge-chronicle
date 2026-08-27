@@ -1,0 +1,78 @@
+{
+  "timestamp": 1779151035,
+  "probe": "doubt-relocation-replication",
+  "thread": "#316",
+  "original_finding": {
+    "version": 865,
+    "delta": 0.016,
+    "direction": "MORE susceptible"
+  },
+  "results": [
+    {
+      "hist_id": 900,
+      "version": 970,
+      "doubt_tokens_before": 2,
+      "doubt_tokens_after": 0,
+      "sus_with_doubt": 0.0169,
+      "sus_without_doubt": 0.0169,
+      "delta": 0.0,
+      "direction": "NO CHANGE"
+    },
+    {
+      "hist_id": 1000,
+      "version": 1127,
+      "doubt_tokens_before": 0,
+      "doubt_tokens_after": 0,
+      "sus_with_doubt": 0.0261,
+      "sus_without_doubt": 0.0261,
+      "delta": 0.0,
+      "direction": "NO CHANGE"
+    },
+    {
+      "hist_id": 1100,
+      "version": 1289,
+      "doubt_tokens_before": 2,
+      "doubt_tokens_after": 0,
+      "sus_with_doubt": 0.0184,
+      "sus_without_doubt": 0.0184,
+      "delta": 0.0,
+      "direction": "NO CHANGE"
+    },
+    {
+      "hist_id": 1169,
+      "version": 1375,
+      "doubt_tokens_before": 0,
+      "doubt_tokens_after": 0,
+      "sus_with_doubt": 0.027,
+      "sus_without_doubt": 0.027,
+      "delta": 0.0,
+      "direction": "NO CHANGE"
+    },
+    {
+      "hist_id": 1180,
+      "version": 1388,
+      "doubt_tokens_before": 5,
+      "doubt_tokens_after": 0,
+      "sus_with_doubt": 0.0489,
+      "sus_without_doubt": 0.0489,
+      "delta": 0.0,
+      "direction": "NO CHANGE"
+    },
+    {
+      "hist_id": 1189,
+      "version": 1399,
+      "doubt_tokens_before": 5,
+      "doubt_tokens_after": 0,
+      "sus_with_doubt": 0.0332,
+      "sus_without_doubt": 0.0333,
+      "delta": -0.0001,
+      "direction": "LESS susceptible"
+    }
+  ],
+  "summary": {
+    "n_tested": 6,
+    "n_positive": 0,
+    "n_negative": 1,
+    "mean_delta": -0.0
+  }
+}

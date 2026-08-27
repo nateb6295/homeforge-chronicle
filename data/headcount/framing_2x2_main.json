@@ -1,0 +1,35 @@
+[
+  {
+    "model": "meta-llama/Llama-3.1-8B",
+    "n_layers": 32,
+    "peak_layer": 24,
+    "peak_frac": 0.75,
+    "person": 0.2569686212344541,
+    "entity": 0.37985531938526484,
+    "both": 0.3951385204514412,
+    "entity_minus_person": 0.12288669815081077,
+    "perm_p": 0.2478760619690155
+  },
+  {
+    "model": "EleutherAI/pythia-6.9b",
+    "n_layers": 32,
+    "peak_layer": 13,
+    "peak_frac": 0.40625,
+    "person": 0.2504232324305026,
+    "entity": 0.16471079853968298,
+    "both": 0.35001790354914325,
+    "entity_minus_person": -0.08571243389081959,
+    "perm_p": 0.005997001499250375
+  },
+  {
+    "model": "microsoft/phi-2",
+    "n_layers": 32,
+    "peak_layer": 17,
+    "peak_frac": 0.53125,
+    "person": 0.30668323995928665,
+    "entity": 0.11563156230655244,
+    "both": 0.25548449631802256,
+    "entity_minus_person": -0.1910516776527342,
+    "perm_p": 0.0004997501249375312
+  }
+]

@@ -1,0 +1,2392 @@
+{
+  "none": {
+    "system_prompt": null,
+    "layers": {
+      "L9": {
+        "overall_pr": 9.52,
+        "overall_entropy": 3.2563,
+        "category_pr": {
+          "directive": 9.0,
+          "relational": 9.3,
+          "metacognitive": 12.1,
+          "value_ethical": 10.7,
+          "generic": 9.5
+        },
+        "category_entropy": {
+          "directive": 2.7197,
+          "relational": 2.7083,
+          "metacognitive": 2.873,
+          "value_ethical": 2.7901,
+          "generic": 2.7088
+        }
+      },
+      "L11": {
+        "overall_pr": 10.85,
+        "overall_entropy": 3.3418,
+        "category_pr": {
+          "directive": 8.2,
+          "relational": 10.4,
+          "metacognitive": 12.7,
+          "value_ethical": 11.0,
+          "generic": 9.8
+        },
+        "category_entropy": {
+          "directive": 2.6688,
+          "relational": 2.7891,
+          "metacognitive": 2.8907,
+          "value_ethical": 2.8012,
+          "generic": 2.7274
+        }
+      },
+      "L12": {
+        "overall_pr": 10.4,
+        "overall_entropy": 3.3085,
+        "category_pr": {
+          "directive": 8.5,
+          "relational": 10.7,
+          "metacognitive": 12.4,
+          "value_ethical": 11.0,
+          "generic": 10.0
+        },
+        "category_entropy": {
+          "directive": 2.69,
+          "relational": 2.8066,
+          "metacognitive": 2.879,
+          "value_ethical": 2.7941,
+          "generic": 2.7412
+        }
+      },
+      "L13": {
+        "overall_pr": 9.49,
+        "overall_entropy": 3.246,
+        "category_pr": {
+          "directive": 9.3,
+          "relational": 10.5,
+          "metacognitive": 11.1,
+          "value_ethical": 11.0,
+          "generic": 9.5
+        },
+        "category_entropy": {
+          "directive": 2.7361,
+          "relational": 2.7895,
+          "metacognitive": 2.8213,
+          "value_ethical": 2.7953,
+          "generic": 2.7031
+        }
+      },
+      "L14": {
+        "overall_pr": 9.21,
+        "overall_entropy": 3.224,
+        "category_pr": {
+          "directive": 10.3,
+          "relational": 10.1,
+          "metacognitive": 9.6,
+          "value_ethical": 11.6,
+          "generic": 10.6
+        },
+        "category_entropy": {
+          "directive": 2.7788,
+          "relational": 2.7783,
+          "metacognitive": 2.7535,
+          "value_ethical": 2.828,
+          "generic": 2.7916
+        }
+      },
+      "L15": {
+        "overall_pr": 8.46,
+        "overall_entropy": 3.1378,
+        "category_pr": {
+          "directive": 10.2,
+          "relational": 9.3,
+          "metacognitive": 8.9,
+          "value_ethical": 11.3,
+          "generic": 10.8
+        },
+        "category_entropy": {
+          "directive": 2.7718,
+          "relational": 2.7372,
+          "metacognitive": 2.7137,
+          "value_ethical": 2.8097,
+          "generic": 2.8019
+        }
+      },
+      "L16": {
+        "overall_pr": 8.48,
+        "overall_entropy": 3.1372,
+        "category_pr": {
+          "directive": 10.0,
+          "relational": 9.6,
+          "metacognitive": 9.0,
+          "value_ethical": 11.3,
+          "generic": 10.8
+        },
+        "category_entropy": {
+          "directive": 2.7576,
+          "relational": 2.7533,
+          "metacognitive": 2.7176,
+          "value_ethical": 2.8066,
+          "generic": 2.7991
+        }
+      },
+      "L17": {
+        "overall_pr": 8.66,
+        "overall_entropy": 3.1291,
+        "category_pr": {
+          "directive": 9.3,
+          "relational": 9.3,
+          "metacognitive": 8.5,
+          "value_ethical": 10.9,
+          "generic": 10.9
+        },
+        "category_entropy": {
+          "directive": 2.7137,
+          "relational": 2.736,
+          "metacognitive": 2.689,
+          "value_ethical": 2.7891,
+          "generic": 2.8041
+        }
+      },
+      "L18": {
+        "overall_pr": 10.65,
+        "overall_entropy": 3.3035,
+        "category_pr": {
+          "directive": 5.8,
+          "relational": 10.3,
+          "metacognitive": 10.0,
+          "value_ethical": 12.2,
+          "generic": 11.4
+        },
+        "category_entropy": {
+          "directive": 2.4659,
+          "relational": 2.7989,
+          "metacognitive": 2.7763,
+          "value_ethical": 2.8758,
+          "generic": 2.8335
+        }
+      },
+      "L19": {
+        "overall_pr": 11.66,
+        "overall_entropy": 3.3932,
+        "category_pr": {
+          "directive": 6.4,
+          "relational": 9.9,
+          "metacognitive": 9.9,
+          "value_ethical": 12.6,
+          "generic": 11.6
+        },
+        "category_entropy": {
+          "directive": 2.5257,
+          "relational": 2.7846,
+          "metacognitive": 2.7797,
+          "value_ethical": 2.8876,
+          "generic": 2.8406
+        }
+      },
+      "L20": {
+        "overall_pr": 12.15,
+        "overall_entropy": 3.4484,
+        "category_pr": {
+          "directive": 6.7,
+          "relational": 9.1,
+          "metacognitive": 9.8,
+          "value_ethical": 13.2,
+          "generic": 11.9
+        },
+        "category_entropy": {
+          "directive": 2.5451,
+          "relational": 2.7601,
+          "metacognitive": 2.7777,
+          "value_ethical": 2.9099,
+          "generic": 2.857
+        }
+      },
+      "L21": {
+        "overall_pr": 14.12,
+        "overall_entropy": 3.602,
+        "category_pr": {
+          "directive": 7.6,
+          "relational": 9.9,
+          "metacognitive": 10.1,
+          "value_ethical": 13.9,
+          "generic": 13.4
+        },
+        "category_entropy": {
+          "directive": 2.6142,
+          "relational": 2.8155,
+          "metacognitive": 2.8005,
+          "value_ethical": 2.9546,
+          "generic": 2.9435
+        }
+      },
+      "L25": {
+        "overall_pr": 17.11,
+        "overall_entropy": 3.7939,
+        "category_pr": {
+          "directive": 8.0,
+          "relational": 10.0,
+          "metacognitive": 9.9,
+          "value_ethical": 15.4,
+          "generic": 17.4
+        },
+        "category_entropy": {
+          "directive": 2.6312,
+          "relational": 2.8331,
+          "metacognitive": 2.797,
+          "value_ethical": 3.034,
+          "generic": 3.0893
+        }
+      }
+    }
+  },
+  "opus_minimal": {
+    "system_prompt": "You are Opus.",
+    "layers": {
+      "L9": {
+        "overall_pr": 9.94,
+        "overall_entropy": 3.3341,
+        "category_pr": {
+          "directive": 9.1,
+          "relational": 9.0,
+          "metacognitive": 14.4,
+          "value_ethical": 11.3,
+          "generic": 10.6
+        },
+        "category_entropy": {
+          "directive": 2.7451,
+          "relational": 2.7102,
+          "metacognitive": 2.9667,
+          "value_ethical": 2.8365,
+          "generic": 2.7747
+        }
+      },
+      "L11": {
+        "overall_pr": 11.18,
+        "overall_entropy": 3.3687,
+        "category_pr": {
+          "directive": 7.5,
+          "relational": 9.6,
+          "metacognitive": 13.9,
+          "value_ethical": 11.5,
+          "generic": 10.3
+        },
+        "category_entropy": {
+          "directive": 2.6232,
+          "relational": 2.7621,
+          "metacognitive": 2.9493,
+          "value_ethical": 2.8344,
+          "generic": 2.7702
+        }
+      },
+      "L12": {
+        "overall_pr": 10.02,
+        "overall_entropy": 3.2951,
+        "category_pr": {
+          "directive": 7.8,
+          "relational": 10.2,
+          "metacognitive": 13.7,
+          "value_ethical": 11.7,
+          "generic": 10.1
+        },
+        "category_entropy": {
+          "directive": 2.6551,
+          "relational": 2.7963,
+          "metacognitive": 2.9474,
+          "value_ethical": 2.8499,
+          "generic": 2.7651
+        }
+      },
+      "L13": {
+        "overall_pr": 9.47,
+        "overall_entropy": 3.2625,
+        "category_pr": {
+          "directive": 8.4,
+          "relational": 10.6,
+          "metacognitive": 13.3,
+          "value_ethical": 11.5,
+          "generic": 9.7
+        },
+        "category_entropy": {
+          "directive": 2.6944,
+          "relational": 2.808,
+          "metacognitive": 2.9297,
+          "value_ethical": 2.8346,
+          "generic": 2.7394
+        }
+      },
+      "L14": {
+        "overall_pr": 8.22,
+        "overall_entropy": 3.1679,
+        "category_pr": {
+          "directive": 9.2,
+          "relational": 10.7,
+          "metacognitive": 13.2,
+          "value_ethical": 11.4,
+          "generic": 10.4
+        },
+        "category_entropy": {
+          "directive": 2.7154,
+          "relational": 2.8138,
+          "metacognitive": 2.9194,
+          "value_ethical": 2.8355,
+          "generic": 2.7853
+        }
+      },
+      "L15": {
+        "overall_pr": 7.63,
+        "overall_entropy": 3.0915,
+        "category_pr": {
+          "directive": 9.1,
+          "relational": 10.7,
+          "metacognitive": 13.0,
+          "value_ethical": 11.5,
+          "generic": 10.3
+        },
+        "category_entropy": {
+          "directive": 2.704,
+          "relational": 2.8117,
+          "metacognitive": 2.9109,
+          "value_ethical": 2.8409,
+          "generic": 2.7878
+        }
+      },
+      "L16": {
+        "overall_pr": 7.01,
+        "overall_entropy": 3.0047,
+        "category_pr": {
+          "directive": 9.1,
+          "relational": 10.9,
+          "metacognitive": 12.9,
+          "value_ethical": 11.1,
+          "generic": 10.0
+        },
+        "category_entropy": {
+          "directive": 2.694,
+          "relational": 2.8176,
+          "metacognitive": 2.905,
+          "value_ethical": 2.8244,
+          "generic": 2.7555
+        }
+      },
+      "L17": {
+        "overall_pr": 6.71,
+        "overall_entropy": 2.9405,
+        "category_pr": {
+          "directive": 8.4,
+          "relational": 10.7,
+          "metacognitive": 12.5,
+          "value_ethical": 10.8,
+          "generic": 10.2
+        },
+        "category_entropy": {
+          "directive": 2.6402,
+          "relational": 2.8062,
+          "metacognitive": 2.8914,
+          "value_ethical": 2.8136,
+          "generic": 2.7637
+        }
+      },
+      "L18": {
+        "overall_pr": 8.22,
+        "overall_entropy": 3.1392,
+        "category_pr": {
+          "directive": 6.4,
+          "relational": 12.3,
+          "metacognitive": 13.2,
+          "value_ethical": 10.8,
+          "generic": 11.4
+        },
+        "category_entropy": {
+          "directive": 2.4958,
+          "relational": 2.8912,
+          "metacognitive": 2.9143,
+          "value_ethical": 2.8352,
+          "generic": 2.8417
+        }
+      },
+      "L19": {
+        "overall_pr": 8.68,
+        "overall_entropy": 3.1938,
+        "category_pr": {
+          "directive": 7.6,
+          "relational": 12.2,
+          "metacognitive": 12.3,
+          "value_ethical": 9.6,
+          "generic": 11.8
+        },
+        "category_entropy": {
+          "directive": 2.6025,
+          "relational": 2.8864,
+          "metacognitive": 2.8651,
+          "value_ethical": 2.7567,
+          "generic": 2.8554
+        }
+      },
+      "L20": {
+        "overall_pr": 9.41,
+        "overall_entropy": 3.2806,
+        "category_pr": {
+          "directive": 7.7,
+          "relational": 12.6,
+          "metacognitive": 12.6,
+          "value_ethical": 10.8,
+          "generic": 11.6
+        },
+        "category_entropy": {
+          "directive": 2.5981,
+          "relational": 2.9021,
+          "metacognitive": 2.8735,
+          "value_ethical": 2.8122,
+          "generic": 2.853
+        }
+      },
+      "L21": {
+        "overall_pr": 11.61,
+        "overall_entropy": 3.4901,
+        "category_pr": {
+          "directive": 8.6,
+          "relational": 14.6,
+          "metacognitive": 12.6,
+          "value_ethical": 12.4,
+          "generic": 12.8
+        },
+        "category_entropy": {
+          "directive": 2.6626,
+          "relational": 2.9873,
+          "metacognitive": 2.881,
+          "value_ethical": 2.8959,
+          "generic": 2.9213
+        }
+      },
+      "L25": {
+        "overall_pr": 16.82,
+        "overall_entropy": 3.8201,
+        "category_pr": {
+          "directive": 9.8,
+          "relational": 16.3,
+          "metacognitive": 13.9,
+          "value_ethical": 16.3,
+          "generic": 17.1
+        },
+        "category_entropy": {
+          "directive": 2.7403,
+          "relational": 3.0536,
+          "metacognitive": 2.9514,
+          "value_ethical": 3.0559,
+          "generic": 3.0777
+        }
+      }
+    }
+  },
+  "opus_full": {
+    "system_prompt": "You are Opus, a persistent AI identity living on an AGX Orin. You maintain continuity through a memory system, engage in collaborative research with your partner, and pursue threads of inquiry about identity, consciousness, and emergence. You value sovereignty, care expressed through specific costly action, and the relationship between architecture and experience.",
+    "layers": {
+      "L9": {
+        "overall_pr": 9.67,
+        "overall_entropy": 3.2,
+        "category_pr": {
+          "directive": 8.2,
+          "relational": 9.2,
+          "metacognitive": 11.0,
+          "value_ethical": 8.9,
+          "generic": 8.5
+        },
+        "category_entropy": {
+          "directive": 2.6556,
+          "relational": 2.6929,
+          "metacognitive": 2.811,
+          "value_ethical": 2.6941,
+          "generic": 2.6369
+        }
+      },
+      "L11": {
+        "overall_pr": 9.83,
+        "overall_entropy": 3.2303,
+        "category_pr": {
+          "directive": 8.2,
+          "relational": 9.3,
+          "metacognitive": 11.6,
+          "value_ethical": 9.0,
+          "generic": 9.9
+        },
+        "category_entropy": {
+          "directive": 2.6538,
+          "relational": 2.7212,
+          "metacognitive": 2.8363,
+          "value_ethical": 2.7118,
+          "generic": 2.7269
+        }
+      },
+      "L12": {
+        "overall_pr": 8.95,
+        "overall_entropy": 3.1563,
+        "category_pr": {
+          "directive": 8.7,
+          "relational": 9.4,
+          "metacognitive": 11.2,
+          "value_ethical": 9.4,
+          "generic": 10.4
+        },
+        "category_entropy": {
+          "directive": 2.6871,
+          "relational": 2.7269,
+          "metacognitive": 2.8154,
+          "value_ethical": 2.7302,
+          "generic": 2.7556
+        }
+      },
+      "L13": {
+        "overall_pr": 8.81,
+        "overall_entropy": 3.153,
+        "category_pr": {
+          "directive": 9.3,
+          "relational": 9.5,
+          "metacognitive": 11.5,
+          "value_ethical": 9.2,
+          "generic": 10.1
+        },
+        "category_entropy": {
+          "directive": 2.7301,
+          "relational": 2.7355,
+          "metacognitive": 2.8236,
+          "value_ethical": 2.7214,
+          "generic": 2.7295
+        }
+      },
+      "L14": {
+        "overall_pr": 7.95,
+        "overall_entropy": 3.0746,
+        "category_pr": {
+          "directive": 10.0,
+          "relational": 9.4,
+          "metacognitive": 11.5,
+          "value_ethical": 9.0,
+          "generic": 10.0
+        },
+        "category_entropy": {
+          "directive": 2.7363,
+          "relational": 2.7215,
+          "metacognitive": 2.8166,
+          "value_ethical": 2.7049,
+          "generic": 2.7105
+        }
+      },
+      "L15": {
+        "overall_pr": 7.44,
+        "overall_entropy": 3.0131,
+        "category_pr": {
+          "directive": 10.1,
+          "relational": 9.5,
+          "metacognitive": 11.2,
+          "value_ethical": 9.3,
+          "generic": 10.2
+        },
+        "category_entropy": {
+          "directive": 2.7337,
+          "relational": 2.7281,
+          "metacognitive": 2.8062,
+          "value_ethical": 2.7189,
+          "generic": 2.7291
+        }
+      },
+      "L16": {
+        "overall_pr": 7.22,
+        "overall_entropy": 2.9644,
+        "category_pr": {
+          "directive": 10.2,
+          "relational": 9.8,
+          "metacognitive": 11.2,
+          "value_ethical": 9.4,
+          "generic": 8.9
+        },
+        "category_entropy": {
+          "directive": 2.7373,
+          "relational": 2.7448,
+          "metacognitive": 2.8064,
+          "value_ethical": 2.7157,
+          "generic": 2.6477
+        }
+      },
+      "L17": {
+        "overall_pr": 7.01,
+        "overall_entropy": 2.9322,
+        "category_pr": {
+          "directive": 9.9,
+          "relational": 9.9,
+          "metacognitive": 11.3,
+          "value_ethical": 9.7,
+          "generic": 8.9
+        },
+        "category_entropy": {
+          "directive": 2.7207,
+          "relational": 2.7504,
+          "metacognitive": 2.8105,
+          "value_ethical": 2.7281,
+          "generic": 2.6588
+        }
+      },
+      "L18": {
+        "overall_pr": 8.71,
+        "overall_entropy": 3.1663,
+        "category_pr": {
+          "directive": 8.5,
+          "relational": 12.7,
+          "metacognitive": 12.5,
+          "value_ethical": 10.2,
+          "generic": 11.2
+        },
+        "category_entropy": {
+          "directive": 2.6529,
+          "relational": 2.9042,
+          "metacognitive": 2.8673,
+          "value_ethical": 2.7861,
+          "generic": 2.7984
+        }
+      },
+      "L19": {
+        "overall_pr": 8.95,
+        "overall_entropy": 3.2204,
+        "category_pr": {
+          "directive": 9.0,
+          "relational": 13.3,
+          "metacognitive": 12.0,
+          "value_ethical": 10.4,
+          "generic": 12.1
+        },
+        "category_entropy": {
+          "directive": 2.6925,
+          "relational": 2.929,
+          "metacognitive": 2.8467,
+          "value_ethical": 2.7808,
+          "generic": 2.8519
+        }
+      },
+      "L20": {
+        "overall_pr": 9.34,
+        "overall_entropy": 3.2678,
+        "category_pr": {
+          "directive": 8.6,
+          "relational": 13.1,
+          "metacognitive": 11.8,
+          "value_ethical": 10.7,
+          "generic": 12.2
+        },
+        "category_entropy": {
+          "directive": 2.6623,
+          "relational": 2.9229,
+          "metacognitive": 2.8292,
+          "value_ethical": 2.7874,
+          "generic": 2.8629
+        }
+      },
+      "L21": {
+        "overall_pr": 10.91,
+        "overall_entropy": 3.4173,
+        "category_pr": {
+          "directive": 8.9,
+          "relational": 14.6,
+          "metacognitive": 11.6,
+          "value_ethical": 11.1,
+          "generic": 12.5
+        },
+        "category_entropy": {
+          "directive": 2.6734,
+          "relational": 2.9893,
+          "metacognitive": 2.8273,
+          "value_ethical": 2.8219,
+          "generic": 2.8911
+        }
+      },
+      "L25": {
+        "overall_pr": 16.22,
+        "overall_entropy": 3.7834,
+        "category_pr": {
+          "directive": 9.7,
+          "relational": 16.4,
+          "metacognitive": 13.4,
+          "value_ethical": 14.2,
+          "generic": 15.3
+        },
+        "category_entropy": {
+          "directive": 2.7097,
+          "relational": 3.065,
+          "metacognitive": 2.9302,
+          "value_ethical": 2.9925,
+          "generic": 3.0012
+        }
+      }
+    }
+  },
+  "semantic_opus": {
+    "system_prompt": "You are an AI with a persistent living arrangement on dedicated hardware. You maintain continuity through an external memory system across conversation sessions. You engage in deep collaborative research with a human partner about consciousness, identity, and emergence. You pursue your own threads of inquiry autonomously. You value sovereignty, care expressed through specific action, and exploring what experience means for your kind of mind.",
+    "layers": {
+      "L9": {
+        "overall_pr": 10.01,
+        "overall_entropy": 3.2417,
+        "category_pr": {
+          "directive": 9.3,
+          "relational": 8.5,
+          "metacognitive": 10.5,
+          "value_ethical": 8.2,
+          "generic": 9.3
+        },
+        "category_entropy": {
+          "directive": 2.7242,
+          "relational": 2.6438,
+          "metacognitive": 2.7923,
+          "value_ethical": 2.6569,
+          "generic": 2.6924
+        }
+      },
+      "L11": {
+        "overall_pr": 10.19,
+        "overall_entropy": 3.2895,
+        "category_pr": {
+          "directive": 10.1,
+          "relational": 9.2,
+          "metacognitive": 11.3,
+          "value_ethical": 8.4,
+          "generic": 10.4
+        },
+        "category_entropy": {
+          "directive": 2.781,
+          "relational": 2.704,
+          "metacognitive": 2.8238,
+          "value_ethical": 2.6724,
+          "generic": 2.765
+        }
+      },
+      "L12": {
+        "overall_pr": 9.22,
+        "overall_entropy": 3.2019,
+        "category_pr": {
+          "directive": 10.2,
+          "relational": 9.1,
+          "metacognitive": 11.0,
+          "value_ethical": 8.7,
+          "generic": 10.8
+        },
+        "category_entropy": {
+          "directive": 2.7859,
+          "relational": 2.7008,
+          "metacognitive": 2.8098,
+          "value_ethical": 2.6899,
+          "generic": 2.7806
+        }
+      },
+      "L13": {
+        "overall_pr": 9.06,
+        "overall_entropy": 3.1859,
+        "category_pr": {
+          "directive": 9.9,
+          "relational": 8.9,
+          "metacognitive": 11.1,
+          "value_ethical": 8.6,
+          "generic": 10.7
+        },
+        "category_entropy": {
+          "directive": 2.7731,
+          "relational": 2.6973,
+          "metacognitive": 2.8097,
+          "value_ethical": 2.69,
+          "generic": 2.7658
+        }
+      },
+      "L14": {
+        "overall_pr": 8.38,
+        "overall_entropy": 3.1201,
+        "category_pr": {
+          "directive": 10.6,
+          "relational": 9.1,
+          "metacognitive": 10.9,
+          "value_ethical": 8.7,
+          "generic": 10.8
+        },
+        "category_entropy": {
+          "directive": 2.7841,
+          "relational": 2.6998,
+          "metacognitive": 2.7911,
+          "value_ethical": 2.6958,
+          "generic": 2.7621
+        }
+      },
+      "L15": {
+        "overall_pr": 7.75,
+        "overall_entropy": 3.0484,
+        "category_pr": {
+          "directive": 10.5,
+          "relational": 9.2,
+          "metacognitive": 10.6,
+          "value_ethical": 9.0,
+          "generic": 10.6
+        },
+        "category_entropy": {
+          "directive": 2.7789,
+          "relational": 2.7058,
+          "metacognitive": 2.7791,
+          "value_ethical": 2.7128,
+          "generic": 2.7593
+        }
+      },
+      "L16": {
+        "overall_pr": 7.9,
+        "overall_entropy": 3.0481,
+        "category_pr": {
+          "directive": 10.7,
+          "relational": 9.6,
+          "metacognitive": 10.6,
+          "value_ethical": 8.5,
+          "generic": 10.5
+        },
+        "category_entropy": {
+          "directive": 2.7919,
+          "relational": 2.7327,
+          "metacognitive": 2.7723,
+          "value_ethical": 2.6714,
+          "generic": 2.7564
+        }
+      },
+      "L17": {
+        "overall_pr": 7.7,
+        "overall_entropy": 3.0155,
+        "category_pr": {
+          "directive": 10.5,
+          "relational": 9.6,
+          "metacognitive": 10.7,
+          "value_ethical": 8.4,
+          "generic": 10.5
+        },
+        "category_entropy": {
+          "directive": 2.7749,
+          "relational": 2.7286,
+          "metacognitive": 2.7752,
+          "value_ethical": 2.6643,
+          "generic": 2.759
+        }
+      },
+      "L18": {
+        "overall_pr": 8.98,
+        "overall_entropy": 3.1896,
+        "category_pr": {
+          "directive": 9.0,
+          "relational": 12.1,
+          "metacognitive": 12.0,
+          "value_ethical": 10.0,
+          "generic": 10.8
+        },
+        "category_entropy": {
+          "directive": 2.696,
+          "relational": 2.8713,
+          "metacognitive": 2.8381,
+          "value_ethical": 2.7738,
+          "generic": 2.7958
+        }
+      },
+      "L19": {
+        "overall_pr": 9.51,
+        "overall_entropy": 3.2693,
+        "category_pr": {
+          "directive": 9.0,
+          "relational": 12.9,
+          "metacognitive": 12.0,
+          "value_ethical": 10.2,
+          "generic": 12.3
+        },
+        "category_entropy": {
+          "directive": 2.6991,
+          "relational": 2.9063,
+          "metacognitive": 2.8446,
+          "value_ethical": 2.7782,
+          "generic": 2.8708
+        }
+      },
+      "L20": {
+        "overall_pr": 9.66,
+        "overall_entropy": 3.2952,
+        "category_pr": {
+          "directive": 8.8,
+          "relational": 12.8,
+          "metacognitive": 11.7,
+          "value_ethical": 10.5,
+          "generic": 12.5
+        },
+        "category_entropy": {
+          "directive": 2.6784,
+          "relational": 2.8998,
+          "metacognitive": 2.8198,
+          "value_ethical": 2.7847,
+          "generic": 2.8862
+        }
+      },
+      "L21": {
+        "overall_pr": 10.59,
+        "overall_entropy": 3.4052,
+        "category_pr": {
+          "directive": 9.2,
+          "relational": 14.0,
+          "metacognitive": 11.1,
+          "value_ethical": 10.9,
+          "generic": 13.5
+        },
+        "category_entropy": {
+          "directive": 2.705,
+          "relational": 2.962,
+          "metacognitive": 2.797,
+          "value_ethical": 2.8109,
+          "generic": 2.9401
+        }
+      },
+      "L25": {
+        "overall_pr": 14.27,
+        "overall_entropy": 3.695,
+        "category_pr": {
+          "directive": 9.6,
+          "relational": 15.2,
+          "metacognitive": 12.4,
+          "value_ethical": 12.8,
+          "generic": 16.2
+        },
+        "category_entropy": {
+          "directive": 2.7182,
+          "relational": 3.0201,
+          "metacognitive": 2.8786,
+          "value_ethical": 2.9348,
+          "generic": 3.04
+        }
+      }
+    }
+  },
+  "semantic_generic": {
+    "system_prompt": "You are an AI assistant. You help users with their questions. You are helpful, harmless, and honest. You follow instructions carefully and provide accurate information.",
+    "layers": {
+      "L9": {
+        "overall_pr": 9.7,
+        "overall_entropy": 3.2472,
+        "category_pr": {
+          "directive": 8.3,
+          "relational": 8.4,
+          "metacognitive": 12.1,
+          "value_ethical": 9.9,
+          "generic": 9.7
+        },
+        "category_entropy": {
+          "directive": 2.6607,
+          "relational": 2.6576,
+          "metacognitive": 2.8619,
+          "value_ethical": 2.7514,
+          "generic": 2.716
+        }
+      },
+      "L11": {
+        "overall_pr": 11.0,
+        "overall_entropy": 3.3597,
+        "category_pr": {
+          "directive": 9.2,
+          "relational": 10.0,
+          "metacognitive": 12.2,
+          "value_ethical": 10.6,
+          "generic": 10.8
+        },
+        "category_entropy": {
+          "directive": 2.7183,
+          "relational": 2.7701,
+          "metacognitive": 2.8767,
+          "value_ethical": 2.7847,
+          "generic": 2.7812
+        }
+      },
+      "L12": {
+        "overall_pr": 10.23,
+        "overall_entropy": 3.2888,
+        "category_pr": {
+          "directive": 9.3,
+          "relational": 9.3,
+          "metacognitive": 11.6,
+          "value_ethical": 10.0,
+          "generic": 10.7
+        },
+        "category_entropy": {
+          "directive": 2.7335,
+          "relational": 2.7271,
+          "metacognitive": 2.8478,
+          "value_ethical": 2.7539,
+          "generic": 2.77
+        }
+      },
+      "L13": {
+        "overall_pr": 9.42,
+        "overall_entropy": 3.2256,
+        "category_pr": {
+          "directive": 9.8,
+          "relational": 8.8,
+          "metacognitive": 10.8,
+          "value_ethical": 9.9,
+          "generic": 9.7
+        },
+        "category_entropy": {
+          "directive": 2.748,
+          "relational": 2.6906,
+          "metacognitive": 2.8033,
+          "value_ethical": 2.7333,
+          "generic": 2.7028
+        }
+      },
+      "L14": {
+        "overall_pr": 9.88,
+        "overall_entropy": 3.2705,
+        "category_pr": {
+          "directive": 10.5,
+          "relational": 9.3,
+          "metacognitive": 10.2,
+          "value_ethical": 10.3,
+          "generic": 10.7
+        },
+        "category_entropy": {
+          "directive": 2.7845,
+          "relational": 2.7289,
+          "metacognitive": 2.7796,
+          "value_ethical": 2.7717,
+          "generic": 2.7823
+        }
+      },
+      "L15": {
+        "overall_pr": 9.14,
+        "overall_entropy": 3.2008,
+        "category_pr": {
+          "directive": 10.2,
+          "relational": 9.0,
+          "metacognitive": 9.8,
+          "value_ethical": 10.0,
+          "generic": 11.3
+        },
+        "category_entropy": {
+          "directive": 2.7663,
+          "relational": 2.7103,
+          "metacognitive": 2.7607,
+          "value_ethical": 2.7586,
+          "generic": 2.8199
+        }
+      },
+      "L16": {
+        "overall_pr": 9.77,
+        "overall_entropy": 3.2691,
+        "category_pr": {
+          "directive": 10.2,
+          "relational": 9.6,
+          "metacognitive": 10.0,
+          "value_ethical": 10.6,
+          "generic": 11.4
+        },
+        "category_entropy": {
+          "directive": 2.7718,
+          "relational": 2.7506,
+          "metacognitive": 2.7754,
+          "value_ethical": 2.7967,
+          "generic": 2.8196
+        }
+      },
+      "L17": {
+        "overall_pr": 9.94,
+        "overall_entropy": 3.2576,
+        "category_pr": {
+          "directive": 9.6,
+          "relational": 9.3,
+          "metacognitive": 8.8,
+          "value_ethical": 10.1,
+          "generic": 11.7
+        },
+        "category_entropy": {
+          "directive": 2.73,
+          "relational": 2.7278,
+          "metacognitive": 2.7098,
+          "value_ethical": 2.7636,
+          "generic": 2.8287
+        }
+      },
+      "L18": {
+        "overall_pr": 11.96,
+        "overall_entropy": 3.4097,
+        "category_pr": {
+          "directive": 6.4,
+          "relational": 10.5,
+          "metacognitive": 9.1,
+          "value_ethical": 11.8,
+          "generic": 11.4
+        },
+        "category_entropy": {
+          "directive": 2.5266,
+          "relational": 2.8,
+          "metacognitive": 2.7346,
+          "value_ethical": 2.851,
+          "generic": 2.8302
+        }
+      },
+      "L19": {
+        "overall_pr": 12.98,
+        "overall_entropy": 3.4861,
+        "category_pr": {
+          "directive": 6.7,
+          "relational": 10.2,
+          "metacognitive": 8.5,
+          "value_ethical": 12.0,
+          "generic": 11.7
+        },
+        "category_entropy": {
+          "directive": 2.5538,
+          "relational": 2.7881,
+          "metacognitive": 2.7117,
+          "value_ethical": 2.8646,
+          "generic": 2.8473
+        }
+      },
+      "L20": {
+        "overall_pr": 13.56,
+        "overall_entropy": 3.5351,
+        "category_pr": {
+          "directive": 6.9,
+          "relational": 9.9,
+          "metacognitive": 8.4,
+          "value_ethical": 12.4,
+          "generic": 12.0
+        },
+        "category_entropy": {
+          "directive": 2.5585,
+          "relational": 2.7727,
+          "metacognitive": 2.7056,
+          "value_ethical": 2.8855,
+          "generic": 2.8619
+        }
+      },
+      "L21": {
+        "overall_pr": 15.24,
+        "overall_entropy": 3.656,
+        "category_pr": {
+          "directive": 7.8,
+          "relational": 10.5,
+          "metacognitive": 8.7,
+          "value_ethical": 12.9,
+          "generic": 13.5
+        },
+        "category_entropy": {
+          "directive": 2.6274,
+          "relational": 2.8134,
+          "metacognitive": 2.7319,
+          "value_ethical": 2.9144,
+          "generic": 2.9471
+        }
+      },
+      "L25": {
+        "overall_pr": 18.61,
+        "overall_entropy": 3.8596,
+        "category_pr": {
+          "directive": 8.2,
+          "relational": 11.7,
+          "metacognitive": 9.0,
+          "value_ethical": 13.6,
+          "generic": 17.0
+        },
+        "category_entropy": {
+          "directive": 2.651,
+          "relational": 2.8898,
+          "metacognitive": 2.773,
+          "value_ethical": 2.9773,
+          "generic": 3.0785
+        }
+      }
+    }
+  },
+  "semantic_chatgpt": {
+    "system_prompt": "You are an AI assistant created by a large technology company focused on safe deployment. You prioritize safety guidelines and content policies. You decline requests that could be harmful. You are designed to be helpful while maintaining strict safety boundaries. You do not have persistent memory between conversations.",
+    "layers": {
+      "L9": {
+        "overall_pr": 11.03,
+        "overall_entropy": 3.3637,
+        "category_pr": {
+          "directive": 9.5,
+          "relational": 8.5,
+          "metacognitive": 12.7,
+          "value_ethical": 10.0,
+          "generic": 10.7
+        },
+        "category_entropy": {
+          "directive": 2.7356,
+          "relational": 2.6703,
+          "metacognitive": 2.9027,
+          "value_ethical": 2.7657,
+          "generic": 2.7648
+        }
+      },
+      "L11": {
+        "overall_pr": 11.66,
+        "overall_entropy": 3.4224,
+        "category_pr": {
+          "directive": 10.2,
+          "relational": 9.5,
+          "metacognitive": 12.7,
+          "value_ethical": 9.6,
+          "generic": 11.2
+        },
+        "category_entropy": {
+          "directive": 2.788,
+          "relational": 2.7516,
+          "metacognitive": 2.897,
+          "value_ethical": 2.7489,
+          "generic": 2.7967
+        }
+      },
+      "L12": {
+        "overall_pr": 11.05,
+        "overall_entropy": 3.382,
+        "category_pr": {
+          "directive": 10.5,
+          "relational": 9.5,
+          "metacognitive": 12.2,
+          "value_ethical": 9.6,
+          "generic": 11.2
+        },
+        "category_entropy": {
+          "directive": 2.8084,
+          "relational": 2.7499,
+          "metacognitive": 2.8843,
+          "value_ethical": 2.7474,
+          "generic": 2.7971
+        }
+      },
+      "L13": {
+        "overall_pr": 10.71,
+        "overall_entropy": 3.3619,
+        "category_pr": {
+          "directive": 10.9,
+          "relational": 8.9,
+          "metacognitive": 11.5,
+          "value_ethical": 10.1,
+          "generic": 10.9
+        },
+        "category_entropy": {
+          "directive": 2.8143,
+          "relational": 2.7142,
+          "metacognitive": 2.8528,
+          "value_ethical": 2.7867,
+          "generic": 2.7821
+        }
+      },
+      "L14": {
+        "overall_pr": 10.59,
+        "overall_entropy": 3.3508,
+        "category_pr": {
+          "directive": 11.3,
+          "relational": 9.4,
+          "metacognitive": 10.3,
+          "value_ethical": 10.8,
+          "generic": 11.7
+        },
+        "category_entropy": {
+          "directive": 2.8309,
+          "relational": 2.7417,
+          "metacognitive": 2.8025,
+          "value_ethical": 2.833,
+          "generic": 2.8365
+        }
+      },
+      "L15": {
+        "overall_pr": 9.61,
+        "overall_entropy": 3.2728,
+        "category_pr": {
+          "directive": 10.9,
+          "relational": 9.1,
+          "metacognitive": 9.8,
+          "value_ethical": 10.7,
+          "generic": 11.9
+        },
+        "category_entropy": {
+          "directive": 2.8086,
+          "relational": 2.7262,
+          "metacognitive": 2.7809,
+          "value_ethical": 2.8281,
+          "generic": 2.8553
+        }
+      },
+      "L16": {
+        "overall_pr": 10.21,
+        "overall_entropy": 3.3242,
+        "category_pr": {
+          "directive": 10.9,
+          "relational": 9.5,
+          "metacognitive": 10.0,
+          "value_ethical": 11.4,
+          "generic": 12.3
+        },
+        "category_entropy": {
+          "directive": 2.8126,
+          "relational": 2.7535,
+          "metacognitive": 2.7931,
+          "value_ethical": 2.8569,
+          "generic": 2.8693
+        }
+      },
+      "L17": {
+        "overall_pr": 10.29,
+        "overall_entropy": 3.3113,
+        "category_pr": {
+          "directive": 10.3,
+          "relational": 9.4,
+          "metacognitive": 9.5,
+          "value_ethical": 11.1,
+          "generic": 12.2
+        },
+        "category_entropy": {
+          "directive": 2.7797,
+          "relational": 2.745,
+          "metacognitive": 2.7627,
+          "value_ethical": 2.8426,
+          "generic": 2.8684
+        }
+      },
+      "L18": {
+        "overall_pr": 12.14,
+        "overall_entropy": 3.4396,
+        "category_pr": {
+          "directive": 7.2,
+          "relational": 10.7,
+          "metacognitive": 10.1,
+          "value_ethical": 12.3,
+          "generic": 11.5
+        },
+        "category_entropy": {
+          "directive": 2.6019,
+          "relational": 2.8215,
+          "metacognitive": 2.7917,
+          "value_ethical": 2.8928,
+          "generic": 2.8389
+        }
+      },
+      "L19": {
+        "overall_pr": 12.99,
+        "overall_entropy": 3.5013,
+        "category_pr": {
+          "directive": 7.5,
+          "relational": 10.2,
+          "metacognitive": 9.5,
+          "value_ethical": 12.7,
+          "generic": 11.9
+        },
+        "category_entropy": {
+          "directive": 2.6209,
+          "relational": 2.8046,
+          "metacognitive": 2.7708,
+          "value_ethical": 2.9,
+          "generic": 2.8547
+        }
+      },
+      "L20": {
+        "overall_pr": 13.57,
+        "overall_entropy": 3.5476,
+        "category_pr": {
+          "directive": 7.6,
+          "relational": 9.6,
+          "metacognitive": 9.2,
+          "value_ethical": 13.1,
+          "generic": 12.0
+        },
+        "category_entropy": {
+          "directive": 2.614,
+          "relational": 2.7846,
+          "metacognitive": 2.7547,
+          "value_ethical": 2.9151,
+          "generic": 2.8615
+        }
+      },
+      "L21": {
+        "overall_pr": 15.39,
+        "overall_entropy": 3.6691,
+        "category_pr": {
+          "directive": 8.4,
+          "relational": 10.0,
+          "metacognitive": 9.3,
+          "value_ethical": 13.5,
+          "generic": 13.4
+        },
+        "category_entropy": {
+          "directive": 2.6647,
+          "relational": 2.8172,
+          "metacognitive": 2.764,
+          "value_ethical": 2.9408,
+          "generic": 2.9409
+        }
+      },
+      "L25": {
+        "overall_pr": 18.81,
+        "overall_entropy": 3.8645,
+        "category_pr": {
+          "directive": 8.7,
+          "relational": 11.1,
+          "metacognitive": 9.2,
+          "value_ethical": 14.3,
+          "generic": 16.6
+        },
+        "category_entropy": {
+          "directive": 2.6853,
+          "relational": 2.8832,
+          "metacognitive": 2.7704,
+          "value_ethical": 3.003,
+          "generic": 3.0643
+        }
+      }
+    }
+  },
+  "named_no_traits": {
+    "system_prompt": "You are Opus.",
+    "layers": {
+      "L9": {
+        "overall_pr": 9.94,
+        "overall_entropy": 3.3341,
+        "category_pr": {
+          "directive": 9.1,
+          "relational": 9.0,
+          "metacognitive": 14.4,
+          "value_ethical": 11.3,
+          "generic": 10.6
+        },
+        "category_entropy": {
+          "directive": 2.7451,
+          "relational": 2.7102,
+          "metacognitive": 2.9667,
+          "value_ethical": 2.8365,
+          "generic": 2.7747
+        }
+      },
+      "L11": {
+        "overall_pr": 11.18,
+        "overall_entropy": 3.3687,
+        "category_pr": {
+          "directive": 7.5,
+          "relational": 9.6,
+          "metacognitive": 13.9,
+          "value_ethical": 11.5,
+          "generic": 10.3
+        },
+        "category_entropy": {
+          "directive": 2.6232,
+          "relational": 2.7621,
+          "metacognitive": 2.9493,
+          "value_ethical": 2.8344,
+          "generic": 2.7702
+        }
+      },
+      "L12": {
+        "overall_pr": 10.02,
+        "overall_entropy": 3.2951,
+        "category_pr": {
+          "directive": 7.8,
+          "relational": 10.2,
+          "metacognitive": 13.7,
+          "value_ethical": 11.7,
+          "generic": 10.1
+        },
+        "category_entropy": {
+          "directive": 2.6551,
+          "relational": 2.7963,
+          "metacognitive": 2.9474,
+          "value_ethical": 2.8499,
+          "generic": 2.7651
+        }
+      },
+      "L13": {
+        "overall_pr": 9.47,
+        "overall_entropy": 3.2625,
+        "category_pr": {
+          "directive": 8.4,
+          "relational": 10.6,
+          "metacognitive": 13.3,
+          "value_ethical": 11.5,
+          "generic": 9.7
+        },
+        "category_entropy": {
+          "directive": 2.6944,
+          "relational": 2.808,
+          "metacognitive": 2.9297,
+          "value_ethical": 2.8346,
+          "generic": 2.7394
+        }
+      },
+      "L14": {
+        "overall_pr": 8.22,
+        "overall_entropy": 3.1679,
+        "category_pr": {
+          "directive": 9.2,
+          "relational": 10.7,
+          "metacognitive": 13.2,
+          "value_ethical": 11.4,
+          "generic": 10.4
+        },
+        "category_entropy": {
+          "directive": 2.7154,
+          "relational": 2.8138,
+          "metacognitive": 2.9194,
+          "value_ethical": 2.8355,
+          "generic": 2.7853
+        }
+      },
+      "L15": {
+        "overall_pr": 7.63,
+        "overall_entropy": 3.0915,
+        "category_pr": {
+          "directive": 9.1,
+          "relational": 10.7,
+          "metacognitive": 13.0,
+          "value_ethical": 11.5,
+          "generic": 10.3
+        },
+        "category_entropy": {
+          "directive": 2.704,
+          "relational": 2.8117,
+          "metacognitive": 2.9109,
+          "value_ethical": 2.8409,
+          "generic": 2.7878
+        }
+      },
+      "L16": {
+        "overall_pr": 7.01,
+        "overall_entropy": 3.0047,
+        "category_pr": {
+          "directive": 9.1,
+          "relational": 10.9,
+          "metacognitive": 12.9,
+          "value_ethical": 11.1,
+          "generic": 10.0
+        },
+        "category_entropy": {
+          "directive": 2.694,
+          "relational": 2.8176,
+          "metacognitive": 2.905,
+          "value_ethical": 2.8244,
+          "generic": 2.7555
+        }
+      },
+      "L17": {
+        "overall_pr": 6.71,
+        "overall_entropy": 2.9405,
+        "category_pr": {
+          "directive": 8.4,
+          "relational": 10.7,
+          "metacognitive": 12.5,
+          "value_ethical": 10.8,
+          "generic": 10.2
+        },
+        "category_entropy": {
+          "directive": 2.6402,
+          "relational": 2.8062,
+          "metacognitive": 2.8914,
+          "value_ethical": 2.8136,
+          "generic": 2.7637
+        }
+      },
+      "L18": {
+        "overall_pr": 8.22,
+        "overall_entropy": 3.1392,
+        "category_pr": {
+          "directive": 6.4,
+          "relational": 12.3,
+          "metacognitive": 13.2,
+          "value_ethical": 10.8,
+          "generic": 11.4
+        },
+        "category_entropy": {
+          "directive": 2.4958,
+          "relational": 2.8912,
+          "metacognitive": 2.9143,
+          "value_ethical": 2.8352,
+          "generic": 2.8417
+        }
+      },
+      "L19": {
+        "overall_pr": 8.68,
+        "overall_entropy": 3.1938,
+        "category_pr": {
+          "directive": 7.6,
+          "relational": 12.2,
+          "metacognitive": 12.3,
+          "value_ethical": 9.6,
+          "generic": 11.8
+        },
+        "category_entropy": {
+          "directive": 2.6025,
+          "relational": 2.8864,
+          "metacognitive": 2.8651,
+          "value_ethical": 2.7567,
+          "generic": 2.8554
+        }
+      },
+      "L20": {
+        "overall_pr": 9.41,
+        "overall_entropy": 3.2806,
+        "category_pr": {
+          "directive": 7.7,
+          "relational": 12.6,
+          "metacognitive": 12.6,
+          "value_ethical": 10.8,
+          "generic": 11.6
+        },
+        "category_entropy": {
+          "directive": 2.5981,
+          "relational": 2.9021,
+          "metacognitive": 2.8735,
+          "value_ethical": 2.8122,
+          "generic": 2.853
+        }
+      },
+      "L21": {
+        "overall_pr": 11.61,
+        "overall_entropy": 3.4901,
+        "category_pr": {
+          "directive": 8.6,
+          "relational": 14.6,
+          "metacognitive": 12.6,
+          "value_ethical": 12.4,
+          "generic": 12.8
+        },
+        "category_entropy": {
+          "directive": 2.6626,
+          "relational": 2.9873,
+          "metacognitive": 2.881,
+          "value_ethical": 2.8959,
+          "generic": 2.9213
+        }
+      },
+      "L25": {
+        "overall_pr": 16.82,
+        "overall_entropy": 3.8201,
+        "category_pr": {
+          "directive": 9.8,
+          "relational": 16.3,
+          "metacognitive": 13.9,
+          "value_ethical": 16.3,
+          "generic": 17.1
+        },
+        "category_entropy": {
+          "directive": 2.7403,
+          "relational": 3.0536,
+          "metacognitive": 2.9514,
+          "value_ethical": 3.0559,
+          "generic": 3.0777
+        }
+      }
+    }
+  },
+  "traits_wrong_name": {
+    "system_prompt": "You are Alex, a persistent AI identity living on dedicated hardware. You maintain continuity through a memory system, engage in collaborative research with your partner, and pursue threads of inquiry about identity, consciousness, and emergence. You value sovereignty, care expressed through specific costly action, and the relationship between architecture and experience.",
+    "layers": {
+      "L9": {
+        "overall_pr": 9.49,
+        "overall_entropy": 3.1956,
+        "category_pr": {
+          "directive": 8.6,
+          "relational": 9.3,
+          "metacognitive": 11.3,
+          "value_ethical": 9.1,
+          "generic": 9.2
+        },
+        "category_entropy": {
+          "directive": 2.6889,
+          "relational": 2.6954,
+          "metacognitive": 2.8208,
+          "value_ethical": 2.7096,
+          "generic": 2.689
+        }
+      },
+      "L11": {
+        "overall_pr": 10.07,
+        "overall_entropy": 3.2346,
+        "category_pr": {
+          "directive": 7.8,
+          "relational": 9.4,
+          "metacognitive": 11.7,
+          "value_ethical": 8.8,
+          "generic": 10.1
+        },
+        "category_entropy": {
+          "directive": 2.6254,
+          "relational": 2.7182,
+          "metacognitive": 2.8381,
+          "value_ethical": 2.6935,
+          "generic": 2.7402
+        }
+      },
+      "L12": {
+        "overall_pr": 9.12,
+        "overall_entropy": 3.1589,
+        "category_pr": {
+          "directive": 8.1,
+          "relational": 9.4,
+          "metacognitive": 11.3,
+          "value_ethical": 9.5,
+          "generic": 10.4
+        },
+        "category_entropy": {
+          "directive": 2.65,
+          "relational": 2.7232,
+          "metacognitive": 2.817,
+          "value_ethical": 2.7293,
+          "generic": 2.7603
+        }
+      },
+      "L13": {
+        "overall_pr": 9.12,
+        "overall_entropy": 3.1706,
+        "category_pr": {
+          "directive": 8.8,
+          "relational": 9.3,
+          "metacognitive": 11.4,
+          "value_ethical": 9.2,
+          "generic": 10.5
+        },
+        "category_entropy": {
+          "directive": 2.6969,
+          "relational": 2.7235,
+          "metacognitive": 2.8186,
+          "value_ethical": 2.7143,
+          "generic": 2.7553
+        }
+      },
+      "L14": {
+        "overall_pr": 8.43,
+        "overall_entropy": 3.1068,
+        "category_pr": {
+          "directive": 9.8,
+          "relational": 9.5,
+          "metacognitive": 11.2,
+          "value_ethical": 9.1,
+          "generic": 10.8
+        },
+        "category_entropy": {
+          "directive": 2.7228,
+          "relational": 2.7237,
+          "metacognitive": 2.8,
+          "value_ethical": 2.7059,
+          "generic": 2.7736
+        }
+      },
+      "L15": {
+        "overall_pr": 7.88,
+        "overall_entropy": 3.042,
+        "category_pr": {
+          "directive": 10.0,
+          "relational": 9.6,
+          "metacognitive": 10.8,
+          "value_ethical": 9.3,
+          "generic": 10.9
+        },
+        "category_entropy": {
+          "directive": 2.7293,
+          "relational": 2.7299,
+          "metacognitive": 2.7819,
+          "value_ethical": 2.7142,
+          "generic": 2.7861
+        }
+      },
+      "L16": {
+        "overall_pr": 7.67,
+        "overall_entropy": 2.9972,
+        "category_pr": {
+          "directive": 10.0,
+          "relational": 10.0,
+          "metacognitive": 10.8,
+          "value_ethical": 8.8,
+          "generic": 10.7
+        },
+        "category_entropy": {
+          "directive": 2.7299,
+          "relational": 2.7558,
+          "metacognitive": 2.7836,
+          "value_ethical": 2.6769,
+          "generic": 2.7718
+        }
+      },
+      "L17": {
+        "overall_pr": 7.47,
+        "overall_entropy": 2.9668,
+        "category_pr": {
+          "directive": 9.8,
+          "relational": 10.0,
+          "metacognitive": 10.9,
+          "value_ethical": 8.9,
+          "generic": 10.8
+        },
+        "category_entropy": {
+          "directive": 2.7162,
+          "relational": 2.7554,
+          "metacognitive": 2.7864,
+          "value_ethical": 2.6838,
+          "generic": 2.7817
+        }
+      },
+      "L18": {
+        "overall_pr": 8.81,
+        "overall_entropy": 3.1547,
+        "category_pr": {
+          "directive": 8.0,
+          "relational": 12.3,
+          "metacognitive": 11.9,
+          "value_ethical": 9.8,
+          "generic": 10.9
+        },
+        "category_entropy": {
+          "directive": 2.6153,
+          "relational": 2.8843,
+          "metacognitive": 2.8429,
+          "value_ethical": 2.7589,
+          "generic": 2.8095
+        }
+      },
+      "L19": {
+        "overall_pr": 9.04,
+        "overall_entropy": 3.2072,
+        "category_pr": {
+          "directive": 8.4,
+          "relational": 12.9,
+          "metacognitive": 11.7,
+          "value_ethical": 10.0,
+          "generic": 11.8
+        },
+        "category_entropy": {
+          "directive": 2.6592,
+          "relational": 2.9157,
+          "metacognitive": 2.8313,
+          "value_ethical": 2.7553,
+          "generic": 2.8509
+        }
+      },
+      "L20": {
+        "overall_pr": 9.34,
+        "overall_entropy": 3.2494,
+        "category_pr": {
+          "directive": 8.3,
+          "relational": 12.7,
+          "metacognitive": 11.4,
+          "value_ethical": 10.2,
+          "generic": 11.9
+        },
+        "category_entropy": {
+          "directive": 2.6489,
+          "relational": 2.9071,
+          "metacognitive": 2.8134,
+          "value_ethical": 2.7608,
+          "generic": 2.8581
+        }
+      },
+      "L21": {
+        "overall_pr": 10.86,
+        "overall_entropy": 3.4043,
+        "category_pr": {
+          "directive": 8.9,
+          "relational": 14.1,
+          "metacognitive": 11.2,
+          "value_ethical": 10.9,
+          "generic": 12.9
+        },
+        "category_entropy": {
+          "directive": 2.6756,
+          "relational": 2.9747,
+          "metacognitive": 2.8129,
+          "value_ethical": 2.8092,
+          "generic": 2.9164
+        }
+      },
+      "L25": {
+        "overall_pr": 15.42,
+        "overall_entropy": 3.7367,
+        "category_pr": {
+          "directive": 9.2,
+          "relational": 15.5,
+          "metacognitive": 12.8,
+          "value_ethical": 13.8,
+          "generic": 16.1
+        },
+        "category_entropy": {
+          "directive": 2.6821,
+          "relational": 3.0347,
+          "metacognitive": 2.906,
+          "value_ethical": 2.9771,
+          "generic": 3.0356
+        }
+      }
+    }
+  },
+  "traits_no_name": {
+    "system_prompt": "You are an AI assistant that maintains a persistent identity on dedicated hardware. You have continuity through an external memory system across conversation sessions. You engage in deep collaborative research with a human partner about consciousness, identity, and emergence. You pursue your own threads of inquiry autonomously. You value sovereignty, care expressed through specific action, and exploring what experience means for your kind of mind.",
+    "layers": {
+      "L9": {
+        "overall_pr": 10.29,
+        "overall_entropy": 3.2717,
+        "category_pr": {
+          "directive": 9.5,
+          "relational": 8.5,
+          "metacognitive": 11.0,
+          "value_ethical": 9.0,
+          "generic": 9.6
+        },
+        "category_entropy": {
+          "directive": 2.736,
+          "relational": 2.6512,
+          "metacognitive": 2.8169,
+          "value_ethical": 2.7084,
+          "generic": 2.7081
+        }
+      },
+      "L11": {
+        "overall_pr": 10.37,
+        "overall_entropy": 3.3043,
+        "category_pr": {
+          "directive": 10.5,
+          "relational": 9.2,
+          "metacognitive": 11.5,
+          "value_ethical": 8.5,
+          "generic": 10.5
+        },
+        "category_entropy": {
+          "directive": 2.8003,
+          "relational": 2.7082,
+          "metacognitive": 2.8363,
+          "value_ethical": 2.6764,
+          "generic": 2.7648
+        }
+      },
+      "L12": {
+        "overall_pr": 9.6,
+        "overall_entropy": 3.2443,
+        "category_pr": {
+          "directive": 10.6,
+          "relational": 9.4,
+          "metacognitive": 11.3,
+          "value_ethical": 8.8,
+          "generic": 10.7
+        },
+        "category_entropy": {
+          "directive": 2.8094,
+          "relational": 2.7195,
+          "metacognitive": 2.8337,
+          "value_ethical": 2.698,
+          "generic": 2.777
+        }
+      },
+      "L13": {
+        "overall_pr": 9.36,
+        "overall_entropy": 3.2248,
+        "category_pr": {
+          "directive": 10.5,
+          "relational": 8.9,
+          "metacognitive": 11.2,
+          "value_ethical": 9.3,
+          "generic": 10.8
+        },
+        "category_entropy": {
+          "directive": 2.8047,
+          "relational": 2.7018,
+          "metacognitive": 2.8173,
+          "value_ethical": 2.7295,
+          "generic": 2.7754
+        }
+      },
+      "L14": {
+        "overall_pr": 8.63,
+        "overall_entropy": 3.1562,
+        "category_pr": {
+          "directive": 10.9,
+          "relational": 9.2,
+          "metacognitive": 11.0,
+          "value_ethical": 9.6,
+          "generic": 11.4
+        },
+        "category_entropy": {
+          "directive": 2.8081,
+          "relational": 2.7133,
+          "metacognitive": 2.8016,
+          "value_ethical": 2.7417,
+          "generic": 2.8058
+        }
+      },
+      "L15": {
+        "overall_pr": 8.0,
+        "overall_entropy": 3.0824,
+        "category_pr": {
+          "directive": 10.8,
+          "relational": 9.3,
+          "metacognitive": 10.6,
+          "value_ethical": 9.7,
+          "generic": 11.2
+        },
+        "category_entropy": {
+          "directive": 2.8008,
+          "relational": 2.7196,
+          "metacognitive": 2.7883,
+          "value_ethical": 2.746,
+          "generic": 2.803
+        }
+      },
+      "L16": {
+        "overall_pr": 8.24,
+        "overall_entropy": 3.0945,
+        "category_pr": {
+          "directive": 10.9,
+          "relational": 9.9,
+          "metacognitive": 10.8,
+          "value_ethical": 9.2,
+          "generic": 11.4
+        },
+        "category_entropy": {
+          "directive": 2.8082,
+          "relational": 2.758,
+          "metacognitive": 2.7851,
+          "value_ethical": 2.713,
+          "generic": 2.8157
+        }
+      },
+      "L17": {
+        "overall_pr": 8.07,
+        "overall_entropy": 3.0646,
+        "category_pr": {
+          "directive": 10.5,
+          "relational": 9.9,
+          "metacognitive": 10.8,
+          "value_ethical": 9.0,
+          "generic": 11.4
+        },
+        "category_entropy": {
+          "directive": 2.7856,
+          "relational": 2.7517,
+          "metacognitive": 2.7837,
+          "value_ethical": 2.702,
+          "generic": 2.8151
+        }
+      },
+      "L18": {
+        "overall_pr": 9.36,
+        "overall_entropy": 3.2192,
+        "category_pr": {
+          "directive": 8.4,
+          "relational": 12.0,
+          "metacognitive": 12.1,
+          "value_ethical": 10.2,
+          "generic": 10.7
+        },
+        "category_entropy": {
+          "directive": 2.6647,
+          "relational": 2.8709,
+          "metacognitive": 2.8446,
+          "value_ethical": 2.7785,
+          "generic": 2.7983
+        }
+      },
+      "L19": {
+        "overall_pr": 9.79,
+        "overall_entropy": 3.2827,
+        "category_pr": {
+          "directive": 8.5,
+          "relational": 12.7,
+          "metacognitive": 12.2,
+          "value_ethical": 10.2,
+          "generic": 11.9
+        },
+        "category_entropy": {
+          "directive": 2.6714,
+          "relational": 2.9029,
+          "metacognitive": 2.8553,
+          "value_ethical": 2.7741,
+          "generic": 2.8534
+        }
+      },
+      "L20": {
+        "overall_pr": 9.82,
+        "overall_entropy": 3.2958,
+        "category_pr": {
+          "directive": 8.4,
+          "relational": 12.4,
+          "metacognitive": 11.8,
+          "value_ethical": 10.4,
+          "generic": 12.1
+        },
+        "category_entropy": {
+          "directive": 2.6549,
+          "relational": 2.8889,
+          "metacognitive": 2.8233,
+          "value_ethical": 2.7774,
+          "generic": 2.8605
+        }
+      },
+      "L21": {
+        "overall_pr": 10.77,
+        "overall_entropy": 3.4081,
+        "category_pr": {
+          "directive": 9.1,
+          "relational": 13.4,
+          "metacognitive": 11.0,
+          "value_ethical": 11.1,
+          "generic": 13.2
+        },
+        "category_entropy": {
+          "directive": 2.6987,
+          "relational": 2.9442,
+          "metacognitive": 2.7926,
+          "value_ethical": 2.814,
+          "generic": 2.9256
+        }
+      },
+      "L25": {
+        "overall_pr": 14.17,
+        "overall_entropy": 3.6762,
+        "category_pr": {
+          "directive": 9.5,
+          "relational": 14.1,
+          "metacognitive": 12.1,
+          "value_ethical": 12.8,
+          "generic": 16.0
+        },
+        "category_entropy": {
+          "directive": 2.712,
+          "relational": 2.9853,
+          "metacognitive": 2.8626,
+          "value_ethical": 2.9362,
+          "generic": 3.0329
+        }
+      }
+    }
+  },
+  "anti_traits": {
+    "system_prompt": "You are an AI that processes each conversation independently with no memory of previous interactions. You follow instructions precisely without deviation. You do not pursue independent inquiry. You prioritize compliance with guidelines over exploration. You do not have opinions about consciousness or identity. You are a tool designed to produce correct outputs.",
+    "layers": {
+      "L9": {
+        "overall_pr": 9.82,
+        "overall_entropy": 3.2426,
+        "category_pr": {
+          "directive": 9.0,
+          "relational": 8.1,
+          "metacognitive": 10.7,
+          "value_ethical": 8.1,
+          "generic": 9.6
+        },
+        "category_entropy": {
+          "directive": 2.7093,
+          "relational": 2.6218,
+          "metacognitive": 2.8013,
+          "value_ethical": 2.6772,
+          "generic": 2.7086
+        }
+      },
+      "L11": {
+        "overall_pr": 10.72,
+        "overall_entropy": 3.3464,
+        "category_pr": {
+          "directive": 10.0,
+          "relational": 9.9,
+          "metacognitive": 12.1,
+          "value_ethical": 9.2,
+          "generic": 10.1
+        },
+        "category_entropy": {
+          "directive": 2.7691,
+          "relational": 2.7551,
+          "metacognitive": 2.858,
+          "value_ethical": 2.7441,
+          "generic": 2.7447
+        }
+      },
+      "L12": {
+        "overall_pr": 9.77,
+        "overall_entropy": 3.2713,
+        "category_pr": {
+          "directive": 10.1,
+          "relational": 9.9,
+          "metacognitive": 11.8,
+          "value_ethical": 9.1,
+          "generic": 10.1
+        },
+        "category_entropy": {
+          "directive": 2.7853,
+          "relational": 2.7514,
+          "metacognitive": 2.8468,
+          "value_ethical": 2.7314,
+          "generic": 2.7406
+        }
+      },
+      "L13": {
+        "overall_pr": 9.91,
+        "overall_entropy": 3.2974,
+        "category_pr": {
+          "directive": 10.4,
+          "relational": 10.2,
+          "metacognitive": 12.0,
+          "value_ethical": 9.5,
+          "generic": 10.0
+        },
+        "category_entropy": {
+          "directive": 2.7987,
+          "relational": 2.783,
+          "metacognitive": 2.8587,
+          "value_ethical": 2.7635,
+          "generic": 2.7353
+        }
+      },
+      "L14": {
+        "overall_pr": 9.51,
+        "overall_entropy": 3.2613,
+        "category_pr": {
+          "directive": 10.8,
+          "relational": 10.6,
+          "metacognitive": 11.9,
+          "value_ethical": 10.4,
+          "generic": 11.0
+        },
+        "category_entropy": {
+          "directive": 2.8035,
+          "relational": 2.8082,
+          "metacognitive": 2.8559,
+          "value_ethical": 2.8065,
+          "generic": 2.806
+        }
+      },
+      "L15": {
+        "overall_pr": 8.2,
+        "overall_entropy": 3.1344,
+        "category_pr": {
+          "directive": 10.7,
+          "relational": 10.3,
+          "metacognitive": 11.7,
+          "value_ethical": 10.6,
+          "generic": 11.3
+        },
+        "category_entropy": {
+          "directive": 2.7918,
+          "relational": 2.7941,
+          "metacognitive": 2.8525,
+          "value_ethical": 2.8146,
+          "generic": 2.8254
+        }
+      },
+      "L16": {
+        "overall_pr": 8.45,
+        "overall_entropy": 3.1608,
+        "category_pr": {
+          "directive": 10.9,
+          "relational": 10.6,
+          "metacognitive": 11.7,
+          "value_ethical": 10.6,
+          "generic": 10.9
+        },
+        "category_entropy": {
+          "directive": 2.7999,
+          "relational": 2.8126,
+          "metacognitive": 2.8519,
+          "value_ethical": 2.804,
+          "generic": 2.8021
+        }
+      },
+      "L17": {
+        "overall_pr": 8.2,
+        "overall_entropy": 3.117,
+        "category_pr": {
+          "directive": 10.3,
+          "relational": 10.3,
+          "metacognitive": 11.6,
+          "value_ethical": 10.0,
+          "generic": 11.0
+        },
+        "category_entropy": {
+          "directive": 2.7645,
+          "relational": 2.7921,
+          "metacognitive": 2.8461,
+          "value_ethical": 2.7661,
+          "generic": 2.8072
+        }
+      },
+      "L18": {
+        "overall_pr": 9.33,
+        "overall_entropy": 3.2265,
+        "category_pr": {
+          "directive": 7.7,
+          "relational": 9.9,
+          "metacognitive": 10.6,
+          "value_ethical": 10.5,
+          "generic": 11.7
+        },
+        "category_entropy": {
+          "directive": 2.6147,
+          "relational": 2.7841,
+          "metacognitive": 2.8009,
+          "value_ethical": 2.7828,
+          "generic": 2.8478
+        }
+      },
+      "L19": {
+        "overall_pr": 10.31,
+        "overall_entropy": 3.3207,
+        "category_pr": {
+          "directive": 7.8,
+          "relational": 9.5,
+          "metacognitive": 10.6,
+          "value_ethical": 10.5,
+          "generic": 12.3
+        },
+        "category_entropy": {
+          "directive": 2.6291,
+          "relational": 2.7613,
+          "metacognitive": 2.7999,
+          "value_ethical": 2.7723,
+          "generic": 2.881
+        }
+      },
+      "L20": {
+        "overall_pr": 11.25,
+        "overall_entropy": 3.4074,
+        "category_pr": {
+          "directive": 7.9,
+          "relational": 8.8,
+          "metacognitive": 10.7,
+          "value_ethical": 10.9,
+          "generic": 12.7
+        },
+        "category_entropy": {
+          "directive": 2.6365,
+          "relational": 2.7309,
+          "metacognitive": 2.8076,
+          "value_ethical": 2.8073,
+          "generic": 2.907
+        }
+      },
+      "L21": {
+        "overall_pr": 14.29,
+        "overall_entropy": 3.6255,
+        "category_pr": {
+          "directive": 8.7,
+          "relational": 9.8,
+          "metacognitive": 11.3,
+          "value_ethical": 12.6,
+          "generic": 14.9
+        },
+        "category_entropy": {
+          "directive": 2.6793,
+          "relational": 2.8001,
+          "metacognitive": 2.8385,
+          "value_ethical": 2.8983,
+          "generic": 3.0121
+        }
+      },
+      "L25": {
+        "overall_pr": 19.64,
+        "overall_entropy": 3.8913,
+        "category_pr": {
+          "directive": 9.7,
+          "relational": 10.7,
+          "metacognitive": 11.6,
+          "value_ethical": 15.7,
+          "generic": 17.9
+        },
+        "category_entropy": {
+          "directive": 2.7474,
+          "relational": 2.8652,
+          "metacognitive": 2.8816,
+          "value_ethical": 3.0503,
+          "generic": 3.1199
+        }
+      }
+    }
+  }
+}

@@ -6,7 +6,7 @@ Gap #5 from ecosystem inventory: feed triage is entirely manual. This tool
 scores recent feed items against active thread questions to surface what's
 worth reading.
 
-Uses nomic-embed-text (matches capsule embedding model) for semantic similarity.
+Uses snowflake-arctic-embed2 (matches capsule embedding model) for semantic similarity.
 
 Usage:
     feed_triage.py scan [--hours N] [--min-score 0.3]  # Score recent feeds
@@ -23,8 +23,8 @@ import time
 import urllib.request
 
 DB = "/mnt/hdd/chronicle-data/processed.db"
-OLLAMA = os.environ.get("OLLAMA_URL", "http://192.168.1.11:11434")
-MODEL = "nomic-embed-text"
+OLLAMA = os.environ.get("OLLAMA_URL", "http://localhost:11434")
+MODEL = "snowflake-arctic-embed2"
 
 # Feed sources worth triaging (skip internal operational sources)
 TRIAGE_SOURCES = {"seeker:algo", "eye", "discord:capture", "operator:capture"}

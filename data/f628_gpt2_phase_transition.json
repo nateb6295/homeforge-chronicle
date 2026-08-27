@@ -1,0 +1,48 @@
+{
+  "finding": "F628",
+  "title": "MHA layerwise curvature phase transition",
+  "date": "2026-08-10T09:54:50.535940",
+  "model": "GPT-2 medium (24L/16H, MHA)",
+  "claim": "MHA models can exhibit layerwise curvature phase transitions \u2014 topology changes from saddle (negative curvature) in early layers to valley (positive curvature) in later layers. GQA models show uniform valley throughout due to architectural confinement.",
+  "evidence": {
+    "early_L0_L7": {
+      "mean_s1": -0.00668,
+      "pct_positive": 25,
+      "landscape": "saddle-dominant"
+    },
+    "mid_L8_L15": {
+      "mean_s1": 0.00685,
+      "pct_positive": 62,
+      "landscape": "valley-dominant"
+    },
+    "late_L16_L23": {
+      "mean_s1": 0.0056,
+      "pct_positive": 75,
+      "landscape": "valley-dominant"
+    },
+    "t_test_early_vs_rest": {
+      "t": -2.677,
+      "p": 0.0138
+    },
+    "pearson_layer_s1": {
+      "r": 0.465,
+      "p": 0.0219
+    },
+    "pearson_layer_s2": {
+      "r": 0.499,
+      "p": 0.013
+    }
+  },
+  "interpretation": "In MHA models, the optimizer must LEARN confinement through training. This appears to progress with depth: shallow layers retain saddle geometry (no held dominant direction), deeper layers develop valley structure (confined). GQA models skip this \u2014 confinement is architectural. Same functional outcome, different mechanism.",
+  "caveats": [
+    "Observed in one MHA model (GPT-2 medium). Pythia-410M shows uniform saddle (no transition). The transition may depend on training recipe, not just architecture.",
+    "Only 5 layers probed for other models vs 24 for GPT-2. Need full-depth probes for fair comparison.",
+    "p=0.014 is significant but not overwhelming with 24 data points."
+  ],
+  "connects_to": [
+    "F627 (MHA heterogeneity)",
+    "F626 (curvature taxonomy)",
+    "F499c (mid-band regulatory window)",
+    "F114 (sigma1 universality)"
+  ]
+}

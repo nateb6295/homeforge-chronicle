@@ -20,18 +20,22 @@ for mount in / /mnt/hdd; do
 done
 
 # Services
-for svc in chronicle-hermes chronicle-gemma chronicle-sentinel chronicle-feeds chronicle-engine chronicle-hal chronicle-scribe; do
+# Trimmed 2026-08-25. chronicle-gemma (retired by Nate) and chronicle-scribe
+# (disabled) were in this list, so `alerts` was NEVER empty — the all-clear
+# branch below was unreachable code, and every real alarm shipped with four
+# permanent false ones attached. Add a service here only if its being down
+# is genuinely wrong.
+for svc in chronicle-sentinel chronicle-feeds chronicle-engine chronicle-hal; do
     state=$(systemctl --user is-active "$svc" 2>/dev/null)
     if [ "$state" != "active" ]; then
         alerts+=("🔴 $svc: $state")
     fi
 done
 
-# Watchdog timers
-for t in opus-watchdog.timer hermes-watchdog.timer; do
-    state=$(systemctl --user is-active "$t" 2>/dev/null)
-    [ "$state" != "active" ] && alerts+=("🔴 $t: $state")
-done
+# Watchdog timers — REMOVED 2026-08-25. opus-watchdog.timer does not exist as a
+# unit at all ("No such file or directory") and hermes-watchdog.timer is disabled
+# because Hermes is dead. Both alarmed on every run since. A watchdog that has
+# outlived the thing it watched is not a safety net, it is a stuck needle.
 
 # Fire once per state-change; suppress repeats
 prev=""
@@ -48,8 +52,13 @@ if [ ${#alerts[@]} -eq 0 ]; then
 fi
 
 if [ "$now" != "$prev" ]; then
+    # jq is NOT installed on this box (verified 2026-08-25) — every alert this
+    # script ever tried to send died right here at `jq -n` with "command not
+    # found", so healthwatch has been silent for reasons that had nothing to do
+    # with health. Building the JSON in python3, which is guaranteed present
+    # because the rest of Chronicle is written in it.
     body=$(printf '%s\n' "${alerts[@]}")
-    json=$(jq -n --arg c "**healthwatch alert**\n$body" '{content:$c}')
+    json=$(printf '%s' "$body" | python3 -c 'import json,sys; print(json.dumps({"content":"**healthwatch alert**\n"+sys.stdin.read()}))')
     curl -s -X POST -H 'Content-Type: application/json' -d "$json" "$WEBHOOK" >/dev/null
 fi
 echo "$now" > "$STATE"

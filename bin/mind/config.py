@@ -21,7 +21,7 @@ WORKING_DIR = os.path.expanduser("~")
 LOG_FILE = os.environ.get("CHRONICLE_LOG", os.path.expanduser("~/chronicle/chronicle-mind.log"))
 
 # API keys (from env, loaded by wrapper or service)
-ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY", "")
+ANTHROPIC_API_KEY = os.environ.get("CHRONICLE_ANTHROPIC_KEY", "") or os.environ.get("ANTHROPIC_API_KEY", "")
 DISCORD_TOKEN = os.environ.get("DISCORD_TOKEN", "")
 DISCORD_CHANNEL_ID = os.environ.get("DISCORD_CHANNEL_ID", "")
 HA_TOKEN = os.environ.get("HA_TOKEN", "")
@@ -84,7 +84,7 @@ WAKE_CYCLE_INTERVAL = 180   # 3 minutes — maximum continuity
 VISION_MODEL = "moondream"   # lightweight vision model for image description
 CONSOLIDATE_SIMILARITY_THRESHOLD = 0.82
 CONSOLIDATE_CROSS_CAT_THRESHOLD = 0.87
-CONSOLIDATE_EMBED_MODEL = "mxbai-embed-large"
+CONSOLIDATE_EMBED_MODEL = "snowflake-arctic-embed2"
 CONSOLIDATE_MIN_NOTES_TO_RUN = 8
 CONSOLIDATE_MAX_CLUSTER_SIZE = 5
 

@@ -1,0 +1,132 @@
+{
+  "experiment": "F629_perturbation_sensitivity",
+  "model": "gpt2-medium",
+  "epsilon": 0.1,
+  "prompt": "The fundamental nature of consciousness is",
+  "results": [
+    {
+      "layer": 0,
+      "kl_divergence": 0.0006570587866008282,
+      "sigma1_value": 62.471614837646484
+    },
+    {
+      "layer": 1,
+      "kl_divergence": 6.518923328258097e-06,
+      "sigma1_value": 27.6949405670166
+    },
+    {
+      "layer": 2,
+      "kl_divergence": -4.135979907005094e-06,
+      "sigma1_value": 32.41156768798828
+    },
+    {
+      "layer": 3,
+      "kl_divergence": 3.1809788197278976e-05,
+      "sigma1_value": 33.24696350097656
+    },
+    {
+      "layer": 4,
+      "kl_divergence": 9.95909795165062e-06,
+      "sigma1_value": 26.355392456054688
+    },
+    {
+      "layer": 5,
+      "kl_divergence": 1.3034594303462654e-05,
+      "sigma1_value": 22.261676788330078
+    },
+    {
+      "layer": 6,
+      "kl_divergence": 2.3339867766480893e-05,
+      "sigma1_value": 18.230764389038086
+    },
+    {
+      "layer": 7,
+      "kl_divergence": 2.922461135312915e-06,
+      "sigma1_value": 17.92750358581543
+    },
+    {
+      "layer": 8,
+      "kl_divergence": 2.6039706426672637e-06,
+      "sigma1_value": 19.30183219909668
+    },
+    {
+      "layer": 9,
+      "kl_divergence": -1.9566250557545573e-06,
+      "sigma1_value": 17.444482803344727
+    },
+    {
+      "layer": 10,
+      "kl_divergence": 2.9618677217513323e-05,
+      "sigma1_value": 18.180627822875977
+    },
+    {
+      "layer": 11,
+      "kl_divergence": 1.8684295355342329e-07,
+      "sigma1_value": 17.39259910583496
+    },
+    {
+      "layer": 12,
+      "kl_divergence": 1.6717967810109258e-05,
+      "sigma1_value": 17.99079704284668
+    },
+    {
+      "layer": 13,
+      "kl_divergence": 0.00015315406199079007,
+      "sigma1_value": 17.355714797973633
+    },
+    {
+      "layer": 14,
+      "kl_divergence": 0.00015172372513916343,
+      "sigma1_value": 16.74760627746582
+    },
+    {
+      "layer": 15,
+      "kl_divergence": 0.00013273354852572083,
+      "sigma1_value": 16.74992561340332
+    },
+    {
+      "layer": 16,
+      "kl_divergence": 0.0002771536819636822,
+      "sigma1_value": 15.66733169555664
+    },
+    {
+      "layer": 17,
+      "kl_divergence": 0.00025135528994724154,
+      "sigma1_value": 15.703685760498047
+    },
+    {
+      "layer": 18,
+      "kl_divergence": 9.093666449189186e-05,
+      "sigma1_value": 15.788722038269043
+    },
+    {
+      "layer": 19,
+      "kl_divergence": 9.932025568559766e-05,
+      "sigma1_value": 14.992891311645508
+    },
+    {
+      "layer": 20,
+      "kl_divergence": 5.7587552873883396e-05,
+      "sigma1_value": 14.947101593017578
+    },
+    {
+      "layer": 21,
+      "kl_divergence": 4.72175088361837e-05,
+      "sigma1_value": 15.391751289367676
+    },
+    {
+      "layer": 22,
+      "kl_divergence": 5.374994361773133e-05,
+      "sigma1_value": 16.8826847076416
+    },
+    {
+      "layer": 23,
+      "kl_divergence": 0.00016888848040252924,
+      "sigma1_value": 20.953205108642578
+    }
+  ],
+  "saddle_mean_kl": 0.00011739279671019176,
+  "valley_mean_kl": 8.45790572594314e-05,
+  "pearson_r": -0.23426982254914155,
+  "pearson_p": 0.27053221927202553
+}

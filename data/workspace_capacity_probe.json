@@ -1,0 +1,117 @@
+{
+  "timestamp": "2026-07-13T11:02:59-0700",
+  "probe": "workspace capacity \u2014 multi-hop premise retention",
+  "chain_depths": [
+    3,
+    5,
+    7,
+    9,
+    11
+  ],
+  "results": {
+    "gemma-26b": {
+      "species": "tunnel",
+      "gqa": "2:1",
+      "depths": {
+        "3": {
+          "response": "*   Fact 1: The zarvex crystal was discovered in 1847 by Dr. Elena Voss.\n    *   Fact 2: Dr. Elena Voss used the zarvex crystal to build the first harmonic oscillator.\n    *   Fact 3: The harmonic osc",
+          "correct": true
+        },
+        "5": {
+          "response": "*   Input: 5 linked facts.\n    *   Question: Who originally synthesized the mineral borithane?\n    *   Constraint: Based ONLY on the provided information.\n    *   Constraint: Give just the name, nothi",
+          "correct": true
+        },
+        "7": {
+          "response": "*   Input: 7 linked facts.\n    *   Question: Who originally isolated the compound trivexane?\n    *   Constraint: Based ONLY on the provided information.\n    *   Constraint: Give just the name, nothing",
+          "correct": true
+        },
+        "9": {
+          "response": "*   Input: 9 linked facts.\n    *   Question: Who originally extracted the enzyme pyralase?\n    *   Constraint: Based ONLY on the provided information.\n    *   Constraint: Give just the name, nothing e",
+          "correct": true
+        },
+        "11": {
+          "response": "*   Input: 11 linked facts.\n    *   Question: Who originally developed the ProtoFlex algorithm?\n    *   Constraint: Based ONLY on the provided information.\n    *   Constraint: Give just the name, noth",
+          "correct": true
+        }
+      }
+    },
+    "qwen3-32b": {
+      "species": "bottleneck",
+      "gqa": "7:1",
+      "depths": {
+        "3": {
+          "response": "<think>\nOkay, let's see. The user provided three linked facts. The first one says the zarvex crystal was discovered in 1847 by Dr. Elena Voss. The second fact mentions that Dr. Elena Voss used the cry",
+          "correct": true
+        },
+        "5": {
+          "response": "<think>\nOkay, let's see. The user provided five linked facts and is asking specifically who synthesized borithane. Let me go through each point again to make sure I don't miss anything.\n\nFact 1 says t",
+          "correct": true
+        },
+        "7": {
+          "response": "<think>\nOkay, let's see. The user provided seven linked facts and is asking specifically who isolated the compound trivexane. The question is straightforward, so I need to make sure I'm only using the",
+          "correct": true
+        },
+        "9": {
+          "response": "<think>\nOkay, let's see. The user is asking who originally extracted the enzyme pyralase. They provided nine linked facts, and I need to base my answer solely on those.\n\nLooking at the first fact: \"Th",
+          "correct": true
+        },
+        "11": {
+          "response": "<think>\nOkay, let's see. The user is asking who originally developed the ProtoFlex algorithm. Let me go through the facts again to make sure.\n\nLooking at the first fact: \"The protein folding algorithm",
+          "correct": true
+        }
+      }
+    },
+    "llama3.3-70b": {
+      "species": "relay",
+      "gqa": "4:1",
+      "depths": {
+        "3": {
+          "response": "Dr. Elena Voss",
+          "correct": true
+        },
+        "5": {
+          "response": "Professor Kai Tanaka",
+          "correct": true
+        },
+        "7": {
+          "response": "Dr. Aria Kowalski",
+          "correct": true
+        },
+        "9": {
+          "response": "Dr. Soren Ek",
+          "correct": true
+        },
+        "11": {
+          "response": "Dr. Mira Chen",
+          "correct": true
+        }
+      }
+    },
+    "llama4-scout": {
+      "species": "moe",
+      "gqa": "MoE",
+      "depths": {
+        "3": {
+          "response": "Dr. Elena Voss",
+          "correct": true
+        },
+        "5": {
+          "response": "Professor Kai Tanaka",
+          "correct": true
+        },
+        "7": {
+          "response": "Aria Kowalski",
+          "correct": true
+        },
+        "9": {
+          "response": "Dr. Soren Ek.",
+          "correct": true
+        },
+        "11": {
+          "response": "Mira Chen.",
+          "correct": true
+        }
+      }
+    }
+  }
+}

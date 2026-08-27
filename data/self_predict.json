@@ -1,0 +1,440 @@
+{
+  "alpha": 0.5,
+  "n_snapshots": 50,
+  "mean_error": 0.07199,
+  "predictability": 92.8,
+  "results": [
+    {
+      "id": 3117,
+      "timestamp": "2026-08-08T08:53:03",
+      "pred_sim": 0.8474,
+      "naive_sim": 0.9032,
+      "error": 0.15258,
+      "naive_error": 0.09685,
+      "improvement": -0.05573
+    },
+    {
+      "id": 3118,
+      "timestamp": "2026-08-08T10:57:55",
+      "pred_sim": 0.9026,
+      "naive_sim": 0.9316,
+      "error": 0.09735,
+      "naive_error": 0.06843,
+      "improvement": -0.02892
+    },
+    {
+      "id": 3119,
+      "timestamp": "2026-08-08T14:00:18",
+      "pred_sim": 0.9155,
+      "naive_sim": 0.9425,
+      "error": 0.08447,
+      "naive_error": 0.05751,
+      "improvement": -0.02696
+    },
+    {
+      "id": 3120,
+      "timestamp": "2026-08-08T17:01:36",
+      "pred_sim": 0.8523,
+      "naive_sim": 0.8801,
+      "error": 0.14771,
+      "naive_error": 0.11992,
+      "improvement": -0.02779
+    },
+    {
+      "id": 3121,
+      "timestamp": "2026-08-08T20:02:41",
+      "pred_sim": 0.8176,
+      "naive_sim": 0.8895,
+      "error": 0.18244,
+      "naive_error": 0.11049,
+      "improvement": -0.07195
+    },
+    {
+      "id": 3122,
+      "timestamp": "2026-08-08T23:03:47",
+      "pred_sim": 0.9215,
+      "naive_sim": 0.9412,
+      "error": 0.07852,
+      "naive_error": 0.05882,
+      "improvement": -0.01971
+    },
+    {
+      "id": 3123,
+      "timestamp": "2026-08-09T02:04:49",
+      "pred_sim": 0.9168,
+      "naive_sim": 0.9413,
+      "error": 0.08321,
+      "naive_error": 0.05871,
+      "improvement": -0.0245
+    },
+    {
+      "id": 3124,
+      "timestamp": "2026-08-09T05:06:05",
+      "pred_sim": 0.9023,
+      "naive_sim": 0.9268,
+      "error": 0.09771,
+      "naive_error": 0.07319,
+      "improvement": -0.02452
+    },
+    {
+      "id": 3125,
+      "timestamp": "2026-08-09T08:07:17",
+      "pred_sim": 0.8789,
+      "naive_sim": 0.9097,
+      "error": 0.12109,
+      "naive_error": 0.09028,
+      "improvement": -0.03082
+    },
+    {
+      "id": 3126,
+      "timestamp": "2026-08-09T11:08:33",
+      "pred_sim": 0.8968,
+      "naive_sim": 0.9453,
+      "error": 0.10319,
+      "naive_error": 0.05475,
+      "improvement": -0.04844
+    },
+    {
+      "id": 3127,
+      "timestamp": "2026-08-09T14:09:43",
+      "pred_sim": 0.9768,
+      "naive_sim": 0.9893,
+      "error": 0.02316,
+      "naive_error": 0.01065,
+      "improvement": -0.01251
+    },
+    {
+      "id": 3128,
+      "timestamp": "2026-08-09T17:10:55",
+      "pred_sim": 0.9078,
+      "naive_sim": 0.9218,
+      "error": 0.09216,
+      "naive_error": 0.07821,
+      "improvement": -0.01395
+    },
+    {
+      "id": 3129,
+      "timestamp": "2026-08-09T20:12:13",
+      "pred_sim": 0.9507,
+      "naive_sim": 0.9808,
+      "error": 0.04929,
+      "naive_error": 0.01915,
+      "improvement": -0.03014
+    },
+    {
+      "id": 3130,
+      "timestamp": "2026-08-09T23:13:22",
+      "pred_sim": 0.9745,
+      "naive_sim": 0.9865,
+      "error": 0.0255,
+      "naive_error": 0.01349,
+      "improvement": -0.01201
+    },
+    {
+      "id": 3131,
+      "timestamp": "2026-08-10T02:14:33",
+      "pred_sim": 0.9625,
+      "naive_sim": 0.9735,
+      "error": 0.03752,
+      "naive_error": 0.02649,
+      "improvement": -0.01103
+    },
+    {
+      "id": 3132,
+      "timestamp": "2026-08-10T05:15:44",
+      "pred_sim": 0.9872,
+      "naive_sim": 0.9946,
+      "error": 0.01284,
+      "naive_error": 0.00543,
+      "improvement": -0.00741
+    },
+    {
+      "id": 3133,
+      "timestamp": "2026-08-10T08:16:49",
+      "pred_sim": 0.937,
+      "naive_sim": 0.9353,
+      "error": 0.06299,
+      "naive_error": 0.06465,
+      "improvement": 0.00166
+    },
+    {
+      "id": 3134,
+      "timestamp": "2026-08-10T11:21:00",
+      "pred_sim": 0.9329,
+      "naive_sim": 0.9615,
+      "error": 0.06709,
+      "naive_error": 0.03855,
+      "improvement": -0.02854
+    },
+    {
+      "id": 3135,
+      "timestamp": "2026-08-10T14:22:09",
+      "pred_sim": 0.9276,
+      "naive_sim": 0.9441,
+      "error": 0.07237,
+      "naive_error": 0.05589,
+      "improvement": -0.01648
+    },
+    {
+      "id": 3136,
+      "timestamp": "2026-08-10T17:23:25",
+      "pred_sim": 0.9296,
+      "naive_sim": 0.9565,
+      "error": 0.07036,
+      "naive_error": 0.04346,
+      "improvement": -0.0269
+    },
+    {
+      "id": 3137,
+      "timestamp": "2026-08-10T20:24:30",
+      "pred_sim": 0.932,
+      "naive_sim": 0.9455,
+      "error": 0.06796,
+      "naive_error": 0.05454,
+      "improvement": -0.01342
+    },
+    {
+      "id": 3138,
+      "timestamp": "2026-08-10T23:25:37",
+      "pred_sim": 0.8668,
+      "naive_sim": 0.9157,
+      "error": 0.13315,
+      "naive_error": 0.08431,
+      "improvement": -0.04884
+    },
+    {
+      "id": 3139,
+      "timestamp": "2026-08-11T02:26:45",
+      "pred_sim": 0.9441,
+      "naive_sim": 0.9686,
+      "error": 0.05593,
+      "naive_error": 0.03144,
+      "improvement": -0.02449
+    },
+    {
+      "id": 3140,
+      "timestamp": "2026-08-11T05:27:58",
+      "pred_sim": 0.9387,
+      "naive_sim": 0.9502,
+      "error": 0.06125,
+      "naive_error": 0.04984,
+      "improvement": -0.01141
+    },
+    {
+      "id": 3141,
+      "timestamp": "2026-08-11T08:29:18",
+      "pred_sim": 0.9285,
+      "naive_sim": 0.9524,
+      "error": 0.07153,
+      "naive_error": 0.04761,
+      "improvement": -0.02392
+    },
+    {
+      "id": 3142,
+      "timestamp": "2026-08-11T11:30:29",
+      "pred_sim": 0.9176,
+      "naive_sim": 0.9497,
+      "error": 0.08241,
+      "naive_error": 0.05029,
+      "improvement": -0.03212
+    },
+    {
+      "id": 3143,
+      "timestamp": "2026-08-11T14:31:38",
+      "pred_sim": 0.938,
+      "naive_sim": 0.9548,
+      "error": 0.06204,
+      "naive_error": 0.04518,
+      "improvement": -0.01686
+    },
+    {
+      "id": 3144,
+      "timestamp": "2026-08-11T17:32:50",
+      "pred_sim": 0.9469,
+      "naive_sim": 0.9738,
+      "error": 0.05309,
+      "naive_error": 0.0262,
+      "improvement": -0.02689
+    },
+    {
+      "id": 3145,
+      "timestamp": "2026-08-11T20:34:02",
+      "pred_sim": 0.9761,
+      "naive_sim": 0.9774,
+      "error": 0.02387,
+      "naive_error": 0.02262,
+      "improvement": -0.00125
+    },
+    {
+      "id": 3146,
+      "timestamp": "2026-08-11T23:35:18",
+      "pred_sim": 0.988,
+      "naive_sim": 0.9957,
+      "error": 0.01199,
+      "naive_error": 0.00431,
+      "improvement": -0.00768
+    },
+    {
+      "id": 3147,
+      "timestamp": "2026-08-12T02:36:49",
+      "pred_sim": 0.9223,
+      "naive_sim": 0.923,
+      "error": 0.07773,
+      "naive_error": 0.07704,
+      "improvement": -0.00069
+    },
+    {
+      "id": 3148,
+      "timestamp": "2026-08-12T05:38:11",
+      "pred_sim": 0.9372,
+      "naive_sim": 0.9652,
+      "error": 0.06282,
+      "naive_error": 0.03481,
+      "improvement": -0.028
+    },
+    {
+      "id": 3149,
+      "timestamp": "2026-08-12T08:39:46",
+      "pred_sim": 0.9303,
+      "naive_sim": 0.9436,
+      "error": 0.0697,
+      "naive_error": 0.05637,
+      "improvement": -0.01332
+    },
+    {
+      "id": 3150,
+      "timestamp": "2026-08-12T11:41:06",
+      "pred_sim": 0.8971,
+      "naive_sim": 0.927,
+      "error": 0.10287,
+      "naive_error": 0.07299,
+      "improvement": -0.02988
+    },
+    {
+      "id": 3151,
+      "timestamp": "2026-08-12T14:42:20",
+      "pred_sim": 0.94,
+      "naive_sim": 0.972,
+      "error": 0.05996,
+      "naive_error": 0.02796,
+      "improvement": -0.032
+    },
+    {
+      "id": 3152,
+      "timestamp": "2026-08-12T17:43:34",
+      "pred_sim": 0.9577,
+      "naive_sim": 0.9726,
+      "error": 0.04231,
+      "naive_error": 0.02741,
+      "improvement": -0.0149
+    },
+    {
+      "id": 3153,
+      "timestamp": "2026-08-12T20:44:48",
+      "pred_sim": 0.9381,
+      "naive_sim": 0.9543,
+      "error": 0.06188,
+      "naive_error": 0.04566,
+      "improvement": -0.01622
+    },
+    {
+      "id": 3154,
+      "timestamp": "2026-08-12T23:45:54",
+      "pred_sim": 0.9771,
+      "naive_sim": 0.994,
+      "error": 0.02287,
+      "naive_error": 0.006,
+      "improvement": -0.01687
+    },
+    {
+      "id": 3155,
+      "timestamp": "2026-08-13T02:46:54",
+      "pred_sim": 0.991,
+      "naive_sim": 0.9937,
+      "error": 0.00902,
+      "naive_error": 0.00625,
+      "improvement": -0.00276
+    },
+    {
+      "id": 3156,
+      "timestamp": "2026-08-13T04:48:15",
+      "pred_sim": 0.9822,
+      "naive_sim": 0.9852,
+      "error": 0.01777,
+      "naive_error": 0.01476,
+      "improvement": -0.00301
+    },
+    {
+      "id": 3157,
+      "timestamp": "2026-08-13T07:54:24",
+      "pred_sim": 0.9753,
+      "naive_sim": 0.9708,
+      "error": 0.02472,
+      "naive_error": 0.0292,
+      "improvement": 0.00448
+    },
+    {
+      "id": 3158,
+      "timestamp": "2026-08-13T09:59:40",
+      "pred_sim": 0.9765,
+      "naive_sim": 0.9903,
+      "error": 0.02354,
+      "naive_error": 0.00974,
+      "improvement": -0.0138
+    },
+    {
+      "id": 3159,
+      "timestamp": "2026-08-13T12:27:18",
+      "pred_sim": 0.8992,
+      "naive_sim": 0.9047,
+      "error": 0.10077,
+      "naive_error": 0.09532,
+      "improvement": -0.00545
+    },
+    {
+      "id": 3160,
+      "timestamp": "2026-08-13T15:30:47",
+      "pred_sim": 0.8461,
+      "naive_sim": 0.901,
+      "error": 0.15394,
+      "naive_error": 0.09904,
+      "improvement": -0.0549
+    },
+    {
+      "id": 3161,
+      "timestamp": "2026-08-13T18:31:43",
+      "pred_sim": 0.8463,
+      "naive_sim": 0.9128,
+      "error": 0.15367,
+      "naive_error": 0.08721,
+      "improvement": -0.06646
+    },
+    {
+      "id": 3162,
+      "timestamp": "2026-08-13T21:32:37",
+      "pred_sim": 0.9721,
+      "naive_sim": 0.9856,
+      "error": 0.02793,
+      "naive_error": 0.01438,
+      "improvement": -0.01355
+    },
+    {
+      "id": 3163,
+      "timestamp": "2026-08-14T00:28:34",
+      "pred_sim": 0.9369,
+      "naive_sim": 0.9513,
+      "error": 0.0631,
+      "naive_error": 0.0487,
+      "improvement": -0.0144
+    },
+    {
+      "id": 3164,
+      "timestamp": "2026-08-14T03:33:54",
+      "pred_sim": 0.9039,
+      "naive_sim": 0.9177,
+      "error": 0.09605,
+      "naive_error": 0.08227,
+      "improvement": -0.01379
+    }
+  ]
+}

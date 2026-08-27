@@ -13,13 +13,12 @@ import re
 import subprocess
 import sys
 import time
-import requests
+sys.path.insert(0, os.path.dirname(__file__))
+from embed_config import EMBED_URL, EMBED_MODEL, EMBED_DIM, embed as _embed_raw
 
 # ── Configuration ──
 CANISTER_ID = os.environ.get("CANISTER_ID", "fqqku-bqaaa-aaaai-q4wha-cai")
 DFX_BIN = os.path.expanduser("~/.local/share/dfx/bin/dfx")
-OLLAMA_URL = os.environ.get("CHRONICLE_OLLAMA_URL", "http://localhost:11434")
-EMBED_MODEL = os.environ.get("CHRONICLE_EMBEDDING_MODEL", "qwen3-embedding:0.6b")
 BATCH_SIZE = 20  # capsules per run — keep it light
 DFX_ENV = {**os.environ, "DFX_WARNING": "-mainnet_plaintext_identity"}
 
@@ -93,18 +92,13 @@ def has_embedding(capsule_id):
 
 
 def compute_embedding(text):
-    """Compute embedding locally via Ollama."""
+    """Compute embedding via shared embed_config."""
     try:
-        r = requests.post(
-            f"{OLLAMA_URL}/api/embed",
-            json={"model": EMBED_MODEL, "input": text},
-            timeout=30,
-        )
-        if r.status_code == 200:
-            data = r.json()
-            embeddings = data.get("embeddings", [])
-            if embeddings and len(embeddings) > 0:
-                return embeddings[0]
+        emb = _embed_raw(text)
+        if emb and len(emb) == EMBED_DIM:
+            return emb
+        elif emb:
+            log(f"  Dimension mismatch: got {len(emb)}, expected {EMBED_DIM}")
     except Exception as e:
         log(f"  Embed error: {e}")
     return None

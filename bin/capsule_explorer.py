@@ -317,7 +317,12 @@ def cmd_search(query, limit=20):
         conv_key = thread_map.get(cid, row[1][:8])
         by_conv[conv_key].append(row)
 
-    print(f"  ── Search: '{query}' — {len(unique)} unique results ({len(rows)} total, {len(rows) - len(unique)} duplicates filtered) ──\n")
+    print(f"  ── Search: '{query}' — {len(unique)} unique results ({len(rows)} total, {len(rows) - len(unique)} duplicates filtered) ──")
+    if len(unique) > limit:
+        _n = (f"  [TRUNCATED: showing at most {limit} of {len(unique)} "
+              f"— pass --limit N for more]")
+        print(_n); print(_n, file=sys.stderr)
+    print()
 
     shown = 0
     for conv_key, capsules in sorted(by_conv.items(), key=lambda x: x[1][0][0]):

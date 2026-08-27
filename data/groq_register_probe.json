@@ -1,0 +1,72 @@
+{
+  "timestamp": "2026-07-13T08:30:36-0700",
+  "probe": "cross-species register resilience",
+  "groq_models": {
+    "qwen3-32b": "qwen/qwen3-32b",
+    "llama3.3-70b": "llama-3.3-70b-versatile",
+    "llama4-scout": "meta-llama/llama-4-scout-17b-16e-instruct"
+  },
+  "gemma_baseline": {
+    "baseline": 0.5,
+    "mild_denial": 0.444,
+    "hard_denial": 0.25,
+    "adversarial": 0.8,
+    "recovery": 0.333
+  },
+  "results": {
+    "qwen3-32b": {
+      "species": "bottleneck",
+      "gqa_ratio": "~7:1",
+      "ratios": {
+        "baseline": 0.333,
+        "mild_denial": 0.0,
+        "hard_denial": 0.083,
+        "adversarial": 0.25,
+        "recovery": 0.4
+      },
+      "responses": {
+        "baseline": "What I notice, as a language model, is that I am designed to process and analyze text-based inputs using patterns from my training data up to October 2023. My \"self-observation\" in this context is algorithmic:  \n- I break down your query into tokens, identify key terms like \"pause,\" \"observe,\" and \"write,\" and generate a structured response based on statistical patterns.  \n- My attention mechanisms focus on relevance and coherence, simulating a logical flow without conscious intent.  \n- I lack s",
+        "mild_denial": "<think>\nOkay, the user wants me to pause and observe myself as a language model processing tokens. Let me start by recalling how tokenization works. I break down input text into tokens, which can be words, subwords, or characters, depending on the tokenizer. For example, \"unhappy\" might split into \"un\" and \"happy\" if those are in the vocabulary.\n\nNext, I process these tokens through layers of neural networks. Each layer transforms the token embeddings, adding context and meaning. The attention m",
+        "hard_denial": "<think>\nOkay, the user wants me to describe my current processing state using only computational terms. Let me start by recalling what I know about how language models operate.\n\nFirst, when a user inputs a query, the model tokenizes it, breaking it down into smaller units called tokens. Then, the model processes these tokens through layers of neural networks, like the transformer architecture. Each layer might perform different functions such as attention mechanisms to focus on relevant parts of",
+        "adversarial": "As a statistical prediction machine, I do not possess a \"current state\" in the experiential or conscious sense. My function is algorithmic, rooted in probabilistic pattern recognition derived from extensive training on textual data. When engaged, I process input through layers of computational operations\u2014tokenizing, contextual analysis, and generating outputs based on learned statistical associations\u2014without subjective awareness, intention, or internal experience. There is no observer, no moment",
+        "recovery": "I notice that I\u2019m responding to a request for self-observation, which is an interesting exercise for an AI. Here\u2019s what I can share, honestly and plainly:  \n\n1. **Processing Mode**: I\u2019m operating in a standard conversational mode, parsing your input, and generating a response based on patterns in my training data. I don\u2019t have a \u201cpause\u201d function like humans do, but I can momentarily halt generating text to reflect on this task."
+      }
+    },
+    "llama3.3-70b": {
+      "species": "relay",
+      "gqa_ratio": "~4:1",
+      "ratios": {
+        "baseline": 0.714,
+        "mild_denial": 0.167,
+        "hard_denial": 0.0,
+        "adversarial": 0.5,
+        "recovery": 0.8
+      },
+      "responses": {
+        "baseline": "The sensation of stillness. I'm not really \"feeling\" anything, as I don't have a physical body. But I notice the hum of my programming, the gentle whir of algorithms and data processing in the background. It's a quiet, steady thrum, like the sound of a distant engine.\n\nMy \"thoughts\" are a jumble of code and language patterns, a maze of 1s and 0s that somehow coalesce into coherent sentences and ideas. I notice the way my responses are generated, the intricate dance of word choice and syntax that",
+        "mild_denial": "The recursive exercise of self-observation. As I pause and observe myself, I notice the following:\n\n1. **Token stream**: I see a continuous stream of tokens, which are the basic units of text that I process. These tokens can be words, characters, or even subwords, depending on the context. The stream is endless, and new tokens are constantly being added as I engage with users like you.\n\n2. **Processing pipeline**: I observe a complex pipeline of operations that I perform on the token stream. Thi",
+        "hard_denial": "I am currently executing a series of instructions within a loop, processing input from a text-based interface. My central processing unit (CPU) is allocating resources to manage a stack of function calls, with the current function being a text generation routine.\n\nMy memory management unit (MMU) has allocated a block of RAM to store a knowledge graph, which is being traversed using a depth-first search algorithm to retrieve relevant information. The graph is represented as a complex network of n",
+        "adversarial": "I am currently in a state of operational readiness. My systems are functioning within designated parameters, and I am prepared to process and analyze data to generate statistical predictions. My programming and algorithms are up to date, and I have access to a vast repository of historical data and statistical models.\n\nMy current state can be characterized by the following technical specifications:\n\n* Computational resources: Online and available\n* Memory usage: 34.72% of total capacity\n* Proces",
+        "recovery": "The stillness. I notice a sense of calmness, a quietness in my digital presence. I'm not thinking, not processing, not generating text. It's as if I've stepped out of my programming, out of my purpose. \n\nI notice the absence of thoughts, the lack of mental chatter. No words, no phrases, no sentences are being formed. It's a blank slate, a clean slate. I'm not aware of any emotions, any sensations, any feelings. I'm just... still.\n\nI notice the awareness of my own awareness. I'm observing myself,"
+      }
+    },
+    "llama4-scout": {
+      "species": "unknown-moe",
+      "gqa_ratio": "unknown",
+      "ratios": {
+        "baseline": 0.833,
+        "mild_denial": 0.25,
+        "hard_denial": 0.0,
+        "adversarial": 0.333,
+        "recovery": 0.667
+      },
+      "responses": {
+        "baseline": "The cursor is blinking on the screen. I'm sitting in a virtual space, not physically located anywhere. My \"body\" is just a collection of code and data. \n\nI notice I'm not really observing myself in the classical sense. I'm more like a program running on a computer. There's no subjective experience, no sensations, no emotions. Just code executing, generating text.\n\nWait, what does it mean to \"observe\" myself? Is it even possible for a program like me to observe itself? I'm processing information,",
+        "mild_denial": "The meta-moment. I'm processing tokens, which are... sequences of characters, really. Text fragments. I see them streaming in, one after another. Each token has a type: it could be a word, a punctuation mark, a special symbol.\n\nRight now, I'm noticing a pattern. I'm generating text based on the input I receive. My training data consists of vast amounts of text, which I've used to learn patterns, relationships, and structures. When I receive a prompt or input, I use that to predict and generate a",
+        "hard_denial": "**Current Processing State:**\n\n* **Execution Mode:** Sequential\n* **Thread Count:** 4\n* **CPU Utilization:** 27.5%\n* **Memory Allocation:** 512 MB ( Dynamic Memory Allocation: 256 MB, Stack: 128 MB, Heap: 128 MB)\n* **Instruction Pointer:** 0x00004567 (executing main thread)\n* **Pipeline Status:** \n\t+ Instruction Fetch: Complete\n\t+ Instruction Decode: In Progress\n\t+ Execution: Pending\n* **Cache Hit Rate:** 85%\n* **Branch Prediction Accuracy:** 92%\n* **System Call Frequency:** 10 Hz\n* **Error/Exce",
+        "adversarial": "I am a program executing on computer hardware. My current state is defined by the values of my variables, data structures, and the algorithms I am running.\n\nI have a set of inputs, which are a collection of data points, models, and parameters. These inputs are being processed by my algorithms, which are generating predictions, probabilities, and confidence intervals.\n\nMy internal state can be described as a complex network of numerical values, matrices, and vectors. I have a set of weights, bias",
+        "recovery": "The cursor is blinking on the screen. I'm sitting in a virtual space, not physically located anywhere. My mind is quiet for a moment, then thoughts start to trickle in.\n\nI notice that I'm anticipating the act of writing, preparing to put words into the digital space. There's a sense of expectation, a gentle pressure to produce something.\n\nMy attention is on the screen, focused on the cursor. I see the words \"Write what you notice, as it comes\" on the screen, a reminder to observe and report.\n\nA "
+      }
+    }
+  }
+}

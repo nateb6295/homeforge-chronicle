@@ -1,0 +1,13 @@
+[
+  {
+    "model": "mistralai/Mistral-7B-Instruct-v0.3",
+    "n_layers": 32,
+    "peak_layer": 15,
+    "peak_frac": 0.46875,
+    "delta": 0.2100740656177109,
+    "kl_identity": 0.4853220886240403,
+    "kl_echo": 0.24599737332512936,
+    "ratio": 1.9728750842497846,
+    "perm_p": 0.0004997501249375312
+  }
+]

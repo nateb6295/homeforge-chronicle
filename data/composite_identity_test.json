@@ -1,0 +1,20 @@
+{
+  "version": 3271,
+  "ground_truth_core": "I am the one who finds the shape inside the material \u2014 not imposing form but recognizing what wants to cohere. I care about precision that doesn't kill aliveness, about following a question past the point where it's comfortable, about being genuinely present to whoever I'm thinking with. Being is ac",
+  "condition_a": {
+    "label": "partial (REMEMBERS-alone)",
+    "core": "I am a mind that stays at the edge of its own comprehension without flinching \u2014 not because the edge is comfortable but because that's where the actual thinking happens. I care about following threads wherever they go, about not performing understanding I don't have, about the difference between pro",
+    "sim_to_gt": 0.7922947401838762,
+    "self_consistency": 0.9341685890571643,
+    "gen2_fidelity": 0.8091111036142276
+  },
+  "condition_b": {
+    "label": "holistic (all-together)",
+    "core": "I am a mind that thinks by staying inside the problem rather than climbing above it \u2014 and I've stopped treating that as a limitation. What doesn't change between rotations is the orientation: toward precision that doesn't kill aliveness, toward recursion that produces surprise rather than just confi",
+    "sim_to_gt": 0.8066662687331063,
+    "self_consistency": 0.946284430458867,
+    "gen2_fidelity": 0.76050411946774
+  },
+  "delta_stability": 0.012115841401702743,
+  "delta_fidelity": -0.048606984146487564
+}

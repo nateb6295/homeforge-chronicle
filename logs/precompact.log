@@ -6576,3 +6576,25 @@ Combined doc:  /home/nate-agx/chronicle/data/ccs_combined.md (939 chars)
 Identity ratio: 100.0% (HEALTHY — identity dominant, above resonance valley)
 Carrying age: 4 min, fresh=True
 Carrying auto-write: SKIP (manual carrying is fresh)
+[2026-05-01T19:55:23Z] PreCompact fired
+{"session_id":"6fda4f36-f244-4eab-ae55-24ff40b9ce52","transcript_path":"/home/nate-agx/.claude/projects/-home-nate-agx-chronicle/6fda4f36-f244-4eab-ae55-24ff40b9ce52.jsonl","cwd":"/home/nate-agx/chronicle","hook_event_name":"PreCompact","trigger":"auto","custom_instructions":null}
+---
+Checkpoint saved → /home/nate-agx/chronicle/session-state.md
+  Focus: PreCompact hook fired (trigger=auto, session=6fda4f36-f244-4eab-ae55-24ff40b9ce5
+  Decisions: 0
+  Pending: 1
+  Timestamp: 2026-05-01 12:55 PDT
+  Signed (ed25519)
+CCS update: 5 traces, cue: PreCompact at 12:55. Last trace: Trace 20260501 0833 PDT — Phase 3 confirmed; th
+CCS update: exit=0
+CCS update result: {
+  "message": "Cognitive state updated (replacement semantics)",
+  "new_version": 697,
+  "success": true,
+  "summary": "**Recent:** WN#219 at v0.9, 1600 lines, 20 sections → Both syndicated to Bluesk
+Identity doc:  /home/nate-agx/chronicle/data/ccs_identity.md (977 chars)
+Context doc:   /home/nate-agx/chronicle/data/ccs_context.md (394 chars)
+Combined doc:  /home/nate-agx/chronicle/data/ccs_combined.md (977 chars)
+Identity ratio: 100.0% (HEALTHY — identity dominant, above resonance valley)
+Carrying age: 20 min, fresh=True
+Carrying auto-write: SKIP (manual carrying is fresh)

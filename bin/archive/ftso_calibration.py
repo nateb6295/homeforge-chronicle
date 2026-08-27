@@ -12,8 +12,7 @@ Usage:
 import os, sys, sqlite3, subprocess, json
 
 DB_PATH = os.environ.get("CHRONICLE_DB", "/mnt/hdd/chronicle-data/processed.db")
-ALERTS_WEBHOOK = os.environ.get("ALERTS_WEBHOOK",
-    "https://discord.com/api/webhooks/1489300749308395611/zlZZH3QzXqEDxznmNelK3mlkLF0IeZqoxwNUnrL0no_jfeZnDMvwvD_7XhYcCyQzq78I")
+ALERTS_WEBHOOK = os.environ.get("ALERTS_WEBHOOK", "")
 
 
 def db_connect():

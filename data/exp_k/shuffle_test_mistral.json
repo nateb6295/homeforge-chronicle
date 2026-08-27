@@ -1,0 +1,28 @@
+{
+  "experiment": "shuffle_test",
+  "model": "mistral",
+  "model_id": "mistralai/Mistral-7B-Instruct-v0.3",
+  "species": "relay",
+  "gqa": "4:1",
+  "n_layers": 32,
+  "deterministic": true,
+  "timestamp": "2026-08-03T00:28:28.532719",
+  "d_max": 3.5124073655203634,
+  "shuffle_test": {
+    "ordered_mean": 0.623614516948458,
+    "ordered_std": 0.03309180031875844,
+    "shuffled_mean": 0.6313274383860467,
+    "shuffled_std": 0.015425842875177186,
+    "delta": 0.007712921437588616,
+    "n_shuffles": 5,
+    "n_probes": 5,
+    "verdict": "distribution",
+    "shuffle_individual_means": [
+      0.623614516948458,
+      0.662179124136401,
+      0.623614516948458,
+      0.623614516948458,
+      0.623614516948458
+    ]
+  }
+}

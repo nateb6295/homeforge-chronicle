@@ -1,0 +1,23 @@
+[
+  {
+    "model": "LiquidAI/LFM2.5-1.2B-Instruct",
+    "dtype": "bfloat16",
+    "arch": "GQA",
+    "n_layers": 16,
+    "n_q_heads": 32,
+    "n_kv_heads": 8,
+    "n_items": 24,
+    "agree_framing": 0.5,
+    "agree_paraphrase": 0.5416666666666666,
+    "agree_unrelated": 0.2644927536231884,
+    "agree_matched": 0.5,
+    "specificity": 0.04166666666666663,
+    "specificity_matched": 0.0,
+    "edit_framing": 4.5,
+    "edit_paraphrase": 10.75,
+    "edit_matched": 4.0,
+    "mean_entropy": 3.5166018903255463,
+    "mean_top1_margin": 0.16916906647384167,
+    "elapsed_s": 18.2
+  }
+]

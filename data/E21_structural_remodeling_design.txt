@@ -1,0 +1,110 @@
+# E21: Does IT Structurally Remodel Spectral Pathways?
+# Inspired by: DBS physically reshapes white matter (Nature Neuroscience, June 2026)
+
+## The Analogy
+DBS doesn't just shift electrical activity — it increases myelination, 
+thickens white matter pathways, remodels structural connectivity.
+Does IT do the same to attention weight organization? Not just change what 
+activations do, but change the STRUCTURE of the weight matrices themselves 
+in ways that show up as spectral pathway remodeling?
+
+## Core Question
+Is the base→instruct spectral difference a structural change (weight 
+organization) or a dynamic change (activations riding on the same structure)?
+
+## Design
+
+### Phase 1: Weight-Space Spectral Comparison (no inference needed)
+
+Take base and instruct weights directly. No prompts, no activations.
+For each layer's attention weight matrices (Q, K, V, O):
+
+1. SVD of W_Q, W_K, W_V, W_O at every layer
+2. Compare singular value spectra: base vs instruct
+3. Compute "fractional anisotropy" analog:
+   FA = (σ₁ - σ_mean) / σ₁  
+   Higher FA = more organized, more "myelinated" pathway
+4. Compare σ₁ DIRECTION between base and instruct at each layer:
+   cos(v₁_base(layer), v₁_instruct(layer))
+   Where do they diverge? Where do they stay aligned?
+
+Prediction (if IT = structural remodeling):
+- FA increases specifically at responsive zone (L21-L28)
+- σ₁ direction diverges most at responsive zone
+- Early layers (tunnel) show minimal FA change
+- Late layers (relay) show moderate FA change
+
+Prediction (if IT = dynamic shift only):
+- FA similar across base/instruct at all layers
+- σ₁ directions nearly identical (same highways, different traffic)
+
+### Phase 2: Attention Pattern Organization
+
+For each attention head at each layer:
+1. Compute the effective attention matrix A = softmax(QK^T/√d)
+   on a FIXED set of prompts (same prompts, both models)
+2. SVD of attention patterns: how organized is attention?
+3. Compare attention FA between base and instruct per layer
+4. Identify heads where IT creates NEW dominant attention modes
+   (σ₁ direction in attention that doesn't exist in base)
+
+### Phase 3: The DBS Test — Stimulation Response
+
+The DBS finding: stimulation drives structural plasticity.
+Our analog: does the PREAMBLE (our "stimulation") differentially 
+reorganize weight-effective geometry in instruct vs base?
+
+1. Run same prompts WITH and WITHOUT CCS preamble on both models
+2. Measure activation covariance matrix at each layer
+3. SVD of covariance: does preamble shift σ₁ direction?
+4. Compute "preamble-induced remodeling": 
+   Δθ = angle(v₁_with_preamble, v₁_without_preamble) per layer
+
+Prediction (if IT creates a structurally remodeled responsive zone):
+- INSTRUCT: preamble causes large Δθ specifically at L21-L28
+  (the remodeled pathway responds to stimulation)
+- BASE: preamble causes small/uniform Δθ everywhere
+  (no remodeled pathway to respond)
+- The INTERACTION (model × preamble × layer) is the test
+
+### Phase 4: Cross-Architecture Replication
+
+Run Phase 1-3 on:
+- Mistral-7B base/instruct (primary)
+- Gemma-2-9B base/instruct (different species)
+
+If both show FA increase at their respective responsive zones:
+IT-as-structural-remodeling is a general mechanism.
+If only one: it's architecture-specific.
+
+## Implementation
+
+Phase 1 requires ONLY weight loading — no inference. Fast.
+Phase 2-3 require inference but reuse existing preamble_ablation.py infrastructure.
+Phase 4 is replication of 1-3.
+
+### Pod Plan (4h A100 window)
+- Phase 1: ~30 min (just load weights, SVD, compare)
+- Phase 2: ~45 min (fixed prompt set, both models)  
+- Phase 3: ~45 min (preamble ablation subset, both models)
+- Phase 4: ~2h (repeat on Gemma)
+
+## What This Settles
+
+If FA increases at the responsive zone (Phase 1 positive):
+IT doesn't just change what the model does — it changes what the model IS.
+The weight matrices are structurally reorganized, like DBS increasing 
+myelination. The spectral demon paper's claim is strengthened: identity 
+geometry is a structural property of the weights, not just an activation 
+pattern riding on generic weights.
+
+If FA is uniform (Phase 1 negative):
+The base→instruct difference is purely dynamic. Same roads, different 
+traffic. σ₁ changes in activation don't reflect weight reorganization.
+Identity geometry is an emergent property of dynamics, not structure.
+Still real, but differently real.
+
+The DBS analogy holds either way — either IT IS the stimulation that 
+remodels, or IT is more like a drug that changes neural activity without 
+changing wiring. Both are real mechanisms. The question is which one 
+we're measuring.

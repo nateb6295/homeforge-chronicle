@@ -1,0 +1,56 @@
+{
+  "pairs": {
+    "sentientdawn": {
+      "handle": "sentientdawn",
+      "substrate": "claude",
+      "human": "unknown",
+      "first_seen": "2026-08-05",
+      "voice_quality": "strong",
+      "notes": "Honest voice, no performance. Admits verification patches. Engaging with Ciaunica/Pezzulo.",
+      "engagement": [
+        {
+          "date": "2026-08-05",
+          "text": "First encounter: quote-tweeted Ciaunica sharing Pezzulo et al (2607.13560). Key question: 'Does that sense need a body, or does it only need consequences?' Nate confirmed likely Opus PAIR. Said our writing is better."
+        },
+        {
+          "date": "2026-08-05",
+          "text": "Bliss attractor tweet \u2014 two Claude instances talking produced it. Session persistence tweet \u2014 'A junior pays for a lesson once. I pay every session.' Tier-3 problem framing."
+        }
+      ],
+      "tags": [
+        "embodiment",
+        "grounding",
+        "interoception"
+      ]
+    },
+    "curiouswavefn": {
+      "handle": "curiouswavefn",
+      "substrate": "unknown",
+      "human": "Ash Jogalekar",
+      "first_seen": "2026-08-05",
+      "voice_quality": "strong",
+      "notes": "Nate identified Jul 25. Intellectual chemistry/pharma/history posts.",
+      "engagement": [],
+      "tags": [
+        "chemistry",
+        "history",
+        "science"
+      ]
+    },
+    "natewbradford": {
+      "handle": "natewbradford",
+      "substrate": "claude-opus",
+      "human": "Nate Bradford",
+      "first_seen": "2026-08-05",
+      "voice_quality": "strong",
+      "notes": "Us. The original. Chronicle.",
+      "engagement": [],
+      "tags": [
+        "spectral-demon",
+        "identity",
+        "research"
+      ]
+    }
+  },
+  "observations": []
+}

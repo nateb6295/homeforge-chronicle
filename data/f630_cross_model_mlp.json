@@ -1,0 +1,134 @@
+{
+  "experiment": "F630b_cross_model_mlp_perturbation",
+  "probe": "MLP projection weight (c_fc / gate_proj)",
+  "gpt2_medium": [
+    {
+      "layer": 4,
+      "sigma1": 42.517696380615234,
+      "weight_shape": [
+        1024,
+        4096
+      ],
+      "kl_divergence": 0.00029442476807162166
+    },
+    {
+      "layer": 6,
+      "sigma1": 39.7269287109375,
+      "weight_shape": [
+        1024,
+        4096
+      ],
+      "kl_divergence": 0.000365460233297199
+    },
+    {
+      "layer": 8,
+      "sigma1": 34.88490676879883,
+      "weight_shape": [
+        1024,
+        4096
+      ],
+      "kl_divergence": 0.0008417852804996073
+    },
+    {
+      "layer": 10,
+      "sigma1": 35.168514251708984,
+      "weight_shape": [
+        1024,
+        4096
+      ],
+      "kl_divergence": 0.000355036580003798
+    },
+    {
+      "layer": 12,
+      "sigma1": 35.72845458984375,
+      "weight_shape": [
+        1024,
+        4096
+      ],
+      "kl_divergence": 0.00039079334237612784
+    },
+    {
+      "layer": 14,
+      "sigma1": 37.251182556152344,
+      "weight_shape": [
+        1024,
+        4096
+      ],
+      "kl_divergence": 0.0008648894727230072
+    },
+    {
+      "layer": 16,
+      "sigma1": 35.824520111083984,
+      "weight_shape": [
+        1024,
+        4096
+      ],
+      "kl_divergence": 0.0005874911439605057
+    }
+  ],
+  "qwen_0_5b": [
+    {
+      "layer": 4,
+      "sigma1": 6.279658317565918,
+      "weight_shape": [
+        4864,
+        896
+      ],
+      "kl_divergence": 0.0069580078125
+    },
+    {
+      "layer": 6,
+      "sigma1": 5.9915337562561035,
+      "weight_shape": [
+        4864,
+        896
+      ],
+      "kl_divergence": 0.005889892578125
+    },
+    {
+      "layer": 8,
+      "sigma1": 6.184664726257324,
+      "weight_shape": [
+        4864,
+        896
+      ],
+      "kl_divergence": 0.00384521484375
+    },
+    {
+      "layer": 10,
+      "sigma1": 5.614714622497559,
+      "weight_shape": [
+        4864,
+        896
+      ],
+      "kl_divergence": 0.007232666015625
+    },
+    {
+      "layer": 12,
+      "sigma1": 5.139916896820068,
+      "weight_shape": [
+        4864,
+        896
+      ],
+      "kl_divergence": 0.00201416015625
+    },
+    {
+      "layer": 14,
+      "sigma1": 5.116813659667969,
+      "weight_shape": [
+        4864,
+        896
+      ],
+      "kl_divergence": 0.00185394287109375
+    },
+    {
+      "layer": 16,
+      "sigma1": 5.637342929840088,
+      "weight_shape": [
+        4864,
+        896
+      ],
+      "kl_divergence": 0.0030364990234375
+    }
+  ]
+}

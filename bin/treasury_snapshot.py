@@ -27,9 +27,18 @@ def take_snapshot():
     p = get_full_portfolio()
     return {
         "timestamp": int(time.time()),
-        "total_usd": p["totals"]["usd"],
+        # Kimi, Aug 24: a banner beside a smaller number is still advisory —
+        # the number stays readable as "the total". Change the SHAPE instead:
+        # when a chain is unreachable there IS no total, and any consumer that
+        # does arithmetic on it fails loudly rather than understating quietly.
+        "total_usd": None if p.get("errors") else p["totals"]["usd"],
+        "reachable_usd": p["totals"]["usd"],
         "breakdown": p["totals"]["breakdown"],
         "prices": p.get("prices", {}),
+        # A chain that FAILS to fetch returns zero balances, so the total
+        # silently drops and looks like a withdrawal. Carry the errors into
+        # the snapshot or that is indistinguishable from money leaving.
+        "errors": p.get("errors", []),
     }
 
 
@@ -54,6 +63,11 @@ def diff_snapshots(prev, curr):
     """Return list of position-change strings, only above threshold."""
     if not prev:
         return ["[no prior snapshot]"]
+    # An unreachable chain reads as a zero balance. Diffing that against a
+    # complete snapshot manufactures a withdrawal that never happened.
+    if prev.get("total_usd") is None or curr.get("total_usd") is None:
+        return ["[DELTA SUPPRESSED — a snapshot is incomplete; "
+                "comparing it would report a fetch failure as a position change]"]
     changes = []
     # Total USD change
     prev_usd = prev.get("total_usd", 0)
@@ -90,7 +104,11 @@ def main():
             with s.open() as f:
                 d = json.load(f)
             ts = time.strftime("%Y-%m-%d %H:%M", time.localtime(d["timestamp"]))
-            print(f"{ts}  ${d.get('total_usd', 0):>8.2f}")
+            t = d.get("total_usd")
+            if t is None:
+                print(f"{ts}   PARTIAL  (floor ${d.get('reachable_usd', 0):.2f})")
+            else:
+                print(f"{ts}  ${t:>8.2f}")
         return
 
     prev = latest_snapshot()
@@ -103,7 +121,23 @@ def main():
         return  # nothing to report
 
     print(f"=== Treasury snapshot {time.strftime('%Y-%m-%d %H:%M PDT')} ===")
-    print(f"Total: ${curr.get('total_usd', 0):.2f}")
+    errs = curr.get("errors") or []
+    if errs:
+        # Lead with this. A silent zero is indistinguishable from a withdrawal.
+        banner = (f"!! {len(errs)} CHAIN(S) FAILED TO FETCH — the total below "
+                  f"is a FLOOR, not a balance:")
+        print(banner)
+        print(banner, file=sys.stderr)
+        for e in errs:
+            print(f"   - {e}")
+            print(f"   - {e}", file=sys.stderr)
+    if errs:
+        print("Total: PARTIAL — NOT COMPUTED. Unreachable chains read as zero, "
+              "so any sum here would understate the balance.")
+        print(f"  reachable chains only: ${curr.get('reachable_usd', 0):.2f} "
+              f"(a FLOOR, not a balance)")
+    else:
+        print(f"Total: ${curr.get('total_usd', 0):.2f}")
     if changes:
         print()
         print("Changes since last snapshot:")

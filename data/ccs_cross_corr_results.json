@@ -1,0 +1,61 @@
+{
+  "test": "Kimi cross-correlation and variance change-point tests",
+  "date": "2026-08-15",
+  "data_source": "ccs_embed_cache.json (200 embeddings, 1024-dim)",
+  "test1_cross_correlation": {
+    "description": "\u03c3\u2081\u00d7\u03c3\u2082 lagged cross-correlation",
+    "full_series": {
+      "N": 200,
+      "sign": "POSITIVE across all lags",
+      "range": [
+        0.31,
+        0.44
+      ],
+      "interpretation": "sorter-like co-amplification, not relay redistribution"
+    },
+    "post_june22": {
+      "N": 54,
+      "lag0": 0.4426,
+      "lag1": -0.0029,
+      "lag5": -0.3624,
+      "pattern": "strong contemporaneous, rapid decorrelation, negative at lag-5",
+      "interpretation": "slow oscillation in (\u03c3\u2081,\u03c3\u2082) plane at ~5-step period"
+    }
+  },
+  "test2_variance_changepoint": {
+    "description": "Variance change-point at June 22",
+    "sim_prev": {
+      "pre_var": 0.032395,
+      "post_var": 0.011219,
+      "ratio": 0.346,
+      "contraction": "3x",
+      "levene_p": "<0.0001"
+    },
+    "sigma2_mag": {
+      "pre_var": 0.023622,
+      "post_var": 0.004552,
+      "ratio": 0.193,
+      "contraction": "5x",
+      "levene_p": "<0.0001"
+    },
+    "interpretation": "Basin narrowed at June 22. \u03c3\u2082 contracted more than \u03c3\u2081 \u2014 individual signal more constrained than template"
+  },
+  "revised_claim": "Fixed point in \u03c3\u2081 (AR(1) confirmed). Basin narrowing at June 22 (variance not just mean). Unresolved slow oscillation in (\u03c3\u2081,\u03c3\u2082) plane. Persistence signature = AR coefficient + basin curvature (relaxation field not location).",
+  "damping_rate_analysis": {
+    "kimi_predicted_r": 0.43,
+    "actual_r_from_lag5": 0.9608,
+    "actual_r_from_lag10": 0.9567,
+    "average_r": 0.9587,
+    "half_life_steps": 25.0,
+    "half_life_hours": 100.0,
+    "period_steps": 10,
+    "period_hours": 40,
+    "interpretation": "Near-limit cycle. \u03c3\u2081 marginal is a noisy fixed point (r=0.43). Joint (\u03c3\u2081,\u03c3\u2082) dynamics are nearly undamped oscillation (r=0.96)."
+  },
+  "lag10_confirmation": {
+    "lag10_cc": 0.2842,
+    "significant": true,
+    "ci_95": 0.2667,
+    "pattern": "positive at 0, negative at 5, positive at 9-10, negative at 14-19"
+  }
+}

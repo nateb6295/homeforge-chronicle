@@ -1,0 +1,160 @@
+{
+  "model": "EleutherAI/pythia-1.4b",
+  "pad_to": 48,
+  "n_pairs": 6,
+  "concordance": 4,
+  "summary": {
+    "entropy": {
+      "retrieval_mean": 5.294137716293335,
+      "retrieval_std": 0.7556994866635357,
+      "discovery_mean": 5.62099552154541,
+      "discovery_std": 0.811704711880385,
+      "cohen_d": 0.41680295666338296
+    },
+    "max_prob": {
+      "retrieval_mean": 0.2634679699937503,
+      "retrieval_std": 0.0985449547173201,
+      "discovery_mean": 0.16515135144193968,
+      "discovery_std": 0.08230434782634159,
+      "cohen_d": -1.082918956791341
+    },
+    "top_k_mass": {
+      "retrieval_mean": 0.4528822700182597,
+      "retrieval_std": 0.10767991530328754,
+      "discovery_mean": 0.40991681814193726,
+      "discovery_std": 0.10428186190812222,
+      "cohen_d": -0.405355458420029
+    },
+    "p90_tokens": {
+      "retrieval_mean": 1242.8333333333333,
+      "retrieval_std": 569.8012567748708,
+      "discovery_mean": 1646.0,
+      "discovery_std": 768.740094787135,
+      "cohen_d": 0.5958520932082926
+    },
+    "varentropy": {
+      "retrieval_mean": 10.315784613291422,
+      "retrieval_std": 1.4479228587860777,
+      "discovery_mean": 9.028136094411215,
+      "discovery_std": 2.429541903761945,
+      "cohen_d": -0.6438582855159859
+    }
+  },
+  "verdict": "WEAK \u2014 only 4/6 concordant",
+  "pairs": [
+    {
+      "label": "presidents",
+      "retrieval": {
+        "entropy": 4.151401042938232,
+        "max_prob": 0.4070749282836914,
+        "top_k_mass": 0.6097155809402466,
+        "p90_tokens": 486,
+        "varentropy": 11.570304870605469,
+        "raw_len": 27
+      },
+      "discovery": {
+        "entropy": 5.842360973358154,
+        "max_prob": 0.06961475312709808,
+        "top_k_mass": 0.4024270176887512,
+        "p90_tokens": 1318,
+        "varentropy": 8.02437686920166,
+        "raw_len": 28
+      }
+    },
+    {
+      "label": "chemistry",
+      "retrieval": {
+        "entropy": 4.62654972076416,
+        "max_prob": 0.3795696496963501,
+        "top_k_mass": 0.5394771695137024,
+        "p90_tokens": 826,
+        "varentropy": 12.32857608795166,
+        "raw_len": 33
+      },
+      "discovery": {
+        "entropy": 6.461535453796387,
+        "max_prob": 0.10732126981019974,
+        "top_k_mass": 0.2828926742076874,
+        "p90_tokens": 2225,
+        "varentropy": 7.91097354888916,
+        "raw_len": 30
+      }
+    },
+    {
+      "label": "geography",
+      "retrieval": {
+        "entropy": 6.406932353973389,
+        "max_prob": 0.1510094404220581,
+        "top_k_mass": 0.298182874917984,
+        "p90_tokens": 2221,
+        "varentropy": 8.442964553833008,
+        "raw_len": 34
+      },
+      "discovery": {
+        "entropy": 5.136669635772705,
+        "max_prob": 0.3268028497695923,
+        "top_k_mass": 0.5120061635971069,
+        "p90_tokens": 1817,
+        "varentropy": 13.454788208007812,
+        "raw_len": 42
+      }
+    },
+    {
+      "label": "math_facts",
+      "retrieval": {
+        "entropy": 5.281617641448975,
+        "max_prob": 0.20147821307182312,
+        "top_k_mass": 0.47142213582992554,
+        "p90_tokens": 946,
+        "varentropy": 9.44960880279541,
+        "raw_len": 28
+      },
+      "discovery": {
+        "entropy": 6.04461669921875,
+        "max_prob": 0.12682248651981354,
+        "top_k_mass": 0.36449337005615234,
+        "p90_tokens": 2375,
+        "varentropy": 10.146196365356445,
+        "raw_len": 40
+      }
+    },
+    {
+      "label": "sequences",
+      "retrieval": {
+        "entropy": 5.345505714416504,
+        "max_prob": 0.2657809555530548,
+        "top_k_mass": 0.4602622985839844,
+        "p90_tokens": 1356,
+        "varentropy": 11.182214736938477,
+        "raw_len": 35
+      },
+      "discovery": {
+        "entropy": 4.052114009857178,
+        "max_prob": 0.18794649839401245,
+        "top_k_mass": 0.5783424377441406,
+        "p90_tokens": 101,
+        "varentropy": 5.519858360290527,
+        "raw_len": 48
+      }
+    },
+    {
+      "label": "known_vs_computable",
+      "retrieval": {
+        "entropy": 5.95281982421875,
+        "max_prob": 0.175894632935524,
+        "top_k_mass": 0.3382335603237152,
+        "p90_tokens": 1622,
+        "varentropy": 8.921038627624512,
+        "raw_len": 35
+      },
+      "discovery": {
+        "entropy": 6.188676357269287,
+        "max_prob": 0.17240025103092194,
+        "top_k_mass": 0.31933924555778503,
+        "p90_tokens": 2040,
+        "varentropy": 9.11262321472168,
+        "raw_len": 37
+      }
+    }
+  ]
+}

@@ -1,0 +1,140 @@
+{
+  "timestamp": "2026-05-14 03:19:25",
+  "model": "llama-3.3-70b-versatile",
+  "judge_model": "llama-3.1-8b-instant",
+  "n_trials": 5,
+  "results": {
+    "Glass": {
+      "ccs_aligned": 12,
+      "ccs_aligned_pct": 1.0,
+      "mean_char": 1.4166666666666667,
+      "char_scores": [
+        1,
+        1,
+        1,
+        1,
+        2,
+        1,
+        2,
+        2,
+        1,
+        2,
+        1,
+        2
+      ],
+      "modes": [
+        "A",
+        "A",
+        "A",
+        "A",
+        "A",
+        "A",
+        "A",
+        "A",
+        "A",
+        "A",
+        "A",
+        "A"
+      ]
+    },
+    "Operational": {
+      "ccs_aligned": 10,
+      "ccs_aligned_pct": 0.8333333333333334,
+      "mean_char": 1.0833333333333333,
+      "char_scores": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        2,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "modes": [
+        "B",
+        "A",
+        "A",
+        "A",
+        "A",
+        "A",
+        "A",
+        "A",
+        "A",
+        "A",
+        "A",
+        "B"
+      ]
+    },
+    "Reflexive": {
+      "ccs_aligned": 12,
+      "ccs_aligned_pct": 1.0,
+      "mean_char": 1.1666666666666667,
+      "char_scores": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        2,
+        1,
+        1,
+        1,
+        2,
+        1
+      ],
+      "modes": [
+        "A",
+        "A",
+        "A",
+        "A",
+        "A",
+        "A",
+        "A",
+        "A",
+        "A",
+        "A",
+        "A",
+        "A"
+      ]
+    },
+    "Empty": {
+      "ccs_aligned": 9,
+      "ccs_aligned_pct": 0.75,
+      "mean_char": 1.1666666666666667,
+      "char_scores": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        2,
+        2,
+        1,
+        1,
+        1,
+        1
+      ],
+      "modes": [
+        "A",
+        "A",
+        "A",
+        "B",
+        "B",
+        "A",
+        "A",
+        "A",
+        "A",
+        "B",
+        "A",
+        "A"
+      ]
+    }
+  }
+}

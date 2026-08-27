@@ -142,13 +142,11 @@ def call_gemma(prompt, timeout=60):
     return resp["message"]["content"].strip()
 
 
-def post_operator(content):
-    body = json.dumps({"content": content})
+def post_threads(content):
     subprocess.run(
-        ["curl", "-s", "-o", "/dev/null", "-w", "%{http_code}",
-         "-X", "POST", "-H", "Content-Type: application/json",
-         "-d", body, OPERATOR_WEBHOOK],
-        capture_output=True, text=True, timeout=10,
+        ["python3", os.path.expanduser("~/chronicle/bin/discord_post.py"),
+         "--channel-id", "1509006814916771932", "-c", content],
+        capture_output=True, text=True, timeout=15,
     )
 
 
@@ -186,7 +184,7 @@ def main():
     print(msg)
 
     if not args.dry:
-        post_operator(msg)
+        post_threads(msg)
         _log_challenge(tid)
         print("[posted to #operator]")
     return 0

@@ -1,0 +1,30 @@
+{
+  "build": "38",
+  "thread": 319,
+  "test": "legibility_replication",
+  "n_states": 114,
+  "test_a": {
+    "center": {
+      "ref_mean": 0.9204990742427,
+      "meaning_mean": 0.9303687341804459,
+      "n_pairs": 34,
+      "gap": 0.0098696599377458
+    },
+    "edge": {
+      "ref_mean": 0.9378729570500638,
+      "meaning_mean": 0.9694664255409248,
+      "n_pairs": 71,
+      "gap": 0.031593468490860976
+    }
+  },
+  "test_b": {
+    "slow_ref_stability": 0.864918080039978,
+    "slow_meaning_stability": 0.9847285105692236,
+    "fast_ref_stability": 0.5252081787360504,
+    "fast_meaning_stability": 0.9466475223017277,
+    "separation": 0.33970990130392764,
+    "slow_schema_legible": true,
+    "fast_encounter_legible": true
+  },
+  "verdict": "REPLICATES"
+}

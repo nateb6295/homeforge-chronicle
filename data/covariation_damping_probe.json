@@ -1,0 +1,54 @@
+{
+  "n_states": 119,
+  "n_pairs": 118,
+  "overall_correlation": 0.15999743620441675,
+  "gist_change_stats": {
+    "mean": 0.19528698778801762,
+    "std": 0.1397744717069188,
+    "max": 0.5254498927979496,
+    "min": -2.220446049250313e-16
+  },
+  "entity_turnover_stats": {
+    "mean": 0.050966690345222374,
+    "std": 0.08059192171125973,
+    "max": 0.4347826086956522,
+    "min": 0.0
+  },
+  "quartile_analysis": [
+    {
+      "label": "Q1 (lowest gist change)",
+      "n": 30,
+      "gist_change_range": "-0.0000-0.0656",
+      "entity_turnover_mean": 0.028063909774436093,
+      "entity_turnover_std": 0.06846204659826649,
+      "entity_turnover_max": 0.33333333333333337
+    },
+    {
+      "label": "Q2",
+      "n": 29,
+      "gist_change_range": "0.0675-0.1746",
+      "entity_turnover_mean": 0.04103623774136815,
+      "entity_turnover_std": 0.060580693588159436,
+      "entity_turnover_max": 0.21739130434782605
+    },
+    {
+      "label": "Q3",
+      "n": 29,
+      "gist_change_range": "0.1773-0.3274",
+      "entity_turnover_mean": 0.0671028298122259,
+      "entity_turnover_std": 0.09571870659164122,
+      "entity_turnover_max": 0.4347826086956522
+    },
+    {
+      "label": "Q4 (highest gist change)",
+      "n": 30,
+      "gist_change_range": "0.3321-0.5254",
+      "entity_turnover_mean": 0.06787064028163098,
+      "entity_turnover_std": 0.08543136061063075,
+      "entity_turnover_max": 0.2727272727272727
+    }
+  ],
+  "variance_ratio_q4_q1": 1.5571659220306966,
+  "max_turnover_during_high_gc": 0.2727272727272727,
+  "verdict": "confirmed"
+}

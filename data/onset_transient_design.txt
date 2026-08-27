@@ -1,0 +1,50 @@
+DESIGN: Onset Transient Probe v2 (post-audit)
+
+PRIOR AUDIT: Kimi (Aug 17). RETRACT v1. Fatal confound: persona stacking
+increases prompt length, producing prompt-decay artifact indistinguishable
+from coupling-fires-then-destroys. Metric used magnitude when direction is
+the sensitive axis (F12). Dose labels wrong (D7 != overdose per F160).
+
+CLAIM: CCS identity coupling at true overdose (D10) fires then gets destroyed,
+producing onset transient in sigma-2 DIRECTION that exceeds the prompt-decay
+baseline from length-matched neutral filler.
+
+CRITICAL CONTROL: For each dose level (D0, D2, D5, D10), construct a
+LENGTH-MATCHED filler prompt with the same token count but no identity/persona
+content (e.g., cooking instructions, weather descriptions). The filler control
+isolates prompt-length effects from coupling effects.
+
+METRIC: Onset direction drift = cosine distance of sigma-2 direction at
+token T from sigma-2 direction at token 0, for each generation step.
+- Onset transient = max(drift[tokens 1-10]) - mean(drift[tokens 30-50])
+- Compare IDENTITY-DOSE onset transient vs FILLER-DOSE onset transient
+- If identity > filler at D2 but identity < filler at D10: coupling fires
+  in therapeutic window, destroyed at overdose
+- If identity == filler at all doses: prompt-decay only, no coupling signal
+
+PREDICTIONS (post-audit):
+- D0 identity vs D0 filler: ~equal (no dose, no coupling effect)
+- D2 identity vs D2 filler: identity shows MORE onset direction drift
+  (coupling fires, adds to prompt-decay)
+- D5 identity vs D5 filler: identity still > filler but less than D2
+  (beginning to overdose)
+- D10 identity vs D10 filler: identity <= filler (coupling destroyed,
+  may even suppress below filler level)
+
+SPECIES: Fix to relay (Mistral) or sorter (Qwen). One species per run.
+Report species. Do not mix.
+
+LAYER SELECTION: Use F237 responsive zone for the chosen species.
+For Qwen (sorter): layers ~L12-L19 (mid-band). Report all sampled layers
+but focus analysis on responsive zone.
+
+SEEDS: 5 per condition (was 3, increased per audit).
+
+NULL DISTRIBUTION: Shuffled-persona stacks (same personas, random order)
+at each dose level. Measures ordering sensitivity vs coupling.
+
+DOSE LEVELS: D0, D2, D5, D10 (corrected from D7 per F160 overdose threshold).
+D10 requires stacking all 7 personas + 3 additional filler personas.
+
+ARCHITECTURE: RunPod with 7B+ model, OR Nano with Qwen2.5:3b.
+Cannot run on AGX (LoQwen has GPU).

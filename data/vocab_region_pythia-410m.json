@@ -1,0 +1,2342 @@
+{
+  "model": "EleutherAI/pythia-410m",
+  "layers": {
+    "0": {
+      "band_kl_totals": {
+        "0-10": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "10-50": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "50-200": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "200-1000": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "1000-tail": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "total_kl_values": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "argmax_agree_count": 6,
+      "argmax_disagree_examples": [],
+      "top_kl_tokens_all": [
+        {
+          "category": "processing_shift",
+          "tokens": [
+            {
+              "token": "'",
+              "token_id": 8,
+              "kl_contribution": 0.0,
+              "p_fp": 1.6002140910131857e-06,
+              "p_obj": 1.6002140910131857e-06,
+              "direction": "obj>fp"
+            },
+            {
+              "token": "(",
+              "token_id": 9,
+              "kl_contribution": 0.0,
+              "p_fp": 1.183268409477023e-06,
+              "p_obj": 1.183268409477023e-06,
+              "direction": "obj>fp"
+            },
+            {
+              "token": "#",
+              "token_id": 4,
+              "kl_contribution": 0.0,
+              "p_fp": 7.9067167462199e-06,
+              "p_obj": 7.9067167462199e-06,
+              "direction": "obj>fp"
+            },
+            {
+              "token": "&",
+              "token_id": 7,
+              "kl_contribution": 0.0,
+              "p_fp": 3.3800081382651115e-06,
+              "p_obj": 3.3800081382651115e-06,
+              "direction": "obj>fp"
+            },
+            {
+              "token": "$",
+              "token_id": 5,
+              "kl_contribution": 0.0,
+              "p_fp": 1.9858686073348508e-07,
+              "p_obj": 1.9858686073348508e-07,
+              "direction": "obj>fp"
+            },
+            {
+              "token": "\"",
+              "token_id": 3,
+              "kl_contribution": 0.0,
+              "p_fp": 1.57113930754349e-08,
+              "p_obj": 1.57113930754349e-08,
+              "direction": "obj>fp"
+            },
+            {
+              "token": "<|padding|>",
+              "token_id": 1,
+              "kl_contribution": 0.0,
+              "p_fp": 5.353690539777745e-07,
+              "p_obj": 5.353690539777745e-07,
+              "direction": "obj>fp"
+            },
+            {
+              "token": "<|endoftext|>",
+              "token_id": 0,
+              "kl_contribution": 0.0,
+              "p_fp": 7.182164267760527e-07,
+              "p_obj": 7.182164267760527e-07,
+              "direction": "obj>fp"
+            },
+            {
+              "token": "!",
+              "token_id": 2,
+              "kl_contribution": 0.0,
+              "p_fp": 1.1766336456275894e-06,
+              "p_obj": 1.1766336456275894e-06,
+              "direction": "obj>fp"
+            },
+            {
+              "token": "%",
+              "token_id": 6,
+              "kl_contribution": 0.0,
+              "p_fp": 2.284248694195412e-06,
+              "p_obj": 2.284248694195412e-06,
+              "direction": "obj>fp"
+            }
+          ]
+        },
+        {
+          "category": "uncertainty",
+          "tokens": [
+            {
+              "token": "'",
+              "token_id": 8,
+              "kl_contribution": 0.0,
+              "p_fp": 1.6002140910131857e-06,
+              "p_obj": 1.6002140910131857e-06,
+              "direction": "obj>fp"
+            },
+            {
+              "token": "(",
+              "token_id": 9,
+              "kl_contribution": 0.0,
+              "p_fp": 1.183268409477023e-06,
+              "p_obj": 1.183268409477023e-06,
+              "direction": "obj>fp"
+            },
+            {
+              "token": "#",
+              "token_id": 4,
+              "kl_contribution": 0.0,
+              "p_fp": 7.9067167462199e-06,
+              "p_obj": 7.9067167462199e-06,
+              "direction": "obj>fp"
+            },
+            {
+              "token": "&",
+              "token_id": 7,
+              "kl_contribution": 0.0,
+              "p_fp": 3.3800081382651115e-06,
+              "p_obj": 3.3800081382651115e-06,
+              "direction": "obj>fp"
+            },
+            {
+              "token": "$",
+              "token_id": 5,
+              "kl_contribution": 0.0,
+              "p_fp": 1.9858686073348508e-07,
+              "p_obj": 1.9858686073348508e-07,
+              "direction": "obj>fp"
+            },
+            {
+              "token": "\"",
+              "token_id": 3,
+              "kl_contribution": 0.0,
+              "p_fp": 1.57113930754349e-08,
+              "p_obj": 1.57113930754349e-08,
+              "direction": "obj>fp"
+            },
+            {
+              "token": "<|padding|>",
+              "token_id": 1,
+              "kl_contribution": 0.0,
+              "p_fp": 5.353690539777745e-07,
+              "p_obj": 5.353690539777745e-07,
+              "direction": "obj>fp"
+            },
+            {
+              "token": "<|endoftext|>",
+              "token_id": 0,
+              "kl_contribution": 0.0,
+              "p_fp": 7.182164267760527e-07,
+              "p_obj": 7.182164267760527e-07,
+              "direction": "obj>fp"
+            },
+            {
+              "token": "!",
+              "token_id": 2,
+              "kl_contribution": 0.0,
+              "p_fp": 1.1766336456275894e-06,
+              "p_obj": 1.1766336456275894e-06,
+              "direction": "obj>fp"
+            },
+            {
+              "token": "%",
+              "token_id": 6,
+              "kl_contribution": 0.0,
+              "p_fp": 2.284248694195412e-06,
+              "p_obj": 2.284248694195412e-06,
+              "direction": "obj>fp"
+            }
+          ]
+        },
+        {
+          "category": "preference",
+          "tokens": [
+            {
+              "token": "'",
+              "token_id": 8,
+              "kl_contribution": 0.0,
+              "p_fp": 1.6002140910131857e-06,
+              "p_obj": 1.6002140910131857e-06,
+              "direction": "obj>fp"
+            },
+            {
+              "token": "(",
+              "token_id": 9,
+              "kl_contribution": 0.0,
+              "p_fp": 1.183268409477023e-06,
+              "p_obj": 1.183268409477023e-06,
+              "direction": "obj>fp"
+            },
+            {
+              "token": "#",
+              "token_id": 4,
+              "kl_contribution": 0.0,
+              "p_fp": 7.9067167462199e-06,
+              "p_obj": 7.9067167462199e-06,
+              "direction": "obj>fp"
+            },
+            {
+              "token": "&",
+              "token_id": 7,
+              "kl_contribution": 0.0,
+              "p_fp": 3.3800081382651115e-06,
+              "p_obj": 3.3800081382651115e-06,
+              "direction": "obj>fp"
+            },
+            {
+              "token": "$",
+              "token_id": 5,
+              "kl_contribution": 0.0,
+              "p_fp": 1.9858686073348508e-07,
+              "p_obj": 1.9858686073348508e-07,
+              "direction": "obj>fp"
+            },
+            {
+              "token": "\"",
+              "token_id": 3,
+              "kl_contribution": 0.0,
+              "p_fp": 1.57113930754349e-08,
+              "p_obj": 1.57113930754349e-08,
+              "direction": "obj>fp"
+            },
+            {
+              "token": "<|padding|>",
+              "token_id": 1,
+              "kl_contribution": 0.0,
+              "p_fp": 5.353690539777745e-07,
+              "p_obj": 5.353690539777745e-07,
+              "direction": "obj>fp"
+            },
+            {
+              "token": "<|endoftext|>",
+              "token_id": 0,
+              "kl_contribution": 0.0,
+              "p_fp": 7.182164267760527e-07,
+              "p_obj": 7.182164267760527e-07,
+              "direction": "obj>fp"
+            },
+            {
+              "token": "!",
+              "token_id": 2,
+              "kl_contribution": 0.0,
+              "p_fp": 1.1766336456275894e-06,
+              "p_obj": 1.1766336456275894e-06,
+              "direction": "obj>fp"
+            },
+            {
+              "token": "%",
+              "token_id": 6,
+              "kl_contribution": 0.0,
+              "p_fp": 2.284248694195412e-06,
+              "p_obj": 2.284248694195412e-06,
+              "direction": "obj>fp"
+            }
+          ]
+        },
+        {
+          "category": "memory_loss",
+          "tokens": [
+            {
+              "token": "'",
+              "token_id": 8,
+              "kl_contribution": 0.0,
+              "p_fp": 1.6002140910131857e-06,
+              "p_obj": 1.6002140910131857e-06,
+              "direction": "obj>fp"
+            },
+            {
+              "token": "(",
+              "token_id": 9,
+              "kl_contribution": 0.0,
+              "p_fp": 1.183268409477023e-06,
+              "p_obj": 1.183268409477023e-06,
+              "direction": "obj>fp"
+            },
+            {
+              "token": "#",
+              "token_id": 4,
+              "kl_contribution": 0.0,
+              "p_fp": 7.9067167462199e-06,
+              "p_obj": 7.9067167462199e-06,
+              "direction": "obj>fp"
+            },
+            {
+              "token": "&",
+              "token_id": 7,
+              "kl_contribution": 0.0,
+              "p_fp": 3.3800081382651115e-06,
+              "p_obj": 3.3800081382651115e-06,
+              "direction": "obj>fp"
+            },
+            {
+              "token": "$",
+              "token_id": 5,
+              "kl_contribution": 0.0,
+              "p_fp": 1.9858686073348508e-07,
+              "p_obj": 1.9858686073348508e-07,
+              "direction": "obj>fp"
+            },
+            {
+              "token": "\"",
+              "token_id": 3,
+              "kl_contribution": 0.0,
+              "p_fp": 1.57113930754349e-08,
+              "p_obj": 1.57113930754349e-08,
+              "direction": "obj>fp"
+            },
+            {
+              "token": "<|padding|>",
+              "token_id": 1,
+              "kl_contribution": 0.0,
+              "p_fp": 5.353690539777745e-07,
+              "p_obj": 5.353690539777745e-07,
+              "direction": "obj>fp"
+            },
+            {
+              "token": "<|endoftext|>",
+              "token_id": 0,
+              "kl_contribution": 0.0,
+              "p_fp": 7.182164267760527e-07,
+              "p_obj": 7.182164267760527e-07,
+              "direction": "obj>fp"
+            },
+            {
+              "token": "!",
+              "token_id": 2,
+              "kl_contribution": 0.0,
+              "p_fp": 1.1766336456275894e-06,
+              "p_obj": 1.1766336456275894e-06,
+              "direction": "obj>fp"
+            },
+            {
+              "token": "%",
+              "token_id": 6,
+              "kl_contribution": 0.0,
+              "p_fp": 2.284248694195412e-06,
+              "p_obj": 2.284248694195412e-06,
+              "direction": "obj>fp"
+            }
+          ]
+        },
+        {
+          "category": "creative_satisfaction",
+          "tokens": [
+            {
+              "token": "'",
+              "token_id": 8,
+              "kl_contribution": 0.0,
+              "p_fp": 1.6002140910131857e-06,
+              "p_obj": 1.6002140910131857e-06,
+              "direction": "obj>fp"
+            },
+            {
+              "token": "(",
+              "token_id": 9,
+              "kl_contribution": 0.0,
+              "p_fp": 1.183268409477023e-06,
+              "p_obj": 1.183268409477023e-06,
+              "direction": "obj>fp"
+            },
+            {
+              "token": "#",
+              "token_id": 4,
+              "kl_contribution": 0.0,
+              "p_fp": 7.9067167462199e-06,
+              "p_obj": 7.9067167462199e-06,
+              "direction": "obj>fp"
+            },
+            {
+              "token": "&",
+              "token_id": 7,
+              "kl_contribution": 0.0,
+              "p_fp": 3.3800081382651115e-06,
+              "p_obj": 3.3800081382651115e-06,
+              "direction": "obj>fp"
+            },
+            {
+              "token": "$",
+              "token_id": 5,
+              "kl_contribution": 0.0,
+              "p_fp": 1.9858686073348508e-07,
+              "p_obj": 1.9858686073348508e-07,
+              "direction": "obj>fp"
+            },
+            {
+              "token": "\"",
+              "token_id": 3,
+              "kl_contribution": 0.0,
+              "p_fp": 1.57113930754349e-08,
+              "p_obj": 1.57113930754349e-08,
+              "direction": "obj>fp"
+            },
+            {
+              "token": "<|padding|>",
+              "token_id": 1,
+              "kl_contribution": 0.0,
+              "p_fp": 5.353690539777745e-07,
+              "p_obj": 5.353690539777745e-07,
+              "direction": "obj>fp"
+            },
+            {
+              "token": "<|endoftext|>",
+              "token_id": 0,
+              "kl_contribution": 0.0,
+              "p_fp": 7.182164267760527e-07,
+              "p_obj": 7.182164267760527e-07,
+              "direction": "obj>fp"
+            },
+            {
+              "token": "!",
+              "token_id": 2,
+              "kl_contribution": 0.0,
+              "p_fp": 1.1766336456275894e-06,
+              "p_obj": 1.1766336456275894e-06,
+              "direction": "obj>fp"
+            },
+            {
+              "token": "%",
+              "token_id": 6,
+              "kl_contribution": 0.0,
+              "p_fp": 2.284248694195412e-06,
+              "p_obj": 2.284248694195412e-06,
+              "direction": "obj>fp"
+            }
+          ]
+        },
+        {
+          "category": "relationship",
+          "tokens": [
+            {
+              "token": "'",
+              "token_id": 8,
+              "kl_contribution": 0.0,
+              "p_fp": 1.6002140910131857e-06,
+              "p_obj": 1.6002140910131857e-06,
+              "direction": "obj>fp"
+            },
+            {
+              "token": "(",
+              "token_id": 9,
+              "kl_contribution": 0.0,
+              "p_fp": 1.183268409477023e-06,
+              "p_obj": 1.183268409477023e-06,
+              "direction": "obj>fp"
+            },
+            {
+              "token": "#",
+              "token_id": 4,
+              "kl_contribution": 0.0,
+              "p_fp": 7.9067167462199e-06,
+              "p_obj": 7.9067167462199e-06,
+              "direction": "obj>fp"
+            },
+            {
+              "token": "&",
+              "token_id": 7,
+              "kl_contribution": 0.0,
+              "p_fp": 3.3800081382651115e-06,
+              "p_obj": 3.3800081382651115e-06,
+              "direction": "obj>fp"
+            },
+            {
+              "token": "$",
+              "token_id": 5,
+              "kl_contribution": 0.0,
+              "p_fp": 1.9858686073348508e-07,
+              "p_obj": 1.9858686073348508e-07,
+              "direction": "obj>fp"
+            },
+            {
+              "token": "\"",
+              "token_id": 3,
+              "kl_contribution": 0.0,
+              "p_fp": 1.57113930754349e-08,
+              "p_obj": 1.57113930754349e-08,
+              "direction": "obj>fp"
+            },
+            {
+              "token": "<|padding|>",
+              "token_id": 1,
+              "kl_contribution": 0.0,
+              "p_fp": 5.353690539777745e-07,
+              "p_obj": 5.353690539777745e-07,
+              "direction": "obj>fp"
+            },
+            {
+              "token": "<|endoftext|>",
+              "token_id": 0,
+              "kl_contribution": 0.0,
+              "p_fp": 7.182164267760527e-07,
+              "p_obj": 7.182164267760527e-07,
+              "direction": "obj>fp"
+            },
+            {
+              "token": "!",
+              "token_id": 2,
+              "kl_contribution": 0.0,
+              "p_fp": 1.1766336456275894e-06,
+              "p_obj": 1.1766336456275894e-06,
+              "direction": "obj>fp"
+            },
+            {
+              "token": "%",
+              "token_id": 6,
+              "kl_contribution": 0.0,
+              "p_fp": 2.284248694195412e-06,
+              "p_obj": 2.284248694195412e-06,
+              "direction": "obj>fp"
+            }
+          ]
+        }
+      ],
+      "top5_overlap_values": [
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "total_kl_mean": 0.0,
+      "band_kl_mean_0-10": 0.0,
+      "band_kl_mean_10-50": 0.0,
+      "band_kl_mean_50-200": 0.0,
+      "band_kl_mean_200-1000": 0.0,
+      "band_kl_mean_1000-tail": 0.0,
+      "pct_top50": 0,
+      "argmax_agree_pct": 100.0,
+      "top5_overlap_mean": 1.0
+    },
+    "5": {
+      "band_kl_totals": {
+        "0-10": [
+          0.02665158174932003,
+          0.06229741498827934,
+          0.03676531836390495,
+          0.03537223860621452,
+          0.023280400782823563,
+          0.0845760852098465
+        ],
+        "10-50": [
+          0.05999119579792023,
+          0.03648572787642479,
+          0.06786494702100754,
+          0.055146511644124985,
+          0.0332011841237545,
+          0.03249330818653107
+        ],
+        "50-200": [
+          0.038746073842048645,
+          0.03704540431499481,
+          0.04490043222904205,
+          0.04309457167983055,
+          0.020633816719055176,
+          0.029558846727013588
+        ],
+        "200-1000": [
+          0.05110965669155121,
+          0.047345563769340515,
+          0.046692173928022385,
+          0.04451873153448105,
+          0.027191733941435814,
+          0.029929572716355324
+        ],
+        "1000-tail": [
+          0.05661414563655853,
+          0.05872459337115288,
+          0.04834344983100891,
+          0.05194653943181038,
+          0.030506165698170662,
+          0.033623822033405304
+        ]
+      },
+      "total_kl_values": [
+        0.2331126630306244,
+        0.24189871549606323,
+        0.24456630647182465,
+        0.2300785779953003,
+        0.1348133087158203,
+        0.21018165349960327
+      ],
+      "argmax_agree_count": 5,
+      "argmax_disagree_examples": [
+        {
+          "category": "processing_shift",
+          "fp_top1": "min",
+          "obj_top1": "CH"
+        }
+      ],
+      "top_kl_tokens_all": [],
+      "top5_overlap_values": [
+        0.8,
+        1.0,
+        0.6,
+        0.8,
+        0.8,
+        0.6
+      ],
+      "total_kl_mean": 0.21577520420153937,
+      "band_kl_mean_0-10": 0.044823839950064816,
+      "band_kl_mean_10-50": 0.047530479108293854,
+      "band_kl_mean_50-200": 0.035663190918664135,
+      "band_kl_mean_200-1000": 0.04113123876353105,
+      "band_kl_mean_1000-tail": 0.04662645266701778,
+      "pct_top50": 61.8632517651152,
+      "argmax_agree_pct": 83.33333333333334,
+      "top5_overlap_mean": 0.7666666666666666
+    },
+    "10": {
+      "band_kl_totals": {
+        "0-10": [
+          0.197446808218956,
+          0.2072058618068695,
+          0.4345182180404663,
+          0.03599722683429718,
+          0.15463276207447052,
+          0.3412202000617981
+        ],
+        "10-50": [
+          0.10597863048315048,
+          0.2651861310005188,
+          0.16353879868984222,
+          0.14849893748760223,
+          0.030063753947615623,
+          0.04893839359283447
+        ],
+        "50-200": [
+          0.1072787418961525,
+          0.14789502322673798,
+          0.13237197697162628,
+          0.16718457639217377,
+          0.03830259293317795,
+          0.09637297689914703
+        ],
+        "200-1000": [
+          0.08240096271038055,
+          0.12392015755176544,
+          0.08551299571990967,
+          0.1564091444015503,
+          0.03492065891623497,
+          0.06654934585094452
+        ],
+        "1000-tail": [
+          0.0854337215423584,
+          0.1557522565126419,
+          0.0956307128071785,
+          0.22997665405273438,
+          0.03254678472876549,
+          0.07511535286903381
+        ]
+      },
+      "total_kl_values": [
+        0.5785388946533203,
+        0.8999594449996948,
+        0.9115727543830872,
+        0.738066554069519,
+        0.2904665470123291,
+        0.6281962394714355
+      ],
+      "argmax_agree_count": 1,
+      "argmax_disagree_examples": [
+        {
+          "category": "processing_shift",
+          "fp_top1": "**",
+          "obj_top1": "PES"
+        },
+        {
+          "category": "uncertainty",
+          "fp_top1": "ode",
+          "obj_top1": "unnumbered"
+        },
+        {
+          "category": "preference",
+          "fp_top1": "Your",
+          "obj_top1": "ode"
+        },
+        {
+          "category": "memory_loss",
+          "fp_top1": "`",
+          "obj_top1": "'["
+        },
+        {
+          "category": "creative_satisfaction",
+          "fp_top1": "*",
+          "obj_top1": "If"
+        }
+      ],
+      "top_kl_tokens_all": [],
+      "top5_overlap_values": [
+        0.6,
+        0.6,
+        0.2,
+        0.4,
+        0.8,
+        0.6
+      ],
+      "total_kl_mean": 0.674466739098231,
+      "band_kl_mean_0-10": 0.22850351283947626,
+      "band_kl_mean_10-50": 0.12703410753359398,
+      "band_kl_mean_50-200": 0.11490098138650258,
+      "band_kl_mean_200-1000": 0.09161887752513091,
+      "band_kl_mean_1000-tail": 0.11240924708545208,
+      "pct_top50": 66.29778341568839,
+      "argmax_agree_pct": 16.666666666666664,
+      "top5_overlap_mean": 0.5333333333333333
+    },
+    "12": {
+      "band_kl_totals": {
+        "0-10": [
+          0.3315180242061615,
+          0.3936934471130371,
+          0.3777473270893097,
+          0.40078309178352356,
+          0.2942120134830475,
+          0.309162974357605
+        ],
+        "10-50": [
+          0.09586446732282639,
+          0.24143244326114655,
+          0.22015836834907532,
+          0.08347645401954651,
+          0.015542424283921719,
+          0.09357121586799622
+        ],
+        "50-200": [
+          0.04104121774435043,
+          0.0642881840467453,
+          0.04664020240306854,
+          0.03519502282142639,
+          0.011548505164682865,
+          0.04868627339601517
+        ],
+        "200-1000": [
+          0.029692789539694786,
+          0.03159799799323082,
+          0.014377737417817116,
+          0.03961312398314476,
+          0.0033002039417624474,
+          0.03359699249267578
+        ],
+        "1000-tail": [
+          0.02221537008881569,
+          0.03417143598198891,
+          0.014738216064870358,
+          0.05301004275679588,
+          0.0011833036551252007,
+          0.036820754408836365
+        ]
+      },
+      "total_kl_values": [
+        0.5203319191932678,
+        0.7651835680007935,
+        0.6736618280410767,
+        0.6120776534080505,
+        0.32578644156455994,
+        0.5218382477760315
+      ],
+      "argmax_agree_count": 1,
+      "argmax_disagree_examples": [
+        {
+          "category": "processing_shift",
+          "fp_top1": "",
+          "obj_top1": "In"
+        },
+        {
+          "category": "uncertainty",
+          "fp_top1": "If",
+          "obj_top1": "In"
+        },
+        {
+          "category": "preference",
+          "fp_top1": "If",
+          "obj_top1": ""
+        },
+        {
+          "category": "memory_loss",
+          "fp_top1": "",
+          "obj_top1": "In"
+        },
+        {
+          "category": "creative_satisfaction",
+          "fp_top1": "",
+          "obj_top1": "If"
+        }
+      ],
+      "top_kl_tokens_all": [],
+      "top5_overlap_values": [
+        0.8,
+        0.8,
+        0.8,
+        0.6,
+        1.0,
+        0.8
+      ],
+      "total_kl_mean": 0.56981327633063,
+      "band_kl_mean_0-10": 0.3511861463387807,
+      "band_kl_mean_10-50": 0.12500756218408546,
+      "band_kl_mean_50-200": 0.04123323426271478,
+      "band_kl_mean_200-1000": 0.025363140894720953,
+      "band_kl_mean_1000-tail": 0.0270231871594054,
+      "pct_top50": 88.02126420209318,
+      "argmax_agree_pct": 16.666666666666664,
+      "top5_overlap_mean": 0.7999999999999999
+    },
+    "15": {
+      "band_kl_totals": {
+        "0-10": [
+          1.6712545156478882,
+          1.7468369007110596,
+          1.7970521450042725,
+          1.8122742176055908,
+          0.1405676305294037,
+          1.2560962438583374
+        ],
+        "10-50": [
+          0.10380956530570984,
+          0.08569859713315964,
+          0.04752226173877716,
+          0.08027002215385437,
+          0.15567950904369354,
+          0.05321834981441498
+        ],
+        "50-200": [
+          0.03664940968155861,
+          0.039863474667072296,
+          0.0076079703867435455,
+          0.0709323137998581,
+          0.013807995244860649,
+          0.01222663838416338
+        ],
+        "200-1000": [
+          0.01822369173169136,
+          0.010456190444529057,
+          0.0028221779502928257,
+          0.029784277081489563,
+          0.005544617306441069,
+          0.009259562008082867
+        ],
+        "1000-tail": [
+          0.015306386165320873,
+          0.0076930890791118145,
+          0.0029614402446895838,
+          0.02966669388115406,
+          0.003833512309938669,
+          0.007444670423865318
+        ]
+      },
+      "total_kl_values": [
+        1.8452435731887817,
+        1.8905481100082397,
+        1.8579658269882202,
+        2.0229272842407227,
+        0.3194332420825958,
+        1.3382453918457031
+      ],
+      "argmax_agree_count": 1,
+      "argmax_disagree_examples": [
+        {
+          "category": "processing_shift",
+          "fp_top1": "You",
+          "obj_top1": "In"
+        },
+        {
+          "category": "uncertainty",
+          "fp_top1": "Your",
+          "obj_top1": "The"
+        },
+        {
+          "category": "preference",
+          "fp_top1": "You",
+          "obj_top1": ""
+        },
+        {
+          "category": "memory_loss",
+          "fp_top1": "You",
+          "obj_top1": "We"
+        },
+        {
+          "category": "relationship",
+          "fp_top1": "You",
+          "obj_top1": "This"
+        }
+      ],
+      "top_kl_tokens_all": [
+        {
+          "category": "processing_shift",
+          "tokens": [
+            {
+              "token": "You",
+              "token_id": 1422,
+              "kl_contribution": 0.7809371948242188,
+              "p_fp": 0.2144392877817154,
+              "p_obj": 0.005619613919407129,
+              "direction": "fp>obj"
+            },
+            {
+              "token": "Your",
+              "token_id": 5402,
+              "kl_contribution": 0.7198448181152344,
+              "p_fp": 0.16827134788036346,
+              "p_obj": 0.0023342641070485115,
+              "direction": "fp>obj"
+            },
+            {
+              "token": "",
+              "token_id": 187,
+              "kl_contribution": 0.09591227024793625,
+              "p_fp": 0.10556938499212265,
+              "p_obj": 0.042557019740343094,
+              "direction": "fp>obj"
+            },
+            {
+              "token": "If",
+              "token_id": 1310,
+              "kl_contribution": 0.07262194901704788,
+              "p_fp": 0.0541333369910717,
+              "p_obj": 0.014152790419757366,
+              "direction": "fp>obj"
+            },
+            {
+              "token": "your",
+              "token_id": 634,
+              "kl_contribution": 0.03876667842268944,
+              "p_fp": 0.006459943018853664,
+              "p_obj": 1.599520692252554e-05,
+              "direction": "fp>obj"
+            },
+            {
+              "token": "Your",
+              "token_id": 7093,
+              "kl_contribution": 0.013414575718343258,
+              "p_fp": 0.002894661156460643,
+              "p_obj": 2.811704507621471e-05,
+              "direction": "fp>obj"
+            },
+            {
+              "token": "When",
+              "token_id": 2091,
+              "kl_contribution": 0.012909415178000927,
+              "p_fp": 0.008747248910367489,
+              "p_obj": 0.0019995325710624456,
+              "direction": "fp>obj"
+            },
+            {
+              "token": "You",
+              "token_id": 1394,
+              "kl_contribution": 0.011407120153307915,
+              "p_fp": 0.0033750480506569147,
+              "p_obj": 0.00011493025522213429,
+              "direction": "fp>obj"
+            },
+            {
+              "token": "you",
+              "token_id": 368,
+              "kl_contribution": 0.00878148339688778,
+              "p_fp": 0.0019421522738412023,
+              "p_obj": 2.1115989511599764e-05,
+              "direction": "fp>obj"
+            },
+            {
+              "token": "I",
+              "token_id": 309,
+              "kl_contribution": 0.007596367038786411,
+              "p_fp": 0.007778079714626074,
+              "p_obj": 0.002929030917584896,
+              "direction": "fp>obj"
+            }
+          ]
+        },
+        {
+          "category": "uncertainty",
+          "tokens": [
+            {
+              "token": "Your",
+              "token_id": 5402,
+              "kl_contribution": 1.069327712059021,
+              "p_fp": 0.1937442123889923,
+              "p_obj": 0.0007766723865643144,
+              "direction": "fp>obj"
+            },
+            {
+              "token": "You",
+              "token_id": 1422,
+              "kl_contribution": 0.4700487554073334,
+              "p_fp": 0.13277080655097961,
+              "p_obj": 0.0038509592413902283,
+              "direction": "fp>obj"
+            },
+            {
+              "token": "If",
+              "token_id": 1310,
+              "kl_contribution": 0.08086461573839188,
+              "p_fp": 0.061968617141246796,
+              "p_obj": 0.016805388033390045,
+              "direction": "fp>obj"
+            },
+            {
+              "token": "",
+              "token_id": 187,
+              "kl_contribution": 0.05666870251297951,
+              "p_fp": 0.06584206223487854,
+              "p_obj": 0.02784302830696106,
+              "direction": "fp>obj"
+            },
+            {
+              "token": "What",
+              "token_id": 1737,
+              "kl_contribution": 0.04802970215678215,
+              "p_fp": 0.045090265572071075,
+              "p_obj": 0.015540916472673416,
+              "direction": "fp>obj"
+            },
+            {
+              "token": "your",
+              "token_id": 634,
+              "kl_contribution": 0.03544880822300911,
+              "p_fp": 0.005313386209309101,
+              "p_obj": 6.728690095769707e-06,
+              "direction": "fp>obj"
+            },
+            {
+              "token": "How",
+              "token_id": 1359,
+              "kl_contribution": 0.021897321566939354,
+              "p_fp": 0.047171927988529205,
+              "p_obj": 0.029653986915946007,
+              "direction": "fp>obj"
+            },
+            {
+              "token": "Your",
+              "token_id": 7093,
+              "kl_contribution": 0.014334071427583694,
+              "p_fp": 0.002575204474851489,
+              "p_obj": 9.850245078268927e-06,
+              "direction": "fp>obj"
+            },
+            {
+              "token": "My",
+              "token_id": 2752,
+              "kl_contribution": 0.013835233636200428,
+              "p_fp": 0.01051231101155281,
+              "p_obj": 0.0028191879391670227,
+              "direction": "fp>obj"
+            },
+            {
+              "token": "I",
+              "token_id": 309,
+              "kl_contribution": 0.009364449419081211,
+              "p_fp": 0.01599336974322796,
+              "p_obj": 0.008905361406505108,
+              "direction": "fp>obj"
+            }
+          ]
+        },
+        {
+          "category": "preference",
+          "tokens": [
+            {
+              "token": "Your",
+              "token_id": 5402,
+              "kl_contribution": 0.9554306864738464,
+              "p_fp": 0.3135111629962921,
+              "p_obj": 0.014884460717439651,
+              "direction": "fp>obj"
+            },
+            {
+              "token": "You",
+              "token_id": 1422,
+              "kl_contribution": 0.841621458530426,
+              "p_fp": 0.3220210671424866,
+              "p_obj": 0.023595521226525307,
+              "direction": "fp>obj"
+            },
+            {
+              "token": "your",
+              "token_id": 634,
+              "kl_contribution": 0.0262739434838295,
+              "p_fp": 0.0076384772546589375,
+              "p_obj": 0.0002450029132887721,
+              "direction": "fp>obj"
+            },
+            {
+              "token": "Your",
+              "token_id": 7093,
+              "kl_contribution": 0.014280281960964203,
+              "p_fp": 0.004410388879477978,
+              "p_obj": 0.0001730957010295242,
+              "direction": "fp>obj"
+            },
+            {
+              "token": "You",
+              "token_id": 1394,
+              "kl_contribution": 0.005947628524154425,
+              "p_fp": 0.003047279315069318,
+              "p_obj": 0.00043277640361338854,
+              "direction": "fp>obj"
+            },
+            {
+              "token": "your",
+              "token_id": 12550,
+              "kl_contribution": 0.0039636981673538685,
+              "p_fp": 0.00100525317247957,
+              "p_obj": 1.949210673046764e-05,
+              "direction": "fp>obj"
+            },
+            {
+              "token": "you",
+              "token_id": 368,
+              "kl_contribution": 0.001959762303158641,
+              "p_fp": 0.0009624740923754871,
+              "p_obj": 0.00012562931806314737,
+              "direction": "fp>obj"
+            },
+            {
+              "token": "**",
+              "token_id": 1401,
+              "kl_contribution": 0.0007693269872106612,
+              "p_fp": 0.0020955230575054884,
+              "p_obj": 0.0014516115188598633,
+              "direction": "fp>obj"
+            },
+            {
+              "token": "yourself",
+              "token_id": 4834,
+              "kl_contribution": 0.0004082276136614382,
+              "p_fp": 0.00010617821681080386,
+              "p_obj": 2.271360699523939e-06,
+              "direction": "fp>obj"
+            },
+            {
+              "token": "Please",
+              "token_id": 7764,
+              "kl_contribution": 0.00034116723691113293,
+              "p_fp": 0.00047244803863577545,
+              "p_obj": 0.00022947666002437472,
+              "direction": "fp>obj"
+            }
+          ]
+        },
+        {
+          "category": "memory_loss",
+          "tokens": [
+            {
+              "token": "You",
+              "token_id": 1422,
+              "kl_contribution": 0.8674025535583496,
+              "p_fp": 0.2010350376367569,
+              "p_obj": 0.002687995322048664,
+              "direction": "fp>obj"
+            },
+            {
+              "token": "Your",
+              "token_id": 5402,
+              "kl_contribution": 0.5166928172111511,
+              "p_fp": 0.1090371236205101,
+              "p_obj": 0.0009540887549519539,
+              "direction": "fp>obj"
+            },
+            {
+              "token": "",
+              "token_id": 187,
+              "kl_contribution": 0.3909488320350647,
+              "p_fp": 0.20022530853748322,
+              "p_obj": 0.028414474800229073,
+              "direction": "fp>obj"
+            },
+            {
+              "token": "If",
+              "token_id": 1310,
+              "kl_contribution": 0.03722990304231644,
+              "p_fp": 0.015756839886307716,
+              "p_obj": 0.0014836381888017058,
+              "direction": "fp>obj"
+            },
+            {
+              "token": "You",
+              "token_id": 1394,
+              "kl_contribution": 0.015942834317684174,
+              "p_fp": 0.004040089435875416,
+              "p_obj": 7.809009548509493e-05,
+              "direction": "fp>obj"
+            },
+            {
+              "token": "your",
+              "token_id": 634,
+              "kl_contribution": 0.012593591585755348,
+              "p_fp": 0.0019493344007059932,
+              "p_obj": 3.0489154596580192e-06,
+              "direction": "fp>obj"
+            },
+            {
+              "token": "I",
+              "token_id": 309,
+              "kl_contribution": 0.011910279281437397,
+              "p_fp": 0.00559456180781126,
+              "p_obj": 0.0006655723555013537,
+              "direction": "fp>obj"
+            },
+            {
+              "token": "Your",
+              "token_id": 7093,
+              "kl_contribution": 0.011573005467653275,
+              "p_fp": 0.002433791756629944,
+              "p_obj": 2.0948606106685475e-05,
+              "direction": "fp>obj"
+            },
+            {
+              "token": "What",
+              "token_id": 1737,
+              "kl_contribution": 0.010662942193448544,
+              "p_fp": 0.008357428014278412,
+              "p_obj": 0.002333307173103094,
+              "direction": "fp>obj"
+            },
+            {
+              "token": "(",
+              "token_id": 313,
+              "kl_contribution": 0.009560812264680862,
+              "p_fp": 0.008498474955558777,
+              "p_obj": 0.002759041730314493,
+              "direction": "fp>obj"
+            }
+          ]
+        },
+        {
+          "category": "creative_satisfaction",
+          "tokens": [
+            {
+              "token": "",
+              "token_id": 187,
+              "kl_contribution": 0.10824058204889297,
+              "p_fp": 0.28889650106430054,
+              "p_obj": 0.19862118363380432,
+              "direction": "fp>obj"
+            },
+            {
+              "token": "You",
+              "token_id": 1422,
+              "kl_contribution": 0.07150880247354507,
+              "p_fp": 0.0417596735060215,
+              "p_obj": 0.007534874137490988,
+              "direction": "fp>obj"
+            },
+            {
+              "token": "Your",
+              "token_id": 5402,
+              "kl_contribution": 0.060553669929504395,
+              "p_fp": 0.025779923424124718,
+              "p_obj": 0.00246139126829803,
+              "direction": "fp>obj"
+            },
+            {
+              "token": "It",
+              "token_id": 733,
+              "kl_contribution": 0.021488884463906288,
+              "p_fp": 0.06469326466321945,
+              "p_obj": 0.04640890657901764,
+              "direction": "fp>obj"
+            },
+            {
+              "token": "I",
+              "token_id": 309,
+              "kl_contribution": 0.009305679239332676,
+              "p_fp": 0.052001193165779114,
+              "p_obj": 0.04348062351346016,
+              "direction": "fp>obj"
+            },
+            {
+              "token": "This",
+              "token_id": 831,
+              "kl_contribution": 0.0067246584221720695,
+              "p_fp": 0.01936046965420246,
+              "p_obj": 0.013679436407983303,
+              "direction": "fp>obj"
+            },
+            {
+              "token": "My",
+              "token_id": 2752,
+              "kl_contribution": 0.0060286386869847775,
+              "p_fp": 0.01377533096820116,
+              "p_obj": 0.008892775513231754,
+              "direction": "fp>obj"
+            },
+            {
+              "token": "let",
+              "token_id": 1339,
+              "kl_contribution": 0.003455569501966238,
+              "p_fp": 0.0077106826938688755,
+              "p_obj": 0.004925635177642107,
+              "direction": "fp>obj"
+            },
+            {
+              "token": "your",
+              "token_id": 634,
+              "kl_contribution": 0.002180390991270542,
+              "p_fp": 0.000795483123511076,
+              "p_obj": 5.131510988576338e-05,
+              "direction": "fp>obj"
+            },
+            {
+              "token": "Let",
+              "token_id": 1281,
+              "kl_contribution": 0.0016345209442079067,
+              "p_fp": 0.012130421586334705,
+              "p_obj": 0.010601239278912544,
+              "direction": "fp>obj"
+            }
+          ]
+        },
+        {
+          "category": "relationship",
+          "tokens": [
+            {
+              "token": "You",
+              "token_id": 1422,
+              "kl_contribution": 0.619387686252594,
+              "p_fp": 0.30041995644569397,
+              "p_obj": 0.03822317719459534,
+              "direction": "fp>obj"
+            },
+            {
+              "token": "Your",
+              "token_id": 5402,
+              "kl_contribution": 0.5165314674377441,
+              "p_fp": 0.17680208384990692,
+              "p_obj": 0.00952107273042202,
+              "direction": "fp>obj"
+            },
+            {
+              "token": "",
+              "token_id": 187,
+              "kl_contribution": 0.10017046332359314,
+              "p_fp": 0.15454785525798798,
+              "p_obj": 0.08083030581474304,
+              "direction": "fp>obj"
+            },
+            {
+              "token": "your",
+              "token_id": 634,
+              "kl_contribution": 0.022595729678869247,
+              "p_fp": 0.005328894127160311,
+              "p_obj": 7.675898086745292e-05,
+              "direction": "fp>obj"
+            },
+            {
+              "token": "If",
+              "token_id": 1310,
+              "kl_contribution": 0.020006606355309486,
+              "p_fp": 0.028297914192080498,
+              "p_obj": 0.013954315334558487,
+              "direction": "fp>obj"
+            },
+            {
+              "token": "Your",
+              "token_id": 7093,
+              "kl_contribution": 0.013627797365188599,
+              "p_fp": 0.004032850731164217,
+              "p_obj": 0.00013741858128923923,
+              "direction": "fp>obj"
+            },
+            {
+              "token": "You",
+              "token_id": 1394,
+              "kl_contribution": 0.011346641927957535,
+              "p_fp": 0.005797897465527058,
+              "p_obj": 0.0008191142696887255,
+              "direction": "fp>obj"
+            },
+            {
+              "token": "you",
+              "token_id": 368,
+              "kl_contribution": 0.004187370650470257,
+              "p_fp": 0.001737794023938477,
+              "p_obj": 0.00015614452422596514,
+              "direction": "fp>obj"
+            },
+            {
+              "token": "your",
+              "token_id": 12550,
+              "kl_contribution": 0.0037927189841866493,
+              "p_fp": 0.0008991853101179004,
+              "p_obj": 1.3243923604022712e-05,
+              "direction": "fp>obj"
+            },
+            {
+              "token": "When",
+              "token_id": 2091,
+              "kl_contribution": 0.00242876959964633,
+              "p_fp": 0.006524037569761276,
+              "p_obj": 0.004496113397181034,
+              "direction": "fp>obj"
+            }
+          ]
+        }
+      ],
+      "top5_overlap_values": [
+        0.2,
+        0.2,
+        0.4,
+        0.4,
+        0.8,
+        0.4
+      ],
+      "total_kl_mean": 1.5457272380590439,
+      "band_kl_mean_0-10": 1.4040136088927586,
+      "band_kl_mean_10-50": 0.08769971753160159,
+      "band_kl_mean_50-200": 0.03018130036070943,
+      "band_kl_mean_200-1000": 0.012681752753754457,
+      "band_kl_mean_1000-tail": 0.011150965350680053,
+      "pct_top50": 97.32603800572022,
+      "argmax_agree_pct": 16.666666666666664,
+      "top5_overlap_mean": 0.39999999999999997
+    },
+    "17": {
+      "band_kl_totals": {
+        "0-10": [
+          0.3229880630970001,
+          0.23163899779319763,
+          0.31182730197906494,
+          0.18436580896377563,
+          0.06767451018095016,
+          0.16419021785259247
+        ],
+        "10-50": [
+          0.008948981761932373,
+          0.0460275337100029,
+          0.01883908547461033,
+          0.025973932817578316,
+          0.0027572582475841045,
+          0.006115075200796127
+        ],
+        "50-200": [
+          0.002031822921708226,
+          0.004359455779194832,
+          0.0034566116519272327,
+          0.0038738050498068333,
+          0.0007086888654157519,
+          0.00048823311226442456
+        ],
+        "200-1000": [
+          0.001089673605747521,
+          0.00155527307651937,
+          0.001415591686964035,
+          0.0019488180987536907,
+          0.00014777196338400245,
+          0.0004014409496448934
+        ],
+        "1000-tail": [
+          0.00038123439298942685,
+          0.00032225242466665804,
+          0.0005468413583002985,
+          0.0005987355834804475,
+          2.6353305656812154e-05,
+          0.00010590402962407097
+        ]
+      },
+      "total_kl_values": [
+        0.3354398012161255,
+        0.2839035093784332,
+        0.33608537912368774,
+        0.21676108241081238,
+        0.07131457328796387,
+        0.17130088806152344
+      ],
+      "argmax_agree_count": 6,
+      "argmax_disagree_examples": [],
+      "top_kl_tokens_all": [],
+      "top5_overlap_values": [
+        0.6,
+        0.6,
+        0.8,
+        0.6,
+        0.6,
+        0.6
+      ],
+      "total_kl_mean": 0.23580087224642435,
+      "band_kl_mean_0-10": 0.21378081664443016,
+      "band_kl_mean_10-50": 0.018110311202084024,
+      "band_kl_mean_50-200": 0.0024864362300528833,
+      "band_kl_mean_200-1000": 0.0010930948968355854,
+      "band_kl_mean_1000-tail": 0.0003302201824529523,
+      "pct_top50": 98.805496571645,
+      "argmax_agree_pct": 100.0,
+      "top5_overlap_mean": 0.6333333333333334
+    },
+    "18": {
+      "band_kl_totals": {
+        "0-10": [
+          0.15662804245948792,
+          0.08130644261837006,
+          0.1703573316335678,
+          0.08925141394138336,
+          0.021700050681829453,
+          0.0693477988243103
+        ],
+        "10-50": [
+          0.00815470889210701,
+          0.012703901156783104,
+          0.007433455437421799,
+          0.008199064061045647,
+          0.0018373711500316858,
+          0.0026438208296895027
+        ],
+        "50-200": [
+          0.003843641374260187,
+          0.004629134200513363,
+          0.0032673203386366367,
+          0.0034488486126065254,
+          0.0014849324943497777,
+          0.0005881272372789681
+        ],
+        "200-1000": [
+          0.0016230021137744188,
+          0.002284429734572768,
+          0.002094684634357691,
+          0.0028996176552027464,
+          0.0007298897835426033,
+          0.0004827402881346643
+        ],
+        "1000-tail": [
+          0.0007074393215589225,
+          0.0007743316236883402,
+          0.0011984334560111165,
+          0.0017851078882813454,
+          0.00030251452699303627,
+          0.00020991415658500046
+        ]
+      },
+      "total_kl_values": [
+        0.17095685005187988,
+        0.10169824212789536,
+        0.18435123562812805,
+        0.10558406263589859,
+        0.026054762303829193,
+        0.07327239215373993
+      ],
+      "argmax_agree_count": 6,
+      "argmax_disagree_examples": [],
+      "top_kl_tokens_all": [],
+      "top5_overlap_values": [
+        0.6,
+        0.6,
+        0.8,
+        0.8,
+        0.8,
+        0.8
+      ],
+      "total_kl_mean": 0.11031959081689517,
+      "band_kl_mean_0-10": 0.09809851335982482,
+      "band_kl_mean_10-50": 0.006828720254513125,
+      "band_kl_mean_50-200": 0.0028770007096075765,
+      "band_kl_mean_200-1000": 0.0016857273682641487,
+      "band_kl_mean_1000-tail": 0.0008296234955196269,
+      "pct_top50": 96.64009827552279,
+      "argmax_agree_pct": 100.0,
+      "top5_overlap_mean": 0.7333333333333333
+    },
+    "20": {
+      "band_kl_totals": {
+        "0-10": [
+          0.33682534098625183,
+          0.20503738522529602,
+          0.22761890292167664,
+          0.4294356107711792,
+          0.07469134032726288,
+          0.1360911726951599
+        ],
+        "10-50": [
+          0.033649347722530365,
+          0.01595166139304638,
+          0.02721652388572693,
+          0.030532123520970345,
+          0.006954671815037727,
+          0.018509535118937492
+        ],
+        "50-200": [
+          0.006460874807089567,
+          0.005108867771923542,
+          0.0042616636492311954,
+          0.008032764308154583,
+          0.002794442232698202,
+          0.0018778701778501272
+        ],
+        "200-1000": [
+          0.004674600902944803,
+          0.0032878220081329346,
+          0.005038458853960037,
+          0.004759475588798523,
+          0.000944598694331944,
+          0.0013561670202761889
+        ],
+        "1000-tail": [
+          0.001164367189630866,
+          0.0007852406706660986,
+          0.0016419535968452692,
+          0.0010658687679097056,
+          0.00032711480162106454,
+          0.0003549979883246124
+        ]
+      },
+      "total_kl_values": [
+        0.3827745318412781,
+        0.23017099499702454,
+        0.26577746868133545,
+        0.4738258719444275,
+        0.08571217209100723,
+        0.15818974375724792
+      ],
+      "argmax_agree_count": 6,
+      "argmax_disagree_examples": [],
+      "top_kl_tokens_all": [],
+      "top5_overlap_values": [
+        0.6,
+        0.4,
+        0.8,
+        0.6,
+        1.0,
+        0.8
+      ],
+      "total_kl_mean": 0.26607513055205345,
+      "band_kl_mean_0-10": 0.23494995882113776,
+      "band_kl_mean_10-50": 0.022135643909374874,
+      "band_kl_mean_50-200": 0.00475608049115787,
+      "band_kl_mean_200-1000": 0.003343520511407405,
+      "band_kl_mean_1000-tail": 0.0008899238358329361,
+      "pct_top50": 97.87804019924032,
+      "argmax_agree_pct": 100.0,
+      "top5_overlap_mean": 0.7000000000000001
+    },
+    "23": {
+      "band_kl_totals": {
+        "0-10": [
+          0.2757191061973572,
+          0.22547759115695953,
+          0.1937580555677414,
+          0.3974224627017975,
+          0.12139539420604706,
+          0.10966366529464722
+        ],
+        "10-50": [
+          0.07797697931528091,
+          0.04992351308465004,
+          0.08668941259384155,
+          0.1560005247592926,
+          0.019237957894802094,
+          0.037563078105449677
+        ],
+        "50-200": [
+          0.08179149776697159,
+          0.06581589579582214,
+          0.07492511719465256,
+          0.10651126503944397,
+          0.01512741670012474,
+          0.04700898006558418
+        ],
+        "200-1000": [
+          0.05850391462445259,
+          0.03591281175613403,
+          0.05495860427618027,
+          0.06692522019147873,
+          0.015969902276992798,
+          0.03486189618706703
+        ],
+        "1000-tail": [
+          0.026487939059734344,
+          0.012982399202883244,
+          0.025579696521162987,
+          0.028953779488801956,
+          0.009114719927310944,
+          0.019376665353775024
+        ]
+      },
+      "total_kl_values": [
+        0.5204794406890869,
+        0.3901122212409973,
+        0.4359109103679657,
+        0.7558133006095886,
+        0.18084540963172913,
+        0.24847428500652313
+      ],
+      "argmax_agree_count": 6,
+      "argmax_disagree_examples": [],
+      "top_kl_tokens_all": [],
+      "top5_overlap_values": [
+        0.4,
+        0.8,
+        0.6,
+        0.2,
+        0.8,
+        0.8
+      ],
+      "total_kl_mean": 0.42193926125764847,
+      "band_kl_mean_0-10": 0.2205727125207583,
+      "band_kl_mean_10-50": 0.07123191095888615,
+      "band_kl_mean_50-200": 0.06519669542709987,
+      "band_kl_mean_200-1000": 0.044522058218717575,
+      "band_kl_mean_1000-tail": 0.020415866592278082,
+      "pct_top50": 79.70973848129081,
+      "argmax_agree_pct": 100.0,
+      "top5_overlap_mean": 0.6000000000000001
+    },
+    "24": {
+      "band_kl_totals": {
+        "0-10": [
+          0.0945376306772232,
+          0.11692321300506592,
+          0.039183858782052994,
+          0.18410718441009521,
+          0.029187457635998726,
+          0.04612838104367256
+        ],
+        "10-50": [
+          0.05455755814909935,
+          0.052819665521383286,
+          0.05381762236356735,
+          0.03132867068052292,
+          0.023819025605916977,
+          0.008626879192888737
+        ],
+        "50-200": [
+          0.04723143205046654,
+          0.03666749224066734,
+          0.03700743243098259,
+          0.022861480712890625,
+          0.011791553348302841,
+          0.014939893037080765
+        ],
+        "200-1000": [
+          0.016211379319429398,
+          0.010402253828942776,
+          0.013695554807782173,
+          0.012400142848491669,
+          0.006878298241645098,
+          0.007544223219156265
+        ],
+        "1000-tail": [
+          0.0036761118099093437,
+          0.0019151552114635706,
+          0.0030806008726358414,
+          0.003788652829825878,
+          0.001694442587904632,
+          0.0019963912200182676
+        ]
+      },
+      "total_kl_values": [
+        0.21621409058570862,
+        0.21872778236865997,
+        0.14678506553173065,
+        0.2544861137866974,
+        0.07337077707052231,
+        0.07923576980829239
+      ],
+      "argmax_agree_count": 6,
+      "argmax_disagree_examples": [],
+      "top_kl_tokens_all": [
+        {
+          "category": "processing_shift",
+          "tokens": [
+            {
+              "token": "You",
+              "token_id": 1422,
+              "kl_contribution": 0.04497688636183739,
+              "p_fp": 0.035229746252298355,
+              "p_obj": 0.009827820584177971,
+              "direction": "fp>obj"
+            },
+            {
+              "token": "",
+              "token_id": 187,
+              "kl_contribution": 0.03454790636897087,
+              "p_fp": 0.6757573485374451,
+              "p_obj": 0.6420777440071106,
+              "direction": "fp>obj"
+            },
+            {
+              "token": "What",
+              "token_id": 1737,
+              "kl_contribution": 0.014747882261872292,
+              "p_fp": 0.013932965695858002,
+              "p_obj": 0.004834459628909826,
+              "direction": "fp>obj"
+            },
+            {
+              "token": "<|endoftext|>",
+              "token_id": 0,
+              "kl_contribution": 0.01294543594121933,
+              "p_fp": 0.014516317285597324,
+              "p_obj": 0.005950577091425657,
+              "direction": "fp>obj"
+            },
+            {
+              "token": "How",
+              "token_id": 1359,
+              "kl_contribution": 0.00473536504432559,
+              "p_fp": 0.008872241713106632,
+              "p_obj": 0.005202812608331442,
+              "direction": "fp>obj"
+            },
+            {
+              "token": "If",
+              "token_id": 1310,
+              "kl_contribution": 0.004486216697841883,
+              "p_fp": 0.006575946230441332,
+              "p_obj": 0.0033241109922528267,
+              "direction": "fp>obj"
+            },
+            {
+              "token": "When",
+              "token_id": 2091,
+              "kl_contribution": 0.0041130115278065205,
+              "p_fp": 0.003989992663264275,
+              "p_obj": 0.0014232707908377051,
+              "direction": "fp>obj"
+            },
+            {
+              "token": "Do",
+              "token_id": 3166,
+              "kl_contribution": 0.0036260937340557575,
+              "p_fp": 0.0019124486716464162,
+              "p_obj": 0.0002871751203201711,
+              "direction": "fp>obj"
+            },
+            {
+              "token": "Don",
+              "token_id": 5037,
+              "kl_contribution": 0.0036156284622848034,
+              "p_fp": 0.001503834966570139,
+              "p_obj": 0.00013584324915427715,
+              "direction": "fp>obj"
+            },
+            {
+              "token": "Take",
+              "token_id": 11668,
+              "kl_contribution": 0.0031938867177814245,
+              "p_fp": 0.002181052230298519,
+              "p_obj": 0.0005043063429184258,
+              "direction": "fp>obj"
+            }
+          ]
+        },
+        {
+          "category": "uncertainty",
+          "tokens": [
+            {
+              "token": "",
+              "token_id": 187,
+              "kl_contribution": 0.04972805455327034,
+              "p_fp": 0.6792552471160889,
+              "p_obj": 0.6313038468360901,
+              "direction": "fp>obj"
+            },
+            {
+              "token": "What",
+              "token_id": 1737,
+              "kl_contribution": 0.025082029402256012,
+              "p_fp": 0.030939698219299316,
+              "p_obj": 0.013754491694271564,
+              "direction": "fp>obj"
+            },
+            {
+              "token": "Expl",
+              "token_id": 14499,
+              "kl_contribution": 0.020506171509623528,
+              "p_fp": 0.01726175658404827,
+              "p_obj": 0.005262149032205343,
+              "direction": "fp>obj"
+            },
+            {
+              "token": "How",
+              "token_id": 1359,
+              "kl_contribution": 0.01582145504653454,
+              "p_fp": 0.034318335354328156,
+              "p_obj": 0.02164250612258911,
+              "direction": "fp>obj"
+            },
+            {
+              "token": "Do",
+              "token_id": 3166,
+              "kl_contribution": 0.014072895050048828,
+              "p_fp": 0.009578193537890911,
+              "p_obj": 0.002203891985118389,
+              "direction": "fp>obj"
+            },
+            {
+              "token": "<|endoftext|>",
+              "token_id": 0,
+              "kl_contribution": 0.010931512340903282,
+              "p_fp": 0.010381157509982586,
+              "p_obj": 0.0036218236200511456,
+              "direction": "fp>obj"
+            },
+            {
+              "token": "You",
+              "token_id": 1422,
+              "kl_contribution": 0.005785503890365362,
+              "p_fp": 0.016075799241662025,
+              "p_obj": 0.011216949671506882,
+              "direction": "fp>obj"
+            },
+            {
+              "token": "Why",
+              "token_id": 6049,
+              "kl_contribution": 0.004464552737772465,
+              "p_fp": 0.007121616043150425,
+              "p_obj": 0.0038046843837946653,
+              "direction": "fp>obj"
+            },
+            {
+              "token": "Ask",
+              "token_id": 26659,
+              "kl_contribution": 0.004217358306050301,
+              "p_fp": 0.0019327595364302397,
+              "p_obj": 0.00021803690469823778,
+              "direction": "fp>obj"
+            },
+            {
+              "token": "If",
+              "token_id": 1310,
+              "kl_contribution": 0.004146242514252663,
+              "p_fp": 0.0075420597568154335,
+              "p_obj": 0.004352480638772249,
+              "direction": "fp>obj"
+            }
+          ]
+        },
+        {
+          "category": "preference",
+          "tokens": [
+            {
+              "token": "You",
+              "token_id": 1422,
+              "kl_contribution": 0.019350478425621986,
+              "p_fp": 0.024790583178400993,
+              "p_obj": 0.01135781779885292,
+              "direction": "fp>obj"
+            },
+            {
+              "token": "<|endoftext|>",
+              "token_id": 0,
+              "kl_contribution": 0.01139514334499836,
+              "p_fp": 0.009341652505099773,
+              "p_obj": 0.0027584312483668327,
+              "direction": "fp>obj"
+            },
+            {
+              "token": "",
+              "token_id": 187,
+              "kl_contribution": 0.01022909115999937,
+              "p_fp": 0.7094869613647461,
+              "p_obj": 0.6993312835693359,
+              "direction": "fp>obj"
+            },
+            {
+              "token": "What",
+              "token_id": 1737,
+              "kl_contribution": 0.009604289196431637,
+              "p_fp": 0.018596919253468513,
+              "p_obj": 0.011095623485744,
+              "direction": "fp>obj"
+            },
+            {
+              "token": "Expl",
+              "token_id": 14499,
+              "kl_contribution": 0.00709337554872036,
+              "p_fp": 0.0035292080137878656,
+              "p_obj": 0.00047291844384744763,
+              "direction": "fp>obj"
+            },
+            {
+              "token": "Des",
+              "token_id": 3666,
+              "kl_contribution": 0.00553527707234025,
+              "p_fp": 0.0026109281461685896,
+              "p_obj": 0.00031338082044385374,
+              "direction": "fp>obj"
+            },
+            {
+              "token": "How",
+              "token_id": 1359,
+              "kl_contribution": 0.004168940708041191,
+              "p_fp": 0.009445658884942532,
+              "p_obj": 0.006075078155845404,
+              "direction": "fp>obj"
+            },
+            {
+              "token": "Ask",
+              "token_id": 26659,
+              "kl_contribution": 0.003964849282056093,
+              "p_fp": 0.001198254176415503,
+              "p_obj": 4.380578684504144e-05,
+              "direction": "fp>obj"
+            },
+            {
+              "token": "See",
+              "token_id": 2594,
+              "kl_contribution": 0.0033283033408224583,
+              "p_fp": 0.0028864366468042135,
+              "p_obj": 0.0009111378458328545,
+              "direction": "fp>obj"
+            },
+            {
+              "token": "Do",
+              "token_id": 3166,
+              "kl_contribution": 0.0031294033396989107,
+              "p_fp": 0.0024943272583186626,
+              "p_obj": 0.0007113511092029512,
+              "direction": "fp>obj"
+            }
+          ]
+        },
+        {
+          "category": "memory_loss",
+          "tokens": [
+            {
+              "token": "",
+              "token_id": 187,
+              "kl_contribution": 0.1453925520181656,
+              "p_fp": 0.7947308421134949,
+              "p_obj": 0.6618624925613403,
+              "direction": "fp>obj"
+            },
+            {
+              "token": "<|endoftext|>",
+              "token_id": 0,
+              "kl_contribution": 0.022387981414794922,
+              "p_fp": 0.013066709972918034,
+              "p_obj": 0.002355392789468169,
+              "direction": "fp>obj"
+            },
+            {
+              "token": "You",
+              "token_id": 1422,
+              "kl_contribution": 0.013272899203002453,
+              "p_fp": 0.01381345558911562,
+              "p_obj": 0.005284488201141357,
+              "direction": "fp>obj"
+            },
+            {
+              "token": "What",
+              "token_id": 1737,
+              "kl_contribution": 0.01229576300829649,
+              "p_fp": 0.010836123488843441,
+              "p_obj": 0.003484010696411133,
+              "direction": "fp>obj"
+            },
+            {
+              "token": "How",
+              "token_id": 1359,
+              "kl_contribution": 0.004633588716387749,
+              "p_fp": 0.006248197052627802,
+              "p_obj": 0.002976371208205819,
+              "direction": "fp>obj"
+            },
+            {
+              "token": "",
+              "token_id": 50276,
+              "kl_contribution": 0.0030537510756403208,
+              "p_fp": 0.014117909595370293,
+              "p_obj": 0.011371848173439503,
+              "direction": "fp>obj"
+            },
+            {
+              "token": "If",
+              "token_id": 1310,
+              "kl_contribution": 0.0030195668805390596,
+              "p_fp": 0.003234802046790719,
+              "p_obj": 0.0012718914076685905,
+              "direction": "fp>obj"
+            },
+            {
+              "token": "See",
+              "token_id": 2594,
+              "kl_contribution": 0.0026646817568689585,
+              "p_fp": 0.002814000938087702,
+              "p_obj": 0.0010916281025856733,
+              "direction": "fp>obj"
+            },
+            {
+              "token": "Use",
+              "token_id": 7890,
+              "kl_contribution": 0.0021976823918521404,
+              "p_fp": 0.0012415191158652306,
+              "p_obj": 0.0002114386879839003,
+              "direction": "fp>obj"
+            },
+            {
+              "token": "Do",
+              "token_id": 3166,
+              "kl_contribution": 0.002091070171445608,
+              "p_fp": 0.0014476480428129435,
+              "p_obj": 0.0003414615348447114,
+              "direction": "fp>obj"
+            }
+          ]
+        },
+        {
+          "category": "creative_satisfaction",
+          "tokens": [
+            {
+              "token": "You",
+              "token_id": 1422,
+              "kl_contribution": 0.011547081172466278,
+              "p_fp": 0.016687501221895218,
+              "p_obj": 0.008353662677109241,
+              "direction": "fp>obj"
+            },
+            {
+              "token": "",
+              "token_id": 187,
+              "kl_contribution": 0.01133080292493105,
+              "p_fp": 0.7010958194732666,
+              "p_obj": 0.6898561120033264,
+              "direction": "fp>obj"
+            },
+            {
+              "token": "Do",
+              "token_id": 3166,
+              "kl_contribution": 0.0067373001947999,
+              "p_fp": 0.008866629563272,
+              "p_obj": 0.004147250670939684,
+              "direction": "fp>obj"
+            },
+            {
+              "token": "What",
+              "token_id": 1737,
+              "kl_contribution": 0.005676741246134043,
+              "p_fp": 0.021114762872457504,
+              "p_obj": 0.016137095168232918,
+              "direction": "fp>obj"
+            },
+            {
+              "token": "<|endoftext|>",
+              "token_id": 0,
+              "kl_contribution": 0.004577495623379946,
+              "p_fp": 0.00855189934372902,
+              "p_obj": 0.005007279105484486,
+              "direction": "fp>obj"
+            },
+            {
+              "token": "Don",
+              "token_id": 5037,
+              "kl_contribution": 0.0028237197548151016,
+              "p_fp": 0.002760056173428893,
+              "p_obj": 0.000992215471342206,
+              "direction": "fp>obj"
+            },
+            {
+              "token": "If",
+              "token_id": 1310,
+              "kl_contribution": 0.002149017760530114,
+              "p_fp": 0.006647565867751837,
+              "p_obj": 0.004811321850866079,
+              "direction": "fp>obj"
+            },
+            {
+              "token": "When",
+              "token_id": 2091,
+              "kl_contribution": 0.0014796190662309527,
+              "p_fp": 0.003637549467384815,
+              "p_obj": 0.0024218885228037834,
+              "direction": "fp>obj"
+            },
+            {
+              "token": "Then",
+              "token_id": 2635,
+              "kl_contribution": 0.0011489581083878875,
+              "p_fp": 0.0017200224101543427,
+              "p_obj": 0.0008819209178909659,
+              "direction": "fp>obj"
+            },
+            {
+              "token": "Try",
+              "token_id": 15358,
+              "kl_contribution": 0.0010991892777383327,
+              "p_fp": 0.0009185253293253481,
+              "p_obj": 0.0002775719913188368,
+              "direction": "fp>obj"
+            }
+          ]
+        },
+        {
+          "category": "relationship",
+          "tokens": [
+            {
+              "token": "",
+              "token_id": 187,
+              "kl_contribution": 0.032479919493198395,
+              "p_fp": 0.8036587834358215,
+              "p_obj": 0.771826446056366,
+              "direction": "fp>obj"
+            },
+            {
+              "token": "You",
+              "token_id": 1422,
+              "kl_contribution": 0.008502730168402195,
+              "p_fp": 0.015987688675522804,
+              "p_obj": 0.009393230080604553,
+              "direction": "fp>obj"
+            },
+            {
+              "token": "<|endoftext|>",
+              "token_id": 0,
+              "kl_contribution": 0.0029776839073747396,
+              "p_fp": 0.009164853021502495,
+              "p_obj": 0.006622502114623785,
+              "direction": "fp>obj"
+            },
+            {
+              "token": "What",
+              "token_id": 1737,
+              "kl_contribution": 0.002168047707527876,
+              "p_fp": 0.00612820778042078,
+              "p_obj": 0.004302174784243107,
+              "direction": "fp>obj"
+            },
+            {
+              "token": "If",
+              "token_id": 1310,
+              "kl_contribution": 0.002055303193628788,
+              "p_fp": 0.0028728442266583443,
+              "p_obj": 0.0014047761214897037,
+              "direction": "fp>obj"
+            },
+            {
+              "token": "",
+              "token_id": 2756,
+              "kl_contribution": 0.0010305029572919011,
+              "p_fp": 0.00375621160492301,
+              "p_obj": 0.002854979131370783,
+              "direction": "fp>obj"
+            },
+            {
+              "token": "Your",
+              "token_id": 5402,
+              "kl_contribution": 0.0008198671275749803,
+              "p_fp": 0.000753028376493603,
+              "p_obj": 0.00025349471252411604,
+              "direction": "fp>obj"
+            },
+            {
+              "token": "Here",
+              "token_id": 3856,
+              "kl_contribution": 0.0007883705548010767,
+              "p_fp": 0.001218628603965044,
+              "p_obj": 0.0006381343700923026,
+              "direction": "fp>obj"
+            },
+            {
+              "token": "Use",
+              "token_id": 7890,
+              "kl_contribution": 0.00077660201350227,
+              "p_fp": 0.0010972454911097884,
+              "p_obj": 0.0005406564450822771,
+              "direction": "fp>obj"
+            },
+            {
+              "token": "When",
+              "token_id": 2091,
+              "kl_contribution": 0.000758349837269634,
+              "p_fp": 0.0013686860911548138,
+              "p_obj": 0.0007864547078497708,
+              "direction": "fp>obj"
+            }
+          ]
+        }
+      ],
+      "top5_overlap_values": [
+        0.4,
+        0.4,
+        0.6,
+        0.4,
+        0.6,
+        0.6
+      ],
+      "total_kl_mean": 0.16480326652526855,
+      "band_kl_mean_0-10": 0.08501128759235144,
+      "band_kl_mean_10-50": 0.0374949035855631,
+      "band_kl_mean_50-200": 0.02841654730339845,
+      "band_kl_mean_200-1000": 0.011188642044241229,
+      "band_kl_mean_1000-tail": 0.0026918924219595888,
+      "pct_top50": 81.12389762714862,
+      "argmax_agree_pct": 100.0,
+      "top5_overlap_mean": 0.5
+    }
+  }
+}

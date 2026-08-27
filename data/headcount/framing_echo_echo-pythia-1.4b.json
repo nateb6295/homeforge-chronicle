@@ -1,0 +1,13 @@
+[
+  {
+    "model": "EleutherAI/pythia-1.4b",
+    "n_layers": 24,
+    "peak_layer": 24,
+    "peak_frac": 1.0,
+    "delta": 0.12126130826217173,
+    "kl_identity": 0.5918828093757232,
+    "kl_echo": 0.34969545621424913,
+    "ratio": 1.6925664856597173,
+    "perm_p": 0.10394802598700649
+  }
+]

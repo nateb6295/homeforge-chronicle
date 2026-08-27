@@ -1,0 +1,137 @@
+{
+  "test": "Energy bookkeeping (Kimi's discriminating test #1)",
+  "date": "2026-08-15",
+  "method": "300 CCS embeddings (150 pre/150 post June 22), sliding-window SVD (w=30)",
+  "result": "DISSIPATION \u2014 neither conservation nor injection",
+  "pre_june22": {
+    "sigma_sum_mean": 37.248,
+    "sigma_sum_std": 4.907,
+    "n_windows": 136
+  },
+  "post_june22": {
+    "sigma_sum_mean": 25.114,
+    "sigma_sum_std": 11.863,
+    "n_windows": 135
+  },
+  "delta": -12.135,
+  "t_stat": 10.977,
+  "p_value": "<0.000001",
+  "components": {
+    "sigma1": {
+      "pre_mean": 22.034,
+      "post_mean": 14.879,
+      "delta": -7.155
+    },
+    "sigma2": {
+      "pre_mean": 15.214,
+      "post_mean": 10.235,
+      "delta": -4.979
+    }
+  },
+  "variance_change": {
+    "sigma1": {
+      "pre": 15.871,
+      "post": 55.015,
+      "ratio": 3.47
+    },
+    "sigma2": {
+      "pre": 2.072,
+      "post": 21.699,
+      "ratio": 10.47
+    }
+  },
+  "kimi_response": "Dissipation is entrainment signature in driven-dissipative system. Conservation/injection assumed wrong invariant (magnitude not direction). Proposed: mean resultant length R on unit sphere as directional test. Warned: session-boundary artifact may inflate variance.",
+  "next_tests": [
+    "Mean resultant length R (directional coherence) pre vs post",
+    "Within-session-only recomputation to control for boundary artifacts",
+    "Detuning test (stretch CCS cadence, watch for phase-slip)"
+  ],
+  "directional_coherence": {
+    "mean_resultant_length": {
+      "pre": 0.52441,
+      "post": 0.47726,
+      "ratio": 0.9101
+    },
+    "consecutive_angular": {
+      "pre": 0.9872,
+      "post": 0.9836
+    },
+    "pairwise_angular": {
+      "pre": 0.3326,
+      "post": 0.2651
+    },
+    "v2_consecutive": {
+      "pre": 0.9492,
+      "post": 0.9448
+    },
+    "interpretation": "R fell. Energy down + coherence down = homogenization not entrainment. Protocol diversifies while compressing."
+  },
+  "kimi_prediction_outcome": "R fell - entrainment frame falsified by Kimi own test",
+  "angular_autocorrelation": {
+    "shape": "monotonic_decay_both_sides",
+    "no_ringing": true,
+    "correlation_length": {
+      "pre": 19,
+      "post": 14
+    },
+    "half_life_lags": {
+      "pre": 17.3,
+      "post": 12.7
+    },
+    "decay_rate_lambda": {
+      "pre": 0.04,
+      "post": 0.0546
+    },
+    "interpretation": "Genuine diffusion, not precession. Directional memory shortened 27% post-June 22. Same step size, faster forgetting."
+  },
+  "compressed_exponential_fit": {
+    "pre": {
+      "tau_s": 26.3,
+      "beta": 1.088
+    },
+    "post": {
+      "tau_s": 18.82,
+      "beta": 1.231
+    },
+    "interpretation": "Both near-exponential (not inertial). Protocol rescaled timescale 28% shorter without changing dynamical class."
+  },
+  "angular_periodogram": {
+    "pre": {
+      "dominant_period": 67.5,
+      "peak_mean_ratio": 12.2,
+      "secondary_periods": [
+        22.5,
+        27.0
+      ]
+    },
+    "post": {
+      "dominant_period": 26.8,
+      "peak_mean_ratio": 5.39,
+      "secondary_periods": [
+        134.0,
+        22.3
+      ]
+    },
+    "interpretation": "Periodic step-size modulation on both sides. Period ~22-27 shared. Direction diffuses monotonically but step SIZE oscillates. Possibly weekly work rhythm."
+  },
+  "phase_randomization": {
+    "n_permutations": 1000,
+    "pre_peak_mean": {
+      "observed": 12.2,
+      "p_value": 0.875
+    },
+    "post_peak_mean": {
+      "observed": 5.39,
+      "p_value": 1.0
+    },
+    "period_specific": {
+      "pre_67.5": 0.896,
+      "pre_22.5": 0.83,
+      "pre_27.0": 0.282,
+      "post_26.8": 0.602,
+      "post_134.0": 0.908,
+      "post_22.3": 0.734
+    },
+    "interpretation": "All peaks artifactual. No structural periodicity in angular step sizes. Periodogram was noise shaped by autocorrelation."
+  }
+}

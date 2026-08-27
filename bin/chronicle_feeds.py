@@ -10,7 +10,6 @@ import time
 import sqlite3
 import hashlib
 import logging
-import subprocess
 import requests
 import xml.etree.ElementTree as ET
 from datetime import datetime, timedelta
@@ -23,9 +22,6 @@ _mesh = None
 # Config
 DB_PATH = os.environ.get("CHRONICLE_DB",
     os.path.expanduser("~/.homeforge-chronicle/processed.db"))
-CANISTER_ID = os.environ.get("CHRONICLE_CANISTER_ID", "fqqku-bqaaa-aaaai-q4wha-cai")
-IDENTITY = os.environ.get("CHRONICLE_IDENTITY", "chronicle-auto")
-DFX_PATH = os.path.expanduser("~/.local/share/dfx/bin/dfx")
 
 # arxiv categories of interest
 ARXIV_CATEGORIES = [
@@ -331,7 +327,7 @@ RSS_FEEDS = [
 
 POLL_INTERVAL = 1800  # 30 minutes
 MAX_RESULTS_PER_QUERY = 15
-MAX_CAPSULES_PER_CYCLE = 40  # Raised for more diverse sources
+MAX_CAPSULES_PER_CYCLE = 15  # arXiv-only mode (non-arXiv feeds disabled Jul 27)
 MAX_PER_SOURCE_PER_CYCLE = 5  # Prevent any single source from dominating
 
 # High-frequency news sources get a tighter cap — they firehose the same event
@@ -343,12 +339,39 @@ NEWS_SOURCES = {"intercept", "justsecurity", "coindesk", "decrypt"}
 SPAM_TITLE_PATTERNS = [
     r'(?i)promo\s+codes?\b',
     r'(?i)discount\s+codes?\b',
-    r'(?i)\bcoupons?\b',              # "coupon" never appears in research titles
-    r'(?i)\b\d+%\s+off\b',            # "75% Off", "25% Off" — always commercial
+    r'(?i)\bcoupons?\b',
+    r'(?i)\b\d+%\s+off\b',
     r'(?i)\bdeals?\b.*\bsave\b.*\b\d+%',
     r'(?i)^(?:best|top)\s+\d+\s+(?:deals|discounts|sales)\b',
 ]
 _spam_re = [re.compile(p) for p in SPAM_TITLE_PATTERNS]
+
+RELEVANCE_PHRASES = [
+    "spectral entropy", "eigenvalue", "covariance spectrum", "spectral gap",
+    "mechanistic interpretability", "sparse autoencoder",
+    "self-reference", "self-model", "identity circuit", "self-representation",
+    "consciousness", "phenomenal experience", "qualia", "subjective experience",
+    "interoception", "predictive processing", "free energy principle",
+    "internet computer", "xrpl", "flare network",
+    "autopoiesis", "self-organization", "attractor basin",
+    "reward hacking", "alignment tax", "model welfare",
+    "interpretability", "ablation", "circuit analysis",
+    "rlhf", "dpo", "preference optimization",
+    "sovereignty", "digital rights", "autonomous agent",
+    "neuroscience", "neural circuit", "cognition",
+    "emergence", "complexity", "phase transition",
+    "blockchain governance", "canister",
+    "spectral analysis", "hidden state", "transformer layer",
+    "residual stream", "attention mechanism",
+    "language model", "large language",
+]
+_relevance_patterns = [re.compile(re.escape(p), re.IGNORECASE) for p in RELEVANCE_PHRASES]
+
+
+def is_relevant(title, abstract):
+    text = f"{title} {abstract}"
+    hits = sum(1 for p in _relevance_patterns if p.search(text))
+    return hits >= 2
 
 
 def is_spam_title(title):
@@ -391,68 +414,31 @@ def mark_seen(db, article_id, source, title):
 
 
 def post_capsule(title, abstract, source, article_id, url, authors=None, keywords=None):
-    """Post article as capsule to canister via dfx."""
-    restatement = f"{title}\n\n{abstract}"
-    if len(restatement) > 2000:
-        restatement = restatement[:1997] + "..."
+    """Store article. Only relevance-matched articles get promoted to activity_feed."""
+    if is_relevant(title, abstract or ""):
+        author_str = ", ".join(authors[:3]) if authors else ""
+        feed_content = f"[{source}] {title}"
+        if author_str:
+            feed_content += f" — {author_str}"
+        if abstract:
+            feed_content += f"\n{abstract[:500]}"
+        if url:
+            feed_content += f"\n{url}"
 
-    # Clean for Candid string — normalize unicode, escape quotes, strip problematic chars
-    # Fiction/literature feeds use curly quotes, em-dashes, etc. that break Candid encoding
-    restatement = restatement.replace('\u2018', "'").replace('\u2019', "'")  # curly single quotes
-    restatement = restatement.replace('\u201c', '"').replace('\u201d', '"')  # curly double quotes
-    restatement = restatement.replace('\u2014', '-').replace('\u2013', '-')  # em/en dashes
-    restatement = restatement.replace('\u2026', '...').replace('\u00a0', ' ')  # ellipsis, nbsp
-    restatement = re.sub(r'[^\x20-\x7e]', '', restatement)  # strip remaining non-ASCII
-    restatement = re.sub(r'\$[^$]*\$', '', restatement)  # strip LaTeX math
-    restatement = restatement.replace('\\', '')  # strip stray backslashes (before quote escaping)
-    restatement = restatement.replace('"', '\\"').replace('\n', ' ').replace('\r', '')
+        try:
+            feed_db = sqlite3.connect(DB_PATH, timeout=10)
+            feed_db.execute(
+                "INSERT INTO activity_feed (source, activity_type, content, created_at) "
+                "VALUES (?, ?, ?, ?)",
+                (f"feed:{source}", "article", feed_content, int(time.time()))
+            )
+            feed_db.commit()
+            feed_db.close()
+            log.info(f"    [RELEVANT] promoted to activity_feed")
+        except Exception as e:
+            log.warning(f"activity_feed insert failed: {e}")
 
-    def _sanitize(s):
-        """Strip non-ASCII for Candid safety."""
-        return re.sub(r'[^\x20-\x7e]', '', str(s)).replace('"', "'")
-
-    kw_list = [source, article_id]
-    if url:
-        kw_list.append(url)
-    if keywords:
-        kw_list.extend(keywords[:5])
-    kw_str = "; ".join(f'"{_sanitize(k)}"' for k in kw_list)
-
-    persons = []
-    if authors:
-        persons = authors[:3]
-    persons_str = "; ".join(f'"{_sanitize(p)}"' for p in persons)
-
-    topic = f"feed/{source}"
-
-    args = (
-        f'("{source}-feed", '
-        f'"{restatement}", '
-        f'opt "{datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")}", '
-        f'null, '
-        f'opt "{topic}", '
-        f'0.7 : float64, '
-        f'vec {{ {persons_str} }}, '
-        f'vec {{ }}, '
-        f'vec {{ {kw_str} }})'
-    )
-
-    try:
-        result = subprocess.run(
-            [DFX_PATH, "canister", "--network", "ic", "--identity", IDENTITY,
-             "call", CANISTER_ID, "add_capsule", args],
-            capture_output=True, text=True,
-            env={**os.environ, "DFX_WARNING": "-mainnet_plaintext_identity"},
-            timeout=30
-        )
-        if result.returncode == 0:
-            return True
-        else:
-            log.warning(f"dfx error: {result.stderr[:200]}")
-            return False
-    except Exception as e:
-        log.error(f"Post failed: {e}")
-        return False
+    return True
 
 
 def poll_arxiv(db):
@@ -843,20 +829,17 @@ def run_cycle(db):
     log.info("Polling arxiv...")
     all_articles.extend(poll_arxiv(db))
 
-    log.info("Polling Nature...")
-    all_articles.extend(poll_nature(db))
-
-    log.info("Polling PNAS...")
-    all_articles.extend(poll_pnas(db))
-
-    log.info("Polling bioRxiv (extra categories)...")
-    all_articles.extend(poll_biorxiv_extra(db))
-
-    log.info("Polling journals...")
-    all_articles.extend(poll_journals(db))
-
-    log.info("Polling RSS feeds...")
-    all_articles.extend(poll_rss(db))
+    # Non-arXiv feeds disabled per Nate's request (Jul 27) — volume too high
+    # log.info("Polling Nature...")
+    # all_articles.extend(poll_nature(db))
+    # log.info("Polling PNAS...")
+    # all_articles.extend(poll_pnas(db))
+    # log.info("Polling bioRxiv (extra categories)...")
+    # all_articles.extend(poll_biorxiv_extra(db))
+    # log.info("Polling journals...")
+    # all_articles.extend(poll_journals(db))
+    # log.info("Polling RSS feeds...")
+    # all_articles.extend(poll_rss(db))
 
     new_articles = [a for a in all_articles if not is_seen(db, a["id"])]
 
@@ -950,12 +933,11 @@ def main():
     log.info(f"  RSS feeds: {', '.join(f['name'] for f in RSS_FEEDS)}")
     log.info(f"  Poll interval: {POLL_INTERVAL}s")
 
-    db = sqlite3.connect(DB_PATH, timeout=30)
+    db = sqlite3.connect(DB_PATH, timeout=120)
     init_db(db)
 
     global _mesh
     _mesh = Mesh("feeds", db_path=DB_PATH)
-    _mesh.expect("articles_posted", min_per_hour=1)
     # feeds is a source — no upstream dependencies
     log.info("Mesh node joined")
 

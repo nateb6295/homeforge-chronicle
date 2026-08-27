@@ -1,0 +1,200 @@
+[
+  {
+    "model": "stabilityai/stablelm-3b-4e1t",
+    "label": "StableLM-3B",
+    "species": "MHA",
+    "baseline_mag": 85.90628051757812,
+    "conditions": [
+      {
+        "name": "zone",
+        "layers": [
+          2,
+          24,
+          25
+        ],
+        "displacement_deg": 24.3433470320666,
+        "magnitude": 78.97203826904297
+      },
+      {
+        "name": "non_zone",
+        "layers": [
+          3,
+          4,
+          5
+        ],
+        "displacement_deg": 44.4486355788714,
+        "magnitude": 59.5185432434082
+      },
+      {
+        "name": "random_0",
+        "layers": [
+          10,
+          11,
+          27
+        ],
+        "displacement_deg": 20.627315924005803,
+        "magnitude": 80.74893188476562
+      },
+      {
+        "name": "random_1",
+        "layers": [
+          2,
+          7,
+          22
+        ],
+        "displacement_deg": 25.376457358030134,
+        "magnitude": 79.94834899902344
+      },
+      {
+        "name": "random_2",
+        "layers": [
+          6,
+          20,
+          25
+        ],
+        "displacement_deg": 15.304388778666647,
+        "magnitude": 83.89801025390625
+      }
+    ],
+    "zone_disp": 24.3433470320666,
+    "nonzone_disp": 44.4486355788714,
+    "random_mean": 20.436054020234195,
+    "zone_vs_random": 1.1911960600595255,
+    "nonzone_vs_random": 2.1750106715739648,
+    "condition_cv": 0.35371114697656025,
+    "interpretation": "NONZONE-DOMINANT \u2014 inverted importance (sorter prediction)",
+    "time_s": 48.55349850654602
+  },
+  {
+    "model": "google/gemma-2b",
+    "label": "Gemma-2B",
+    "species": "MQA",
+    "baseline_mag": 405.659912109375,
+    "conditions": [
+      {
+        "name": "zone",
+        "layers": [
+          13,
+          14,
+          15
+        ],
+        "displacement_deg": 4.563427388081612,
+        "magnitude": 421.885986328125
+      },
+      {
+        "name": "non_zone",
+        "layers": [
+          2,
+          3,
+          4
+        ],
+        "displacement_deg": 2.706603145965625,
+        "magnitude": 400.71063232421875
+      },
+      {
+        "name": "random_0",
+        "layers": [
+          2,
+          11,
+          13
+        ],
+        "displacement_deg": 3.710457059705613,
+        "magnitude": 404.63372802734375
+      },
+      {
+        "name": "random_1",
+        "layers": [
+          2,
+          11,
+          13
+        ],
+        "displacement_deg": 4.827792243703584,
+        "magnitude": 402.13726806640625
+      },
+      {
+        "name": "random_2",
+        "layers": [
+          3,
+          6,
+          15
+        ],
+        "displacement_deg": 4.781719760504537,
+        "magnitude": 418.7911376953125
+      }
+    ],
+    "zone_disp": 4.563427388081612,
+    "nonzone_disp": 2.706603145965625,
+    "random_mean": 4.439989687971245,
+    "zone_vs_random": 1.027801348378079,
+    "nonzone_vs_random": 0.6095967189514684,
+    "condition_cv": 0.21717809229974552,
+    "interpretation": "ZONE-DOMINANT \u2014 spatial identity (tunnel prediction)",
+    "time_s": 46.13618278503418
+  },
+  {
+    "model": "Qwen/Qwen2.5-1.5B-Instruct",
+    "label": "Qwen2.5-1.5B",
+    "species": "GQA-6",
+    "baseline_mag": 220.97064208984375,
+    "conditions": [
+      {
+        "name": "zone",
+        "layers": [
+          20,
+          21,
+          22
+        ],
+        "displacement_deg": 4.357074534039749,
+        "magnitude": 220.7902069091797
+      },
+      {
+        "name": "non_zone",
+        "layers": [
+          2,
+          3,
+          4
+        ],
+        "displacement_deg": 4.512103528889869,
+        "magnitude": 221.72348022460938
+      },
+      {
+        "name": "random_0",
+        "layers": [
+          2,
+          10,
+          18
+        ],
+        "displacement_deg": 4.825600534441204,
+        "magnitude": 218.75270080566406
+      },
+      {
+        "name": "random_1",
+        "layers": [
+          3,
+          7,
+          20
+        ],
+        "displacement_deg": 3.7591107153864343,
+        "magnitude": 217.49566650390625
+      },
+      {
+        "name": "random_2",
+        "layers": [
+          6,
+          17,
+          25
+        ],
+        "displacement_deg": 4.124120485126203,
+        "magnitude": 220.76589965820312
+      }
+    ],
+    "zone_disp": 4.357074534039749,
+    "nonzone_disp": 4.512103528889869,
+    "random_mean": 4.236277244984613,
+    "zone_vs_random": 1.02851496303698,
+    "nonzone_vs_random": 1.065110536434274,
+    "condition_cv": 0.025842895308261515,
+    "interpretation": "FLAT \u2014 layer selection irrelevant (condenser prediction)",
+    "time_s": 30.962965965270996
+  }
+]
